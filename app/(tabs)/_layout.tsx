@@ -14,16 +14,16 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-        {/* Nouvel onglet pour la page Accueil */}
-        <Tabs.Screen
-          name="home"  // Correspond exactement au nom du fichier accueil.tsx
-          options={{
-            title: 'Accueil',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
-            ),
-          }}
-        />
+    <Tabs.Screen
+      name="index"  // Correspond exactement au nom du fichier home.jsx
+      options={{
+        title: 'Accueil',
+        tabBarIcon: ({ color, focused }) => (
+          <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+        ),
+      }}
+    />
+
 
       <Tabs.Screen
         name="explore"

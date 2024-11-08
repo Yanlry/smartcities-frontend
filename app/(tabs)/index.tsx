@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F5FA',
     padding: 16,
-    paddingTop:50
+    paddingTop:70
   },
   profileContainer: {
     flexDirection: 'row',
