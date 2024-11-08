@@ -48,3 +48,47 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+
+
+smartcities-frontend/
+├── assets/                  # Images, icônes, et autres fichiers statiques
+│   ├── icons/
+│   ├── images/
+│   └── fonts/
+├── components/              # Composants réutilisables dans toute l'application
+│   ├── Button.js
+│   ├── Card.js
+│   ├── Header.js
+│   └── Modal.js
+├── hooks/                   # Hooks personnalisés pour la logique réutilisable
+│   ├── useLocation.js       # Exemple : Hook pour gérer la géolocalisation
+│   ├── useFetch.js          # Exemple : Hook pour les requêtes API
+│   └── useAuth.js           # Exemple : Hook pour la gestion de l'authentification
+├── navigation/              # Configuration de la navigation
+│   ├── MainNavigator.js     # Navigation principale de l'application
+│   └── AuthNavigator.js     # Navigation pour les écrans d'authentification
+├── screens/                 # Écrans principaux de l'application
+│   ├── HomeScreen.js
+│   ├── ReportScreen.js      # Écran de signalement d’un problème
+│   ├── EventsScreen.js      # Écran pour consulter les événements
+│   ├── ProfileScreen.js     # Profil de l'utilisateur
+│   └── Auth/                # Sous-dossier pour les écrans d'authentification
+│       ├── LoginScreen.js
+│       └── RegisterScreen.js
+├── services/                # Logique d'interaction avec l'API backend
+│   ├── api.js               # Configurer Axios pour les appels API
+│   ├── authService.js       # Gestion des requêtes liées à l'authentification
+│   ├── reportService.js     # Gestion des requêtes liées aux signalements
+│   └── eventService.js      # Gestion des requêtes liées aux événements
+├── store/                   # Gestion globale de l'état (si nécessaire, ex : Redux ou Context)
+│   ├── actions/
+│   ├── reducers/
+│   └── store.js
+├── utils/                   # Fonctions utilitaires
+│   ├── formatDate.js
+│   ├── calculateDistance.js # Fonction pour calculer la distance entre deux points GPS
+│   └── constants.js         # Constantes globales de l'application
+├── App.js                   # Entrée principale de l'application
+├── app.json                 # Configuration du projet Expo
+└── package.json             # Dépendances et scripts du projet
