@@ -1,3 +1,4 @@
+
 frontend/
 ├── assets/                    # Images, icônes, et autres fichiers statiques
 │   ├── icons/

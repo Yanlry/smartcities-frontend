@@ -10,6 +10,7 @@ import EventsScreen from './screens/EventsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ReportScreen from './screens/ReportScreen';
 import LoginScreen from './screens/Auth/LoginScreen';
+import RegisterScreen from './screens/Auth/RegisterScreen'; // Assurez-vous d'importer RegisterScreen
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -67,16 +68,19 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (
-          <Stack.Screen name="Login">
-            {(props) => (
-              <LoginScreen
-                {...props}
-                onLogin={() => {
-                  setIsLoggedIn(true);
-                }}
-              />
-            )}
-          </Stack.Screen>
+          <>
+            <Stack.Screen name="Login">
+              {(props) => (
+                <LoginScreen
+                  {...props}
+                  onLogin={() => {
+                    setIsLoggedIn(true);
+                  }}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
         ) : (
           <Stack.Screen name="Main" component={TabNavigator} />
         )}

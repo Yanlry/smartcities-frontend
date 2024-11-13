@@ -5464,6 +5464,11 @@ react-native-vector-icons@^10.2.0:
     prop-types "^15.7.2"
     yargs "^16.1.1"
 
+react-native-web-hover@^0.2.9:
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/react-native-web-hover/-/react-native-web-hover-0.2.9.tgz#aee61d09cb92fce93f55fa7c9d6ebbd28899fded"
+  integrity sha512-6hXQMLptJPDn67xlgmA6eh42LWlHb2THjaedNqW5N8rwutEqsta/zoCYTAJNz+1U/tGW9ZrZVXitUnoLie/itQ==
+
 react-native@0.74.5:
   version "0.74.5"
   resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.74.5.tgz#80e556690fc2583d46714d5618ecd30d93c24e81"
