@@ -1,50 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
-import { useToken } from '../../hooks/useToken'; // Import du hook personnalisé pour le token
-import { login } from '../../services/authService'; // Import du service de login
+import React from 'react';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useAuth } from '../../hooks/useAuth';
+import { useState } from 'react';
 
 export default function LoginScreen({ navigation, onLogin }: any) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoginClicked, setIsLoginClicked] = useState(false);
+  const {
+    email, setEmail,
+    password, setPassword,
+    isLoginClicked,
+    handleLogin,
+  } = useAuth();
+
+  const handleLoginClick = () => handleLogin(onLogin);
+
   const [isRegisterClicked, setIsRegisterClicked] = useState(false);
-  const { setToken, clearToken } = useToken(); // Utiliser le hook pour la gestion du token
-
-  useEffect(() => {
-    // Pour le développement seulement : Nettoyer le token au démarrage
-    clearToken();
-  }, []);
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
-      return;
-    }
-  
-    try {
-      setIsLoginClicked(true); // Change l'état après le clic
-      const lowerCaseEmail = email.toLowerCase();
-      const response = await login(lowerCaseEmail, password); // Utiliser le service de login
-  
-      if (response.status === 200 || response.status === 201) {
-        const { accessToken } = response.data;
-        await setToken(accessToken);
-        // Appeler la fonction onLogin pour mettre à jour l'état de connexion
-        onLogin(); // Cela changera `isLoggedIn` dans `App.tsx` à true
-      }
-    } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
-      Alert.alert('Erreur', 'Email ou mot de passe incorrect');
-    } finally {
-      setIsLoginClicked(false); // Réinitialiser l'état après le clic
-    }
-  };
-  
 
   const handleRegisterNavigation = () => {
     setIsRegisterClicked(true);
     navigation.navigate('Register');
-    setTimeout(() => setIsRegisterClicked(false), 500); // Réinitialiser après 500 ms pour indiquer l'action
+    setTimeout(() => setIsRegisterClicked(false), 500);
   };
 
   return (
@@ -69,7 +43,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
       />
       <TouchableOpacity
         style={[styles.loginButton, isLoginClicked && styles.buttonClicked]}
-        onPress={handleLogin}
+        onPress={handleLoginClick}
       >
         <Text style={styles.loginButtonText}>Se connecter</Text>
       </TouchableOpacity>
@@ -83,6 +57,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

@@ -2,8 +2,19 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "target": "esnext",
+    "lib": ["dom", "esnext"],
+    "moduleResolution": "node",
+    "jsx": "react-native",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "isolatedModules": true,
     "typeRoots": ["node_modules/@types", "./types"],
-    "types": []  // Supprimez la référence à '@types/react-native-vector-icons'
+    "types": []
   },
   "include": ["types/**/*.d.ts", "src/**/*"]
 }
+

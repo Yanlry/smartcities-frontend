@@ -1,55 +1,33 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
+import React from 'react';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { register } from '../../services/authService'; // Import du service d'inscription
+import { useAuth } from '../../hooks/useAuth'; // Import du hook personnalisé
+import { useState } from 'react';
 
 export default function RegisterScreen({ navigation, onLogin }: any) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [isRegisterClicked, setIsRegisterClicked] = useState(false);
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    username,
+    setUsername,
+    lastName,
+    setLastName,
+    firstName,
+    setFirstName,
+    isRegisterClicked,
+    handleRegister,
+  } = useAuth();
+
+  const handleRegisterClick = () => handleRegister(onLogin);
+
   const [isLoginClicked, setIsLoginClicked] = useState(false);
 
-  const handleRegister = async () => {
-    // Validation : vérifier que tous les champs sont remplis
-    if (!email || !password || !name) {
-      Alert.alert('Erreur', 'Tous les champs doivent être remplis pour continuer');
-      return;
-    }
-
-    try {
-      setIsRegisterClicked(true); // Change l'état après le clic
-      const response = await register(email, password, name); // Utiliser le service d'inscription
-
-      if (response.status === 201) {
-        Alert.alert('Succès', 'Inscription réussie');
-        onLogin(); // Mettre à jour l'état de connexion
-      }
-    } catch (error) {
-      // Gérer l'erreur sans afficher la trace complète en production
-      if (__DEV__) {
-        console.error("Erreur lors de l'inscription:", error); // Afficher uniquement en mode développement
-      }
-
-      if (error.response) {
-        if (error.response.status === 409) {
-          // Conflit - Affichez un message spécifique
-          Alert.alert('Erreur', error.response.data.message); // Message précis du backend
-        } else {
-          Alert.alert('Erreur', error.response.data.message || "Une erreur est survenue lors de l'inscription");
-        }
-      } else {
-        Alert.alert('Erreur', "Une erreur réseau est survenue, veuillez vérifier votre connexion");
-      }
-    } finally {
-      setIsRegisterClicked(false); // Réinitialise l'état après l'action
-    }
-  };
-
   const handleLogin = () => {
-    setIsLoginClicked(true); // Change l'état après le clic
+    setIsLoginClicked(true);
     navigation.navigate('Login');
-    setTimeout(() => setIsLoginClicked(false), 500); // Réinitialiser après 500 ms pour indiquer l'action
+    setTimeout(() => setIsLoginClicked(false), 500);
   };
 
   return (
@@ -63,9 +41,23 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
       <TextInput
         style={styles.input}
-        value={name}
-        onChangeText={setName}
+        value={lastName}
+        onChangeText={setLastName}
         placeholder="Nom"
+        placeholderTextColor="#999"
+      />
+      <TextInput
+        style={styles.input}
+        value={firstName}
+        onChangeText={setFirstName}
+        placeholder="Prénom"
+        placeholderTextColor="#999"
+      />
+      <TextInput
+        style={styles.input}
+        value={username}
+        onChangeText={setUsername}
+        placeholder="Nom d'utilisateur"
         placeholderTextColor="#999"
       />
       <TextInput
@@ -88,7 +80,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
       <TouchableOpacity
         style={[styles.registerButton, isRegisterClicked && styles.buttonClicked]}
-        onPress={handleRegister}
+        onPress={handleRegisterClick}
       >
         <Text style={styles.registerButtonText}>S'inscrire</Text>
       </TouchableOpacity>
@@ -105,7 +97,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {

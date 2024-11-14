@@ -1,26 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location'; // Importer Expo Location pour la géolocalisation
+import { useLocation } from '../hooks/useLocation';
 
 export default function MapScreen() {
-  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission refusée', "La permission de localisation est nécessaire pour afficher la carte.");
-        setLoading(false);
-        return;
-      }
-
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation.coords);
-      setLoading(false);
-    })();
-  }, []);
+  const { location, loading } = useLocation();
 
   if (loading) {
     return (

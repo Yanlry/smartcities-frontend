@@ -1,13 +1,29 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CalendarPicker from 'react-native-calendar-picker'; // Ajoutez un module de calendrier si nécessaire
 import { BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
+const categoryBackgrounds = [
+  require('../assets/images/danger.png'),
+  require('../assets/images/travaux.png'),
+  require('../assets/images/defaut.png'),
+  require('../assets/images/nuissance.png'),
+  require('../assets/images/reparation.png'),
+];
+
 export default function HomeScreen() {
   const screenWidth = Dimensions.get('window').width;
 
+  const categories = [
+    { name: 'Danger', icon: 'warning-outline' as const },
+    { name: 'Travaux', icon: 'construct-outline' as const },
+    { name: 'Défaut / Problème', icon: 'alert-circle-outline' as const },
+    { name: 'Nuissance', icon: 'volume-mute-outline' as const },
+    { name: 'Réparation', icon: 'hammer-outline' as const },
+  ];
+  
   const data = {
     labels: ["Danger", "Travaux", "Défaut", "Autre"],
     datasets: [
@@ -76,16 +92,19 @@ export default function HomeScreen() {
       {/* Section Profil */}
       <View style={styles.profileContainer}>
       <Image source={require('../assets/images/profil.png')} style={styles.profileImage} />
-        <View style={styles.profileInfo}>
-          <Text style={styles.userName}>Yann leroy</Text>
-          <Text style={styles.userDetails}>Inscrit il y a 1 ans</Text>
-          <Text style={styles.userStats}><Text style={styles.goodStats}>187</Text> 👍  |   <Text style={styles.badStats}>19</Text> 👎</Text>
-          <Text style={styles.userRanking}>Classement: 453 / 1245</Text>
-          <TouchableOpacity style={styles.trustBadge}>
-            <Text style={styles.trustBadgeText}>⭐ Digne de confiance ⭐</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.profileInfo}>
+        <Text style={styles.userName}>Yann leroy</Text>
+        <Text style={styles.userDetails}>Inscrit il y a 1 ans</Text>
+        <Text style={styles.userStats}>📈 187 followers</Text>
+        <Text style={styles.userRanking}>Classement: 453 / 1245</Text>
+        <TouchableOpacity style={styles.trustBadge}>
+          <Text style={styles.trustBadgeText}>⭐ Digne de confiance ⭐</Text>
+          <Text style={styles.trustBadgeTextPercent}>🔥 Taux de validation: 94% 🔥</Text>
+        </TouchableOpacity>
       </View>
+      {/* Smiley vert ajouté ici */}
+      
+    </View>
 
       {/* Section Top 10 des Smarter Actif */}
       <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
@@ -109,27 +128,21 @@ export default function HomeScreen() {
       {/* Section Catégories */}
       <Text style={styles.sectionTitle}>Catégories</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-        {/* Ajoutez ici vos catégories, chaque élément aura une icône et un titre */}
-        <View style={styles.categoryItem}>
-          <Ionicons name="grid-outline" size={40} color="#3498db" />
-          <Text style={styles.categoryText}>Danger</Text>
-        </View>
-        <View style={styles.categoryItem}>
-          <Ionicons name="map-outline" size={40} color="#3498db" />
-          <Text style={styles.categoryText}>Travaux</Text>
-        </View>
-        <View style={styles.categoryItem}>
-          <Ionicons name="person-outline" size={40} color="#3498db" />
-          <Text style={styles.categoryText}>Défaut / Probléme</Text>
-        </View>
-        <View style={styles.categoryItem}>
-          <Ionicons name="search-outline" size={40} color="#3498db" />
-          <Text style={styles.categoryText}>Nuissance</Text>
-        </View>
-        <View style={styles.categoryItem}>
-          <Ionicons name="star-outline" size={40} color="#3498db" />
-          <Text style={styles.categoryText}>Réparation</Text>
-        </View>
+        {categories.map((category, index) => (
+          <ImageBackground
+            key={index}
+            source={categoryBackgrounds[index]}
+            style={styles.categoryItem}
+            imageStyle={{ borderRadius: 10 }}
+          >
+            {/* Calque de superposition pour l'opacité */}
+            <View style={styles.overlay} />
+            
+            {/* Icône et texte de la catégorie */}
+            <Ionicons name={category.icon} size={40} color="#fff" />
+            <Text style={styles.categoryText}>{category.name}</Text>
+          </ImageBackground>
+        ))}
       </ScrollView>
 
 
@@ -284,12 +297,7 @@ const styles = StyleSheet.create({
     fontWeight:'bold',
     fontSize: 14,
     marginVertical: 5,
-  },
-  goodStats:{
-    color:'#26A65B'
-  },
-  badStats:{
-    color:'#E74C3C' 
+    color:'#3498db'
   },
   userRanking: {
     fontSize: 14,
@@ -306,6 +314,19 @@ const styles = StyleSheet.create({
     textAlign:'center',
     color: '#fff',
     fontWeight: 'bold',
+    marginBottom:5
+  },
+  trustBadgeTextPercent: {
+    textAlign:'center',
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  smileyContainer: {
+    marginLeft: 16,
+  },
+  smiley: {
+    fontSize: 48,
+    color: 'green',
   },
   sectionTitle: {
     fontSize: 18,
@@ -346,22 +367,24 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   categoryItem: {
-    width: 150, // Utilisez une largeur fixe mais ajustable selon le contenu
-    minHeight: 150, // Hauteur minimale pour permettre au conteneur de grandir si nécessaire
+    width: 150,
+    minHeight: 150,
     marginRight: 15,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#fff',
-    alignItems: 'center', // Centrer les icônes et le texte horizontalement
-    justifyContent: 'center', // Centrer le contenu verticalement
-    padding: 10, // Ajouter du padding pour espacer l'icône et le texte
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, // Remplit entièrement le conteneur parent
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Couleur avec opacité (noir à 50%)
   },
   categoryText: {
     fontSize: 14,
-    color: '#333',
-    textAlign: 'center', // Centrer le texte horizontalement
-    marginTop: 10, // Ajouter un espace entre l'icône et le texte
-    flexWrap: 'wrap', // Permettre au texte de s'étendre sur plusieurs lignes
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 10,
+    zIndex: 1, // Place le texte au-dessus de la superposition
   },
   featuredItem: {
     width: 150,
