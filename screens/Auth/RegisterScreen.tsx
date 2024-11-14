@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
+import { register } from '../../services/authService'; // Import du service d'inscription
 
-export default function RegisterScreen({ navigation }: any) {
+export default function RegisterScreen({ navigation, onLogin }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -19,19 +19,28 @@ export default function RegisterScreen({ navigation }: any) {
 
     try {
       setIsRegisterClicked(true); // Change l'état après le clic
-      const response = await axios.post('http://localhost:3000/auth/signup', {
-        email,
-        password,
-        name,
-      });
+      const response = await register(email, password, name); // Utiliser le service d'inscription
 
       if (response.status === 201) {
         Alert.alert('Succès', 'Inscription réussie');
-        navigation.navigate('Login');
+        onLogin(); // Mettre à jour l'état de connexion
       }
     } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
-      Alert.alert('Erreur', "Une erreur est survenue lors de l'inscription");
+      // Gérer l'erreur sans afficher la trace complète en production
+      if (__DEV__) {
+        console.error("Erreur lors de l'inscription:", error); // Afficher uniquement en mode développement
+      }
+
+      if (error.response) {
+        if (error.response.status === 409) {
+          // Conflit - Affichez un message spécifique
+          Alert.alert('Erreur', error.response.data.message); // Message précis du backend
+        } else {
+          Alert.alert('Erreur', error.response.data.message || "Une erreur est survenue lors de l'inscription");
+        }
+      } else {
+        Alert.alert('Erreur', "Une erreur réseau est survenue, veuillez vérifier votre connexion");
+      }
     } finally {
       setIsRegisterClicked(false); // Réinitialise l'état après l'action
     }
@@ -97,6 +106,7 @@ export default function RegisterScreen({ navigation }: any) {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -153,7 +163,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   buttonClicked: {
-    backgroundColor: '#28a745', // Vert agréable pour indiquer que le bouton a été cliqué
+    backgroundColor: '#28a745',
   },
   registerButtonText: {
     color: '#fff',

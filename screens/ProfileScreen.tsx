@@ -1,48 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function ProfileScreen({ navigation, onLogout }: any) {
-  const handleLogout = async () => {
-    try {
-      // Supprimer le token d'accès de AsyncStorage
-      await AsyncStorage.removeItem('accessToken');
-
-      // Appeler la fonction onLogout pour mettre à jour l'état de connexion
-      onLogout();
-
-      // Afficher un message de confirmation
-      Alert.alert('Déconnexion', 'Vous avez été déconnecté avec succès.');
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-      Alert.alert('Erreur', 'Impossible de se déconnecter. Veuillez réessayer.');
-    }
-  };
-
-  const confirmLogout = () => {
-    Alert.alert(
-      'Confirmation de déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter ?',
-      [
-        {
-          text: 'Annuler',
-          style: 'cancel', // Style par défaut pour annuler
-        },
-        {
-          text: 'Se déconnecter',
-          onPress: handleLogout, // Appelle la fonction handleLogout en cas de confirmation
-          style: 'destructive', // Style pour indiquer une action négative
-        },
-      ],
-      { cancelable: false } // Empêche de fermer l'alerte en appuyant à côté
-    );
-  };
-
+export default function ProfileScreen({ navigation, onLogout }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Profil de l'utilisateur</Text>
-      {/* Ajouter le bouton de déconnexion */}
-      <Button title="Déconnexion" onPress={confirmLogout} />
+      {/* En-tête avec le bouton retour */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={28} color="#333" style={{ marginLeft: 10 }} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profil</Text>
+      </View>
+
+      {/* Contenu principal de la page Profil */}
+      <View style={styles.profileContent}>
+        <Text style={styles.welcomeText}>Bienvenue sur votre profil !</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+          <Text style={styles.logoutText}>Se déconnecter</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -50,12 +27,44 @@ export default function ProfileScreen({ navigation, onLogout }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#f9f9fb',
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e3e3e3',
+    paddingTop: 50, // Pour descendre l'en-tête
     backgroundColor: '#fff',
   },
-  text: {
-    fontSize: 24,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 10,
+  },
+  profileContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 20,
+  },
+  logoutButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
