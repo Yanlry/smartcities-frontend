@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CalendarPicker from 'react-native-calendar-picker'; // Ajoutez un module de calendrier si nécessaire
 import { BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+import { hexToRgba } from '../utils/CustomReductOpacity';
+import styles from './styles/HomeScreen.styles';
 
 const categoryBackgrounds = [
   require('../assets/images/danger.png'),
@@ -63,11 +65,10 @@ export default function HomeScreen() {
   ];
 
   const signalementsData = [
-    { id: '1', type: 'Danger à 100m', description: 'Arbre sur la chaussée\nRue du petit Belgique', color: '#e74c3c' },
+    { id: '1', type: 'Danger à 100m', description: 'Arbre sur la chaussée\nRue du petit Belgique', color: '#E41D1D' },
     { id: '2', type: 'Travaux à 300m', description: 'Route barrée jusqu\'au 16/09/24\nDepartementale D85', color: '#e67e22' },
     { id: '3', type: 'Défaut à 1km', description: 'Feu rouge défaillant\nAvenue du Maréchal Foch', color: '#2ecc71' },
-    { id: '4', type: 'Nuisance à 2,4km', description: 'Tapage nocturne\nRue Sadi Carnot', color: '#9b59b6' },
-    // Ajoutez d'autres éléments ici
+    { id: '4', type: 'Nuissance à 2,4km', description: 'Tapage nocturne\nRue Sadi Carnot', color: '#9b59b6' },
   ];
 
   const featuredEvents = [
@@ -84,7 +85,6 @@ export default function HomeScreen() {
   const upcomingEvents = [
     { id: '1', title: "Marché d'Haubourdin", date: '08:00 - 12:30', location: 'Place Ernest Blondeau' },
     { id: '2', title: "Sortie : Découverte du parc Mosaïc", date: '15:00 - 15:15', location: 'Maison Des Jeunes D’Haubourdin' },
-    // Ajoutez d'autres événements ici
   ];
 
   return (
@@ -98,12 +98,9 @@ export default function HomeScreen() {
         <Text style={styles.userStats}>📈 187 followers</Text>
         <Text style={styles.userRanking}>Classement: 453 / 1245</Text>
         <TouchableOpacity style={styles.trustBadge}>
-          <Text style={styles.trustBadgeText}>⭐ Digne de confiance ⭐</Text>
-          <Text style={styles.trustBadgeTextPercent}>🔥 Taux de validation: 94% 🔥</Text>
+          <Text style={styles.trustBadgeText}>⭐  Taux de fiabilité : 94%  ⭐</Text>
         </TouchableOpacity>
       </View>
-      {/* Smiley vert ajouté ici */}
-      
     </View>
 
       {/* Section Top 10 des Smarter Actif */}
@@ -117,13 +114,21 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Section Signalements Proche de Vous */}
-      <Text style={styles.sectionTitle}>Signalements proche de vous</Text>
-      {signalementsData.map((item) => (
-        <View key={item.id} style={[styles.signalementItem, { borderColor: item.color }]}>
-          <Text style={styles.signalementType}>{item.type}</Text>
-          <Text style={styles.signalementDescription}>{item.description}</Text>
-        </View>
-      ))}
+      <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
+      {signalementsData.map((item) => {
+        const backgroundColor = hexToRgba(item.color, 0.5); // Couleur avec opacité
+        return (
+          <View
+            key={item.id}
+            style={[styles.signalementItem,
+              { backgroundColor, 
+                borderColor: item.color, // Utilise directement `item.color` pour une bordure opaque
+              },]}>
+            <Text style={styles.signalementType}>{item.type}</Text>
+            <Text style={styles.signalementDescription}>{item.description}</Text>
+          </View>
+        );
+      })}
 
       {/* Section Catégories */}
       <Text style={styles.sectionTitle}>Catégories</Text>
@@ -144,7 +149,6 @@ export default function HomeScreen() {
           </ImageBackground>
         ))}
       </ScrollView>
-
 
       {/* Section À la Une */}
       <Text style={styles.sectionTitle}>À la Une</Text>
@@ -193,7 +197,7 @@ export default function HomeScreen() {
             <View style={styles.chartContainer}>
             <BarChart
                 data={data}
-                width={screenWidth} // Ajustez selon les marges de votre composant
+                width={screenWidth} 
                 height={220}
                 chartConfig={chartConfig}
                 yAxisLabel=" "
@@ -263,311 +267,3 @@ export default function HomeScreen() {
   );
 }
 
-// Styles pour la page d'accueil
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9fb',
-    paddingHorizontal: 20,
-  },
-  profileContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  profileImage: {
-    width: 100,
-    height: 130,
-    borderRadius:10,
-    marginRight: 20,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  userDetails: {
-    fontSize: 14,
-    color: '#666',
-  },
-  userStats: {
-    fontWeight:'bold',
-    fontSize: 14,
-    marginVertical: 5,
-    color:'#3498db'
-  },
-  userRanking: {
-    fontSize: 14,
-    color: '#999',
-  },
-  trustBadge: {
-    backgroundColor: '#37323E',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 30,
-    marginTop: 5,
-  },
-  trustBadgeText: {
-    textAlign:'center',
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom:5
-  },
-  trustBadgeTextPercent: {
-    textAlign:'center',
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  smileyContainer: {
-    marginLeft: 16,
-  },
-  smiley: {
-    fontSize: 48,
-    color: 'green',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  horizontalScroll: {
-    marginBottom: 20,
-  },
-  smarterItem: {
-    width: 80,
-    height: 80,
-    marginRight: 15,
-  },
-  smarterImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 40,
-  },
-  signalementItem: {
-    borderWidth: 2,
-    borderRadius: 30,
-    padding: 15,
-    paddingHorizontal: 25,
-    marginBottom: 15,
-    backgroundColor: '#fff',
-  },
-  signalementType: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  signalementDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
-  },
-  categoryItem: {
-    width: 150,
-    minHeight: 150,
-    marginRight: 15,
-    borderRadius: 10,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject, // Remplit entièrement le conteneur parent
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Couleur avec opacité (noir à 50%)
-  },
-  categoryText: {
-    fontSize: 14,
-    color: '#fff',
-    textAlign: 'center',
-    marginTop: 10,
-    zIndex: 1, // Place le texte au-dessus de la superposition
-  },
-  featuredItem: {
-    width: 150,
-    minHeight: 150, // Remplacez height par minHeight pour permettre au conteneur de s'agrandir
-    marginRight: 15,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-  },
-  featuredImage: {
-    width: '100%',
-    height: 'auto', // Utilisez auto pour que l'image s'ajuste en fonction du texte
-    aspectRatio: 1.5, // Vous pouvez définir un ratio pour que l'image conserve une forme cohérente
-  },
-  featuredTitle: {
-    padding: 10,
-    fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
-  },
-  calendarContainer: {
-    marginVertical: 10,
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 10,
-    alignItems: 'center', // Centre le contenu horizontalement
-    overflow: 'hidden',
-  },
-
-  eventItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-  },
-
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-
-  eventDetails: {
-    fontSize: 14,
-    color: '#666',
-    marginVertical: 5,
-  },
-
-  eventLocation: {
-    fontSize: 14,
-    color: '#888',
-  },
-
-  chartContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  infoContainer: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 15,
-  },
-  infoCard: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    borderRadius: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3498db',
-    marginBottom: 10,
-    marginTop: 15,
-  },
-  infoContent: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 15,
-    lineHeight: 20,
-  },
-  infoLabel: {
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  mayorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-  mayorImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 15,
-  },
-  mayorInfo: {
-    flex: 1,
-  },
-  mayor:{
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3498db',
-    marginBottom:5
-  },
-  mayorName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  mayorSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
-  },
-  mayorContact: {
-    fontSize: 16,
-    color: '#333',
-    marginTop: 10,
-  },
-  contactBold: {
-    fontWeight: 'bold',
-  },
-  officeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-  officeImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 15,
-    marginRight: 15,
-  },
-  officeInfo: {
-    flex: 1,
-  },
-  officeAddress: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 10,
-  },
-  Address:{
-    fontSize: 18,
-    fontWeight:'bold',
-    color: '#3498db',
-  },
-  officeContact: {
-    fontSize: 14,
-    color: '#666',
-  },
-  phone:{
-    fontWeight:'bold'
-  },
-  hours:{
-    fontWeight:'bold',
-  },
-});

@@ -13,6 +13,7 @@ import ReportScreen from './screens/ReportScreen';
 import MapScreen from './screens/MapScreen'; // Nouveau composant MapScreen
 import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
+import AddNewReportScreen from './screens/AddNewReportScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -61,15 +62,14 @@ export default function App() {
     </View>
   );
 
-  // Navigateur principal à onglets
   const TabNavigator = () => (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
         header: ({ navigation }) => <CustomHeader navigation={navigation} />,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName;
-
+  
           if (route.name === 'Accueil') {
             iconName = 'home-outline';
           } else if (route.name === 'Evénements') {
@@ -78,18 +78,36 @@ export default function App() {
             iconName = 'alert-circle-outline';
           } else if (route.name === 'Carte') {
             iconName = 'map-outline';
+          } else if (route.name === 'Nouveau signalement') {
+            iconName = 'add-outline';
           }
-
-          return <Icon name={iconName} size={size} color={color} />;
+  
+          return (
+            <Icon
+              name={iconName}
+              size={focused ? size + 5 : size} // Augmente légèrement la taille si l'onglet est sélectionné
+              color={color}
+              style={{ marginBottom: -5 }} // Descend l'icône un peu
+            />
+          );
+        },
+        tabBarShowLabel: false, // Pas de labels
+        tabBarStyle: {
+          height: 70, // Augmente la hauteur de la barre
+          paddingBottom: 10, // Ajoute un espace en bas pour mieux positionner les icônes
+          paddingTop: 5, // Ajuste l'espace en haut
         },
       })}
     >
       <Tab.Screen name="Accueil" component={HomeScreen} />
       <Tab.Screen name="Evénements" component={EventsScreen} />
+
+      <Tab.Screen name="Nouveau signalement" component={AddNewReportScreen} />
       <Tab.Screen name="Signalements" component={ReportScreen} />
       <Tab.Screen name="Carte" component={MapScreen} />
     </Tab.Navigator>
   );
+  
 
   return (
     <NavigationContainer>
