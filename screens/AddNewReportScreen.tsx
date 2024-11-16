@@ -23,7 +23,7 @@ export default function AddNewReportScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const { location, loading } = useLocation();
-  const API_KEY = '2e3d9bbd1aae4961a1d011a87410d13f';
+  const API_KEY = process.env.OPEN_CAGE_API_KEY;
 
   const categories = [
     {
