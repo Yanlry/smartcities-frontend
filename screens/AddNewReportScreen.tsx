@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -7,12 +7,14 @@ import {
   Alert,
   FlatList,
   Dimensions,
+  Modal,
   ScrollView,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 import { useLocation } from '../hooks/useLocation';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/AddNewReportScreen.styles';
+import axios from 'axios';
+import { getUserIdFromToken } from '../utils/tokenUtils';
 
 export default function AddNewReportScreen() {
   const [title, setTitle] = useState('');
@@ -20,67 +22,106 @@ export default function AddNewReportScreen() {
   const [query, setQuery] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const { location, loading } = useLocation();
-  const API_KEY = process.env.OPEN_CAGE_API_KEY;
-
+  const [apiKeys, setApiKeys] = useState<{openCageApiKey: string;} | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalCategorieVisible, setModalCategorieVisible] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const categories = [
     {
       name: 'Danger',
       icon: 'skull-outline' as const,
       value: 'danger',
-      description: `Signalez tout danger pouvant affecter la sécurité des habitants :\n
-  - Objets dangereux sur la voie publique (ex. câbles tombés, verre brisé)\n
-  - Zones instables ou dangereuses (ex. glissements de terrain, structures menaçant de s'effondrer)\n
+      article: 'un danger',
+      description: `Signalez tout danger pouvant affecter la sécurité des habitants :
+
+  - Objets dangereux sur la voie publique (ex. câbles tombés, verre brisé)
+
+  - Zones instables ou dangereuses (ex. glissements de terrain, structures menaçant de s'effondrer)
+
   - Situations à haut risque (ex. incendies, inondations, zones non sécurisées)`,
     },
     {
       name: 'Travaux',
       icon: 'warning-outline' as const,
       value: 'travaux',
-      description: `Informez sur les travaux publics ou privés susceptibles d'impacter la ville :\n
-  - Fermetures de routes ou rues (ex. travaux de réfection, pose de réseaux souterrains)\n
-  - Perturbations des transports ou déviations (ex. encombrements liés aux chantiers)\n
+      article: 'des travaux',
+      description: `Informez sur les travaux publics ou privés susceptibles d'impacter la ville :
+
+  - Fermetures de routes ou rues (ex. travaux de réfection, pose de réseaux souterrains)
+
+  - Perturbations des transports ou déviations (ex. encombrements liés aux chantiers)
+
   - Travaux générant du bruit ou des nuisances (ex. chantiers de nuit, vibrations excessives)`,
     },
     {
       name: 'Nuisance',
       icon: 'sad-outline' as const,
       value: 'nuisance',
-      description: `Rapportez toute nuisance perturbant la tranquillité de la ville :\n
-  - Bruit excessif (ex. travaux nocturnes, fêtes bruyantes)\n
-  - Pollution olfactive ou visuelle (ex. odeurs nauséabondes, graffiti non autorisé)\n
+      article: 'une nuisance',
+
+      description: `Rapportez toute nuisance perturbant la tranquillité de la ville :
+
+  - Bruit excessif (ex. travaux nocturnes, fêtes bruyantes)
+
+  - Pollution olfactive ou visuelle (ex. odeurs nauséabondes, graffiti non autorisé)
+
   - Comportements inappropriés (ex. regroupements bruyants, dégradations dans les espaces publics)`,
     },
     {
       name: 'Pollution',
       icon: 'leaf-outline' as const,
       value: 'pollution',
-      description: `Identifiez les sources de pollution affectant l’environnement ou la santé publique :\n
-  - Dépôts sauvages ou décharges illégales (ex. déchets abandonnés, encombrants non ramassés)\n
-  - Émissions toxiques (ex. fumées industrielles, odeurs chimiques)\n
+      article: 'de la pollution',
+      description: `Identifiez les sources de pollution affectant l’environnement ou la santé publique :
+
+  - Dépôts sauvages ou décharges illégales (ex. déchets abandonnés, encombrants non ramassés)
+
+  - Émissions toxiques (ex. fumées industrielles, odeurs chimiques)
+
   - Pollution des ressources naturelles (ex. cours d'eau contaminés, sols pollués)`,
     },
     {
       name: 'Réparation',
       icon: 'construct-outline' as const,
       value: 'reparation',
-      description: `Déclarez tout problème technique ou infrastructurel nécessitant une réparation ou une maintenance urgente :\n
-  - Pannes d'éclairage public (ex. lampadaires non fonctionnels)\n
-  - Équipements défectueux (ex. feux tricolores en panne, mobiliers urbains endommagés)\n
-  - Infrastructures abîmées (ex. trottoirs fissurés, routes avec nids-de-poule)\n
+      article: 'une réparation',
+      description: `Déclarez tout problème technique ou infrastructurel nécessitant une réparation ou une maintenance urgente :
+
+  - Pannes d'éclairage public (ex. lampadaires non fonctionnels)
+
+  - Équipements défectueux (ex. feux tricolores en panne, mobiliers urbains endommagés)
+
+  - Infrastructures abîmées (ex. trottoirs fissurés, routes avec nids-de-poule)
+
   - Espaces publics détériorés (ex. bancs cassés, panneaux de signalisation dégradés)`,
     },
   ];
-
+  const listRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;
   const expandedWidth = screenWidth * 0.4;
   const collapsedWidth = (screenWidth - expandedWidth) / (categories.length - 1);
+  
+  useEffect(() => {
+    const fetchKeys = async () => {
+      try {
+        const response = await axios.get('http://192.168.1.4:3000/config/keys'); // Remplacez localhost par votre domaine si nécessaire
+        setApiKeys(response.data); // Stocke directement dans l'état
+      } catch (error) {
+        console.error('Failed to fetch API keys:', error);
+      }
+    };
+    fetchKeys();
+  }, []);
 
-  const handleCategorySelect = (value: string) => {
-    setSelectedCategory((prev) => (prev === value ? null : value)); // Toggle
-  };
+  useEffect(() => {
+    // Position initiale pour simuler l'infini
+    listRef.current?.scrollToOffset({
+      offset: categories.length * expandedWidth, // Centre de la liste
+      animated: false,
+    });
+  }, []);
 
   const handleAddressSearch = async () => {
     if (!query.trim()) {
@@ -91,7 +132,7 @@ export default function AddNewReportScreen() {
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         query
-      )}&key=${API_KEY}`;
+      )}&key=${apiKeys?.openCageApiKey}`;
       console.log('Requête API pour la recherche :', url);
 
       const response = await fetch(url);
@@ -99,6 +140,7 @@ export default function AddNewReportScreen() {
 
       if (data.results.length > 0) {
         setSuggestions(data.results);
+        setModalVisible(true);
       } else {
         setSuggestions([]);
         Alert.alert('Erreur', 'Aucune adresse correspondante trouvée.');
@@ -110,12 +152,17 @@ export default function AddNewReportScreen() {
   };
 
   const handleSuggestionSelect = (item: any) => {
-    setQuery(item.formatted);
-    setLatitude(item.geometry.lat);
-    setLongitude(item.geometry.lng);
-    setSuggestions([]);
+    setQuery(item.formatted); // Met à jour l'input avec l'adresse sélectionnée
+    
+    // Met à jour la latitude et la longitude à partir de l'adresse sélectionnée
+    if (item.geometry) {
+      setLatitude(item.geometry.lat);
+      setLongitude(item.geometry.lng);
+    }
+  
+    setModalVisible(false); // Ferme le modal après la sélection
   };
-
+  
   const handleUseLocation = async () => {
     if (loading) {
       Alert.alert('Chargement', 'Nous récupérons votre position. Veuillez patienter.');
@@ -131,7 +178,7 @@ export default function AddNewReportScreen() {
     setLongitude(location.longitude);
 
     try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${API_KEY}`;
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${apiKeys?.openCageApiKey}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -149,76 +196,139 @@ export default function AddNewReportScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !query || latitude === null || longitude === null || !selectedCategory) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
+    if (!expandedCategory) {
+      Alert.alert('Erreur', 'Veuillez sélectionner une catégorie.');
       return;
     }
 
+    const userId = await getUserIdFromToken(); // Récupère l'ID utilisateur dynamique
+    console.log('ID utilisateur récupéré:', userId);
+  
+    if (!userId) {
+      Alert.alert('Erreur', 'Impossible de récupérer votre ID utilisateur.');
+      return;
+    }
+  
+    if (!title || !description || !query || latitude === null || longitude === null || !expandedCategory) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
+      return;
+    }
+  
     const reportData = {
       title,
       description,
-      address: query,
+      city: query,
       latitude,
       longitude,
-      category: selectedCategory,
-      userId: 1,
+      type: expandedCategory,
+      userId,
     };
-
+  
     try {
-      const response = await fetch('https://ton-domaine.com/api/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reportData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Une erreur est survenue lors de la création du signalement.');
+      console.log('Données envoyées :', reportData);
+  
+      const response = await axios.post('http://192.168.1.4:3000/reports', reportData);
+  
+      if (response.status === 201) {
+        Alert.alert('Succès', 'Le signalement a été créé avec succès.');
+        setTitle('');
+        setDescription('');
+        setQuery('');
+        setLatitude(null);
+        setLongitude(null);
+        setExpandedCategory(null);
+      } else {
+        Alert.alert('Erreur', 'Une erreur est survenue lors de la création du signalement.');
       }
-
-      Alert.alert('Succès', 'Le signalement a été créé avec succès.');
     } catch (error) {
+      console.error('Erreur lors de la soumission :', error);
       Alert.alert('Erreur', 'Impossible de créer le signalement.');
     }
   };
 
+  const toggleCategoryExpansion = (value: string) => {
+    setExpandedCategory(prev => (prev === value ? null : value));
+  };
+  
   return (
     <View style={styles.container}>
-      <ScrollView>
-        <Text style={styles.pageTitle}>Choisissez parmi les 5 types</Text>
-        <View style={styles.iconRow}>
-          {categories.map((category) => (
+      <ScrollView
+        horizontal={false}
+        contentContainerStyle={{ flexGrow: 1, width: '100%', overflow: 'hidden' }}
+      >
+        <Text style={styles.pageTitle}>Choisissez le types de signalement</Text>
+        <TouchableOpacity
+        style={styles.dropdown}
+        onPress={() => setModalCategorieVisible(!modalCategorieVisible)}
+      >
+      <Text style={styles.dropdownText}>
+        {expandedCategory ? (
+          <>
+            <Text style={styles.selectedCategory}>Je souhaite signaler {' '}</Text><Text style={styles.boldText}>{categories.find(cat => cat.value === expandedCategory)?.article || ''}</Text>
+          </>
+        ) : (
+          'Que voulez-vous rapporter ?'
+        )}
+      </Text>
+
+
+
+        <Ionicons
+          name={modalVisible ? 'chevron-up-outline' : 'chevron-down-outline'}
+          size={24}
+          color="#666"
+        />
+      </TouchableOpacity>
+
+      {/* Modal pour afficher les catégories */}
+      <Modal
+        visible={modalCategorieVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalCategorieVisible(false)}
+      >
+        <View style={styles.modalOverlayCategorie}>
+          <View style={styles.modalContentCategorie}>
+            <ScrollView>
+              {categories.map((category, index) => (
+               <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.card,
+                    expandedCategory === category.value && styles.expandedCard,
+                  ]}
+                  onPress={() => toggleCategoryExpansion(category.value)}
+                >
+             
+                  <Ionicons
+                    name={category.icon}
+                    size={40}
+                    color="#007BFF"
+                  />
+                  <Text style={styles.cardTitle}>{category.name}</Text>
+                  {expandedCategory === category.value && (
+                    <Text style={styles.cardDescription}>
+                      {category.description}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             <TouchableOpacity
-              key={category.value}
-              style={[
-                styles.iconContainer,
-                {
-                  width:
-                    selectedCategory === category.value
-                      ? expandedWidth
-                      : collapsedWidth,
-                },
-              ]}
-              onPress={() => handleCategorySelect(category.value)}
+              style={styles.closeButton}
+              onPress={() => setModalCategorieVisible(false)}
             >
-              <Ionicons
-                name={category.icon}
-                size={30}
-                color={selectedCategory === category.value ? '#007BFF' : '#666'}
-              />
-              {selectedCategory === category.value && (
-                <View style={styles.selectedIconContainer}>
-                  <Text style={styles.iconLabel}>{category.name}</Text>
-                  <Text style={styles.description}>{category.description}</Text>
-                </View>
-              )}
+              <Text style={styles.closeButtonText}>Fermer</Text>
             </TouchableOpacity>
-          ))}
+          </View>
         </View>
+      </Modal>
         <View style={styles.containerSecond}>
           <Text style={styles.title}>Titre</Text>
           <TextInput
             style={styles.input}
             placeholder="Titre"
+            placeholderTextColor="#c7c7c7"
             value={title}
             onChangeText={setTitle}
           />
@@ -226,6 +336,7 @@ export default function AddNewReportScreen() {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Description"
+            placeholderTextColor="#c7c7c7"
             value={description}
             onChangeText={setDescription}
             multiline
@@ -235,24 +346,38 @@ export default function AddNewReportScreen() {
             style={styles.input}
             placeholder="Rechercher une adresse"
             value={query}
+            placeholderTextColor="#c7c7c7"
             onChangeText={setQuery}
           />
-          {suggestions.length > 0 && (
-            <FlatList
-              data={suggestions}
-              keyExtractor={(item, index) => `${item.formatted}-${index}`}
-              renderItem={({ item }) => (
+          {/* Modal pour afficher les suggestions */}
+          <Modal
+            visible={modalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <ScrollView>
+                  {suggestions.map((item, index) => (
+                    <TouchableOpacity
+                      key={`${item.formatted}-${index}`}
+                      style={styles.suggestionItem}
+                      onPress={() => handleSuggestionSelect(item)}
+                    >
+                      <Text style={styles.suggestionText}>{item.formatted}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
                 <TouchableOpacity
-                  style={styles.suggestionItem}
-                  onPress={() => handleSuggestionSelect(item)}
+                  style={styles.closeModalButton}
+                  onPress={() => setModalVisible(false)}
                 >
-                  <Text style={styles.suggestionText}>{item.formatted}</Text>
+                  <Text style={styles.closeModalButtonText}>Fermer</Text>
                 </TouchableOpacity>
-              )}
-              style={styles.suggestionsList}
-              nestedScrollEnabled // Pour résoudre le problème
-            />
-          )}
+              </View>
+            </View>
+          </Modal>
           
           <View style={styles.rowContainer}>
             <TouchableOpacity style={styles.rowButtonSearch} onPress={handleAddressSearch}>

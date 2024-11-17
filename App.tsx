@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -22,10 +22,11 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Vérifie le statut de connexion au démarrage
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const token = await AsyncStorage.getItem('accessToken');
+        const token = await AsyncStorage.getItem('accessToken'); // Récupère le token
         if (token) {
           console.log("Token trouvé dans AsyncStorage:", token);
           setIsLoggedIn(true);
@@ -41,7 +42,26 @@ export default function App() {
     checkLoginStatus();
   }, []);
 
+ const handleLogout = async () => {
+  try {
+    // Supprime le token et vérifie qu'il est bien supprimé
+    await AsyncStorage.removeItem('accessToken');
+    const token = await AsyncStorage.getItem('accessToken');
+    if (!token) {
+      console.log('Token supprimé avec succès.');
+      setIsLoggedIn(false); // Met à jour l'état
+    } else {
+      console.error('Le token existe encore après suppression :', token);
+    }
+  } catch (error) {
+    console.error('Erreur lors de la déconnexion :', error);
+    Alert.alert('Erreur', 'Impossible de se déconnecter.');
+  }
+};
+
+
   if (loading) {
+    // Affiche un écran de chargement pendant la vérification du statut
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -62,6 +82,7 @@ export default function App() {
     </View>
   );
 
+  // Tab Navigator
   const TabNavigator = () => (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -69,7 +90,7 @@ export default function App() {
         header: ({ navigation }) => <CustomHeader navigation={navigation} />,
         tabBarIcon: ({ color, size, focused }) => {
           let iconName;
-  
+
           if (route.name === 'Accueil') {
             iconName = 'home-outline';
           } else if (route.name === 'Evénements') {
@@ -81,7 +102,7 @@ export default function App() {
           } else if (route.name === 'Nouveau signalement') {
             iconName = 'add-outline';
           }
-  
+
           return (
             <Icon
               name={iconName}
@@ -101,13 +122,11 @@ export default function App() {
     >
       <Tab.Screen name="Accueil" component={HomeScreen} />
       <Tab.Screen name="Evénements" component={EventsScreen} />
-
       <Tab.Screen name="Nouveau signalement" component={AddNewReportScreen} />
       <Tab.Screen name="Signalements" component={ReportScreen} />
       <Tab.Screen name="Carte" component={MapScreen} />
     </Tab.Navigator>
   );
-  
 
   return (
     <NavigationContainer>
@@ -142,16 +161,13 @@ export default function App() {
               {(props) => (
                 <ProfileScreen
                   {...props}
-                  onLogout={() => {
-                    setIsLoggedIn(false);
-                  }}
+                  onLogout={handleLogout}
                 />
               )}
             </Stack.Screen>
           </>
         )}
       </Stack.Navigator>
-
     </NavigationContainer>
   );
 }

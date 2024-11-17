@@ -4,8 +4,7 @@ frontend/
 │   ├── icons/  
 │   ├── images/
 │   └── fonts/
-├── components/              
-│   ├── Button.tsx         
+├── components/             
 │   ├── Card.tsx             
 │   ├── Header.tsx            
 │   └── Modal.tsx            
@@ -23,9 +22,13 @@ frontend/
 │   ├── EventsScreen.tsx      
 │   ├── ProfileScreen.tsx      
 │   ├── MapScreen.tsx      
+│   ├── AddNewReportScreen.tsx      
 │   └── Auth/                  
 │       ├── LoginScreen.tsx   
 │       └── RegisterScreen.tsx 
+│   └── styles/                  
+│       ├── AddNewReportScreen.styles.ts   
+│       └── HomeScreen.styles.ts 
 ├── services/                  
 │   ├── api.ts                 
 │   ├── authService.ts        
@@ -43,6 +46,8 @@ frontend/
 │   ├── formatDate.ts       
 │   ├── calculateDistance.ts
 │   └── constants.ts      
+│   └── CustomPicker.tsx      
+│   └── CustomReductOpacity.tsx      
 ├── App.tsx                 
 ├── app.json                 
 └── package.json              

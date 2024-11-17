@@ -6,12 +6,13 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: '#f9f9f9',
     alignItems: 'center',
+    width: '100%',
   },
   containerSecond: {
-    width: '100%',
     height: '100%',
     padding: 5,
-    marginTop:10
+    marginTop:10,
+    alignItems: 'center',
   },
   pageTitle: {
     fontSize: 15,
@@ -30,98 +31,167 @@ export default StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#e0e0e0',
     borderRadius: 30,
     padding: 15,
+    height:55,
     paddingHorizontal:20,
     marginBottom: 15,
     backgroundColor: '#fff',
     width: '100%',
+    maxWidth: '100%', // Empêche l'élargissement
+    overflow: 'hidden', // Cache le contenu trop long
+    color: '#c7c7c7',
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
     paddingHorizontal:20,
+  },
 
-  },
-  locationButton: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 50,
+
+
+  dropdown: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center', 
+    alignSelf: 'center',
     width: '100%',
-    marginBottom: 15,
+    maxWidth: '100%', 
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 30,
+    backgroundColor: '#fff',
   },
-  locationButtonText: {
-    color: '#fff',
+  dropdownText: {
+    width: '85%',
+    fontSize: 14,
+    color: '#c7c7c7',
+    paddingLeft: 10,
+  },
+  selectedCategory: {
+  color: '#666',
+  },
+  boldText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color:'#007BFF',
   },
-  iconRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  iconContainer: {
+  
+  modalOverlayCategorie: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 5,
-    borderRadius: 10,
+  },
+  modalContentCategorie: {
+    width: '95%',
     backgroundColor: '#fff',
-    elevation: 3,
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  card: {
+    backgroundColor: '#f9f9f9',
+    marginBottom: 25,
+    borderRadius: 50,
+    padding: 20,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 2,
   },
-  suggestionsList: {
-    maxHeight: 150,
-    marginTop: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 5,
+  expandedCard: {
+    backgroundColor: '#e0f7ff',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#007BFF',
   },
-  rowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', // Écarte les boutons uniformément
-  },
-  rowButtonSearch: {
-    flex: 1,
-    flexDirection: 'row', // Aligne l'icône et le texte horizontalement
-    justifyContent: 'center',
-    backgroundColor: '#007BFF', // Bleu pour Rechercher
-    padding: 10,
-    borderRadius: 50,
-    alignItems: 'center',
-    marginRight: 10, // Espace entre les deux boutons
-    
-  },
-  rowButtonLocation: {
-    flexDirection: 'row', // Aligne l'icône et le texte horizontalement
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFA500', // Orange pour Localiser moi
-    padding: 10,
-    borderRadius: 50,
-    marginLeft: 10,
-    width:'48%'
-  },
-  
-  buttonText: {
-    color: '#fff',
+  cardTitle: {
+    marginTop: 10,
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#333',
   },
-  
-  
+  cardDescription: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  closeButton: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#007BFF',
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+
+
+  modalContent: {
+    backgroundColor: '#fff',
+    width: '90%', // Largeur du modal
+    borderRadius: 30,
+    padding: 20,
+  },
   suggestionItem: {
-    padding: 10,
+    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#ccc',
   },
   suggestionText: {
     fontSize: 16,
     color: '#333',
+  },
+  closeModalButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 30,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Espace uniforme entre les boutons
+    alignItems: 'center', // Centre les boutons verticalement
+    width: '95%', // Le conteneur occupe 90% de l'espace disponible
+    alignSelf: 'center', // Centre horizontalement le conteneur
+  },
+  rowButtonSearch: {
+    width:'47%',
+    flexDirection: 'row', // Icône et texte alignés horizontalement
+    justifyContent: 'center', // Centrage horizontal à l'intérieur du bouton
+    alignItems: 'center', // Centrage vertical à l'intérieur du bouton
+    backgroundColor: '#007BFF', // Bleu pour "Rechercher"
+    padding: 10,
+    borderRadius: 50,
+  },
+  rowButtonLocation: {
+    flexDirection: 'row', // Icône et texte alignés horizontalement
+    justifyContent: 'center', // Centrage horizontal à l'intérieur du bouton
+    alignItems: 'center', // Centrage vertical à l'intérieur du bouton
+    backgroundColor: '#FFA500', // Orange pour "Localiser moi"
+    padding: 10,
+    borderRadius: 50,
+    width:'47%',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 
   selectedIconContainer: {
@@ -133,24 +203,17 @@ export default StyleSheet.create({
     fontSize: 12,
     color: '#007BFF',
     fontWeight: 'bold',
-
   },
   selectedIconLabel: {
     color: '#007BFF',
     fontWeight: 'bold',
-  },
-  map: {
-    width: width - 32,
-    height: height * 0.3,
-    borderRadius: 10,
-    marginBottom: 10,
   },
   submitButton: {
     backgroundColor: '#38A83C',
     padding: 15,
     borderRadius: 50,
     alignItems: 'center',
-    width: '100%',
+    width: '95%',
     marginTop: 20,
   },
   submitButtonText: {
@@ -164,4 +227,12 @@ export default StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fond semi-transparent
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  
 });
