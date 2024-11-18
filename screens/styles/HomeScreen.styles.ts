@@ -305,5 +305,53 @@ export default StyleSheet.create({
         fontWeight:'bold',
       },
 
-      
+      loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5', // Couleur de fond douce
+      },
+      loadingText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333', // Texte gris foncé
+      },
+      modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fond semi-transparent
+        paddingHorizontal: 20, // Espacement pour éviter que le contenu ne touche les bords
+      },
+      modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#fff', // Blanc pour contraster avec le fond
+        marginBottom: 10,
+        textAlign: 'center',
+      },
+      modalText: {
+        fontSize: 16,
+        color: '#ddd', // Texte légèrement gris pour une bonne lisibilité
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 24, // Espacement des lignes pour plus de lisibilité
+      },
+      button: {
+        backgroundColor: '#1E90FF', // Bleu vif
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        elevation: 2, // Ombre pour donner un effet de profondeur (Android uniquement)
+        shadowColor: '#000', // Ombre pour iOS
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      buttonText: {
+        color: '#fff', // Texte blanc pour contraster avec le bouton
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+      },
 });
