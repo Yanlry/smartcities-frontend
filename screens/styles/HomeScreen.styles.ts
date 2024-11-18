@@ -66,18 +66,24 @@ export default StyleSheet.create({
       signalementItem: {
         padding: 15, 
         paddingLeft:30,
-        marginVertical: 10,
+        marginVertical: 5,
         borderRadius: 50, 
-        borderWidth: 1,
       },
       signalementType: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#424242', // Couleur du texte en blanc pour contraste
       },
-      signalementDescription: {
+      signalementTitle: {
         fontSize: 14,
         marginTop: 5,
+        fontWeight: '500', 
+        color: '#424242', // Texte blanc pour rester lisible sur les fonds colorés
+      },
+      signalementCity: {
+        fontSize: 14,
+        marginTop: 5,
+        fontWeight: '500', 
         color: '#424242', // Texte blanc pour rester lisible sur les fonds colorés
       },
       horizontalScroll: {
@@ -298,4 +304,6 @@ export default StyleSheet.create({
       hours:{
         fontWeight:'bold',
       },
+
+      
 });

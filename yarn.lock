@@ -1333,6 +1333,11 @@
   dependencies:
     merge-options "^3.0.4"
 
+"@react-native-community/geolocation@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@react-native-community/geolocation/-/geolocation-3.4.0.tgz#8b6ee024a71cf94526ab796af1e9ae140684802c"
+  integrity sha512-bzZH89/cwmpkPMKKveoC72C4JH0yF4St5Ceg/ZM9pA1SqX9MlRIrIrrOGZ/+yi++xAvFDiYfihtn9TvXWU9/rA==
+
 "@react-native-picker/picker@^2.9.0":
   version "2.9.0"
   resolved "https://registry.npmjs.org/@react-native-picker/picker/-/picker-2.9.0.tgz"
@@ -2890,7 +2895,7 @@ expo-keep-awake@~14.0.1:
 
 expo-location@^18.0.1:
   version "18.0.1"
-  resolved "https://registry.npmjs.org/expo-location/-/expo-location-18.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/expo-location/-/expo-location-18.0.1.tgz#88d7e0e3793335b23a133f6e1f2ca209b3946ba3"
   integrity sha512-LRpMkNXynLUbZvbRCfxHCdX6zxrmJx2afRDIXoq8kAYeMXRH7XpjXcF0Aj/+E8tSgu1Wn17zIdRYj4muJi+ldA==
 
 expo-modules-autolinking@2.0.2:
