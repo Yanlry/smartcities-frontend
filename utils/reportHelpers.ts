@@ -1,4 +1,3 @@
-import { voteOnReport } from "../services/api";
 import axios from "axios";
 
 export const typeLabels: { [key: string]: string } = {

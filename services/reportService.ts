@@ -30,8 +30,6 @@ export const fetchDrivingDistances = async (
   destinations: [number, number][]
 ): Promise<number[]> => {
   try {
-    console.log('Envoi des données à OpenRouteService :', { origin, destinations });
-
     const response = await axios.post(
       'https://api.openrouteservice.org/v2/matrix/driving-car',
       {
@@ -45,8 +43,6 @@ export const fetchDrivingDistances = async (
         },
       }
     );
-
-    console.log('Réponse de OpenRouteService :', response.data);
     return response.data.distances[0].slice(1); // Exclut la distance vers soi-même
   } catch (error) {
     console.error('Erreur dans fetchDrivingDistances :', error.response?.data || error.message);

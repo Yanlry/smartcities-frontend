@@ -8,8 +8,8 @@ module.exports = function(api) {
         {
           moduleName: '@env',
           path: '.env', // Chemin vers votre fichier .env
-          safe: false,  // Facultatif : désactive la vérification des variables obligatoires
-          allowUndefined: true, // Permet les variables non définies
+          safe: false,
+          allowUndefined: true,
         },
       ],
     ],

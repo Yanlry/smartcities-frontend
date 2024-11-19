@@ -16,7 +16,6 @@ import styles from './styles/AddNewReportScreen.styles';
 import axios from 'axios';
 import { getUserIdFromToken } from '../utils/tokenUtils';
 import { categories } from '../utils/reportHelpers';
-
 export default function AddNewReportScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

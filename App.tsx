@@ -6,7 +6,7 @@ import { RootStackParamList } from './types/navigation';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import axios from 'axios';
 import HomeScreen from './screens/HomeScreen';
 import EventsScreen from './screens/EventsScreen';
 import ProfileScreen from './screens/ProfileScreen';
@@ -21,28 +21,28 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator<RootStackParamList>(); // Typage ici
 
 export default function App() {
+  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Vérifie le statut de connexion au démarrage
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem('accessToken'); // Récupère le token
-        if (token) {
-          console.log("Token trouvé dans AsyncStorage:", token);
-          setIsLoggedIn(true);
-        } else {
-          console.log("Aucun token trouvé, utilisateur non connecté");
+    // Vérifie le statut de connexion au démarrage
+    useEffect(() => {
+      const checkLoginStatus = async () => {
+        try {
+          const token = await AsyncStorage.getItem('accessToken'); // Récupère le token
+          if (token) {
+            setIsLoggedIn(true);
+          } else {
+            console.log("Aucun token trouvé, utilisateur non connecté");
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification du token:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Erreur lors de la vérification du token:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkLoginStatus();
-  }, []);
+      };
+      checkLoginStatus();
+    }, []);
 
  const handleLogout = async () => {
   try {
