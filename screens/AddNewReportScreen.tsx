@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/AddNewReportScreen.styles';
 import axios from 'axios';
 import { getUserIdFromToken } from '../utils/tokenUtils';
+import { categories } from '../utils/reportHelpers';
 
 export default function AddNewReportScreen() {
   const [title, setTitle] = useState('');
@@ -28,80 +29,10 @@ export default function AddNewReportScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalCategorieVisible, setModalCategorieVisible] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const categories = [
-    {
-      name: 'Danger',
-      icon: 'skull-outline' as const,
-      value: 'danger',
-      article: 'un danger',
-      description: `Signalez tout danger pouvant affecter la sécurité des habitants :
-
-  - Objets dangereux sur la voie publique (ex. câbles tombés, verre brisé)
-
-  - Zones instables ou dangereuses (ex. glissements de terrain, structures menaçant de s'effondrer)
-
-  - Situations à haut risque (ex. incendies, inondations, zones non sécurisées)`,
-    },
-    {
-      name: 'Travaux',
-      icon: 'warning-outline' as const,
-      value: 'travaux',
-      article: 'des travaux',
-      description: `Informez sur les travaux publics ou privés susceptibles d'impacter la ville :
-
-  - Fermetures de routes ou rues (ex. travaux de réfection, pose de réseaux souterrains)
-
-  - Perturbations des transports ou déviations (ex. encombrements liés aux chantiers)
-
-  - Travaux générant du bruit ou des nuisances (ex. chantiers de nuit, vibrations excessives)`,
-    },
-    {
-      name: 'Nuisance',
-      icon: 'sad-outline' as const,
-      value: 'nuisance',
-      article: 'une nuisance',
-
-      description: `Rapportez toute nuisance perturbant la tranquillité de la ville :
-
-  - Bruit excessif (ex. travaux nocturnes, fêtes bruyantes)
-
-  - Pollution olfactive ou visuelle (ex. odeurs nauséabondes, graffiti non autorisé)
-
-  - Comportements inappropriés (ex. regroupements bruyants, dégradations dans les espaces publics)`,
-    },
-    {
-      name: 'Pollution',
-      icon: 'leaf-outline' as const,
-      value: 'pollution',
-      article: 'de la pollution',
-      description: `Identifiez les sources de pollution affectant l’environnement ou la santé publique :
-
-  - Dépôts sauvages ou décharges illégales (ex. déchets abandonnés, encombrants non ramassés)
-
-  - Émissions toxiques (ex. fumées industrielles, odeurs chimiques)
-
-  - Pollution des ressources naturelles (ex. cours d'eau contaminés, sols pollués)`,
-    },
-    {
-      name: 'Réparation',
-      icon: 'construct-outline' as const,
-      value: 'reparation',
-      article: 'une réparation',
-      description: `Déclarez tout problème technique ou infrastructurel nécessitant une réparation ou une maintenance urgente :
-
-  - Pannes d'éclairage public (ex. lampadaires non fonctionnels)
-
-  - Équipements défectueux (ex. feux tricolores en panne, mobiliers urbains endommagés)
-
-  - Infrastructures abîmées (ex. trottoirs fissurés, routes avec nids-de-poule)
-
-  - Espaces publics détériorés (ex. bancs cassés, panneaux de signalisation dégradés)`,
-    },
-  ];
+ 
   const listRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;
   const expandedWidth = screenWidth * 0.4;
-  const collapsedWidth = (screenWidth - expandedWidth) / (categories.length - 1);
   
   useEffect(() => {
     const fetchKeys = async () => {

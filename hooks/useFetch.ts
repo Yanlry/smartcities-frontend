@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { api } from '../services/api';
 
-const useFetch = (url: string) => {
+export const useFetch = (url: string) => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,4 +22,3 @@ const useFetch = (url: string) => {
   return { data, loading };
 };
 
-export default useFetch;

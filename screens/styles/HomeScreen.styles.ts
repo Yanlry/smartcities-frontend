@@ -63,24 +63,24 @@ export default StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
       },
-      signalementItem: {
+      reportItem: {
         padding: 15, 
         paddingLeft:30,
         marginVertical: 5,
         borderRadius: 50, 
       },
-      signalementType: {
+      reportType: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#424242', // Couleur du texte en blanc pour contraste
       },
-      signalementTitle: {
+      reportTitle: {
         fontSize: 14,
         marginTop: 5,
         fontWeight: '500', 
         color: '#424242', // Texte blanc pour rester lisible sur les fonds colorés
       },
-      signalementCity: {
+      reportCity: {
         fontSize: 14,
         marginTop: 5,
         fontWeight: '500', 

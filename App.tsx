@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { RootStackParamList } from './types/navigation';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -14,9 +15,10 @@ import MapScreen from './screens/MapScreen'; // Nouveau composant MapScreen
 import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
 import AddNewReportScreen from './screens/AddNewReportScreen';
+import ReportDetailsScreen from './screens/ReportDetailsScreen'; // Ajout de l'import de ReportDetailsScreen
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>(); // Typage ici
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -130,45 +132,49 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isLoggedIn ? (
-          <>
-            <Stack.Screen name="Login">
-              {(props) => (
-                <LoginScreen
-                  {...props}
-                  onLogin={() => {
-                    setIsLoggedIn(true);
-                  }}
-                />
-              )}
-            </Stack.Screen>
-            <Stack.Screen name="Register">
-              {(props) => (
-                <RegisterScreen
-                  {...props}
-                  onLogin={() => {
-                    setIsLoggedIn(true);
-                  }}
-                />
-              )}
-            </Stack.Screen>
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Main" component={TabNavigator} />
-            <Stack.Screen name="ProfileScreen">
-              {(props) => (
-                <ProfileScreen
-                  {...props}
-                  onLogout={handleLogout}
-                />
-              )}
-            </Stack.Screen>
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isLoggedIn ? (
+        <>
+          <Stack.Screen name="Login">
+            {(props) => (
+              <LoginScreen
+                {...props}
+                onLogin={() => {
+                  setIsLoggedIn(true);
+                }}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Register">
+            {(props) => (
+              <RegisterScreen
+                {...props}
+                onLogin={() => {
+                  setIsLoggedIn(true);
+                }}
+              />
+            )}
+          </Stack.Screen>
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen name="ProfileScreen">
+            {(props) => (
+              <ProfileScreen
+                {...props}
+                onLogout={handleLogout}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="ReportDetails"
+            component={ReportDetailsScreen} // Ajout de l'écran des détails
+          />
+        </>
+      )}
+    </Stack.Navigator>
+  </NavigationContainer>
   );
 }
 

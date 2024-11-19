@@ -1,8 +1,114 @@
-import axios from 'axios';
+import axios from "axios";
+import polyline from "@mapbox/polyline";
 
-const api = axios.create({
-  baseURL: 'http://ton-api-backend.com',  // Remplace par l'URL de ton backend
-  timeout: 10000,
+export const ORS_API_KEY = "5b3ce3597851110001cf6248c043db96218c40ebb775fef94a94d7e4";
+
+export const api = axios.create({
+  baseURL: 'http://192.168.1.4:3000', // Base URL de votre API
+  timeout: 10000, // Timeout en millisecondes
 });
 
-export default api;
+
+export const fetchDrivingDistance = async (
+  startLat: number,
+  startLon: number,
+  endLat: number,
+  endLon: number
+): Promise<number | null> => {
+  try {
+    const response = await axios.post(
+      "https://api.openrouteservice.org/v2/directions/driving-car",
+      {
+        coordinates: [
+          [startLon, startLat],
+          [endLon, endLat],
+        ],
+      },
+      {
+        headers: {
+          Authorization: ORS_API_KEY,
+        },
+      }
+    );
+
+    const distanceInMeters = response.data.routes[0].summary.distance;
+    return distanceInMeters / 1000; // Convertir en kilomètres
+  } catch (error) {
+    console.error("Erreur lors de la récupération de la distance GPS :", error);
+    return null;
+  }
+};
+
+export const fetchRoute = async (
+  startLat: number,
+  startLon: number,
+  endLat: number,
+  endLon: number
+): Promise<Array<{ latitude: number; longitude: number }>> => {
+  try {
+    const response = await axios.post(
+      "https://api.openrouteservice.org/v2/directions/driving-car",
+      {
+        coordinates: [
+          [startLon, startLat],
+          [endLon, endLat],
+        ],
+      },
+      {
+        headers: {
+          Authorization: ORS_API_KEY,
+        },
+      }
+    );
+
+    const decodedCoordinates = polyline
+      .decode(response.data.routes[0].geometry)
+      .map(([latitude, longitude]) => ({ latitude, longitude }));
+
+    return decodedCoordinates;
+  } catch (error) {
+    console.error("Erreur lors de la récupération du tracé :", error);
+    throw new Error("Impossible de récupérer le tracé de trajet.");
+  }
+};
+
+export const fetchReportDetails = async (
+  reportId: number,
+  latitude: number,
+  longitude: number
+): Promise<any> => {
+  try {
+    const response = await axios.get(
+      `http://192.168.1.4:3000/reports/${reportId}`,
+      {
+        params: {
+          latitude,
+          longitude,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des détails :", error);
+    throw new Error("Impossible de récupérer les détails du signalement.");
+  }
+};
+
+export const voteOnReport = async (
+  reportId: number,
+  userId: number,
+  type: string,
+  latitude: number,
+  longitude: number
+) => {
+  const response = await axios.post(`/api/votes`, {
+    reportId,
+    userId,
+    type,
+    latitude,
+    longitude,
+  });
+
+  return response.data;
+};

@@ -8,16 +8,22 @@ export function useLocation() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission refusée', "La permission de localisation est nécessaire pour afficher la carte.");
-        setLoading(false);
-        return;
-      }
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission refusée', "La permission de localisation est nécessaire pour afficher la carte.");
+          setLoading(false);
+          return;
+        }
 
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation.coords);
-      setLoading(false);
+        let currentLocation = await Location.getCurrentPositionAsync({});
+        setLocation(currentLocation.coords);
+      } catch (error) {
+        console.error("Erreur lors de la récupération de la localisation :", error);
+        Alert.alert('Erreur', "Impossible de récupérer votre localisation.");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
