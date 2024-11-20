@@ -1,10 +1,10 @@
 import axios from "axios";
 import polyline from "@mapbox/polyline";
-
-export const ORS_API_KEY = "5b3ce3597851110001cf6248c043db96218c40ebb775fef94a94d7e4";
+const MY_URL = process.env.MY_URL;
+export const ORS_API_KEY =  process.env.ORS_API_KEY;
 
 export const api = axios.create({
-  baseURL: 'http://192.168.1.4:3000', // Base URL de votre API
+  baseURL: `${MY_URL}`, // Base URL de votre API
   timeout: 10000, // Timeout en millisecondes
 });
 
@@ -62,7 +62,7 @@ export const fetchRoute = async (
     );
 
     const decodedCoordinates = polyline
-      .decode(response.data.routes[0].geometry)
+      .decode(response.data.routes[0].geometry, 5)
       .map(([latitude, longitude]) => ({ latitude, longitude }));
 
     return decodedCoordinates;
@@ -79,7 +79,7 @@ export const fetchReportDetails = async (
 ): Promise<any> => {
   try {
     const response = await axios.get(
-      `http://192.168.1.4:3000/reports/${reportId}`,
+      `${MY_URL}/reports/${reportId}`,
       {
         params: {
           latitude,

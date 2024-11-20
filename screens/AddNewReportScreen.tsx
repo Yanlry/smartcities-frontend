@@ -16,7 +16,11 @@ import styles from './styles/AddNewReportScreen.styles';
 import axios from 'axios';
 import { getUserIdFromToken } from '../utils/tokenUtils';
 import { categories } from '../utils/reportHelpers';
+
 export default function AddNewReportScreen() {
+  const openCageApiKey = process.env.OPEN_CAGE_API_KEY; 
+  const MY_URL =  process.env.MY_URL;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [query, setQuery] = useState('');
@@ -24,7 +28,6 @@ export default function AddNewReportScreen() {
   const [longitude, setLongitude] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const { location, loading } = useLocation();
-  const [apiKeys, setApiKeys] = useState<{openCageApiKey: string;} | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalCategorieVisible, setModalCategorieVisible] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -32,18 +35,6 @@ export default function AddNewReportScreen() {
   const listRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;
   const expandedWidth = screenWidth * 0.4;
-  
-  useEffect(() => {
-    const fetchKeys = async () => {
-      try {
-        const response = await axios.get('http://192.168.1.4:3000/config/keys'); // Remplacez localhost par votre domaine si nécessaire
-        setApiKeys(response.data); // Stocke directement dans l'état
-      } catch (error) {
-        console.error('Failed to fetch API keys:', error);
-      }
-    };
-    fetchKeys();
-  }, []);
 
   useEffect(() => {
     // Position initiale pour simuler l'infini
@@ -62,7 +53,7 @@ export default function AddNewReportScreen() {
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         query
-      )}&key=${apiKeys?.openCageApiKey}`;
+      )}&key=${openCageApiKey}`;
       console.log('Requête API pour la recherche :', url);
 
       const response = await fetch(url);
@@ -108,7 +99,7 @@ export default function AddNewReportScreen() {
     setLongitude(location.longitude);
 
     try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${apiKeys?.openCageApiKey}`;
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${openCageApiKey}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -157,7 +148,7 @@ export default function AddNewReportScreen() {
     try {
       console.log('Données envoyées :', reportData);
   
-      const response = await axios.post('http://192.168.1.4:3000/reports', reportData);
+      const response = await axios.post(`${MY_URL}/reports`, reportData);
   
       if (response.status === 201) {
         Alert.alert('Succès', 'Le signalement a été créé avec succès.');

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ORS_API_KEY } from './api';
+
 export interface Report {
   id: number;
   type: string;
@@ -17,7 +18,8 @@ export const fetchReports = async (
   longitude: number,
   radiusKm: number = 10
 ): Promise<Report[]> => {
-  const response = await axios.get('http://192.168.1.4:3000/reports', {
+  const MY_URL = process.env.MY_URL;
+  const response = await axios.get(`${MY_URL}/reports`, {
     params: { latitude, longitude, radiusKm },
   });
   

@@ -12,9 +12,8 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "isolatedModules": true,
-    "typeRoots": ["node_modules/@types", "./types"],
-    "types": []
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "types": ["react-native-dotenv"]
   },
-  "include": ["types/**/*.d.ts", "src/**/*"]
+  "include": ["types/**/*.d.ts", "src/**/*", "./env.d.ts"]
 }
-

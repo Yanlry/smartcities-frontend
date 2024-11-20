@@ -17,6 +17,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { handleVote } from "../utils/reportHelpers";
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
+  const my_url = process.env.MY_URL;
   const { reportId } = route.params;
   const { location } = useLocation();
   const mapRef = useRef<MapView>(null);
@@ -41,14 +42,11 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     }
   }, [report]);
   
-
-  
   useEffect(() => {
     console.log("Upvotes:", upVotes);
     console.log("Downvotes:", downVotes);
   }, [upVotes, downVotes]);
 
-  
   useEffect(() => {
     if (report && report.id && report.userId) {
       checkExistingVote();
@@ -66,7 +64,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
 
       console.log("Payload envoyé au backend :", payload);
 
-      const response = await fetch(`http://192.168.1.4:3000/reports/vote`, {
+      const response = await fetch(`${my_url}/reports/vote`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

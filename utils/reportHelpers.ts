@@ -1,4 +1,5 @@
 import axios from "axios";
+const MY_URL = process.env.MY_URL;
 
 export const typeLabels: { [key: string]: string } = {
     danger: 'Danger  ⚠️',
@@ -115,7 +116,7 @@ export const typeLabels: { [key: string]: string } = {
       };
       console.log("Payload envoyé au backend :", payload);
   
-      const response = await axios.post("http://192.168.1.4:3000/reports/vote", payload);
+      const response = await axios.post(`${MY_URL}/reports/vote`, payload);
       console.log("Réponse du backend :", response.data);
   
       // Synchroniser avec le backend si la réponse contient des votes mis à jour

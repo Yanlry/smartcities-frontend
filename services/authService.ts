@@ -1,11 +1,10 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://192.168.1.4:3000';
+const MY_URL = process.env.MY_URL;
 
 export const login = async (email: string, password: string) => {
-  return await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
+  return await axios.post(`${MY_URL}/auth/login`, { email, password });
 };
 
 export const register = async (email: string, password: string, username: string, lastName:string, firstName: string ) => {
-  return await axios.post(`${API_BASE_URL}/auth/signup`, { email, password, username, lastName, firstName });
+  return await axios.post(`${MY_URL}/auth/signup`, { email, password, username, lastName, firstName });
 };
