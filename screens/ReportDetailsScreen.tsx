@@ -14,13 +14,27 @@ import { useFetchReportDetails } from "../hooks/useFetchReportDetails";
 import { formatCity, formatDate } from "../utils/formatters";
 import { getTypeIcon } from "../utils/typeIcons";
 import Icon from "react-native-vector-icons/Ionicons";
-import { handleVote } from "../utils/reportHelpers";
+import { useToken } from "../hooks/useToken";
+
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
-  const my_url = process.env.MY_URL;
-  const { reportId } = route.params;
-  const { location } = useLocation();
-  const mapRef = useRef<MapView>(null);
+    const API_URL = "http://192.168.1.4:3000";
+    const { reportId } = route.params;
+    const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
+    const { location } = useLocation();
+    const mapRef = useRef<MapView>(null);
+  
+    const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
+    const [votes, setVotes] = useState({ upVotes: 0, downVotes: 0 });
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
+
+  useEffect(() => {
+    (async () => {
+      const userId = await getUserId(); // Récupère le userId depuis AsyncStorage
+      setCurrentUserId(userId); // Met à jour l'état local
+      console.log("userId récupéré :", userId);
+    })();
+  }, []);
 
   const { report, routeCoords, loading } = useFetchReportDetails(
     reportId,
@@ -28,54 +42,53 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     location?.longitude
   );
 
-  const [upVotes, setUpVotes] = useState(report?.upVotes);
-  const [downVotes, setDownVotes] = useState(report?.downVotes);
-
   useEffect(() => {
     if (report) {
-      setUpVotes((prev: number | undefined) =>
-        prev !== undefined ? prev : report.upVotes
-      );
-      setDownVotes((prev: number | undefined) =>
-        prev !== undefined ? prev : report.downVotes
-      );
+      setUserVote(report.userVote || null);
+      setVotes({
+        upVotes: report.upVotes,
+        downVotes: report.downVotes,
+      });
     }
   }, [report]);
+
   
-  useEffect(() => {
-    console.log("Upvotes:", upVotes);
-    console.log("Downvotes:", downVotes);
-  }, [upVotes, downVotes]);
+  const handleVote = async (type: "up" | "down") => {
+    if (!location || !report || !currentUserId) return;
 
-  useEffect(() => {
-    if (report && report.id && report.userId) {
-      checkExistingVote();
-    }
-  }, [report, location]);
-
-  const checkExistingVote = async () => {
     try {
       const payload = {
         reportId: report.id,
-        userId: report.userId,
-        latitude: location?.latitude, // Ajoutez la latitude
-        longitude: location?.longitude, // Ajoutez la longitude
+        userId: currentUserId,
+        type,
+        latitude: location.latitude,
+        longitude: location.longitude,
       };
 
-      console.log("Payload envoyé au backend :", payload);
-
-      const response = await fetch(`${my_url}/reports/vote`, {
+      const response = await fetch(`${API_URL}/reports/vote`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-      console.log("Vote existant :", data);
+      console.log("Réponse brute :", response);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erreur API :", errorData);
+        throw new Error(errorData.message || "Vote failed");
+      }
+
+      const result = await response.json();
+      console.log("Résultat du vote :", result);
+
+      setVotes({
+        upVotes: result.updatedVotes.upVotes,
+        downVotes: result.updatedVotes.downVotes,
+      });
+      setUserVote(type);
     } catch (error) {
-      console.error("Erreur lors de la vérification du vote existant :", error);
+      console.error("Erreur lors de l'envoi du vote :", error);
     }
   };
 
@@ -95,9 +108,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.loadingText}>
-          Chargement des données de localisation...
-        </Text>
+        <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
   }
@@ -105,9 +116,8 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   if (!report) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
         <Text style={styles.loadingText}>
-          Chargement des détails du signalement...
+          Signalement introuvable. Veuillez réessayer.
         </Text>
       </View>
     );
@@ -218,41 +228,32 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
 
         {/* Système de vote */}
         <View style={styles.voteContainer}>
-        <TouchableOpacity
-  onPress={() =>
-    handleVote(
-      report.id,
-      report.userId,
-      "up",
-      location.latitude,
-      location.longitude,
-      upVotes, // Passer les votes actuels ici
-      setUpVotes
-    )
-  }
-  style={styles.voteButton}
->
-  <Text style={styles.voteText}>👍 {upVotes}</Text>
-</TouchableOpacity>
-
-<TouchableOpacity
-  onPress={() =>
-    handleVote(
-      report.id,
-      report.userId,
-      "down",
-      location.latitude,
-      location.longitude,
-      downVotes, // Passer les votes actuels ici
-      setDownVotes
-    )
-  }
-  style={styles.voteButton}
->
-  <Text style={styles.voteText}>👎 {downVotes}</Text>
-</TouchableOpacity>
-
+          {userVote ? (
+            // Affichez un message si l'utilisateur a déjà voté
+            <Text style={styles.alreadyVoted}>
+              Vous avez voté {userVote === "up" ? "👍 (pour)" : "👎 (contre)"}.
+            </Text>
+          ) : (
+            // Affichez les boutons si l'utilisateur n'a pas encore voté
+            <View style={styles.voteButtons}>
+            <TouchableOpacity
+              onPress={() => handleVote("up")}
+              style={styles.voteButton}
+              disabled={userVote === "up"}
+            >
+              <Text style={styles.voteText}>👍 {votes.upVotes}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleVote("down")}
+              style={styles.voteButton}
+              disabled={userVote === "down"}
+            >
+              <Text style={styles.voteText}>👎 {votes.downVotes}</Text>
+            </TouchableOpacity>
+            </View>
+          )}
         </View>
+
       </View>
 
       <View style={styles.card}>
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   content: {
-    padding: 16,
+    marginTop:16,
     backgroundColor: "#f4f4f9",
     borderRadius: 10,
     shadowColor: "#000",
@@ -377,6 +378,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 30,
     marginBottom: 12,
+    marginHorizontal: 16,
     padding: 16,
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -393,6 +395,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     color: "#333",
+  },
+  stateReport: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  detailsVoteContainer: {
+    flexDirection: "row", 
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 30,
+    backgroundColor: "#FCF5C7",
+    width : "90%",
+    justifyContent: "center",
+  },
+  upContainer: {
+  },
+  downContainer: { 
   },
   description: {
     fontSize: 16,
@@ -436,14 +456,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   voteButton: {
-    padding: 10,
-    backgroundColor: "#f4f4f9",
+    alignItems: "center",
     borderRadius: 30,
     marginHorizontal: 10,
+    width: "100%",
   },
   voteText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
+
+
+  alreadyVoted: { 
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  voteButtons: {
+  },  
 });

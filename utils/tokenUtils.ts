@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 
 export const getUserIdFromToken = async (): Promise<number | null> => {
   try {
-    const token = await AsyncStorage.getItem('userToken'); // Récupérer le token
+    const token = await AsyncStorage.getItem('authToken'); // Corrige la clé ici
     console.log('Token récupéré dans AsyncStorage:', token);
 
     if (!token) {

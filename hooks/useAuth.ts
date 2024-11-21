@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Alert } from 'react-native';
 import { register, login } from '../services/authService';
 import { useToken } from './useToken';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export function useAuth() {
   const [email, setEmail] = useState('');
@@ -13,44 +13,41 @@ export function useAuth() {
   const [isLoginClicked, setIsLoginClicked] = useState(false);
   const [isRegisterClicked, setIsRegisterClicked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { setToken, clearToken } = useToken();
-
-  // Vérifie si un token existe pour maintenir la session
-  const checkAuth = async () => {
-    try {
-      const storedToken = await AsyncStorage.getItem('userToken');
-      if (storedToken) {
-        setToken(storedToken); // Configure le token dans le hook `useToken`
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error('Erreur lors de la vérification du token :', error);
-    }
-  };
-
-  // Appelle `checkAuth` au démarrage
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  const { setToken, clearToken, getToken } = useToken(); // Ajout de getToken pour récupérer le token actuel
 
   const handleLogin = async (onLogin: () => void) => {
+    const { setToken, setUserId, getToken, getUserId, clearAll } = useToken(); // Utilise les fonctions de `useToken`
+  
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
-
+  
     try {
       setIsLoginClicked(true);
       const lowerCaseEmail = email.toLowerCase();
       const response = await login(lowerCaseEmail, password);
-
+  
       if (response.status === 200 || response.status === 201) {
-        const { accessToken, userId } = response.data; // Récupère accessToken et userId
-        await AsyncStorage.setItem('userToken', accessToken); // Stocke le token JWT dans AsyncStorage
-        await AsyncStorage.setItem('userId', String(userId)); // Stocke l'ID utilisateur
-        setToken(accessToken); // Configure le token dans le hook `useToken`
-        setIsAuthenticated(true); // L'utilisateur est connecté
-        onLogin(); // Notifie le succès de la connexion
+        const { accessToken, userId } = response.data; // Assure-toi que le backend renvoie `userId`
+  
+        // Suppression des données existantes
+        console.log('Suppression des anciens tokens et userId...');
+        await clearAll();
+  
+        // Stockage des nouvelles données
+        console.log('Stockage du nouveau token et userId...');
+        await setToken(accessToken);
+        await setUserId(userId);
+  
+        // Vérification des données stockées
+        const storedToken = await getToken();
+        const storedUserId = await getUserId();
+        console.log('Token actuellement en stockage après login:', storedToken);
+        console.log('userId actuellement en stockage après login:', storedUserId);
+  
+        setIsAuthenticated(true);
+        onLogin();
       }
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
@@ -59,8 +56,15 @@ export function useAuth() {
       setIsLoginClicked(false);
     }
   };
+  
+  
+  
+  
 
+  // Fonction d'inscription
   const handleRegister = async (onSuccess: () => void) => {
+    console.log('Données d\'inscription:', { email, password, username, firstName, lastName });
+
     if (!email || !password || !username || !firstName || !lastName) {
       Alert.alert('Erreur', 'Tous les champs doivent être remplis pour continuer');
       return;
@@ -72,37 +76,23 @@ export function useAuth() {
 
       if (response.status === 201) {
         Alert.alert('Succès', 'Inscription réussie');
-        onSuccess();
+        onSuccess(); // Redirige ou notifie après l'inscription réussie
       }
     } catch (error: any) {
-      if (__DEV__) {
-        console.error("Erreur lors de l'inscription:", error);
-      }
-
-      if (error.response) {
-        if (error.response.status === 409) {
-          Alert.alert('Erreur', error.response.data.message);
-        } else {
-          Alert.alert('Erreur', error.response.data.message || "Une erreur est survenue lors de l'inscription");
-        }
-      } else {
-        Alert.alert('Erreur', "Une erreur réseau est survenue, veuillez vérifier votre connexion");
-      }
+      console.error('Erreur lors de l\'inscription:', error);
+      Alert.alert('Erreur', error.response?.data?.message || 'Une erreur réseau est survenue');
     } finally {
       setIsRegisterClicked(false);
     }
   };
 
   const logout = async () => {
-    try {
-      await AsyncStorage.removeItem('userToken'); // Supprime le token du stockage
-      await AsyncStorage.removeItem('userId'); // Supprime l'ID utilisateur
-      clearToken(); // Réinitialise le token dans le hook `useToken`
-      setIsAuthenticated(false); // L'utilisateur n'est plus connecté
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion :', error);
-    }
+    console.log('Déconnexion en cours...');
+    await clearToken(); // Supprime le token dans AsyncStorage
+    setIsAuthenticated(false); // Réinitialise l'état d'authentification
+    console.log('Déconnexion réussie, token supprimé.');
   };
+  
 
   return {
     email,

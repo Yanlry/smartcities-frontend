@@ -1,7 +1,8 @@
 import axios from "axios";
 import polyline from "@mapbox/polyline";
-const MY_URL = process.env.MY_URL;
-export const ORS_API_KEY =  process.env.ORS_API_KEY;
+const MY_URL =  "http://192.168.1.4:3000";
+
+export const ORS_API_KEY =  "5b3ce3597851110001cf6248c043db96218c40ebb775fef94a94d7e4";
 
 export const api = axios.create({
   baseURL: `${MY_URL}`, // Base URL de votre API

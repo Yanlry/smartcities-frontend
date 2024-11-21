@@ -1,5 +1,6 @@
 import axios from 'axios';
-const MY_URL = process.env.MY_URL;
+const MY_URL =  "http://192.168.1.4:3000";
+
 
 export const login = async (email: string, password: string) => {
   return await axios.post(`${MY_URL}/auth/login`, { email, password });

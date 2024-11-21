@@ -1,77 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { RootStackParamList } from './types/navigation';
 import { createStackNavigator } from '@react-navigation/stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Ajouté
+
 import HomeScreen from './screens/HomeScreen';
 import EventsScreen from './screens/EventsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ReportScreen from './screens/ReportScreen';
-import MapScreen from './screens/MapScreen'; // Nouveau composant MapScreen
+import MapScreen from './screens/MapScreen';
 import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
 import AddNewReportScreen from './screens/AddNewReportScreen';
-import ReportDetailsScreen from './screens/ReportDetailsScreen'; // Ajout de l'import de ReportDetailsScreen
+import ReportDetailsScreen from './screens/ReportDetailsScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator<RootStackParamList>(); // Typage ici
+const Stack = createStackNavigator();
 
 export default function App() {
-  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Chargement au démarrage
 
-    // Vérifie le statut de connexion au démarrage
-    useEffect(() => {
-      const checkLoginStatus = async () => {
-        try {
-          const token = await AsyncStorage.getItem('accessToken'); // Récupère le token
-          if (token) {
-            setIsLoggedIn(true);
-          } else {
-            console.log("Aucun token trouvé, utilisateur non connecté");
-          }
-        } catch (error) {
-          console.error('Erreur lors de la vérification du token:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      checkLoginStatus();
-    }, []);
+  // Fonction pour vider les tokens
+  const clearAllTokens = async () => {
+    await AsyncStorage.removeItem('authToken');
+    console.log('Tous les tokens ont été supprimés.');
+  };
+// Ajout temporaire pour nettoyer AsyncStorage
+useEffect(() => {
+  AsyncStorage.clear().then(() => console.log('AsyncStorage nettoyé.'));
+}, []);
+  // Appeler clearAllTokens au démarrage
+  useEffect(() => {
+    const initializeApp = async () => {
+      await clearAllTokens(); // Nettoyage des anciens tokens
+      setLoading(false); // Fin du chargement
+    };
+    initializeApp();
+  }, []);
 
- const handleLogout = async () => {
-  try {
-    // Supprime le token et vérifie qu'il est bien supprimé
-    await AsyncStorage.removeItem('accessToken');
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) {
-      console.log('Token supprimé avec succès.');
-      setIsLoggedIn(false); // Met à jour l'état
-    } else {
-      console.error('Le token existe encore après suppression :', token);
-    }
-  } catch (error) {
-    console.error('Erreur lors de la déconnexion :', error);
-    Alert.alert('Erreur', 'Impossible de se déconnecter.');
-  }
-};
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    console.log('Utilisateur déconnecté.');
+  };
 
-
-  if (loading) {
-    // Affiche un écran de chargement pendant la vérification du statut
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  // En-tête personnalisé
   const CustomHeader = ({ navigation }) => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => console.log("Notifications clicked")}>
@@ -84,7 +58,6 @@ export default function App() {
     </View>
   );
 
-  // Tab Navigator
   const TabNavigator = () => (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -108,17 +81,17 @@ export default function App() {
           return (
             <Icon
               name={iconName}
-              size={focused ? size + 5 : size} // Augmente légèrement la taille si l'onglet est sélectionné
+              size={focused ? size + 5 : size}
               color={color}
-              style={{ marginBottom: -5 }} // Descend l'icône un peu
+              style={{ marginBottom: -5 }}
             />
           );
         },
-        tabBarShowLabel: false, // Pas de labels
+        tabBarShowLabel: false,
         tabBarStyle: {
-          height: 70, // Augmente la hauteur de la barre
-          paddingBottom: 10, // Ajoute un espace en bas pour mieux positionner les icônes
-          paddingTop: 5, // Ajuste l'espace en haut
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 5,
         },
       })}
     >
@@ -130,51 +103,56 @@ export default function App() {
     </Tab.Navigator>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isLoggedIn ? (
-        <>
-          <Stack.Screen name="Login">
-            {(props) => (
-              <LoginScreen
-                {...props}
-                onLogin={() => {
-                  setIsLoggedIn(true);
-                }}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Register">
-            {(props) => (
-              <RegisterScreen
-                {...props}
-                onLogin={() => {
-                  setIsLoggedIn(true);
-                }}
-              />
-            )}
-          </Stack.Screen>
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="Main" component={TabNavigator} />
-          <Stack.Screen name="ProfileScreen">
-            {(props) => (
-              <ProfileScreen
-                {...props}
-                onLogout={handleLogout}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen
-            name="ReportDetails"
-            component={ReportDetailsScreen} // Ajout de l'écran des détails
-          />
-        </>
-      )}
-    </Stack.Navigator>
-  </NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isLoggedIn ? (
+          <>
+            <Stack.Screen name="Login">
+              {(props) => (
+                <LoginScreen
+                  {...props}
+                  onLogin={() => {
+                    setIsLoggedIn(true);
+                  }}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Register">
+              {(props) => (
+                <RegisterScreen
+                  {...props}
+                  onLogin={() => {
+                    setIsLoggedIn(true);
+                  }}
+                />
+              )}
+            </Stack.Screen>
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="ProfileScreen">
+              {(props) => (
+                <ProfileScreen
+                  {...props}
+                  onLogout={handleLogout}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="ReportDetails" component={ReportDetailsScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -193,7 +171,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e3e3e3',
-    paddingTop: 50, // Ajoute une marge supérieure pour descendre l'en-tête
+    paddingTop: 50, 
   },
   headerTitle: {
     fontSize: 20,

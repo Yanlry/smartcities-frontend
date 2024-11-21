@@ -1,5 +1,6 @@
 import axios from "axios";
-const MY_URL = process.env.MY_URL;
+const MY_URL =  "http://192.168.1.4:3000";
+
 
 export const typeLabels: { [key: string]: string } = {
     danger: 'Danger  ⚠️',

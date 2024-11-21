@@ -11,7 +11,12 @@ export default function LoginScreen({ navigation, onLogin }: any) {
     handleLogin,
   } = useAuth();
 
-  const handleLoginClick = () => handleLogin(onLogin);
+  const handleLoginClick = () => {
+    console.log('Email saisi dans LoginScreen:', email);
+    console.log('Password saisi dans LoginScreen:', password);
+    handleLogin(onLogin);
+  };
+  
 
   const [isRegisterClicked, setIsRegisterClicked] = useState(false);
 
@@ -28,7 +33,10 @@ export default function LoginScreen({ navigation, onLogin }: any) {
       <TextInput
         style={styles.input}
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          console.log('Modification de l\'email:', text);
+          setEmail(text);
+        }}
         placeholder="Adresse Email"
         placeholderTextColor="#888"
         keyboardType="email-address"
@@ -36,11 +44,15 @@ export default function LoginScreen({ navigation, onLogin }: any) {
       <TextInput
         style={styles.input}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          console.log('Modification du mot de passe:', text);
+          setPassword(text);
+        }}
         placeholder="Mot de passe"
         placeholderTextColor="#888"
         secureTextEntry
       />
+
       <TouchableOpacity
         style={[styles.loginButton, isLoginClicked && styles.buttonClicked]}
         onPress={handleLoginClick}

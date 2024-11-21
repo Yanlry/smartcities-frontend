@@ -18,8 +18,8 @@ import { getUserIdFromToken } from '../utils/tokenUtils';
 import { categories } from '../utils/reportHelpers';
 
 export default function AddNewReportScreen() {
-  const openCageApiKey = process.env.OPEN_CAGE_API_KEY; 
-  const MY_URL =  process.env.MY_URL;
+  const openCageApiKey = "2e3d9bbd1aae4961a1d011a87410d13f"; 
+  const MY_URL =  "http://192.168.1.4:3000";
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -44,34 +44,72 @@ export default function AddNewReportScreen() {
     });
   }, []);
 
-  const handleAddressSearch = async () => {
-    if (!query.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer une adresse à rechercher.');
-      return;
+ const handleAddressSearch = async () => {
+  if (!query.trim()) {
+    console.warn('Recherche annulée : champ query vide.');
+    return;
+  }
+
+  try {
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
+      query
+    )}&key=${openCageApiKey}`;
+    console.log('Requête API pour la recherche :', url);
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.results.length > 0) {
+      setSuggestions(data.results); // Affiche les suggestions
+      setModalVisible(true); // Ouvre la liste des résultats
+    } else {
+      setSuggestions([]);
+      Alert.alert('Erreur', 'Aucune adresse correspondante trouvée.');
     }
+  } catch (error) {
+    console.error('Erreur lors de la recherche de l’adresse :', error);
+    Alert.alert('Erreur', 'Impossible de rechercher l’adresse.');
+  }
+};
 
-    try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
-        query
-      )}&key=${openCageApiKey}`;
-      console.log('Requête API pour la recherche :', url);
+const handleUseLocation = async () => {
+  if (loading) {
+    console.log('Chargement en cours, action ignorée.');
+    return;
+  }
 
-      const response = await fetch(url);
-      const data = await response.json();
+  if (!location) {
+    Alert.alert('Erreur', "Impossible de récupérer votre position. Vérifiez vos permissions GPS.");
+    return;
+  }
 
-      if (data.results.length > 0) {
-        setSuggestions(data.results);
-        setModalVisible(true);
-      } else {
-        setSuggestions([]);
-        Alert.alert('Erreur', 'Aucune adresse correspondante trouvée.');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la recherche de l’adresse :', error);
-      Alert.alert('Erreur', 'Impossible de rechercher l’adresse.');
+  setLatitude(location.latitude);
+  setLongitude(location.longitude);
+
+  try {
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${openCageApiKey}`;
+    console.log('Requête API pour reverse geocoding :', url);
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.results.length > 0) {
+      const address = data.results[0].formatted;
+
+      console.log('Adresse récupérée depuis OpenCage Data :', address);
+
+      setQuery(address); // Met automatiquement à jour le champ d'adresse
+      setSuggestions(data.results); // Remplit les suggestions avec les résultats
+      setModalVisible(true); // Ouvre directement la liste des suggestions
+    } else {
+      Alert.alert('Erreur', "Impossible de déterminer l'adresse exacte.");
     }
-  };
-
+  } catch (error) {
+    console.error('Erreur lors du reverse geocoding :', error);
+    Alert.alert('Erreur', 'Une erreur est survenue lors de la récupération de l’adresse.');
+  }
+};
+  
   const handleSuggestionSelect = (item: any) => {
     setQuery(item.formatted); // Met à jour l'input avec l'adresse sélectionnée
     
@@ -84,38 +122,6 @@ export default function AddNewReportScreen() {
     setModalVisible(false); // Ferme le modal après la sélection
   };
   
-  const handleUseLocation = async () => {
-    if (loading) {
-      Alert.alert('Chargement', 'Nous récupérons votre position. Veuillez patienter.');
-      return;
-    }
-
-    if (!location) {
-      Alert.alert('Erreur', "Impossible de récupérer votre position. Vérifiez vos permissions GPS.");
-      return;
-    }
-
-    setLatitude(location.latitude);
-    setLongitude(location.longitude);
-
-    try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${openCageApiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.results.length > 0) {
-        const address = data.results[0].formatted;
-        setQuery(address);
-        Alert.alert('Localisation réussie', `Adresse détectée : ${address}`);
-      } else {
-        Alert.alert('Erreur', "Impossible de déterminer l'adresse exacte.");
-      }
-    } catch (error) {
-      console.error('Erreur lors du reverse geocoding :', error);
-      Alert.alert('Erreur', 'Une erreur est survenue lors de la récupération de l’adresse.');
-    }
-  };
-
   const handleSubmit = async () => {
     if (!expandedCategory) {
       Alert.alert('Erreur', 'Veuillez sélectionner une catégorie.');
