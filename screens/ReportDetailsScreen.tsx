@@ -285,7 +285,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           </Text>
         </View>
         <View style={styles.detailsContainer}>
-          <Text style={styles.detailLabel}>Publiée par : </Text>
+          <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
           <Text style={styles.detailValue}>{report.user.username}</Text>
         </View>
       </View>
