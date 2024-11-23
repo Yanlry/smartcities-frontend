@@ -37,6 +37,7 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-geolocation-service": "^5.3.1",
     "react-native-gesture-handler": "~2.20.2",
+    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-maps": "1.18.0",
     "react-native-maps-directions": "^1.9.0",
     "react-native-open-maps": "^0.4.3",

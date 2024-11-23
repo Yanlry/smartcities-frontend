@@ -4,65 +4,29 @@ const { width, height } = Dimensions.get('window');
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#fff',
     alignItems: 'center',
     width: '100%',
-  },
-  containerSecond: {
-    height: '100%',
-    padding: 5,
-    marginTop:10,
-    alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 20,
     marginBottom: 20,
+    marginTop: 15,
     color: '#333',
-    textAlign: 'center',
+    marginLeft: 20,
   }, 
-  title: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 30,
-    padding: 15,
-    height:55,
-    paddingHorizontal:20,
-    marginBottom: 15,
-    backgroundColor: '#fff',
-    width: '100%',
-    maxWidth: '100%', // Empêche l'élargissement
-    overflow: 'hidden', // Cache le contenu trop long
-    color: '#c7c7c7',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-    paddingHorizontal:20,
-  },
-
-
-
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center', 
     alignSelf: 'center',
     width: '100%',
-    maxWidth: '100%', 
+    maxWidth: '95%', 
     padding: 15,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
     borderRadius: 30,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
+
   },
   dropdownText: {
     width: '85%',
@@ -78,7 +42,6 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     color:'#007BFF',
   },
-  
   modalOverlayCategorie: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -133,36 +96,6 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-
-
-
-  modalContent: {
-    backgroundColor: '#fff',
-    width: '90%', // Largeur du modal
-    borderRadius: 30,
-    padding: 20,
-  },
-  suggestionItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  suggestionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  closeModalButton: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 30,
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  closeModalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between', // Espace uniforme entre les boutons
@@ -170,7 +103,7 @@ export default StyleSheet.create({
     width: '95%', // Le conteneur occupe 90% de l'espace disponible
     alignSelf: 'center', // Centre horizontalement le conteneur
   },
-  rowButtonSearch: {
+  rowButtonMap: {
     width:'47%',
     flexDirection: 'row', // Icône et texte alignés horizontalement
     justifyContent: 'center', // Centrage horizontal à l'intérieur du bouton
@@ -185,13 +118,16 @@ export default StyleSheet.create({
     alignItems: 'center', // Centrage vertical à l'intérieur du bouton
     backgroundColor: '#FFA500', // Orange pour "Localiser moi"
     padding: 10,
+    paddingVertical:10,
     borderRadius: 50,
     width:'47%',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
+    marginLeft:5
+
   },
 
   selectedIconContainer: {
@@ -213,7 +149,7 @@ export default StyleSheet.create({
     padding: 15,
     borderRadius: 50,
     alignItems: 'center',
-    width: '95%',
+    width: '100%',
     marginTop: 20,
   },
   submitButtonText: {
@@ -227,12 +163,127 @@ export default StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007BFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 30,
+    marginVertical: 10,
+  },
+  buttonMap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007BFF',
+    height: 80,
+    borderRadius: 5,
+    marginVertical: 10,
+  },
+  mapButtonText: {
+    color: 'white',
+    marginLeft: 10,
+  },
+  closeButtonMap: {
+    width: '100%',
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 10,
+    borderRadius: 5,
+  },
+  closeButtonTextMap: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 25,
+  },
+
+   containerSecond: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    marginTop: 15,
+    color: '#333',
+  },
+  inputTitle: {
+    flex: 1, // Permet au champ d'occuper l'espace disponible
+    height: 50, // Hauteur fixe (peut être ajustée)
+    maxHeight: 50, // Empêche l'agrandissement vertical
+    backgroundColor: '#f5f5f5',
+    borderRadius: 30,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: '#333',
+    overflow: 'hidden', // Empêche le débordement
+  },
+  input: {
+  flex: 1, // Permet au champ d'occuper l'espace disponible
+  height: 50, // Hauteur fixe (peut être ajustée)
+  maxHeight: 100, // Empêche l'agrandissement vertical
+  backgroundColor: '#f5f5f5',
+  borderRadius: 30,
+  paddingVertical: 10, // Ajustez en fonction de votre design
+  paddingHorizontal: 15,
+  fontSize: 16,
+  color: '#333',
+  overflow: 'hidden', // Empêche le débordement
+},
+
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  inputWithButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15, // Espacement avec l'élément suivant
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007BFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10, // Espace entre le champ et le bouton
+  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fond semi-transparent
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
-  
+  modalContent: {
+    width: '80%',
+    height : '50%',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 20,
+  },
+  suggestionItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  suggestionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  closeModalButton: {
+    marginTop: 10,
+    alignSelf: 'center',
+    backgroundColor: '#007BFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  closeModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
 });

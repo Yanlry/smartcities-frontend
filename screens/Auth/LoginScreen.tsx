@@ -12,8 +12,6 @@ export default function LoginScreen({ navigation, onLogin }: any) {
   } = useAuth();
 
   const handleLoginClick = () => {
-    console.log('Email saisi dans LoginScreen:', email);
-    console.log('Password saisi dans LoginScreen:', password);
     handleLogin(onLogin);
   };
   
