@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
 import { useLocation } from '../hooks/useLocation';
-import { processReports, Report } from '../services/reportService';
+import { fetchAllReportsInRegion, Report } from '../services/reportService';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -35,7 +35,7 @@ export default function MapScreen() {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
       const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111; // Conversion approx. des deltas en km
 
-      const result = await processReports(latitude, longitude, radiusKm);
+      const result = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
       setReports(result);
     } catch (error) {
       console.error('Erreur lors du chargement des signalements :', error);
