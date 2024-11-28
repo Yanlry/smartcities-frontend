@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Register: undefined;
   ProfileScreen: undefined;
   ReportDetails: { reportId: number }; // Typage attendu pour les paramètres
+  CategoryReports: { category: string }; // Ajout pour gérer la navigation vers la page des rapports par catégorie
 };
 
 export type TabParamList = {

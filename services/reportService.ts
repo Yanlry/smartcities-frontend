@@ -93,7 +93,7 @@ export const fetchDrivingDistances = async (
 export const processReports = async (
   latitude: number,
   longitude: number,
-  radiusKm: number = 10
+  radiusKm: number = 50000000
 ): Promise<Report[]> => {
   try {
     // Étape 1 : Récupérer les signalements

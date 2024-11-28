@@ -1,5 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
-const { width, height } = Dimensions.get('window');
+import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
   container: {
@@ -14,7 +13,7 @@ export default StyleSheet.create({
     marginBottom: 20,
     marginTop: 15,
     color: '#333',
-    marginLeft: 20,
+    textAlign: 'center',
   }, 
   dropdown: {
     flexDirection: 'row',
@@ -40,7 +39,7 @@ export default StyleSheet.create({
   boldText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color:'#007BFF',
+    color:'#34495E',
   },
   modalOverlayCategorie: {
     flex: 1,
@@ -70,7 +69,7 @@ export default StyleSheet.create({
   expandedCard: {
     backgroundColor: '#e0f7ff',
     borderWidth: 1,
-    borderColor: '#007BFF',
+    borderColor: '#34495E',
   },
   cardTitle: {
     marginTop: 10,
@@ -87,7 +86,7 @@ export default StyleSheet.create({
   closeButton: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#007BFF',
+    backgroundColor: '#34495E',
     borderRadius: 30,
     alignItems: 'center',
   },
@@ -108,19 +107,18 @@ export default StyleSheet.create({
     flexDirection: 'row', // Icône et texte alignés horizontalement
     justifyContent: 'center', // Centrage horizontal à l'intérieur du bouton
     alignItems: 'center', // Centrage vertical à l'intérieur du bouton
-    backgroundColor: '#007BFF', // Bleu pour "Rechercher"
+    backgroundColor: '#34495E', // Bleu pour "Rechercher"
     padding: 10,
     borderRadius: 50,
   },
   rowButtonLocation: {
-    flexDirection: 'row', // Icône et texte alignés horizontalement
-    justifyContent: 'center', // Centrage horizontal à l'intérieur du bouton
-    alignItems: 'center', // Centrage vertical à l'intérieur du bouton
-    backgroundColor: '#FFA500', // Orange pour "Localiser moi"
-    padding: 10,
-    paddingVertical:10,
-    borderRadius: 50,
-    width:'47%',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EDAE49',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10, // Espace entre le champ et le bouton
   },
   buttonText: {
     color: '#fff',
@@ -137,19 +135,23 @@ export default StyleSheet.create({
   iconLabel: {
     marginTop: 5,
     fontSize: 12,
-    color: '#007BFF',
+    color: '#34495E',
     fontWeight: 'bold',
   },
   selectedIconLabel: {
-    color: '#007BFF',
+    color: '#34495E',
     fontWeight: 'bold',
+  },
+  containerSubmit: {
+    alignItems: 'center',
   },
   submitButton: {
     backgroundColor: '#38A83C',
     padding: 15,
     borderRadius: 50,
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    width: '80%',
     marginTop: 20,
   },
   submitButtonText: {
@@ -167,7 +169,7 @@ export default StyleSheet.create({
   mapButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007BFF',
+    backgroundColor: '#34495E',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 30,
@@ -176,7 +178,7 @@ export default StyleSheet.create({
   buttonMap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007BFF',
+    backgroundColor: '#34495E',
     height: 80,
     borderRadius: 5,
     marginVertical: 10,
@@ -201,22 +203,25 @@ export default StyleSheet.create({
 
    containerSecond: {
     flex: 1,
-    paddingHorizontal: 20,
-  },
+    paddingHorizontal: 20,  },
   title: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 15,
     marginTop: 15,
     color: '#333',
+    textAlign: 'center',
+
   },
   inputTitle: {
     flex: 1, // Permet au champ d'occuper l'espace disponible
+    width: 300,
     height: 50, // Hauteur fixe (peut être ajustée)
     maxHeight: 50, // Empêche l'agrandissement vertical
     backgroundColor: '#f5f5f5',
     borderRadius: 30,
     paddingHorizontal: 15,
+    marginBottom: 25, // Espacement avec l'élément suivant
     fontSize: 16,
     color: '#333',
     overflow: 'hidden', // Empêche le débordement
@@ -224,7 +229,7 @@ export default StyleSheet.create({
   input: {
   flex: 1, // Permet au champ d'occuper l'espace disponible
   height: 50, // Hauteur fixe (peut être ajustée)
-  maxHeight: 100, // Empêche l'agrandissement vertical
+  maxHeight: 250, // Empêche l'agrandissement vertical
   backgroundColor: '#f5f5f5',
   borderRadius: 30,
   paddingVertical: 10, // Ajustez en fonction de votre design
@@ -241,13 +246,12 @@ export default StyleSheet.create({
   inputWithButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15, // Espacement avec l'élément suivant
   },
   searchButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007BFF',
+    backgroundColor: '#34495E',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 10, // Espace entre le champ et le bouton
@@ -259,10 +263,10 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '80%',
+    width: '90%',
     height : '50%',
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 30,
     padding: 20,
   },
   suggestionItem: {
@@ -271,13 +275,14 @@ export default StyleSheet.create({
     borderBottomColor: '#ccc',
   },
   suggestionText: {
-    fontSize: 16,
+    fontSize: 12,
+    fontWeight: '500',
     color: '#333',
   },
   closeModalButton: {
     marginTop: 10,
     alignSelf: 'center',
-    backgroundColor: '#007BFF',
+    backgroundColor: '#34495E',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -286,4 +291,49 @@ export default StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+
+  navigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  // Bouton de navigation gauche (Précédent)
+  navButtonLeft: {
+    position: 'absolute',
+    right: 110,
+    bottom: 10,
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  categoriesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    padding: 10,
+    gap: 20,
+  },
+
+  // Bouton de navigation droite (Suivant)
+  navButtonRight: {
+    position: 'absolute',
+    left: 110,
+    bottom: 10,
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+
 });

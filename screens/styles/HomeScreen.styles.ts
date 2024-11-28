@@ -113,13 +113,6 @@ export default StyleSheet.create({
         ...StyleSheet.absoluteFillObject, // Remplit entièrement le conteneur parent
         backgroundColor: 'rgba(0, 0, 0, 0.5)', // Couleur avec opacité (noir à 50%)
       },
-      categoryText: {
-        fontSize: 14,
-        color: '#fff',
-        textAlign: 'center',
-        marginTop: 10,
-        zIndex: 1, // Place le texte au-dessus de la superposition
-      },
       featuredItem: {
         width: 150,
         minHeight: 150, // Remplacez height par minHeight pour permettre au conteneur de s'agrandir
@@ -354,4 +347,33 @@ export default StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
       },
+
+      categoryButtonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginVertical: 10,
+        paddingHorizontal: 10,
+      },
+      
+    
+
+      
+      categoryButton: {
+        width: 150, // Largeur fixe
+        height: 150, // Hauteur fixe
+        justifyContent: 'center', // Centrer le contenu verticalement
+        alignItems: 'center', // Centrer le contenu horizontalement
+        marginRight: 10, // Espacement entre les boutons
+        borderRadius: 10, // Coins arrondis
+      },
+      categoryIcon: {
+        marginBottom: 5, // Espacement entre l'icône et le texte
+      },
+      categoryText: {
+        color: '#fff', // Texte blanc
+        fontSize: 16, // Taille de la police du texte
+        fontWeight: 'bold', // Texte en gras
+      },
+      
+      
 });

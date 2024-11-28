@@ -15,6 +15,7 @@ import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
 import AddNewReportScreen from './screens/AddNewReportScreen';
 import ReportDetailsScreen from './screens/ReportDetailsScreen';
+import CategoryReportsScreen from './screens/CategoryReportsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -149,6 +150,7 @@ useEffect(() => {
               )}
             </Stack.Screen>
             <Stack.Screen name="ReportDetails" component={ReportDetailsScreen} />
+            <Stack.Screen name="CategoryReports" component={CategoryReportsScreen} />
           </>
         )}
       </Stack.Navigator>

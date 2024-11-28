@@ -15,18 +15,19 @@ import { formatCity, formatDate } from "../utils/formatters";
 import { getTypeIcon } from "../utils/typeIcons";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useToken } from "../hooks/useToken";
-
+import { Alert } from "react-native";
+import styles from './styles/ReportDetailsScreen.styles';
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
-    const API_URL = "http://192.168.1.4:3000";
-    const { reportId } = route.params;
-    const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
-    const { location } = useLocation();
-    const mapRef = useRef<MapView>(null);
-  
-    const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
-    const [votes, setVotes] = useState({ upVotes: 0, downVotes: 0 });
-    const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
+  const API_URL = "http://192.168.1.4:3000";
+  const { reportId } = route.params;
+  const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
+  const { location } = useLocation();
+  const mapRef = useRef<MapView>(null);
+
+  const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
+  const [votes, setVotes] = useState({ upVotes: 0, downVotes: 0 });
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
 
   useEffect(() => {
     (async () => {
@@ -52,7 +53,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     }
   }, [report]);
 
-  
+
   const handleVote = async (type: "up" | "down") => {
     if (!location || !report || !currentUserId) return;
 
@@ -71,26 +72,29 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         body: JSON.stringify(payload),
       });
 
-      console.log("Réponse brute :", response);
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Erreur API :", errorData);
         throw new Error(errorData.message || "Vote failed");
       }
 
       const result = await response.json();
-      console.log("Résultat du vote :", result);
 
+      // Mise à jour immédiate des votes
       setVotes({
         upVotes: result.updatedVotes.upVotes,
         downVotes: result.updatedVotes.downVotes,
       });
+
+      // Facultatif : pour désactiver les boutons si besoin
       setUserVote(type);
     } catch (error) {
-      console.error("Erreur lors de l'envoi du vote :", error);
+      Alert.alert(
+        "Vous avez déjà voté",
+        "Vous avez déja utiliser votre droit de vote pour cette annonce."
+      );
     }
   };
+
 
   const handleZoom = (latitude: number, longitude: number) => {
     mapRef.current?.animateToRegion(
@@ -227,32 +231,49 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         </View>
 
         {/* Système de vote */}
-        <View style={styles.voteContainer}>
-          {userVote ? (
-            // Affichez un message si l'utilisateur a déjà voté
-            <Text style={styles.alreadyVoted}>
-              Vous avez voté {userVote === "up" ? "👍 (pour)" : "👎 (contre)"}.
-            </Text>
-          ) : (
-            // Affichez les boutons si l'utilisateur n'a pas encore voté
-            <View style={styles.voteButtons}>
+        <View>
+          <View style={styles.voteContainer}>
             <TouchableOpacity
-              onPress={() => handleVote("up")}
-              style={styles.voteButton}
-              disabled={userVote === "up"}
+              onPress={() => {
+                Alert.alert(
+                  "Confirmer le vote",
+                  "Vous vous apprêtez à voter POUR et à confirmer la présence de l'événement. Cette action est irréversible. Êtes-vous sûr ?",
+                  [
+                    { text: "Annuler", style: "cancel" },
+                    {
+                      text: "Confirmer",
+                      onPress: () => handleVote("up"),
+                    },
+                  ]
+                );
+              }}
+              style={[styles.voteButton, styles.upVoteButton]}
             >
               <Text style={styles.voteText}>👍 {votes.upVotes}</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              onPress={() => handleVote("down")}
-              style={styles.voteButton}
-              disabled={userVote === "down"}
+              onPress={() => {
+                Alert.alert(
+                  "Confirmer le vote",
+                  "Vous vous apprêtez à voter CONTRE et à invalider cet événement. Cette action est irréversible. Êtes-vous sûr ?",
+                  [
+                    { text: "Annuler", style: "cancel" },
+                    {
+                      text: "Confirmer",
+                      onPress: () => handleVote("down"),
+                    },
+                  ]
+                );
+              }}
+              style={[styles.voteButton, styles.downVoteButton]}
             >
               <Text style={styles.voteText}>👎 {votes.downVotes}</Text>
             </TouchableOpacity>
-            </View>
-          )}
+          </View>
         </View>
+
+
 
       </View>
 
@@ -260,7 +281,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         <Text style={styles.description}>{report.description}</Text>
       </View>
       <View style={[styles.card, styles.detailCard]}>
-        <View style={styles.detailsContainer}>
+        <View style={styles.detailContainer}>
           <Text style={styles.detailLabel}>📏 Distance en voiture : </Text>
           <Text style={styles.detailValue}>
             {report.gpsDistance
@@ -268,7 +289,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
               : "Indisponible"}
           </Text>
         </View>
-        <View style={styles.detailsContainer}>
+        <View style={styles.detailContainer}>
           <Text style={styles.detailLabel}>📍 Localisation : </Text>
           <Text
             style={styles.detailValue}
@@ -278,13 +299,13 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
             {formatCity(report.city)}
           </Text>
         </View>
-        <View style={styles.detailsContainer}>
+        <View style={styles.detailContainer}>
           <Text style={styles.detailLabel}>📅 Créé le : </Text>
           <Text style={styles.detailValue}>
             Créé le : {formatDate(report.createdAt)}
           </Text>
         </View>
-        <View style={styles.detailsContainer}>
+        <View style={styles.detailContainer}>
           <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
           <Text style={styles.detailValue}>{report.user.username}</Text>
         </View>
@@ -292,187 +313,3 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    paddingTop: 50,
-    marginBottom: 10,
-  },
-  typeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  typeText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    paddingHorizontal: 15,
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    marginRight: 5,
-  },
-  backButton: {
-    padding: 5,
-  },
-  mapContainer: {
-    height: 500, // Donne à la carte une hauteur spécifique
-  },
-  map: {
-    flex: 1,
-  },
-  zoomPosition: {
-    position: "absolute",
-    bottom: 20,
-    right: 5, // Position à droite
-    backgroundColor: "#3185FC",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    elevation: 5,
-    width: "45%",
-    justifyContent: "center", // Centre le texte verticalement
-    alignItems: "center", // Centre le texte horizontalement
-  },
-  zoomPositionText: {
-    color: "#FFF",
-    fontSize: 12, // Ajusté pour correspondre à la taille du bouton
-    fontWeight: "bold",
-  },
-  zoomReport: {
-    position: "absolute",
-    bottom: 20,
-    left: 5, // Position à gauche
-    backgroundColor: "#E84855",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    elevation: 5,
-    width: "45%",
-    justifyContent: "center", // Centre le texte verticalement
-    alignItems: "center", // Centre le texte horizontalement
-  },
-  zoomReprotText: {
-    color: "#FFF",
-    fontSize: 12, // Ajusté pour correspondre à la taille du bouton
-    fontWeight: "bold",
-  },
-  content: {
-    marginTop:16,
-    backgroundColor: "#f4f4f9",
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 30,
-    marginBottom: 12,
-    marginHorizontal: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  detailCard: {
-    display: "flex",
-    flexDirection: "column",
-    borderRadius: 30,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#333",
-  },
-  stateReport: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  detailsVoteContainer: {
-    flexDirection: "row", 
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 30,
-    backgroundColor: "#FCF5C7",
-    width : "90%",
-    justifyContent: "center",
-  },
-  upContainer: {
-  },
-  downContainer: { 
-  },
-  description: {
-    fontSize: 16,
-    color: "#555",
-    lineHeight: 22,
-  },
-  detailsContainer: {
-    alignItems: "center",
-    marginBottom: 8,
-    padding: 8,
-    borderRadius: 30,
-    backgroundColor: "#e6e6f0",
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    marginRight: 4,
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: "#555",
-    flex: 1, // Permet au texte de s'étendre
-    flexWrap: "wrap", // Autorise le retour à la ligne
-    lineHeight: 18, // Ajoute un peu d'espace entre les lignes
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#555",
-  },
-  voteContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  voteButton: {
-    alignItems: "center",
-    borderRadius: 30,
-    marginHorizontal: 10,
-    width: "100%",
-  },
-  voteText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-
-
-  alreadyVoted: { 
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  voteButtons: {
-  },  
-});
