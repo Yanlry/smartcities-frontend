@@ -20,7 +20,7 @@ export const fetchReports = async (
   longitude: number,
   radiusKm: number = 10
 ): Promise<Report[]> => {
-  const MY_URL = "http://192.168.1.4:3000";
+  const MY_URL = "http://192.168.1.100:3000";
 
   const response = await axios.get(`${MY_URL}/reports`, {
     params: { latitude, longitude, radiusKm },
@@ -160,7 +160,7 @@ export const fetchAllReportsInRegion = async (
 
 // Fonction pour créer un signalement
 export const createReport = async (data: any) => {
-  const MY_URL = "http://192.168.1.4:3000";
+  const MY_URL = "http://192.168.1.100:3000";
 
   try {
     // Étape 1 : Récupérer le token depuis AsyncStorage

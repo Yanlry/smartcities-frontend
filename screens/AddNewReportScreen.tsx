@@ -20,9 +20,9 @@ import { categories } from '../utils/reportHelpers';
 import MapView, { Marker } from 'react-native-maps';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-export default function AddNewReportScreen() {
+export default function AddNewReportScreen({navigation}) {
   const openCageApiKey = "2e3d9bbd1aae4961a1d011a87410d13f";
-  const MY_URL = "http://192.168.1.4:3000";
+  const MY_URL = "http://192.168.1.100:3000";
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -239,6 +239,7 @@ export default function AddNewReportScreen() {
         setExpandedCategory(null);
         setStep(1);
         setSelectedLocation(null);
+        navigation.navigate('Main');
       } else {
         Alert.alert('Erreur', 'Une erreur est survenue lors de la création du signalement.');
       }
@@ -263,10 +264,15 @@ export default function AddNewReportScreen() {
         <ScrollView
           horizontal={false}
           contentContainerStyle={{ flexGrow: 1, width: '100%', overflow: 'hidden' }}
-        >
+        >      
           {step === 1 && (
             <View style={{ flex: 1 }}>
-              <Text style={styles.pageTitle}>Étape 1 : Choisissez le type de signalement</Text>
+              <View style={styles.homeTitle}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                  <Text style={styles.backButtonText}>←</Text>
+                </TouchableOpacity>
+              <Text style={styles.pageTitle}>Étape 1 : Choisissez le type</Text>
+              </View>
               <ScrollView
                 contentContainerStyle={styles.categoriesContainer}
                 showsVerticalScrollIndicator={false}
@@ -296,37 +302,39 @@ export default function AddNewReportScreen() {
           {/* Étape 2 */}
           {step === 2 && (
             <View style={styles.containerSecond}>
-              <Text style={styles.pageTitle}>Étape 2 : Donnez nous des informations</Text>
-              <Text style={styles.title}>Titre</Text>
-              <TextInput
-                style={styles.inputTitle}
-                placeholder="Expliquer brièvement le problème"
-                placeholderTextColor="#c7c7c7"
-                value={title}
-                onChangeText={setTitle}
-                multiline={false}
-                maxLength={100}
-                scrollEnabled={true}
-              />
-              <Text style={styles.title}>Description</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Description"
-                placeholderTextColor="#c7c7c7"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-              />
+              <Text style={styles.pageTitle}>Étape 2 : Décrivez le problème</Text>
+              <View style={styles.containerInput}>
+                <Text style={styles.title}>Titre</Text>
+                <TextInput
+                  style={styles.inputTitle}
+                  placeholder="Expliquer brièvement le problème"
+                  placeholderTextColor="#c7c7c7"
+                  value={title}
+                  onChangeText={setTitle}
+                  multiline={false}
+                  maxLength={100}
+                  scrollEnabled={true}
+                />
+                <Text style={styles.title}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Expliquer brièvement le problème ( max. 500 caractères)"
+                  placeholderTextColor="#c7c7c7"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                />
+              </View>
             </View>
           )}
 
           {/* Étape 3 */}
           {step === 3 && (
-            <View style={styles.containerSecond}>
-              <Text style={styles.title}>Étape 3 : entrer une adresse où sélectionnez un point sur la carte</Text>
+            <View style={styles.containerThird}>
+              <Text style={styles.pageTitle}>Étape 3 : Tapez une adresse ou ajouter un point</Text>
               <View style={styles.inputWithButton}>
                 <TextInput
-                  style={styles.input}
+                  style={styles.inputSearch}
                   placeholder="Rechercher une adresse"
                   value={query}
                   placeholderTextColor="#c7c7c7"
@@ -342,7 +350,7 @@ export default function AddNewReportScreen() {
               {loading ? (
                 <ActivityIndicator size="large" color="#007BFF" />
               ) : (
-                <View style={{ flex: 1, height: 300, marginVertical: 10 }}>
+                <View style={{  height: 400, marginVertical: 30 }}>
                   <MapView
                     ref={mapRef} // Connectez la référence
                     style={{ flex: 1, borderRadius: 50 }}
@@ -402,6 +410,7 @@ export default function AddNewReportScreen() {
               </View>
             </View>
           )}
+          
         </ScrollView>
 
         {/* Boutons de navigation fixes */}

@@ -19,7 +19,7 @@ import { Alert } from "react-native";
 import styles from './styles/ReportDetailsScreen.styles';
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
-  const API_URL = "http://192.168.1.4:3000";
+  const API_URL = "http://192.168.1.100:3000";
   const { reportId } = route.params;
   const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
   const { location } = useLocation();
