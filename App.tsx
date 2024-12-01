@@ -17,7 +17,6 @@ import AddNewReportScreen from './screens/AddNewReportScreen';
 import ReportDetailsScreen from './screens/ReportDetailsScreen';
 import CategoryReportsScreen from './screens/CategoryReportsScreen';
 import AddNewEventScreen from './screens/AddNewEventScreen';
-
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -51,14 +50,28 @@ export default function App() {
   const CustomHeader = ({ navigation }) => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => console.log('Notifications clicked')}>
-        <Icon name="notifications-outline" size={28} color="#333" style={{ marginLeft: 10 }} />
+        <Icon
+          name="notifications-outline"
+          size={28}
+          color="#333"
+          style={{ marginLeft: 10 }}
+        />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>SmartCities</Text>
       <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
-        <Icon name="person-outline" size={28} color="#333" style={{ marginRight: 10 }} />
+        <Icon
+          name="person-outline"
+          size={28}
+          color="#333"
+          style={{ marginRight: 10 }}
+        />
       </TouchableOpacity>
     </View>
   );
+
+  const EmptyScreen = () => {
+    return null; // Écran vide intentionnellement
+  };
 
   const TabNavigator = ({ navigation }) => (
     <>
@@ -102,7 +115,7 @@ export default function App() {
         <Tab.Screen name="Evénements" component={EventsScreen} />
         <Tab.Screen
           name="Ajouter"
-          component={() => null} // Écran vide pour représenter le bouton +
+          component={EmptyScreen} // Composant dédié pour éviter les problèmes
           listeners={{
             tabPress: (e) => {
               e.preventDefault(); // Empêche la navigation
@@ -184,6 +197,7 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
 
 const styles = StyleSheet.create({
   loadingContainer: {

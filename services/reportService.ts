@@ -3,6 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {jwtDecode} from 'jwt-decode';
 import { ORS_API_KEY } from './api';
 
+export interface Photo {
+  id: number;
+  url: string;
+}
+
 export interface Report {
   id: number;
   type: string;
@@ -12,9 +17,9 @@ export interface Report {
   distance: number;
   city: string;
   createdAt: string;
+  photos: Photo[]; // Ajouter les photos
 }
 
-// Fonction pour récupérer les signalements
 export const fetchReports = async (
   latitude: number,
   longitude: number,
@@ -26,7 +31,40 @@ export const fetchReports = async (
     params: { latitude, longitude, radiusKm },
   });
 
+  // Pas de transformation nécessaire, les photos sont déjà incluses
   return response.data;
+};
+
+export const fetchAllReportsInRegion = async (
+  latitude: number,
+  longitude: number,
+  radiusKm: number = 10
+): Promise<Report[]> => {
+  try {
+    // Étape 1 : Récupérer les signalements sans limitation
+    const rawReports = await fetchReports(latitude, longitude, radiusKm);
+
+    // Étape 2 : Préparer les destinations pour le calcul des distances
+    const destinations: [number, number][] = rawReports.map((report) => [
+      report.longitude,
+      report.latitude,
+    ]);
+
+    // Étape 3 : Calculer les distances routières
+    const distances = await fetchDrivingDistances([longitude, latitude], destinations);
+
+    // Étape 4 : Enrichir les signalements avec leurs distances
+    const enrichedReports = rawReports.map((report, index) => ({
+      ...report,
+      distance: distances[index] / 1000 || Infinity, // Convertir en kilomètres
+    }));
+
+    // Étape 5 : Trier les signalements par distance
+    return enrichedReports.sort((a, b) => a.distance - b.distance); // Tous les signalements triés par distance
+  } catch (error) {
+    console.error('Erreur lors du chargement des signalements :', error);
+    throw new Error('Impossible de récupérer tous les signalements.');
+  }
 };
 
 export const fetchDrivingDistances = async (
@@ -88,8 +126,6 @@ export const fetchDrivingDistances = async (
   }
 };
 
-
-// Fonction pour traiter les signalements avec une limite de 4
 export const processReports = async (
   latitude: number,
   longitude: number,
@@ -123,40 +159,6 @@ export const processReports = async (
     throw new Error('Impossible de traiter les signalements.');
   }
 };
-
-// Fonction pour lister tous les signalements dans une zone
-export const fetchAllReportsInRegion = async (
-  latitude: number,
-  longitude: number,
-  radiusKm: number = 10
-): Promise<Report[]> => {
-  try {
-    // Étape 1 : Récupérer les signalements sans limitation
-    const rawReports = await fetchReports(latitude, longitude, radiusKm);
-
-    // Étape 2 : Préparer les destinations pour le calcul des distances
-    const destinations: [number, number][] = rawReports.map((report) => [
-      report.longitude,
-      report.latitude,
-    ]);
-
-    // Étape 3 : Calculer les distances routières
-    const distances = await fetchDrivingDistances([longitude, latitude], destinations);
-
-    // Étape 4 : Enrichir les signalements avec leurs distances
-    const enrichedReports = rawReports.map((report, index) => ({
-      ...report,
-      distance: distances[index] / 1000 || Infinity, // Convertir en kilomètres
-    }));
-
-    // Étape 5 : Trier les signalements par distance
-    return enrichedReports.sort((a, b) => a.distance - b.distance); // Tous les signalements triés par distance
-  } catch (error) {
-    console.error('Erreur lors du chargement des signalements :', error);
-    throw new Error('Impossible de récupérer tous les signalements.');
-  }
-};
-
 
 // Fonction pour créer un signalement
 export const createReport = async (data: any) => {

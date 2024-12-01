@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
+  Modal,
   ActivityIndicator,
   ScrollView,
   TouchableOpacity,
@@ -16,7 +16,13 @@ import { getTypeIcon } from "../utils/typeIcons";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useToken } from "../hooks/useToken";
 import { Alert } from "react-native";
-import styles from './styles/ReportDetailsScreen.styles';
+import styles from "./styles/ReportDetailsScreen.styles";
+import { Ionicons } from "@expo/vector-icons";
+
+type Photo = {
+  id: string;
+  url: string;
+};
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
   const API_URL = "http://192.168.1.100:3000";
@@ -28,6 +34,18 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
   const [votes, setVotes] = useState({ upVotes: 0, downVotes: 0 });
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  const openModal = (photoUrl) => {
+    setSelectedPhoto(photoUrl);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setSelectedPhoto(null);
+    setModalVisible(false);
+  };
 
   useEffect(() => {
     (async () => {
@@ -52,7 +70,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       });
     }
   }, [report]);
-
 
   const handleVote = async (type: "up" | "down") => {
     if (!location || !report || !currentUserId) return;
@@ -94,7 +111,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       );
     }
   };
-
 
   const handleZoom = (latitude: number, longitude: number) => {
     mapRef.current?.animateToRegion(
@@ -215,23 +231,24 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           style={styles.zoomPosition}
           onPress={() => handleZoom(location.latitude, location.longitude)}
         >
-          <Text style={styles.zoomPositionText}>Zoom sur ma position</Text>
+          <Ionicons name="location-sharp" size={18} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.zoomReport}
           onPress={() => handleZoom(report.latitude, report.longitude)}
         >
-          <Text style={styles.zoomReprotText}>Zoom sur l'événement</Text>
+          <Text style={styles.zoomReprotText}>GO</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <View style={styles.card}>
+        <View style={styles.cardTitle}>
           <Text style={styles.title}>{report.title}</Text>
         </View>
 
         {/* Système de vote */}
-        <View>
+        <View style={styles.voteSection}>
+          <Text style={styles.votePrompt}>Avez-vous constaté le report ?</Text>
           <View style={styles.voteContainer}>
             <TouchableOpacity
               onPress={() => {
@@ -272,14 +289,58 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
-
-
-
       </View>
 
       <View style={styles.card}>
         <Text style={styles.description}>{report.description}</Text>
       </View>
+
+
+      <View style={styles.detailCardPhoto}> 
+        <View style={styles.detailContainer}>
+        <Text style={styles.detailLabel}>📸 Photos :</Text>
+        {report.photos && report.photos.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {report.photos.map((photo: Photo) => (
+              <TouchableOpacity
+              key={photo.id}
+              onPress={() => openModal(photo.url)}
+              >
+              <Image
+                source={{ uri: photo.url }}
+                style={styles.photo}
+                resizeMode="cover"
+              />
+              </TouchableOpacity>
+            ))}
+            </ScrollView>
+        ) : (
+          <Text style={styles.noPhotosText}>Aucune photo disponible.</Text>
+        )}
+        </View>
+        {selectedPhoto && (
+          <Modal
+            visible={modalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={closeModal}
+          >
+            <View style={styles.modalContainer}>
+              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                <Text style={styles.closeButtonText}>X</Text>
+              </TouchableOpacity>
+              <Image
+                source={{ uri: selectedPhoto }}
+                style={styles.modalPhoto}
+                resizeMode="contain"
+              />
+            </View>
+          </Modal>
+        )}
+    </View>
+
+
+
       <View style={[styles.card, styles.detailCard]}>
         <View style={styles.detailContainer}>
           <Text style={styles.detailLabel}>📏 Distance en voiture : </Text>

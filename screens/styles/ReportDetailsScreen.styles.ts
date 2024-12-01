@@ -1,196 +1,290 @@
-
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "white",
-    },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingHorizontal: 10,
-      paddingTop: 50,
-      marginBottom: 10,
-    },
-    typeBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    typeText: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: "#333",
-      paddingHorizontal: 15,
-    },
-    icon: {
-      width: 40,
-      height: 40,
-      marginRight: 5,
-    },
-    backButton: {
-      padding: 5,
-    },
-    mapContainer: {
-      height: 500, // Donne à la carte une hauteur spécifique
-    },
-    map: {
-      flex: 1,
-    },
-    zoomPosition: {
-      position: "absolute",
-      bottom: 20,
-      right: 5, // Position à droite
-      backgroundColor: "#3185FC",
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 30,
-      elevation: 5,
-      width: "45%",
-      justifyContent: "center", // Centre le texte verticalement
-      alignItems: "center", // Centre le texte horizontalement
-    },
-    zoomPositionText: {
-      color: "#FFF",
-      fontSize: 12, // Ajusté pour correspondre à la taille du bouton
-      fontWeight: "bold",
-    },
-    zoomReport: {
-      position: "absolute",
-      bottom: 20,
-      left: 5, // Position à gauche
-      backgroundColor: "#E84855",
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 30,
-      elevation: 5,
-      width: "45%",
-      justifyContent: "center", // Centre le texte verticalement
-      alignItems: "center", // Centre le texte horizontalement
-    },
-    zoomReprotText: {
-      color: "#FFF",
-      fontSize: 12, // Ajusté pour correspondre à la taille du bouton
-      fontWeight: "bold",
-    },
-    content: {
-      marginTop: 16,
-      backgroundColor: "#f4f4f9",
-      borderRadius: 10,
-      shadowColor: "#000",
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 2 },
-    },
-    card: {
-      backgroundColor: "#ffffff",
-      borderRadius: 30,
-      marginBottom: 12,
-      marginHorizontal: 16,
-      padding: 16,
-      shadowColor: "#000",
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 1 },
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: "bold",
-      textAlign: "center",
-      color: "#333",
-    },
-    stateReport: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: "#333",
-    },
-    upContainer: {
-    },
-    downContainer: {
-    },
-    description: {
-      fontSize: 16,
-      color: "#555",
-      lineHeight: 22,
-    },
-    detailCard: {
-      backgroundColor: '#fff',
-      borderRadius: 20,
-      padding: 16,
-      margin: 16,
-      elevation: 2,
-    },
-    detailContainer: {
-      backgroundColor: '#f8f9fa',
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 8,
-    },
-    detailLabel: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#555',
-      marginBottom: 4,
-    },
-    detailValue: {
-      fontSize: 16,
-      color: '#333',
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: "#555",
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff", // Fond blanc pour une apparence propre
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 15,
+    paddingTop:45,
+    paddingBottom: 10,
+    backgroundColor: "#F3F5F7", // Fond clair pour le header
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  typeText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    paddingHorizontal: 15,
+  },
+  icon: {
+    width: 40,
+    height: 40,
+    marginRight: 5,
+  },
+  backButton: {
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  mapContainer: {
+    height: 400,
+    backgroundColor: "#f4f4f4", // Ajout d'un fond clair autour de la carte
+    borderRadius: 10,
+    overflow: "hidden", // Assurez-vous que la carte reste à l'intérieur des bordures
+    marginHorizontal: 10,
+    marginVertical: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  map: {
+    flex: 1,
+  },
+  voteSection: {
+    padding: 20,
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  votePrompt: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#333",
+    marginBottom: 15,
+  },
+  voteContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  voteButton: {
+    paddingVertical: 12,
+    borderRadius: 20,
+    minWidth: 100,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  upVoteButton: {
+    backgroundColor: "#B8E0C3",
+  },
+  downVoteButton: {
+    backgroundColor: "#F29A91",
+  },
+  voteText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  zoomPosition: {
+    position: "absolute",
+    bottom: 20,
+    right: 10,
+    backgroundColor: "#3185FC",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    elevation: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  zoomPositionText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  zoomReport: {
+    position: "absolute",
+    bottom: 20,
+    left: 10,
+    backgroundColor: "#E84855",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    elevation: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  zoomReprotText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  content: {
+    backgroundColor: "#F3F5F7",
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    padding: 15,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    marginHorizontal: 15,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  description: {
+    fontSize: 16,
+    color: "#555",
+    lineHeight: 22,
+  },
+  detailCardPhoto: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 16,
+    margin: 10,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  cardTitle: {
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    marginBottom: 15,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#333",
+    marginBottom: 10,
+  },
   
-    detailsVoteContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      padding: 16,
-      borderRadius: 30,
-      backgroundColor: "#fff",
-      width: "90%",
-      justifyContent: "center",
-    },
-    voteContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 16,
-      gap: 16,
-    },
-    voteButton: {
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 20,
-      minWidth: 150,
-      alignItems: 'center',
-    },
-    upVoteButton: {
-      backgroundColor: '#B8E0C3',
-    },
-    downVoteButton: {
-      backgroundColor: '#F29A91',
-    },
-    voteText: {
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    voteStatus: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#666',
-    },
-    alreadyVoted: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: "#333",
-    },
-    voteButtons: {
-    },
-  });
+  detailCard: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 16,
+    margin: 10,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  detailContainer: {
+    backgroundColor: "#F3F5F7",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#555",
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: "#333",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#555",
+  },
+  photoContainer: {
+    marginVertical: 20,
+    padding: 10,
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  photosScrollView: {
+    flexDirection: "row",
+    paddingHorizontal: 5,
+    paddingVertical: 10,
+  },
   
+  photo: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    marginRight: 10,
+    marginTop: 10,
+  },
+  noPhotosText: {
+    color: '#888',
+    fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalPhoto: {
+    width: '90%',
+    height: '70%',
+    borderRadius: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 30,
+    right: 20,
+    backgroundColor: '#ccc',
+    borderRadius: 15,
+    padding: 20,
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: '#000',
+  },
+});

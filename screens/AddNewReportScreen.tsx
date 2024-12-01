@@ -14,11 +14,12 @@ import {
 import { useLocation } from '../hooks/useLocation';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/AddNewReportScreen.styles';
-import axios from 'axios';
 import { getUserIdFromToken } from '../utils/tokenUtils';
 import { categories } from '../utils/reportHelpers';
 import MapView, { Marker } from 'react-native-maps';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import * as Progress from 'react-native-progress';
+import PhotoManager from '../components/PhotoManager';
 
 export default function AddNewReportScreen({navigation}) {
   const openCageApiKey = "2e3d9bbd1aae4961a1d011a87410d13f";
@@ -34,11 +35,21 @@ export default function AddNewReportScreen({navigation}) {
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [step, setStep] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null); // Position choisie par l'utilisateur
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null); 
   const listRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;
   const expandedWidth = screenWidth * 0.4;
-  const mapRef = useRef<MapView>(null); // Référence pour MapView
+  const mapRef = useRef<MapView>(null);
+  const [progressModalVisible, setProgressModalVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const steps = [
+    { label: "Préparation des fichiers", progress: 0.2 },
+    { label: "Téléchargement en cours", progress: 0.7 },
+    { label: "Finalisation, veuillez patientez", progress: 1.0 },
+  ];
 
   useEffect(() => {
     listRef.current?.scrollToOffset({
@@ -82,7 +93,6 @@ export default function AddNewReportScreen({navigation}) {
       Alert.alert('Erreur', 'Une erreur est survenue lors de la récupération de l’adresse.');
     }
   };
-
 
   const handleUseLocation = async () => {
     if (loading) {
@@ -187,65 +197,104 @@ export default function AddNewReportScreen({navigation}) {
     setModalVisible(false);
   };
 
-
-
   const handleSubmit = async () => {
-    if (!expandedCategory) {
-      Alert.alert('Erreur', 'Veuillez sélectionner une catégorie.');
+    if (isSubmitting) return;
+  
+    // Vérification des champs requis
+    if (
+      !title.trim() ||
+      !description.trim() ||
+      !query.trim() ||
+      photos.length === 0
+    ) {
+      Alert.alert(
+        "Erreur",
+        "Tous les champs et au moins une photo sont obligatoires."
+      );
       return;
     }
-
-    const userId = await getUserIdFromToken(); // Récupère l'ID utilisateur dynamique
-    console.log('ID utilisateur récupéré:', userId);
-
-    if (!userId) {
-      Alert.alert('Erreur', 'Impossible de récupérer votre ID utilisateur.');
+  
+    if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+      Alert.alert("Erreur", "Les coordonnées ne sont pas valides.");
       return;
     }
-
-    if (!title || !description || !query || latitude === null || longitude === null || !expandedCategory) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires.');
-      return;
-    }
-
-    if (latitude === null || longitude === null || isNaN(latitude) || isNaN(longitude)) {
-      Alert.alert('Erreur', 'Les coordonnées ne sont pas valides.');
-      return;
-    }
-
-
-    const reportData = {
-      title,
-      description,
-      city: query,
-      latitude,
-      longitude,
-      type: expandedCategory,
-      userId,
-    };
-
+  
+    setIsSubmitting(true);
+    setProgressModalVisible(true);
+    setProgress(0);
+  
     try {
-      console.log('Données envoyées :', reportData);
-
-      const response = await axios.post(`${MY_URL}/reports`, reportData);
-
-      if (response.status === 201) {
-        Alert.alert('Succès', 'Le signalement a été créé avec succès.');
-        setTitle('');
-        setDescription('');
-        setQuery('');
-        setLatitude(null);
-        setLongitude(null);
-        setExpandedCategory(null);
-        setStep(1);
-        setSelectedLocation(null);
-        navigation.navigate('Main');
-      } else {
-        Alert.alert('Erreur', 'Une erreur est survenue lors de la création du signalement.');
+      // Étape 1 : Préparation des fichiers
+      setProgress(steps[0].progress);
+      console.log("Préparation des fichiers...");
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulation d'un délai
+  
+      const userId = await getUserIdFromToken();
+      if (!userId) {
+        throw new Error("Impossible de récupérer l'ID utilisateur.");
       }
+  
+      // Préparation du FormData
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("city", query);
+      formData.append("latitude", String(latitude));
+      formData.append("longitude", String(longitude));
+      if (expandedCategory) {
+        formData.append("type", expandedCategory);
+      }
+      formData.append("userId", String(userId));
+  
+      photos.forEach((photo) => {
+        if (!photo.uri || !photo.type) {
+          throw new Error("Une ou plusieurs photos ne sont pas valides.");
+        }
+  
+        formData.append(
+          "photos",
+          {
+            uri: photo.uri,
+            name: photo.uri.split("/").pop(),
+            type: photo.type || "image/jpeg",
+          } as any // Cast explicite pour TypeScript
+        );
+      });
+  
+      // Étape 2 : Téléchargement des fichiers
+      setProgress(steps[1].progress);
+      console.log("Téléchargement en cours...");
+      const response = await fetch(`${MY_URL}/reports`, {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Erreur serveur : ${response.status}`);
+      }
+  
+      // Étape 3 : Finalisation
+      setProgress(steps[2].progress);
+      console.log("Finalisation...");
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulation d'un délai
+  
+      const data = await response.json();
+      Alert.alert("Succès", "Le signalement a été créé avec succès !");
+      console.log("Signalement créé :", data);
     } catch (error) {
-      console.error('Erreur lors de la soumission :', error);
-      Alert.alert('Erreur', 'Impossible de créer le signalement.');
+      console.error("Erreur :", error);
+      Alert.alert("Erreur", error.message || "Une erreur est survenue.");
+    } finally {
+      setProgressModalVisible(false);
+      setIsSubmitting(false);
+      setTitle("");
+      setDescription("");
+      setQuery("");
+      setLatitude(null);
+      setLongitude(null);
+      setExpandedCategory(null);
+      setPhotos([]);
+      navigation.navigate("Main");
     }
   };
 
@@ -324,6 +373,9 @@ export default function AddNewReportScreen({navigation}) {
                   onChangeText={setDescription}
                   multiline
                 />
+                <Text style={styles.title}>Ajouter des photos ( optionnel ) </Text>
+                <PhotoManager photos={photos} setPhotos={setPhotos} />
+
               </View>
             </View>
           )}
@@ -403,11 +455,27 @@ export default function AddNewReportScreen({navigation}) {
                 </View>
               </Modal>
               {/* Bouton de soumission */}
-              <View style={styles.containerSubmit}>
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                  <Text style={styles.submitButtonText}>Soumettre</Text>
-                </TouchableOpacity>
-              </View>
+              <View style={styles.submitButtonContainer}>
+          {isSubmitting ? (
+            <ActivityIndicator size="large" color="#007BFF" />
+          ) : (
+            <View style={styles.submitButton}>
+              <TouchableOpacity
+                style={[
+                  styles.button, // Style du bouton
+                  isSubmitting && styles.buttonDisabled, // Applique un style désactivé si nécessaire
+                ]}
+                onPress={handleSubmit} // Appelle la fonction de soumission
+                disabled={isSubmitting} // Désactive le bouton si déjà en soumission
+              >
+                <Text style={styles.buttonText}>
+                  {isSubmitting ? "Envoi en cours..." : "Créer l'événement"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+       
             </View>
           )}
           
@@ -426,6 +494,23 @@ export default function AddNewReportScreen({navigation}) {
             </TouchableOpacity>
           )}
         </View>
+        <Modal visible={progressModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalText}>
+                {progress < 0.1 && "Préparation des fichiers..."}
+                {progress >= 0.1 &&
+                  progress < 0.9 &&
+                  "Téléchargement en cours..."}
+                {progress >= 0.9 && "Finalisation..."}
+              </Text>
+              <Progress.Bar progress={progress} width={200} color="#007BFF" />
+              <Text style={styles.modalText}>
+                {Math.round(progress * 100)}%
+              </Text>
+            </View>
+          </View>
+        </Modal>
       </View>
 
     </KeyboardAwareScrollView>

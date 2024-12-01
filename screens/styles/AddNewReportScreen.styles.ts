@@ -113,12 +113,6 @@ export default StyleSheet.create({
     marginTop : 40,
 
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
-    marginLeft: 5,
-  },
   selectedIconContainer: {
     alignItems: "center",
     paddingBottom: 10,
@@ -136,19 +130,36 @@ export default StyleSheet.create({
   containerSubmit: {
     alignItems: "center",
   },
-  submitButton: {
-    backgroundColor: "#38A83C",
-    padding: 15,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "80%",
-    marginTop: 20,
+  submitButtonContainer: {
+    paddingBottom: 50,
+    justifyContent: "center", // Centrer l'élément dans le container
+    alignItems: "center", // Centrer l'élément dans le container
   },
-  submitButtonText: {
-    color: "#fff",
+  submitButton: {
+    marginVertical: 20, // Espacement autour du bouton
+    alignItems: "center", // Centrer le bouton horizontalement
+  },
+  button: {
+    backgroundColor: "#007BFF", // Couleur de fond
+    paddingVertical: 12, // Espacement vertical
+    paddingHorizontal: 20, // Espacement horizontal
+    borderRadius: 8, // Coins arrondis
+  },
+  buttonDisabled: {
+    backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
+  },
+  buttonText: {
+    color: "#fff", // Couleur du texte
+    fontSize: 16, // Taille de la police
+    fontWeight: "bold", // Texte en gras
+    textAlign: "center", // Centrage du texte
+  },
+  modalText: {
     fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 15, // Espacement entre le texte et la barre de progression
+    textAlign: "center", // Centrer le texte
+    color: "#333", // Couleur du texte
   },
   description: {
     marginTop: 10,
@@ -223,7 +234,7 @@ export default StyleSheet.create({
   },
   input: {
     flex: 1, // Permet au champ d'occuper l'espace disponiblehei
-    maxHeight: 350, // Empêche l'agrandissement vertical
+    maxHeight: 250, // Empêche l'agrandissement vertical
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingVertical: 10, // Ajustez en fonction de votre design
@@ -269,16 +280,21 @@ export default StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center", // Centre verticalement
+    alignItems: "center", // Centre horizontalement
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
   },
   modalContent: {
-    width: "90%",
-    height: "50%",
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    padding: 20,
+    width: "80%", // Largeur relative à l'écran
+    backgroundColor: "#fff", // Fond blanc
+    borderRadius: 10, // Coins arrondis
+    padding: 20, // Espacement intérieur
+    shadowColor: "#000", // Ombre
+    shadowOffset: { width: 0, height: 4 }, // Position de l'ombre
+    shadowOpacity: 0.3, // Opacité de l'ombre
+    shadowRadius: 5, // Rayon de l'ombre
+    elevation: 10, // Ombre pour Android
+    alignItems: "center", // Centre le contenu horizontalement
   },
   suggestionItem: {
     padding: 10,
