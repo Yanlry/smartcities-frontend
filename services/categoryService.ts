@@ -1,4 +1,5 @@
-const API_URL = 'http://192.168.1.100:3000'; // Remplace avec ton URL
+// @ts-ignore
+import { API_URL } from '@env';
 
 export const fetchReportsByCategory = async (category: string) => {
   try {

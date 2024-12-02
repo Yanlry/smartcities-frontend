@@ -20,6 +20,8 @@ import { useLocation } from "../hooks/useLocation";
 import MapView, { Marker } from "react-native-maps";
 import * as ImagePicker from "expo-image-picker";
 import * as Progress from "react-native-progress";
+// @ts-ignore
+import { OPEN_CAGE_API_KEY, API_URL } from "@env";
 
 export default function CreateEvent({ navigation }) {
   const [title, setTitle] = useState("");
@@ -41,7 +43,6 @@ export default function CreateEvent({ navigation }) {
   const [progress, setProgress] = useState(0);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
 
-  const openCageApiKey = "2e3d9bbd1aae4961a1d011a87410d13f";
 
   const steps = [
     { label: "Préparation des fichiers", progress: 0.2 },
@@ -129,7 +130,7 @@ export default function CreateEvent({ navigation }) {
     setSelectedLocation({ latitude, longitude });
 
     try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${openCageApiKey}`;
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${OPEN_CAGE_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -167,7 +168,7 @@ export default function CreateEvent({ navigation }) {
     setSelectedLocation(location);
 
     try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${openCageApiKey}`;
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -196,7 +197,7 @@ export default function CreateEvent({ navigation }) {
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         query
-      )}&key=${openCageApiKey}`;
+      )}&key=${OPEN_CAGE_API_KEY}`;
       console.log("Requête API pour la recherche :", url);
 
       const response = await fetch(url);
@@ -305,7 +306,7 @@ export default function CreateEvent({ navigation }) {
       // Étape 2 : Téléchargement des fichiers
       setProgress(steps[1].progress);
       console.log("Téléchargement en cours...");
-      const response = await fetch("http://192.168.1.100:3000/events", {
+      const response = await fetch(`${API_URL}/events`, {
         method: "POST",
         body: formData,
       });

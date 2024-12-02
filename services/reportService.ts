@@ -1,7 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {jwtDecode} from 'jwt-decode';
-import { ORS_API_KEY } from './api';
+// @ts-ignore
+import { API_URL, ORS_API_KEY } from "@env"; // Import des variables depuis .env
+
 
 export interface Photo {
   id: number;
@@ -25,9 +27,8 @@ export const fetchReports = async (
   longitude: number,
   radiusKm: number = 10
 ): Promise<Report[]> => {
-  const MY_URL = "http://192.168.1.100:3000";
 
-  const response = await axios.get(`${MY_URL}/reports`, {
+  const response = await axios.get(`${API_URL}/reports`, {
     params: { latitude, longitude, radiusKm },
   });
 
@@ -162,7 +163,6 @@ export const processReports = async (
 
 // Fonction pour créer un signalement
 export const createReport = async (data: any) => {
-  const MY_URL = "http://192.168.1.100:3000";
 
   try {
     // Étape 1 : Récupérer le token depuis AsyncStorage
@@ -189,7 +189,7 @@ export const createReport = async (data: any) => {
     console.log('Données envoyées au backend :', reportData);
 
     // Étape 4 : Envoyer la requête au backend
-    const response = await axios.post(`${MY_URL}/reports`, reportData, {
+    const response = await axios.post(`${API_URL}/reports`, reportData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',

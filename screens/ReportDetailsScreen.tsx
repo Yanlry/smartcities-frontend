@@ -18,6 +18,8 @@ import { useToken } from "../hooks/useToken";
 import { Alert } from "react-native";
 import styles from "./styles/ReportDetailsScreen.styles";
 import { Ionicons } from "@expo/vector-icons";
+// @ts-ignore
+import { API_URL } from "@env";
 
 type Photo = {
   id: string;
@@ -25,7 +27,6 @@ type Photo = {
 };
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
-  const API_URL = "http://192.168.1.100:3000";
   const { reportId } = route.params;
   const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
   const { location } = useLocation();
@@ -51,7 +52,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     (async () => {
       const userId = await getUserId(); // Récupère le userId depuis AsyncStorage
       setCurrentUserId(userId); // Met à jour l'état local
-      console.log("userId récupéré :", userId);
     })();
   }, []);
 

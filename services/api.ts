@@ -1,15 +1,15 @@
 import axios from "axios";
 import polyline from "@mapbox/polyline";
-const MY_URL =  "http://192.168.1.100:3000";
+// @ts-ignore
+import { API_URL, ORS_API_KEY } from "@env"; // Import des variables depuis .env
 
-export const ORS_API_KEY =  "5b3ce3597851110001cf6248c043db96218c40ebb775fef94a94d7e4";
-
+// Création de l'instance Axios avec la base URL de l'API
 export const api = axios.create({
-  baseURL: `${MY_URL}`, // Base URL de votre API
+  baseURL: API_URL, // Base URL provenant de .env
   timeout: 10000, // Timeout en millisecondes
 });
 
-
+// Fonction pour récupérer la distance de conduite
 export const fetchDrivingDistance = async (
   startLat: number,
   startLon: number,
@@ -17,6 +17,7 @@ export const fetchDrivingDistance = async (
   endLon: number
 ): Promise<number | null> => {
   try {
+
     const response = await axios.post(
       "https://api.openrouteservice.org/v2/directions/driving-car",
       {
@@ -27,19 +28,20 @@ export const fetchDrivingDistance = async (
       },
       {
         headers: {
-          Authorization: ORS_API_KEY,
+          Authorization: `Bearer ${ORS_API_KEY}`, // Ajout de "Bearer" pour l'en-tête
         },
       }
     );
 
     const distanceInMeters = response.data.routes[0].summary.distance;
     return distanceInMeters / 1000; // Convertir en kilomètres
-  } catch (error) {
-    console.error("Erreur lors de la récupération de la distance GPS :", error);
+  } catch (error: any) {
+    console.error("Erreur dans fetchDrivingDistance :", error.response?.data || error.message);
     return null;
   }
 };
 
+// Fonction pour récupérer les coordonnées du trajet
 export const fetchRoute = async (
   startLat: number,
   startLon: number,
@@ -47,6 +49,7 @@ export const fetchRoute = async (
   endLon: number
 ): Promise<Array<{ latitude: number; longitude: number }>> => {
   try {
+
     const response = await axios.post(
       "https://api.openrouteservice.org/v2/directions/driving-car",
       {
@@ -57,7 +60,7 @@ export const fetchRoute = async (
       },
       {
         headers: {
-          Authorization: ORS_API_KEY,
+          Authorization: `Bearer ${ORS_API_KEY}`, // Ajout de "Bearer" pour l'en-tête
         },
       }
     );
@@ -67,12 +70,13 @@ export const fetchRoute = async (
       .map(([latitude, longitude]) => ({ latitude, longitude }));
 
     return decodedCoordinates;
-  } catch (error) {
-    console.error("Erreur lors de la récupération du tracé :", error);
+  } catch (error: any) {
+    console.error("Erreur dans fetchRoute :", error.response?.data || error.message);
     throw new Error("Impossible de récupérer le tracé de trajet.");
   }
 };
 
+// Fonction pour récupérer les détails d'un signalement
 export const fetchReportDetails = async (
   reportId: number,
   latitude: number,
@@ -80,7 +84,7 @@ export const fetchReportDetails = async (
 ): Promise<any> => {
   try {
     const response = await axios.get(
-      `${MY_URL}/reports/${reportId}`,
+      `${API_URL}/reports/${reportId}`,
       {
         params: {
           latitude,
@@ -90,12 +94,13 @@ export const fetchReportDetails = async (
     );
 
     return response.data;
-  } catch (error) {
-    console.error("Erreur lors de la récupération des détails :", error);
+  } catch (error: any) {
+    console.error("Erreur dans fetchReportDetails :", error.response?.data || error.message);
     throw new Error("Impossible de récupérer les détails du signalement.");
   }
 };
 
+// Fonction pour voter sur un signalement
 export const voteOnReport = async (
   reportId: number,
   userId: number,
@@ -103,13 +108,21 @@ export const voteOnReport = async (
   latitude: number,
   longitude: number
 ) => {
-  const response = await axios.post(`/api/votes`, {
-    reportId,
-    userId,
-    type,
-    latitude,
-    longitude,
-  });
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/votes`,
+      {
+        reportId,
+        userId,
+        type,
+        latitude,
+        longitude,
+      }
+    );
 
-  return response.data;
+    return response.data;
+  } catch (error: any) {
+    console.error("Erreur dans voteOnReport :", error.response?.data || error.message);
+    throw new Error("Impossible d'envoyer le vote.");
+  }
 };

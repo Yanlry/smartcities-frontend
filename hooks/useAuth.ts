@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { register, login } from '../services/authService';
 import { useToken } from './useToken';
+// @ts-ignore
+import { API_URL, ORS_API_KEY } from '@env';
 
 
 export function useAuth() {
@@ -24,6 +26,9 @@ export function useAuth() {
     }
   
     try {
+      console.log('Début de la connexion...');
+      console.log('API_URL depuis .env:', API_URL);
+      console.log('ORS_API_KEY depuis .env:', ORS_API_KEY);
       setIsLoginClicked(true);
       const lowerCaseEmail = email.toLowerCase();
       const response = await login(lowerCaseEmail, password);
@@ -32,20 +37,12 @@ export function useAuth() {
         const { accessToken, userId } = response.data; // Assure-toi que le backend renvoie `userId`
   
         // Suppression des données existantes
-        console.log('Suppression des anciens tokens et userId...');
         await clearAll();
   
         // Stockage des nouvelles données
-        console.log('Stockage du nouveau token et userId...');
         await setToken(accessToken);
         await setUserId(userId);
-  
-        // Vérification des données stockées
-        const storedToken = await getToken();
-        const storedUserId = await getUserId();
-        console.log('Token actuellement en stockage après login:', storedToken);
-        console.log('userId actuellement en stockage après login:', storedUserId);
-  
+          
         setIsAuthenticated(true);
         onLogin();
       }
@@ -56,6 +53,7 @@ export function useAuth() {
       setIsLoginClicked(false);
     }
   };
+  
   
   
   

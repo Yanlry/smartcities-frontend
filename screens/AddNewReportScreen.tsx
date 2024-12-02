@@ -20,10 +20,10 @@ import MapView, { Marker } from 'react-native-maps';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as Progress from 'react-native-progress';
 import PhotoManager from '../components/PhotoManager';
+// @ts-ignore
+import { API_URL , OPEN_CAGE_API_KEY } from '@env';
 
 export default function AddNewReportScreen({navigation}) {
-  const openCageApiKey = "2e3d9bbd1aae4961a1d011a87410d13f";
-  const MY_URL = "http://192.168.1.100:3000";
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -75,7 +75,7 @@ export default function AddNewReportScreen({navigation}) {
     setLongitude(lng);
 
     try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${openCageApiKey}`;
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${OPEN_CAGE_API_KEY}`;
       console.log('Requête API de reverse geocoding :', url);
 
       const response = await fetch(url);
@@ -109,7 +109,7 @@ export default function AddNewReportScreen({navigation}) {
     setLongitude(location.longitude);
 
     try {
-      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${openCageApiKey}`;
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
       console.log('Requête API pour reverse geocoding :', url);
 
       const response = await fetch(url);
@@ -141,7 +141,7 @@ export default function AddNewReportScreen({navigation}) {
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         query
-      )}&key=${openCageApiKey}`;
+      )}&key=${OPEN_CAGE_API_KEY}`;
       console.log('Requête API pour la recherche :', url);
 
       const response = await fetch(url);
@@ -264,7 +264,7 @@ export default function AddNewReportScreen({navigation}) {
       // Étape 2 : Téléchargement des fichiers
       setProgress(steps[1].progress);
       console.log("Téléchargement en cours...");
-      const response = await fetch(`${MY_URL}/reports`, {
+      const response = await fetch(`${API_URL}/reports`, {
         method: "POST",
         body: formData,
       });

@@ -32,7 +32,6 @@ export default function LoginScreen({ navigation, onLogin }: any) {
         style={styles.input}
         value={email}
         onChangeText={(text) => {
-          console.log('Modification de l\'email:', text);
           setEmail(text);
         }}
         placeholder="Adresse Email"
@@ -43,7 +42,6 @@ export default function LoginScreen({ navigation, onLogin }: any) {
         style={styles.input}
         value={password}
         onChangeText={(text) => {
-          console.log('Modification du mot de passe:', text);
           setPassword(text);
         }}
         placeholder="Mot de passe"

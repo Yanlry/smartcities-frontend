@@ -15,5 +15,5 @@
     "typeRoots": ["./node_modules/@types", "./types"],
     "types": ["react-native-dotenv"]
   },
-  "include": ["types/**/*.d.ts", "src/**/*", "./env.d.ts"]
+  "include": ["types/**/.d.ts", "src/**/*", "./env.d.ts", "types/react-native-dotenv.d.ts"]
 }

@@ -1,5 +1,7 @@
 import axios from "axios";
-const MY_URL =  "http://192.168.1.100:3000";
+import React from "react";
+// @ts-ignore
+import { API_URL } from "@env";
 
 
 export const typeLabels: { [key: string]: string } = {
@@ -117,7 +119,7 @@ export const typeLabels: { [key: string]: string } = {
       };
       console.log("Payload envoyé au backend :", payload);
   
-      const response = await axios.post(`${MY_URL}/reports/vote`, payload);
+      const response = await axios.post(`${API_URL}/reports/vote`, payload);
       console.log("Réponse du backend :", response.data);
   
       // Synchroniser avec le backend si la réponse contient des votes mis à jour

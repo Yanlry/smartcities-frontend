@@ -27,12 +27,7 @@ export default function App() {
 
   const clearAllTokens = async () => {
     await AsyncStorage.removeItem('authToken');
-    console.log('Tous les tokens ont été supprimés.');
   };
-
-  useEffect(() => {
-    AsyncStorage.clear().then(() => console.log('AsyncStorage nettoyé.'));
-  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
