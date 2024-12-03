@@ -42,65 +42,45 @@ export const fetchAllReportsInRegion = async (
   radiusKm: number = 10
 ): Promise<Report[]> => {
   try {
-    // Étape 1 : Récupérer les signalements sans limitation
     const rawReports = await fetchReports(latitude, longitude, radiusKm);
 
-    // Étape 2 : Préparer les destinations pour le calcul des distances
+    // Vérifier si aucun signalement n'a été trouvé
+    if (rawReports.length === 0) {
+      console.log('Aucun signalement trouvé dans la région.');
+      return []; // Retourne un tableau vide
+    }
+
     const destinations: [number, number][] = rawReports.map((report) => [
       report.longitude,
       report.latitude,
     ]);
 
-    // Étape 3 : Calculer les distances routières
     const distances = await fetchDrivingDistances([longitude, latitude], destinations);
 
-    // Étape 4 : Enrichir les signalements avec leurs distances
     const enrichedReports = rawReports.map((report, index) => ({
       ...report,
-      distance: distances[index] / 1000 || Infinity, // Convertir en kilomètres
+      distance: distances[index] / 1000 || Infinity,
     }));
 
-    // Étape 5 : Trier les signalements par distance
-    return enrichedReports.sort((a, b) => a.distance - b.distance); // Tous les signalements triés par distance
+    return enrichedReports.sort((a, b) => a.distance - b.distance);
   } catch (error) {
     console.error('Erreur lors du chargement des signalements :', error);
     throw new Error('Impossible de récupérer tous les signalements.');
   }
 };
 
+
 export const fetchDrivingDistances = async (
   origin: [number, number],
   destinations: [number, number][]
 ): Promise<number[]> => {
   try {
-    // Vérifie que l'origine est un tableau de deux nombres valides
-    if (
-      !Array.isArray(origin) ||
-      origin.length !== 2 ||
-      typeof origin[0] !== 'number' ||
-      typeof origin[1] !== 'number'
-    ) {
-      throw new Error("Origine invalide. 'origin' doit être un tableau de deux nombres.");
+    // Si destinations est vide, retourne un tableau vide
+    if (!destinations || destinations.length === 0) {
+      console.log("Aucune destination pour le calcul des distances.");
+      return [];
     }
 
-    // Vérifie que les destinations sont valides
-    if (
-      !Array.isArray(destinations) ||
-      destinations.length === 0 ||
-      !destinations.every(
-        (dest) =>
-          Array.isArray(dest) &&
-          dest.length === 2 &&
-          typeof dest[0] === 'number' &&
-          typeof dest[1] === 'number'
-      )
-    ) {
-      throw new Error(
-        "Destinations invalides. 'destinations' doit être un tableau de tableaux de deux nombres."
-      );
-    }
-
-    // Effectue la requête si les validations passent
     const response = await axios.post(
       'https://api.openrouteservice.org/v2/matrix/driving-car',
       {
@@ -115,51 +95,53 @@ export const fetchDrivingDistances = async (
       }
     );
 
-    // Vérifie si les distances sont retournées
     if (!response.data?.distances || response.data.distances.length === 0) {
       throw new Error('Aucune distance retournée par le service OpenRouteService.');
     }
 
-    return response.data.distances[0].slice(1); // Exclut la distance vers soi-même
+    return response.data.distances[0].slice(1);
   } catch (error) {
     console.error('Erreur dans fetchDrivingDistances :', error.response?.data || error.message);
     throw error;
   }
 };
 
+
 export const processReports = async (
   latitude: number,
   longitude: number,
-  radiusKm: number = 50000000
+  radiusKm: number = 10
 ): Promise<Report[]> => {
   try {
-    // Étape 1 : Récupérer les signalements
     const rawReports = await fetchReports(latitude, longitude, radiusKm);
 
-    // Étape 2 : Préparer les destinations pour le calcul des distances
+    // Vérifier si aucun signalement n'a été trouvé
+    if (rawReports.length === 0) {
+      console.log('Aucun signalement à traiter.');
+      return []; // Retourne un tableau vide
+    }
+
     const destinations: [number, number][] = rawReports.map((report) => [
       report.longitude,
       report.latitude,
     ]);
 
-    // Étape 3 : Calculer les distances routières
     const distances = await fetchDrivingDistances([longitude, latitude], destinations);
 
-    // Étape 4 : Enrichir les signalements avec leurs distances
     const enrichedReports = rawReports.map((report, index) => ({
       ...report,
-      distance: distances[index] / 1000 || Infinity, // Convertir en kilomètres
+      distance: distances[index] / 1000 || Infinity,
     }));
 
-    // Étape 5 : Trier les signalements par distance et limiter à 4
     return enrichedReports
-      .sort((a, b) => a.distance - b.distance) // Trier par distance croissante
-      .slice(0, 4); // Retourner les 4 premiers signalements
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 4);
   } catch (error) {
     console.error('Erreur lors du traitement des signalements :', error);
     throw new Error('Impossible de traiter les signalements.');
   }
 };
+
 
 // Fonction pour créer un signalement
 export const createReport = async (data: any) => {

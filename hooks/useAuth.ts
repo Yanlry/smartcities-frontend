@@ -4,6 +4,7 @@ import { register, login } from '../services/authService';
 import { useToken } from './useToken';
 // @ts-ignore
 import { API_URL, ORS_API_KEY } from '@env';
+import { getUserIdFromToken } from '../utils/tokenUtils';
 
 
 export function useAuth() {
@@ -12,13 +13,25 @@ export function useAuth() {
   const [username, setUsername] = useState('');
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
+  const [photos, setPhotos] = useState<any[]>([]);
+
   const [isLoginClicked, setIsLoginClicked] = useState(false);
   const [isRegisterClicked, setIsRegisterClicked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { setToken, clearToken, getToken } = useToken(); // Ajout de getToken pour récupérer le token actuel
+  const [progress, setProgress] = useState(0);
+  const [progressModalVisible, setProgressModalVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);  
+  const { setToken, clearToken, getToken,  } = useToken(); // Ajout de getToken pour récupérer le token actuel
+
+  const steps = [
+    { label: "Préparation des fichiers", progress: 0.2 },
+    { label: "Téléchargement en cours", progress: 0.7 },
+    { label: "Finalisation, veuillez patientez", progress: 1.0 },
+  ];
 
   const handleLogin = async (onLogin: () => void) => {
-    const { setToken, setUserId, getToken, getUserId, clearAll } = useToken(); // Utilise les fonctions de `useToken`
+    const { setToken, setUserId, clearAll, getToken, getUserId } = useToken(); // Utilise les fonctions de `useToken`
   
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
@@ -54,36 +67,70 @@ export function useAuth() {
     }
   };
   
-  
-  
-  
-  
-
-  // Fonction d'inscription
   const handleRegister = async (onSuccess: () => void) => {
-    console.log('Données d\'inscription:', { email, password, username, firstName, lastName });
-
-    if (!email || !password || !username || !firstName || !lastName) {
-      Alert.alert('Erreur', 'Tous les champs doivent être remplis pour continuer');
-      return;
-    }
-
     try {
-      setIsRegisterClicked(true);
-      const response = await register(email, password, username, firstName, lastName);
-
+      console.log("Inscription en cours...");
+  
+      // Validation locale des champs obligatoires
+      if (!email || !password || !lastName || !firstName || !username) {
+        Alert.alert("Champs erroné ou vide", "Tous les champs sont obligatoires.");
+        return;
+      }
+  
+      // Validation des photos
+      for (const photo of photos) {
+        if (!photo.uri || !photo.type) {
+          Alert.alert("Erreur", "Une ou plusieurs photos ne sont pas valides.");
+          return;
+        }
+      }
+  
+      // Préparation des données du formulaire
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("lastName", lastName);
+      formData.append("firstName", firstName);
+      formData.append("username", username);
+  
+      photos.forEach((photo) => {
+        formData.append(
+          "photos",
+          {
+            uri: photo.uri,
+            name: photo.uri.split("/").pop(),
+            type: photo.type || "image/jpeg",
+          } as any // Cast explicite pour TypeScript
+        );
+      });
+  
+      // Requête d'inscription
+      const response = await fetch(`${API_URL}/auth/signup`, {
+        method: "POST",
+        body: formData,
+      });
+  
+      // Gestion des réponses serveur
       if (response.status === 201) {
-        Alert.alert('Succès', 'Inscription réussie');
-        onSuccess(); // Redirige ou notifie après l'inscription réussie
+        Alert.alert("Succès", "Inscription réussie !");
+        onSuccess(); // Callback pour gérer la redirection ou autre logique
+      } else if (response.status === 400) {
+        const data = await response.json();
+        Alert.alert("Erreur", data.message || "Données invalides.");
+      } else if (response.status === 500) {
+        Alert.alert("Erreur", "Erreur interne du serveur. Veuillez réessayer plus tard.");
+      } else {
+        Alert.alert("Erreur", `Erreur inattendue : ${response.status}`);
       }
     } catch (error: any) {
-      console.error('Erreur lors de l\'inscription:', error);
-      Alert.alert('Erreur', error.response?.data?.message || 'Une erreur réseau est survenue');
+      // Gestion des erreurs réseau ou autres exceptions
+      console.error("Erreur lors de l'inscription :", error);
+      Alert.alert("Erreur", "Impossible de se connecter au serveur. Vérifiez votre connexion.");
     } finally {
-      setIsRegisterClicked(false);
+      setIsLoading(false); // Fin du chargement
     }
   };
-
+  
   const logout = async () => {
     console.log('Déconnexion en cours...');
     await clearToken(); // Supprime le token dans AsyncStorage
@@ -91,7 +138,6 @@ export function useAuth() {
     console.log('Déconnexion réussie, token supprimé.');
   };
   
-
   return {
     email,
     setEmail,
@@ -109,5 +155,12 @@ export function useAuth() {
     handleLogin,
     handleRegister,
     logout,
+    photos,
+    setPhotos,
+    progress,
+    progressModalVisible,
+    isSubmitting,
+    setIsSubmitting,
+    isLoading,
   };
 }

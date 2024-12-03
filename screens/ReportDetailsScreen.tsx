@@ -31,22 +31,15 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
   const { location } = useLocation();
   const mapRef = useRef<MapView>(null);
-
-  const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
   const [votes, setVotes] = useState({ upVotes: 0, downVotes: 0 });
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-
-  const openModal = (photoUrl) => {
-    setSelectedPhoto(photoUrl);
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setSelectedPhoto(null);
-    setModalVisible(false);
-  };
+  const { report, routeCoords, loading } = useFetchReportDetails(
+    reportId,
+    location?.latitude,
+    location?.longitude
+  );
 
   useEffect(() => {
     (async () => {
@@ -55,15 +48,52 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     })();
   }, []);
 
-  const { report, routeCoords, loading } = useFetchReportDetails(
-    reportId,
-    location?.latitude,
-    location?.longitude
-  );
+  const latitudeMiddle =
+    location && report
+      ? (location.latitude + report.latitude) / 2
+      : location?.latitude || 0;
+
+  const longitudeMiddle =
+    location && report
+      ? (location.longitude + report.longitude) / 2
+      : location?.longitude || 0;
+
+  useEffect(() => {
+    if (mapRef.current && routeCoords.length > 0) {
+      // Étape 1 : Ajuster les limites pour voir tout le tracé
+      mapRef.current.fitToCoordinates(routeCoords, {
+        edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+        animated: true,
+      });
+
+      // Étape 2 : Après un délai, zoomer sur le report
+      setTimeout(() => {
+        const reportCamera = {
+          center: {
+            latitude: report.latitude,
+            longitude: report.longitude,
+          },
+        };
+        mapRef.current?.animateCamera(reportCamera, { duration: 500 }); // Animation sur 2 secondes
+      }, 500); // Attendre que la carte s'ajuste au tracé
+
+      // Étape 3 : Ensuite, zoomer doucement vers votre position
+      setTimeout(() => {
+        if (location?.latitude && location?.longitude) {
+          const userCamera = {
+            center: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+            },
+          };
+          mapRef.current?.animateCamera(userCamera, { duration: 1000 }); // Animation sur 3 secondes
+        }
+      }, 2000); // Délai après la fin du zoom sur le report
+    }
+  }, [routeCoords, report, location]);
 
   useEffect(() => {
     if (report) {
-      setUserVote(report.userVote || null);
       setVotes({
         upVotes: report.upVotes,
         downVotes: report.downVotes,
@@ -102,8 +132,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         downVotes: result.updatedVotes.downVotes,
       });
 
-      // Facultatif : pour désactiver les boutons si besoin
-      setUserVote(type);
     } catch (error) {
       Alert.alert(
         "Vous avez déjà voté",
@@ -112,16 +140,20 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     }
   };
 
-  const handleZoom = (latitude: number, longitude: number) => {
-    mapRef.current?.animateToRegion(
-      {
-        latitude,
-        longitude,
-        latitudeDelta: 0.002,
-        longitudeDelta: 0.002,
-      },
-      1000
-    );
+  const handleZoomAndTilt = (latitude: number, longitude: number) => {
+    if (mapRef.current) {
+      const camera = {
+        center: {
+          latitude,
+          longitude,
+        },
+        pitch: 45, // Inclinaison pour la vue 3D
+        heading: 0, // Orientation
+        zoom: 20, // Zoom plus rapproché
+        altitude: 1000,
+      };
+      mapRef.current.animateCamera(camera, { duration: 1000 });
+    }
   };
 
   if (loading || !location) {
@@ -143,11 +175,15 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     );
   }
 
-  const latitudeMiddle = (location.latitude + report.latitude) / 2;
-  const longitudeMiddle = (location.longitude + report.longitude) / 2;
+  const openModal = (photoUrl) => {
+    setSelectedPhoto(photoUrl);
+    setModalVisible(true);
+  };
 
-  const LATITUDE_DELTA = Math.abs(location.latitude - report.latitude) * 2;
-  const LONGITUDE_DELTA = Math.abs(location.longitude - report.longitude) * 2;
+  const closeModal = () => {
+    setSelectedPhoto(null);
+    setModalVisible(false);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -176,11 +212,20 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         <MapView
           ref={mapRef}
           style={styles.map}
-          initialRegion={{
-            latitude: latitudeMiddle,
-            longitude: longitudeMiddle,
-            latitudeDelta: LATITUDE_DELTA,
-            longitudeDelta: LONGITUDE_DELTA,
+          onMapReady={() => {
+            if (mapRef.current) {
+              const camera = {
+                center: {
+                  latitude: report.latitude,
+                  longitude: report.longitude,
+                },
+                pitch: 65,
+                heading: 0,
+                zoom: 15,
+                altitude: 100,
+              };
+              mapRef.current.setCamera(camera); // Définit la caméra initiale
+            }
           }}
         >
           {/* Marqueur pour la position actuelle */}
@@ -229,13 +274,15 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         {/* Boutons de zoom */}
         <TouchableOpacity
           style={styles.zoomPosition}
-          onPress={() => handleZoom(location.latitude, location.longitude)}
+          onPress={() =>
+            handleZoomAndTilt(location.latitude, location.longitude)
+          }
         >
           <Ionicons name="location-sharp" size={18} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.zoomReport}
-          onPress={() => handleZoom(report.latitude, report.longitude)}
+          onPress={() => handleZoomAndTilt(report.latitude, report.longitude)}
         >
           <Text style={styles.zoomReprotText}>GO</Text>
         </TouchableOpacity>
@@ -295,28 +342,27 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         <Text style={styles.description}>{report.description}</Text>
       </View>
 
-
-      <View style={styles.detailCardPhoto}> 
+      <View style={styles.detailCardPhoto}>
         <View style={styles.detailContainer}>
-        <Text style={styles.detailLabel}>📸 Photos :</Text>
-        {report.photos && report.photos.length > 0 ? (
+          <Text style={styles.detailLabel}>📸 Photos :</Text>
+          {report.photos && report.photos.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {report.photos.map((photo: Photo) => (
-              <TouchableOpacity
-              key={photo.id}
-              onPress={() => openModal(photo.url)}
-              >
-              <Image
-                source={{ uri: photo.url }}
-                style={styles.photo}
-                resizeMode="cover"
-              />
-              </TouchableOpacity>
-            ))}
+              {report.photos.map((photo: Photo) => (
+                <TouchableOpacity
+                  key={photo.id}
+                  onPress={() => openModal(photo.url)}
+                >
+                  <Image
+                    source={{ uri: photo.url }}
+                    style={styles.photo}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
             </ScrollView>
-        ) : (
-          <Text style={styles.noPhotosText}>Aucune photo disponible.</Text>
-        )}
+          ) : (
+            <Text style={styles.noPhotosText}>Aucune photo disponible.</Text>
+          )}
         </View>
         {selectedPhoto && (
           <Modal
@@ -337,9 +383,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
             </View>
           </Modal>
         )}
-    </View>
-
-
+      </View>
 
       <View style={[styles.card, styles.detailCard]}>
         <View style={styles.detailContainer}>

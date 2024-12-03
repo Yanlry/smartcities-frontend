@@ -45,11 +45,18 @@ export default StyleSheet.create({
     padding: 20,
     maxHeight: "80%",
   },
+    categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    padding: 10,
+    gap: 20,
+  },
   card: {
     backgroundColor: "#f9f9f9",
-    marginBottom: 25,
-    borderRadius: 50,
-    padding: 20,
+    borderRadius: 190,
+    width: 300,
+    padding: 40,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -73,6 +80,9 @@ export default StyleSheet.create({
     fontSize: 14,
     color: "#666",
     textAlign: "center",
+  },
+  lastCard: {
+    marginBottom: 50,
   },
   closeButton: {
     marginTop: 20,
@@ -140,10 +150,10 @@ export default StyleSheet.create({
     alignItems: "center", // Centrer le bouton horizontalement
   },
   button: {
-    backgroundColor: "#007BFF", // Couleur de fond
+    backgroundColor: "#2c3e50", // Couleur de fond
     paddingVertical: 12, // Espacement vertical
     paddingHorizontal: 20, // Espacement horizontal
-    borderRadius: 8, // Coins arrondis
+    borderRadius: 30, // Coins arrondis
   },
   buttonDisabled: {
     backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
@@ -218,6 +228,13 @@ export default StyleSheet.create({
     color: "#333",
     textAlign: "center",
   },
+  titlePhoto: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 35,
+    color: "#333",
+    textAlign: "center",
+  },
   inputTitle: {
     flex: 1, // Permet au champ d'occuper l'espace disponible
     width: 330,
@@ -253,7 +270,6 @@ export default StyleSheet.create({
   inputWithButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
   },
   inputSearch: {
     height: 50, // Assurez une hauteur uniforme
@@ -336,13 +352,7 @@ export default StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  categoriesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    padding: 10,
-    gap: 20,
-  },
+
   navButtonRight: {
     position: "absolute",
     left: 110,
@@ -376,12 +386,12 @@ export default StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#007AFF",
+    color: "#2c3e50",
   },
   pageTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#2c3e50",
     // Ajustez la couleur si nécessaire
     marginTop: 20,
     textAlign: "center",

@@ -36,14 +36,14 @@ export default function AddNewReportScreen({navigation}) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [photos, setPhotos] = useState<any[]>([]);
+  const [progressModalVisible, setProgressModalVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null); 
   const listRef = useRef<FlatList>(null);
   const screenWidth = Dimensions.get('window').width;
   const expandedWidth = screenWidth * 0.4;
   const mapRef = useRef<MapView>(null);
-  const [progressModalVisible, setProgressModalVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const steps = [
     { label: "Préparation des fichiers", progress: 0.2 },
@@ -332,10 +332,11 @@ export default function AddNewReportScreen({navigation}) {
                     style={[
                       styles.card,
                       expandedCategory === category.value && styles.expandedCard,
+                      index === categories.length - 1 && styles.lastCard, 
                     ]}
                     onPress={() => toggleCategoryExpansion(category.value)}
                   >
-                    <Ionicons name={category.icon} size={40} color="#007BFF" />
+                    <Ionicons name={category.icon} size={40} color="#2c3e50" />
                     <Text style={styles.cardTitle}>{category.name}</Text>
                     {expandedCategory === category.value && (
                       <Text style={styles.cardDescription}>
@@ -373,7 +374,7 @@ export default function AddNewReportScreen({navigation}) {
                   onChangeText={setDescription}
                   multiline
                 />
-                <Text style={styles.title}>Ajouter des photos ( optionnel ) </Text>
+                <Text style={styles.titlePhoto}>Ajouter des photos ( optionnel ) </Text>
                 <PhotoManager photos={photos} setPhotos={setPhotos} />
 
               </View>
@@ -402,7 +403,7 @@ export default function AddNewReportScreen({navigation}) {
               {loading ? (
                 <ActivityIndicator size="large" color="#007BFF" />
               ) : (
-                <View style={{  height: 400, marginVertical: 30 }}>
+                <View style={{  height: 450, marginVertical: 30 }}>
                   <MapView
                     ref={mapRef} // Connectez la référence
                     style={{ flex: 1, borderRadius: 50 }}
@@ -504,7 +505,7 @@ export default function AddNewReportScreen({navigation}) {
                   "Téléchargement en cours..."}
                 {progress >= 0.9 && "Finalisation..."}
               </Text>
-              <Progress.Bar progress={progress} width={200} color="#007BFF" />
+              <Progress.Bar progress={progress} width={200} color="#2c3e50" />
               <Text style={styles.modalText}>
                 {Math.round(progress * 100)}%
               </Text>

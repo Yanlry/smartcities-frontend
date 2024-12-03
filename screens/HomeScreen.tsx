@@ -24,6 +24,32 @@ import { processReports, Report } from "../services/reportService";
 import { formatCity } from "../utils/formatters";
 import { getTypeLabel, typeColors } from "../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
+import { getUserIdFromToken } from "../utils/tokenUtils";
+// @ts-ignore
+import { API_URL } from "@env";
+
+type User = {
+  id: string;
+  createdAt: string;
+  ranking: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username?: string;
+  trustRate?: number;
+  followers?: any[];
+  following?: any[];
+  reports?: any[];
+  comments?: any[];
+  posts?: any[];
+  organizedEvents?: any[];
+  attendedEvents?: any[];
+  latitude?: number;
+  longitude?: number;
+  profilePhoto?: { url: string };
+  isSubscribed: boolean;
+  isMunicipality: boolean;
+};
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
@@ -32,9 +58,44 @@ export default function HomeScreen() {
   const { location, loading: locationLoading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [user, setUser] = useState<User | null>(null); // État pour les données utilisateur
+  const isLoading = locationLoading || loadingReports || loadingUsers;
 
-  const isLoading = locationLoading || loadingReports;
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        // Récupère l'userId de manière asynchrone
+        const userId = await getUserIdFromToken();
+
+        if (!userId) {
+          console.error("ID utilisateur non trouvé");
+          return; // Sortir si aucune ID utilisateur
+        }
+
+        const response = await fetch(`${API_URL}/users/${userId}`);
+
+        if (!response.ok) {
+          console.error(
+            "Erreur lors de la récupération des données utilisateur"
+          );
+          return; // Sortir si réponse non valide
+        }
+
+        const data = await response.json();
+        setUser(data); // Stocke les données utilisateur
+      } catch (err: any) {
+        console.error(
+          "Erreur lors de la récupération des données utilisateur :",
+          err.message
+        );
+      } finally {
+        setLoadingUsers(false); // Fin du chargement
+      }
+    }
+
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -42,14 +103,17 @@ export default function HomeScreen() {
 
       try {
         setLoadingReports(true);
+
         const reports = await processReports(
           location.latitude,
           location.longitude
         );
+        
         setReports(reports);
       } catch (error) {
         console.error("Erreur lors du chargement des signalements :", error);
-        Alert.alert("Erreur", error.message);
+        Alert.alert("Erreur", "Impossible de charger les signalements.");
+        setReports([]); // Assure que reports est toujours défini
       } finally {
         setLoadingReports(false);
       }
@@ -68,6 +132,7 @@ export default function HomeScreen() {
   }
 
   if (!location) {
+    console.error("Localisation non disponible");
     return (
       <Modal transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -86,7 +151,6 @@ export default function HomeScreen() {
 
   // Fonction pour rediriger vers la page de signalements filtrés
   const handleCategoryClick = (category: string) => {
-    setActiveCategory(category);
     navigation.navigate("CategoryReports", { category }); // Passe la catégorie sélectionnée à la nouvelle page
   };
 
@@ -234,22 +298,63 @@ export default function HomeScreen() {
     },
   ];
 
+  const calculateYearsSince = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const years = now.getFullYear() - date.getFullYear();
+    const months =
+      years * 12 +
+      now.getMonth() -
+      date.getMonth() -
+      (now.getDate() < date.getDate() ? 1 : 0); // Ajuste si le jour n'est pas encore passé
+
+    if (years > 1) {
+      return `${years} ans`;
+    } else if (years === 1) {
+      return "1 an";
+    } else if (months > 1) {
+      return `${months} mois`;
+    } else {
+      return "moins d'un mois";
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* Section Profil */}
       <View style={styles.profileContainer}>
-        <Image
-          source={require("../assets/images/profil.png")}
-          style={styles.profileImage}
-        />
+        {user?.profilePhoto?.url ? (
+          <Image
+            source={{ uri: user.profilePhoto.url }}
+            style={styles.profileImage}
+          />
+        ) : (
+          <Text style={styles.noProfileImageText}>Pas de photo de profil</Text>
+        )}
         <View style={styles.profileInfo}>
-          <Text style={styles.userName}>Yann leroy</Text>
-          <Text style={styles.userDetails}>Inscrit il y a 1 ans</Text>
-          <Text style={styles.userStats}>📈 187 followers</Text>
-          <Text style={styles.userRanking}>Classement: 453 / 1245</Text>
+          <Text style={styles.userName}>
+            {user?.firstName} {user?.lastName}
+          </Text>
+          <Text style={styles.userDetails}>
+            Inscrit il y a{" "}
+            {user?.createdAt
+              ? calculateYearsSince(user.createdAt)
+              : "un certain temps"}
+          </Text>
+          <Text style={styles.userStats}>
+            📈 {user?.followers?.length || 0} followers
+          </Text>
+          <Text style={styles.userRanking}>
+            Classement: {user?.ranking || "Non classé"}
+          </Text>
           <TouchableOpacity style={styles.trustBadge}>
             <Text style={styles.trustBadgeText}>
-              ⭐ Taux de fiabilité : 94% ⭐
+              ⭐⭐   Fiable à{" "}
+              {user?.trustRate
+                ? `${(user.trustRate * 100).toFixed(1)}%`
+                : "Non disponible"}{" "}{" "}{" "}{" "}
+               ⭐⭐
             </Text>
           </TouchableOpacity>
         </View>
@@ -271,28 +376,34 @@ export default function HomeScreen() {
 
       {/* Section Signalements Proche de Vous */}
       <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
-      {reports.map((report, index) => (
-        <TouchableOpacity
-          key={report.id}
-          style={[
-            styles.reportItem,
-            {
-              backgroundColor: hexToRgba(
-                typeColors[report.type] || "#CCCCCC",
-                calculateOpacity(report.createdAt, 0.5)
-              ),
-            },
-            index === reports.length - 1 && { marginBottom: 20 }, // Ajoute marginBottom uniquement au dernier élément
-          ]}
-          onPress={() => handlePressReport(report.id)}
-        >
-          <Text style={styles.reportType}>
-            {getTypeLabel(report.type)} {report.distance.toFixed(2)} km
-          </Text>
-          <Text style={styles.reportTitle}>{report.title}</Text>
-          <Text style={styles.reportCity}>📍 {formatCity(report.city)}</Text>
-        </TouchableOpacity>
-      ))}
+      {reports.length === 0 ? (
+        <Text style={styles.noReportsText}>
+          Aucun signalement à proximité pour le moment.
+        </Text>
+      ) : (
+        reports.map((report, index) => (
+          <TouchableOpacity
+            key={report.id}
+            style={[
+              styles.reportItem,
+              {
+                backgroundColor: hexToRgba(
+                  typeColors[report.type] || "#CCCCCC",
+                  calculateOpacity(report.createdAt, 0.5)
+                ),
+              },
+              index === reports.length - 1 && { marginBottom: 20 }, // Ajoute marginBottom uniquement au dernier élément
+            ]}
+            onPress={() => handlePressReport(report.id)}
+          >
+            <Text style={styles.reportType}>
+              {getTypeLabel(report.type)} {report.distance.toFixed(2)} km
+            </Text>
+            <Text style={styles.reportTitle}>{report.title}</Text>
+            <Text style={styles.reportCity}>📍 {formatCity(report.city)}</Text>
+          </TouchableOpacity>
+        ))
+      )}
 
       {/* Section Catégories */}
       <Text style={styles.sectionTitle}>Catégories</Text>

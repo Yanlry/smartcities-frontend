@@ -16,25 +16,24 @@ export default StyleSheet.create({
   homeTitle: {
     flexDirection: "row", // Aligne les enfants en ligne (horizontalement)
     alignItems: "center", // Centre verticalement les éléments
-    marginBottom: 25,
   },
   backButton: {
     padding: 10,
     borderRadius: 90,
     alignSelf: "flex-start",
     backgroundColor: "#E0E0E0",
-    marginLeft: 15,
+    marginLeft: 5,
     marginRight: 26,
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#007AFF",
+    color: "#2c3e50",
   },
   pageTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#2c3e50",
     textAlign: "center",
   },
   label: {
@@ -90,7 +89,7 @@ export default StyleSheet.create({
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#007BFF",
+    backgroundColor: "#2c3e50",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -139,7 +138,7 @@ export default StyleSheet.create({
     fontWeight: "500",
     marginTop: 10, // Espacement entre la barre de progression et le pourcentage
     textAlign: "center",
-    color: "#007BFF", // Bleu pourcentage
+    color: "#2c3e50", // Bleu pourcentage
   },
   suggestionItem: {
     padding: 10,
@@ -204,19 +203,42 @@ export default StyleSheet.create({
     alignItems: "center", // Centrer le bouton horizontalement
   },
   button: {
-    backgroundColor: "#007BFF", // Couleur de fond
-    paddingVertical: 12, // Espacement vertical
-    paddingHorizontal: 20, // Espacement horizontal
-    borderRadius: 8, // Coins arrondis
-  },
-  buttonDisabled: {
-    backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
+    backgroundColor: "#2c3e50", // Couleur de fond
+    paddingVertical: 22, // Espacement vertical
+    paddingHorizontal: 30, // Espacement horizontal
+    borderRadius: 30, // Coins arrondis
   },
   buttonText: {
     color: "#fff", // Couleur du texte
     fontSize: 16, // Taille de la police
     fontWeight: "bold", // Texte en gras
     textAlign: "center", // Centrage du texte
+  },
+  buttonPhoto: {
+    width: "70%",
+    height: 50,
+    backgroundColor: "#6C63FF", // Couleur violet moderne
+    borderRadius: 25, // Coins arrondis
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 25,
+    shadowColor: "#6C63FF", // Ombre de la même couleur que le bouton
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 4, // Ombre pour Android
+  },
+
+  // Texte du bouton
+  buttonTextPhoto: {
+    color: "#FFFFFF", // Texte blanc
+    fontSize: 16,
+    fontWeight: "bold",
+    textTransform: "uppercase", // Texte en majuscules
+    letterSpacing: 1, // Espacement pour un style élégant
+  },
+  buttonDisabled: {
+    backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
   },
   containerPhoto: {
     flex: 1,

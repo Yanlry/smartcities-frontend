@@ -20,6 +20,17 @@ export default StyleSheet.create({
       profileInfo: {
         flex: 1,
       },
+      noProfileImageText: {
+        color: "#999", // Couleur grise discrète
+        fontSize: 16, // Taille de police lisible
+        fontWeight: "bold", // Texte en gras pour plus de visibilité
+        marginBottom: 20, // Espacement avec le bouton
+      },
+      noReportsText: {
+        textAlign: "center",
+        color: "#888",
+        marginVertical: 20,
+      },
       userName: {
         fontSize: 24,
         fontWeight: 'bold',
