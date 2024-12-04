@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  TextInput,
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -42,7 +43,7 @@ export default function ProfileScreen({ navigation, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [editable, setEditable] = useState(false); // Mode édition
 
   useEffect(() => {
     navigation.setOptions({
@@ -71,40 +72,59 @@ export default function ProfileScreen({ navigation, onLogout }) {
     fetchUser();
   }, [navigation]);
 
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    username: "",
+  });
+
+  // Synchronise `formData` avec `user` quand les données utilisateur sont disponibles
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        username: user.username || "",
+      });
+    }
+  }, [user]);
+
   const handleProfileImageUpdate = async () => {
     try {
       setIsSubmitting(true);
-  
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 1,
         aspect: [1, 1],
       });
-  
+
       if (result.canceled) {
         setIsSubmitting(false);
         return;
       }
-  
+
       const photoUri = result.assets?.[0]?.uri;
-  
+
       if (!photoUri) {
         throw new Error("Aucune image sélectionnée");
       }
-  
+
       const formData = new FormData();
       formData.append("profileImage", {
         uri: photoUri,
         type: "image/jpeg",
         name: "profile.jpg",
       } as any);
-  
+
       console.log("FormData clé et valeur:", formData);
-  
+
       const userId = await getUserIdFromToken();
       if (!userId) throw new Error("ID utilisateur non trouvé");
-  
+
       const responsePost = await fetch(
         `${API_URL}/users/${userId}/profile-image`,
         {
@@ -112,20 +132,19 @@ export default function ProfileScreen({ navigation, onLogout }) {
           body: formData,
         }
       );
-  
+
       console.log("Response status:", responsePost.status);
-  
+
       if (!responsePost.ok) {
         const errorBody = await responsePost.text();
         console.error("Response body:", errorBody);
         throw new Error("Échec de la mise à jour de la photo de profil");
       }
-  
+
       const updatedUser = await responsePost.json();
       console.log("Response body:", updatedUser);
-  
-      navigation.replace("ProfileScreen"); 
 
+      navigation.replace("ProfileScreen");
     } catch (err: any) {
       console.error("Erreur lors de l'upload :", err.message);
       setError(err.message);
@@ -133,7 +152,7 @@ export default function ProfileScreen({ navigation, onLogout }) {
       setIsSubmitting(false);
     }
   };
-  
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -151,10 +170,41 @@ export default function ProfileScreen({ navigation, onLogout }) {
     );
   }
 
+  // Gestion des changements dans les inputs
+  const handleInputChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  // Fonction pour sauvegarder les modifications
+  const handleSave = async () => {
+    try {
+      // Simuler un appel API pour sauvegarder les données
+      const response = await fetch(
+        `http://192.168.1.100:3000/users/${user?.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Une erreur s'est produite lors de la sauvegarde.");
+      }
+
+      Alert.alert("Succès", "Les informations ont été mises à jour.");
+      setEditable(false); // Désactive le mode édition
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de sauvegarder les modifications.");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.replace('Main')}>
+        <TouchableOpacity onPress={() => navigation.replace("Main")}>
           <Icon
             name="arrow-back"
             size={28}
@@ -190,13 +240,58 @@ export default function ProfileScreen({ navigation, onLogout }) {
 
         {/* Section Informations de base */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informations personnelles</Text>
-          <Text style={styles.field}>Prénom : {user?.firstName}</Text>
-          <Text style={styles.field}>Nom : {user?.lastName}</Text>
-          <Text style={styles.field}>Email : {user?.email}</Text>
-          <Text style={styles.field}>
-            Nom d'utilisateur : {user?.username || "Non défini"}
+          <Text style={styles.sectionTitleProfil}>
+            Informations personnelles
           </Text>
+          {/* Prénom */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Prénom :</Text>
+            <TextInput
+              style={[styles.input, !editable && styles.inputDisabled]}
+              value={formData.firstName}
+              onChangeText={(text) => handleInputChange("firstName", text)}
+              editable={editable}
+            />
+          </View>
+          {/* Nom */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Nom :</Text>
+            <TextInput
+              style={[styles.input, !editable && styles.inputDisabled]}
+              value={formData.lastName}
+              onChangeText={(text) => handleInputChange("lastName", text)}
+              editable={editable}
+            />
+          </View>
+          {/* Email */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Email :</Text>
+            <TextInput
+              style={[styles.input, !editable && styles.inputDisabled]}
+              value={formData.email}
+              onChangeText={(text) => handleInputChange("email", text)}
+              editable={editable}
+            />
+          </View>
+          {/* Nom d'utilisateur */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Nom d'utilisateur :</Text>
+            <TextInput
+              style={[styles.input, !editable && styles.inputDisabled]}
+              value={formData.username}
+              onChangeText={(text) => handleInputChange("username", text)}
+              editable={editable}
+            />
+          </View>
+          {/* Bouton Sauvegarder/Modifier */}
+          <TouchableOpacity
+            style={styles.buttonProfil}
+            onPress={editable ? handleSave : () => setEditable(true)}
+          >
+            <Text style={styles.buttonTextProfil}>
+              {editable ? "Sauvegarder" : "Modifier"}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Section Statistiques */}
@@ -412,7 +507,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold", // Texte en gras
     textAlign: "center", // Centrage du texte
   },
- 
+
   nameText: {
     fontSize: 20,
     fontWeight: "bold",
@@ -422,5 +517,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
   },
- 
+
+  sectionTitleProfil: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  fieldContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    color: "#555",
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+  },
+  inputDisabled: {
+    backgroundColor: "#f9f9f9",
+    color: "#888",
+  },
+  buttonProfil: {
+    backgroundColor: "#007bff",
+    padding: 15,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  buttonTextProfil: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });

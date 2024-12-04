@@ -39,9 +39,6 @@ export function useAuth() {
     }
   
     try {
-      console.log('Début de la connexion...');
-      console.log('API_URL depuis .env:', API_URL);
-      console.log('ORS_API_KEY depuis .env:', ORS_API_KEY);
       setIsLoginClicked(true);
       const lowerCaseEmail = email.toLowerCase();
       const response = await login(lowerCaseEmail, password);
@@ -59,9 +56,11 @@ export function useAuth() {
         setIsAuthenticated(true);
         onLogin();
       }
-    } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
-      Alert.alert('Erreur', 'Email ou mot de passe incorrect');
+    } catch (error: any) {
+        Alert.alert(
+          'Erreur',
+          "Email ou mot de passe incorrect."
+        );
     } finally {
       setIsLoginClicked(false);
     }
