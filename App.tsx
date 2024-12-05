@@ -17,6 +17,8 @@ import AddNewReportScreen from './screens/AddNewReportScreen';
 import ReportDetailsScreen from './screens/ReportDetailsScreen';
 import CategoryReportsScreen from './screens/CategoryReportsScreen';
 import AddNewEventScreen from './screens/AddNewEventScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -182,6 +184,7 @@ export default function App() {
                 />
               )}
             </Stack.Screen>
+            <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
             <Stack.Screen name="ReportDetails" component={ReportDetailsScreen} />
             <Stack.Screen name="CategoryReports" component={CategoryReportsScreen} />
             <Stack.Screen name="AddNewEventScreen" component={AddNewEventScreen} />

@@ -6,9 +6,8 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   Modal,
-  Alert,
+  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -50,77 +49,85 @@ type User = {
   isSubscribed: boolean;
   isMunicipality: boolean;
 };
-
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
-export default function HomeScreen() {
+export default function HomeScreen({}) {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { location, loading: locationLoading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [user, setUser] = useState<User | null>(null); // État pour les données utilisateur
+  const [user, setUser] = useState<User | null>(null);
   const isLoading = locationLoading || loadingReports || loadingUsers;
+  const [smarterData, setSmarterData] = useState<
+    { id: string; username: string; image: { uri: string } }[]
+  >([]);
+  const [showFollowers, setShowFollowers] = useState(false); // État pour afficher les followers
 
   useEffect(() => {
-    async function fetchUser() {
+    // Fonction principale regroupant les tâches
+    const fetchData = async () => {
       try {
-        // Récupère l'userId de manière asynchrone
+        // Récupération des données utilisateur
         const userId = await getUserIdFromToken();
-
         if (!userId) {
           console.error("ID utilisateur non trouvé");
-          return; // Sortir si aucune ID utilisateur
+          return;
         }
-
-        const response = await fetch(`${API_URL}/users/${userId}`);
-
-        if (!response.ok) {
+        const userResponse = await fetch(`${API_URL}/users/${userId}`);
+        if (!userResponse.ok) {
           console.error(
             "Erreur lors de la récupération des données utilisateur"
           );
-          return; // Sortir si réponse non valide
+          return;
+        }
+        const userData = await userResponse.json();
+        setUser(userData);
+
+        // Chargement des signalements si la localisation est disponible
+        if (location) {
+          setLoadingReports(true);
+          const reports = await processReports(
+            location.latitude,
+            location.longitude
+          );
+          setReports(reports);
         }
 
-        const data = await response.json();
-        setUser(data); // Stocke les données utilisateur
+        // Récupération de la liste des utilisateurs populaires
+        const topUsersResponse = await fetch(`${API_URL}/users/top10`);
+        const topUsersData = await topUsersResponse.json();
+        interface TopUser {
+          id: string;
+          username: string;
+          photos: { url: string }[];
+        }
+
+        interface FormattedUser {
+          id: string;
+          username: string;
+          image: { uri: string };
+        }
+
+        const formattedData: FormattedUser[] = topUsersData.map((user: TopUser) => ({
+          id: user.id,
+          username: user.username,
+          image: { uri: user.photos[0]?.url || "default-image-url" },
+        }));
+        setSmarterData(formattedData);
       } catch (err: any) {
         console.error(
-          "Erreur lors de la récupération des données utilisateur :",
+          "Erreur lors de la récupération des données :",
           err.message
         );
       } finally {
-        setLoadingUsers(false); // Fin du chargement
-      }
-    }
-
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    const loadReports = async () => {
-      if (!location) return;
-
-      try {
-        setLoadingReports(true);
-
-        const reports = await processReports(
-          location.latitude,
-          location.longitude
-        );
-        
-        setReports(reports);
-      } catch (error) {
-        console.error("Erreur lors du chargement des signalements :", error);
-        Alert.alert("Erreur", "Impossible de charger les signalements.");
-        setReports([]); // Assure que reports est toujours défini
-      } finally {
+        setLoadingUsers(false);
         setLoadingReports(false);
       }
     };
 
-    loadReports();
-  }, [location]);
+    fetchData();
+  }, [location]); // Ajouter `location` comme dépendance
 
   if (isLoading) {
     return (
@@ -149,11 +156,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Fonction pour rediriger vers la page de signalements filtrés
-  const handleCategoryClick = (category: string) => {
-    navigation.navigate("CategoryReports", { category }); // Passe la catégorie sélectionnée à la nouvelle page
-  };
-
   if (loadingReports) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -163,9 +165,75 @@ export default function HomeScreen() {
     );
   }
 
+  const calculateYearsSince = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const years = now.getFullYear() - date.getFullYear();
+    const months =
+      years * 12 +
+      now.getMonth() -
+      date.getMonth() -
+      (now.getDate() < date.getDate() ? 1 : 0); // Ajuste si le jour n'est pas encore passé
+
+    if (years > 1) {
+      return `${years} ans`;
+    } else if (years === 1) {
+      return "1 an";
+    } else if (months > 1) {
+      return `${months} mois`;
+    } else {
+      return "moins d'un mois";
+    }
+  };
+
   const handlePressReport = (id: number) => {
     navigation.navigate("ReportDetails", { reportId: id }); // Maintenant typé correctement
   };
+
+  const handleCategoryClick = (category: string) => {
+    navigation.navigate("CategoryReports", { category }); // Passe la catégorie sélectionnée à la nouvelle page
+  };
+
+  const toggleFollowersList = () => {
+    setShowFollowers((prev) => !prev); // Inverse l'état d'affichage
+  };
+
+  const renderFollower = ({ item }) => (
+    <TouchableOpacity
+      style={styles.followerItem}
+      onPress={() =>
+        navigation.navigate("UserProfileScreen", { userId: item.id })
+      }
+    >
+      <Image
+        source={{ uri: item.profilePhoto || "https://via.placeholder.com/50" }}
+        style={styles.followerImage}
+      />
+      {/* Encapsulation du texte */}
+      <Text style={styles.followerName}>{item.username || "Utilisateur"}</Text>
+    </TouchableOpacity>
+  );
+
+  if (showFollowers) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Mes followers</Text>
+        <FlatList
+          data={user?.followers || []} // Liste des followers
+          keyExtractor={(item) => item.id.toString()} // Utilise `item.id` comme clé
+          renderItem={renderFollower}
+          contentContainerStyle={styles.followerList}
+        />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={toggleFollowersList}
+        >
+          <Text style={styles.backButtonText}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const screenWidth = Dimensions.get("window").width;
 
@@ -226,20 +294,6 @@ export default function HomeScreen() {
     },
   ];
 
-  // Exemples de données
-  const smarterData = [
-    { id: "1", image: require("../assets/images/profil1.png") },
-    { id: "2", image: require("../assets/images/profil2.png") },
-    { id: "3", image: require("../assets/images/profil3.png") },
-    { id: "4", image: require("../assets/images/profil4.png") },
-    { id: "5", image: require("../assets/images/profil5.png") },
-    { id: "6", image: require("../assets/images/profil6.png") },
-    { id: "7", image: require("../assets/images/profil7.png") },
-    { id: "8", image: require("../assets/images/profil8.png") },
-    { id: "9", image: require("../assets/images/profil9.png") },
-    { id: "10", image: require("../assets/images/profil10.png") },
-  ];
-
   const featuredEvents = [
     {
       id: "1",
@@ -297,29 +351,6 @@ export default function HomeScreen() {
       location: "Maison Des Jeunes D’Haubourdin",
     },
   ];
-
-  const calculateYearsSince = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-
-    const years = now.getFullYear() - date.getFullYear();
-    const months =
-      years * 12 +
-      now.getMonth() -
-      date.getMonth() -
-      (now.getDate() < date.getDate() ? 1 : 0); // Ajuste si le jour n'est pas encore passé
-
-    if (years > 1) {
-      return `${years} ans`;
-    } else if (years === 1) {
-      return "1 an";
-    } else if (months > 1) {
-      return `${months} mois`;
-    } else {
-      return "moins d'un mois";
-    }
-  };
-
   return (
     <ScrollView style={styles.container}>
       {/* Section Profil */}
@@ -342,25 +373,26 @@ export default function HomeScreen() {
               ? calculateYearsSince(user.createdAt)
               : "un certain temps"}
           </Text>
-          <Text style={styles.userStats}>
-            📈 {user?.followers?.length || 0} followers
-          </Text>
+          <TouchableOpacity onPress={toggleFollowersList}>
+            <Text style={styles.userStats}>
+              📈 {user?.followers?.length || 0} followers
+            </Text>
+          </TouchableOpacity>
           <Text style={styles.userRanking}>
             Classement: {user?.ranking || "Non classé"}
           </Text>
           <TouchableOpacity style={styles.trustBadge}>
             <Text style={styles.trustBadgeText}>
-              ⭐⭐   Fiable à{" "}
+              ⭐⭐ Fiable à{" "}
               {user?.trustRate
                 ? `${(user.trustRate * 100).toFixed(1)}%`
-                : "Non disponible"}{" "}{" "}{" "}{" "}
-               ⭐⭐
+                : "Non disponible"}{" "}
+              ⭐⭐
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Section Top 10 des Smarter Actif */}
       <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
       <ScrollView
         horizontal
@@ -368,9 +400,16 @@ export default function HomeScreen() {
         style={styles.horizontalScroll}
       >
         {smarterData.map((item) => (
-          <View key={item.id} style={styles.smarterItem}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.smarterItem}
+            onPress={() =>
+              navigation.navigate("UserProfileScreen", { userId: item.id })
+            } // Navigue vers UserProfile avec l'ID utilisateur
+          >
             <Image source={item.image} style={styles.smarterImage} />
-          </View>
+            <Text style={styles.username}>{item.username}</Text>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 

@@ -3,18 +3,18 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   ActivityIndicator,
   Image,
   TextInput,
   Alert,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
 // @ts-ignore
 import { API_URL } from "@env";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 import * as ImagePicker from "expo-image-picker";
+import styles from "./styles/ProfileScreen.styles";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 type User = {
   id: string;
@@ -44,6 +44,8 @@ export default function ProfileScreen({ navigation, onLogout }) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editable, setEditable] = useState(false); // Mode édition
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({
@@ -77,6 +79,8 @@ export default function ProfileScreen({ navigation, onLogout }) {
     lastName: "",
     email: "",
     username: "",
+    currentPassword: "",
+    newPassword: "",
   });
 
   // Synchronise `formData` avec `user` quand les données utilisateur sont disponibles
@@ -87,6 +91,8 @@ export default function ProfileScreen({ navigation, onLogout }) {
         lastName: user.lastName || "",
         email: user.email || "",
         username: user.username || "",
+        currentPassword: "",
+        newPassword: "",
       });
     }
   }, [user]);
@@ -201,18 +207,53 @@ export default function ProfileScreen({ navigation, onLogout }) {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!formData.currentPassword || !formData.newPassword) {
+      Alert.alert("Erreur", "Veuillez remplir tous les champs.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_URL}/users/${user?.id}/change-password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Mot de passe actuel incorrect ou autre erreur.");
+      }
+
+      Alert.alert("Succès", "Mot de passe modifié avec succès.");
+    } catch (error: any) {
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible de modifier le mot de passe."
+      );
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.replace("Main")}>
           <Icon
-            name="arrow-back"
+            name="chevron-left"
             size={28}
             color="#333"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profil</Text>
+        <Text style={styles.headerTitle}> </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.profileContent}>
@@ -292,6 +333,72 @@ export default function ProfileScreen({ navigation, onLogout }) {
               {editable ? "Sauvegarder" : "Modifier"}
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitleProfil}>
+              Modifier le mot de passe
+            </Text>
+
+            {/* Mot de passe actuel */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Mot de passe actuel :</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Entrez votre mot de passe actuel"
+                  secureTextEntry={!showCurrentPassword} // Contrôle la visibilité
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, currentPassword: text })
+                  }
+                />
+                <TouchableOpacity
+                  onPress={() => setShowCurrentPassword(!showCurrentPassword)} // Toggle visibilité
+                >
+                  <Icon
+                    name={showCurrentPassword ? "eye-slash" : "eye"} // Icône selon l'état
+                    size={20}
+                    color="gray"
+                    style={styles.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Nouveau mot de passe */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Nouveau mot de passe :</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Entrez le nouveau mot de passe"
+                  secureTextEntry={!showNewPassword} // Contrôle la visibilité
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, newPassword: text })
+                  }
+                />
+                <TouchableOpacity
+                  onPress={() => setShowNewPassword(!showNewPassword)} // Toggle visibilité
+                >
+                  <Icon
+                    name={showNewPassword ? "eye-slash" : "eye"} // Icône selon l'état
+                    size={20}
+                    color="gray"
+                    style={styles.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Bouton Sauvegarder */}
+            <TouchableOpacity
+              style={styles.buttonProfil}
+              onPress={handleChangePassword}
+            >
+              <Text style={styles.buttonTextProfil}>
+                Modifier le mot de passe
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Section Statistiques */}
@@ -357,201 +464,3 @@ export default function ProfileScreen({ navigation, onLogout }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9f9fb",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e3e3e3",
-    paddingTop: 50,
-    backgroundColor: "#fff",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginLeft: 10,
-  },
-  profileContent: {
-    padding: 20,
-  },
-  profileImageContainer: {
-    alignItems: "center", // Centrer le contenu horizontalement
-    justifyContent: "center", // Centrer le contenu verticalement
-    padding: 20, // Espacement interne pour respirer
-    backgroundColor: "#F9F9F9", // Fond clair pour contraster
-    borderRadius: 15, // Coins arrondis
-    shadowColor: "#000", // Ombre douce
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3, // Ombre sur Android
-    marginBottom: 20, // Espacement avec la section suivante
-  },
-  profileImage: {
-    width: 250, // Largeur de l'image
-    height: 250, // Hauteur de l'image
-    borderRadius: 60, // Forme ronde (50% de width/height)
-  },
-  noProfileImageText: {
-    color: "#999", // Couleur grise discrète
-    fontSize: 16, // Taille de police lisible
-    fontWeight: "bold", // Texte en gras pour plus de visibilité
-    marginBottom: 20, // Espacement avec le bouton
-  },
-  updateButton: {
-    marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: "#007BFF", // Bleu moderne
-    borderRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  updateButtonText: {
-    color: "#FFFFFF", // Texte blanc
-    fontSize: 16,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  section: {
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  field: {
-    fontSize: 16,
-    marginBottom: 5,
-    color: "#555",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "red",
-  },
-  logoutButton: {
-    backgroundColor: "#e74c3c",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 30,
-  },
-  logoutText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  containerPhoto: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  photoContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-
-  photoWrapper: {
-    position: "relative", // Nécessaire pour positionner la croix
-    marginRight: 10,
-  },
-  photo: {
-    width: 100,
-    height: 100,
-    borderRadius: 5,
-  },
-  deleteButton: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    zIndex: 1, // S'assurer que la croix est au-dessus de l'image
-  },
-  button: {
-    backgroundColor: "#007BFF", // Couleur de fond
-    paddingVertical: 12, // Espacement vertical
-    paddingHorizontal: 20, // Espacement horizontal
-    borderRadius: 8, // Coins arrondis
-  },
-  buttonText: {
-    color: "#fff", // Couleur du texte
-    fontSize: 16, // Taille de la police
-    fontWeight: "bold", // Texte en gras
-    textAlign: "center", // Centrage du texte
-  },
-
-  nameText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  usernameText: {
-    fontSize: 16,
-    color: "#555",
-  },
-
-  sectionTitleProfil: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  fieldContainer: {
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 16,
-    color: "#555",
-    marginBottom: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    fontSize: 16,
-  },
-  inputDisabled: {
-    backgroundColor: "#f9f9f9",
-    color: "#888",
-  },
-  buttonProfil: {
-    backgroundColor: "#007bff",
-    padding: 15,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  buttonTextProfil: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});

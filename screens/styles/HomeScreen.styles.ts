@@ -100,17 +100,23 @@ export default StyleSheet.create({
       horizontalScroll: {
         marginBottom: 20,
       },
-      smarterItem: {
-        width: 80,
-        height: 80,
-        marginRight: 15,
+      smarterItem: { 
+        width: 100,
+        height: 100,
+        alignItems: 'center', // Centre le contenu horizontalement
+        justifyContent: 'center', // Assure un alignement vertical cohérent
+        padding: 10, // Ajoute de l'espace interne
+        marginTop: 10, // Espacement avec les autres éléments
       },
       smarterImage: {
         width: '100%',
         height: '100%',
         borderRadius: 40,
       },
-     
+      username: { 
+        marginTop: 5, 
+        fontSize: 14 
+      },
       categoryItem: {
         width: 150,
         minHeight: 150,
@@ -386,5 +392,38 @@ export default StyleSheet.create({
         fontWeight: 'bold', // Texte en gras
       },
       
-      
+
+      title: {
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 10,
+      },
+      followerList: {
+        marginTop: 10,
+      },
+      followerItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+      },
+      followerImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        marginRight: 10,
+      },
+      followerName: {
+        fontSize: 16,
+      },
+      backButton: {
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: "#007BFF",
+        borderRadius: 5,
+        alignItems: "center",
+      },
+      backButtonText: {
+        color: "#fff",
+        fontWeight: "bold",
+      },
 });

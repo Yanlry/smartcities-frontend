@@ -13,6 +13,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { BlurView } from "expo-blur";
 // @ts-ignore
 import { API_URL } from "@env";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 export default function LoginScreen({ navigation, onLogin }: any) {
   const {
@@ -31,6 +32,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // État pour la visibilité du mot de passe
 
   const handleLoginClick = () => {
     handleLogin(onLogin);
@@ -44,7 +46,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
 
   const handleForgotPassword = async () => {
     setIsLoading(true);
-  
+
     try {
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: "POST",
@@ -53,14 +55,17 @@ export default function LoginScreen({ navigation, onLogin }: any) {
           email: forgotPasswordEmail.trim().toLowerCase(),
         }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         Alert.alert("Succès", data.message); // Affiche le message de succès
         setStep(2); // Passer à l'étape 2
       } else if (response.status === 404) {
         const data = await response.json();
-        Alert.alert("Vérifié le champs de saisie", data.message || "Adresse email introuvable."); // Affiche l'erreur pour un email inexistant
+        Alert.alert(
+          "Vérifié le champs de saisie",
+          data.message || "Adresse email introuvable."
+        ); // Affiche l'erreur pour un email inexistant
       } else {
         const data = await response.json();
         Alert.alert("Erreur", data.message || "Une erreur est survenue.");
@@ -162,26 +167,39 @@ export default function LoginScreen({ navigation, onLogin }: any) {
           <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
 
           <TextInput
-  style={styles.input}
-  value={email}
-  onChangeText={(text) => setEmail(text)}
-  placeholder="Adresse Email"
-  placeholderTextColor="#aaa"
-  keyboardType="email-address"
-  autoCorrect={false} // Désactive la correction automatique
-  spellCheck={false} // Désactive la vérification orthographique
-/>
+            style={styles.input}
+            value={email}
+            onChangeText={(text) => setEmail(text)}
+            placeholder="Adresse Email"
+            placeholderTextColor="#aaa"
+            keyboardType="email-address"
+            autoCorrect={false} // Désactive la correction automatique
+            spellCheck={false} // Désactive la vérification orthographique
+          />
 
-<TextInput
-  style={styles.input}
-  value={password}
-  onChangeText={(text) => setPassword(text)}
-  placeholder="Mot de passe"
-  placeholderTextColor="#aaa"
-  secureTextEntry
-  autoCorrect={false} // Désactive la correction automatique
-  spellCheck={false} // Désactive la vérification orthographique
-/>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.inputPassword}
+              value={password}
+              onChangeText={(text) => setPassword(text)}
+              placeholder="Mot de passe"
+              placeholderTextColor="#aaa"
+              secureTextEntry={!isPasswordVisible} // Contrôle la visibilité
+              autoCorrect={false} // Désactive la correction automatique
+              spellCheck={false} // Désactive la vérification orthographique
+            />
+            <TouchableOpacity
+              onPress={() => setIsPasswordVisible(!isPasswordVisible)} // Toggle visibilité
+            >
+              <Icon
+                name={isPasswordVisible ? "eye-slash" : "eye"} // Icône selon l'état
+                size={20}
+                color="#333"
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity onPress={() => setIsModalVisible(true)}>
             <Text style={styles.passwordText}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
@@ -372,6 +390,31 @@ const styles = StyleSheet.create({
 
   // Champs de saisie
   input: {
+    width: "100%",
+    height: 50,
+    backgroundColor: "rgba(255, 255, 255, 0.8)", // Blanc semi-transparent
+    borderRadius: 30,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    color: "#333",
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+  },
+  inputContainer: {
+    flexDirection: "row", // Aligne le champ et l'icône côte à côte
+    alignItems: "center",
+    borderRadius: 5,
+    marginVertical: 10,
+  },
+  icon: {
+    position: "absolute", 
+    right: 20, 
+    bottom:1,
+  },
+
+  inputPassword: {
+    flex: 1,
     width: "100%",
     height: 50,
     backgroundColor: "rgba(255, 255, 255, 0.8)", // Blanc semi-transparent

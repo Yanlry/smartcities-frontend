@@ -131,7 +131,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         upVotes: result.updatedVotes.upVotes,
         downVotes: result.updatedVotes.downVotes,
       });
-
     } catch (error) {
       Alert.alert(
         "Vous avez déjà voté",
@@ -411,8 +410,16 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           </Text>
         </View>
         <View style={styles.detailContainer}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("UserProfileScreen", {
+                userId: report.user.id,
+              })
+            }
+          >
           <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
-          <Text style={styles.detailValue}>{report.user.username}</Text>
+            <Text style={styles.detailValue}>{report.user.username}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
