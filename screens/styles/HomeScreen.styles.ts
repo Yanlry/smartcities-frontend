@@ -1,429 +1,553 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        paddingHorizontal: 20,
-      },
-      profileContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 20,
-      },
-      profileImage: {
-        width: 100,
-        height: 130,
-        borderRadius:10,
-        marginRight: 20,
-      },
-      profileInfo: {
-        flex: 1,
-      },
-      noProfileImageText: {
-        color: "#999", // Couleur grise discrète
-        fontSize: 16, // Taille de police lisible
-        fontWeight: "bold", // Texte en gras pour plus de visibilité
-        marginBottom: 20, // Espacement avec le bouton
-      },
-      noReportsText: {
-        textAlign: "center",
-        color: "#888",
-        marginVertical: 20,
-      },
-      userName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-      },
-      userDetails: {
-        fontSize: 14,
-        color: '#666',
-      },
-      userStats: {
-        fontWeight:'bold',
-        fontSize: 14,
-        marginVertical: 5,
-        color:'#3498db'
-      },
-      userRanking: {
-        fontSize: 14,
-        color: '#999',
-      },
-      trustBadge: {
-        backgroundColor: '#37323E',
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        borderRadius: 30,
-        marginTop: 5,
-      },
-      trustBadgeText: {
-        textAlign:'center',
-        color: '#fff',
-        fontWeight: 'bold',
-      },
-      smileyContainer: {
-        marginLeft: 16,
-      },
-      smiley: {
-        fontSize: 48,
-        color: 'green',
-      },
-      sectionTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-      },
-      reportItem: {
-        padding: 15, 
-        paddingLeft:30,
-        marginVertical: 5,
-        borderRadius: 50, 
-      },
-      reportType: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#424242', // Couleur du texte en blanc pour contraste
-      },
-      reportTitle: {
-        fontSize: 14,
-        marginTop: 5,
-        fontWeight: '500', 
-        color: '#424242', // Texte blanc pour rester lisible sur les fonds colorés
-      },
-      reportCity: {
-        fontSize: 14,
-        marginTop: 5,
-        fontWeight: '500', 
-        color: '#424242', // Texte blanc pour rester lisible sur les fonds colorés
-      },
-      horizontalScroll: {
-        marginBottom: 20,
-      },
-      smarterItem: { 
-        width: 100,
-        height: 100,
-        alignItems: 'center', // Centre le contenu horizontalement
-        justifyContent: 'center', // Assure un alignement vertical cohérent
-        padding: 10, // Ajoute de l'espace interne
-        marginTop: 10, // Espacement avec les autres éléments
-      },
-      smarterImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 40,
-      },
-      username: { 
-        marginTop: 5, 
-        fontSize: 14 
-      },
-      categoryItem: {
-        width: 150,
-        minHeight: 150,
-        marginRight: 15,
-        borderRadius: 10,
-        overflow: 'hidden',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      overlay: {
-        ...StyleSheet.absoluteFillObject, // Remplit entièrement le conteneur parent
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Couleur avec opacité (noir à 50%)
-      },
-      featuredItem: {
-        width: 150,
-        minHeight: 150, // Remplacez height par minHeight pour permettre au conteneur de s'agrandir
-        marginRight: 15,
-        borderRadius: 10,
-        overflow: 'hidden',
-        backgroundColor: '#fff',
-      },
-      featuredImage: {
-        width: '100%',
-        height: 'auto', // Utilisez auto pour que l'image s'ajuste en fonction du texte
-        aspectRatio: 1.5, // Vous pouvez définir un ratio pour que l'image conserve une forme cohérente
-      },
-      featuredTitle: {
-        padding: 10,
-        fontSize: 14,
-        color: '#333',
-        textAlign: 'center',
-      },
-      calendarContainer: {
-        marginVertical: 10,
-        backgroundColor: '#fff',
-        padding: 10,
-        borderRadius: 10,
-        alignItems: 'center', // Centre le contenu horizontalement
-        overflow: 'hidden',
-      },
-    
-      eventItem: {
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 10,
-      },
-    
-      eventTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-      },
-    
-      eventDetails: {
-        fontSize: 14,
-        color: '#666',
-        marginVertical: 5,
-      },
-    
-      eventLocation: {
-        fontSize: 14,
-        color: '#888',
-      },
-    
-      chartContainer: {
-        alignItems: 'center',
-        marginBottom: 20,
-      },
-      infoContainer: {
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 20,
-      },
-    
-      infoText: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 15,
-      },
-      infoCard: {
-        backgroundColor: '#fff',
-        paddingHorizontal: 15,
-        borderRadius: 15,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 4,
-      },
-      infoTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#3498db',
-        marginBottom: 10,
-        marginTop: 15,
-      },
-      infoContent: {
-        fontSize: 14,
-        color: '#333',
-        marginBottom: 15,
-        lineHeight: 20,
-      },
-      infoLabel: {
-        fontWeight: 'bold',
-        color: '#666',
-      },
-      mayorCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 15,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 4,
-      },
-      mayorImage: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        marginRight: 15,
-      },
-      mayorInfo: {
-        flex: 1,
-      },
-      mayor:{
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#3498db',
-        marginBottom:5
-      },
-      mayorName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-      },
-      mayorSubtitle: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 5,
-      },
-      mayorContact: {
-        fontSize: 16,
-        color: '#333',
-        marginTop: 10,
-      },
-      contactBold: {
-        fontWeight: 'bold',
-      },
-      officeCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 15,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 4,
-      },
-      officeImage: {
-        width: 80,
-        height: 80,
-        borderRadius: 15,
-        marginRight: 15,
-      },
-      officeInfo: {
-        flex: 1,
-      },
-      officeAddress: {
-        fontSize: 16,
-        color: '#333',
-        marginBottom: 10,
-      },
-      Address:{
-        fontSize: 18,
-        fontWeight:'bold',
-        color: '#3498db',
-      },
-      officeContact: {
-        fontSize: 14,
-        color: '#666',
-      },
-      phone:{
-        fontWeight:'bold'
-      },
-      hours:{
-        fontWeight:'bold',
-      },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+  },
+  profileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  profileImage: {
+    width: 100,
+    height: 130,
+    borderRadius: 10,
+    marginRight: 20,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  noProfileImageText: {
+    color: "#999", // Couleur grise discrète
+    fontSize: 16, // Taille de police lisible
+    fontWeight: "bold", // Texte en gras pour plus de visibilité
+    marginBottom: 20, // Espacement avec le bouton
+  },
+  noReportsText: {
+    textAlign: "center",
+    color: "#888",
+    marginVertical: 20,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  userDetails: {
+    fontSize: 14,
+    color: "#666",
+  },
+  userStats: {
+    fontWeight: "bold",
+    fontSize: 14,
+    marginVertical: 5,
+    color: "#3498db",
+  },
+  userRanking: {
+    fontSize: 14,
+    color: "#999",
+  },
+  trustBadge: {
+    backgroundColor: "#37323E",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 30,
+    marginTop: 5,
+  },
+  trustBadgeText: {
+    textAlign: "center",
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  smileyContainer: {
+    marginLeft: 16,
+  },
+  smiley: {
+    fontSize: 48,
+    color: "green",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  reportItem: {
+    padding: 15,
+    paddingLeft: 30,
+    marginVertical: 5,
+    borderRadius: 50,
+  },
+  reportType: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#424242", // Couleur du texte en blanc pour contraste
+  },
+  reportTitle: {
+    fontSize: 14,
+    marginTop: 5,
+    fontWeight: "500",
+    color: "#424242", // Texte blanc pour rester lisible sur les fonds colorés
+  },
+  reportCity: {
+    fontSize: 14,
+    marginTop: 5,
+    fontWeight: "500",
+    color: "#424242", // Texte blanc pour rester lisible sur les fonds colorés
+  },
+  horizontalScroll: {
+    marginBottom: 20,
+  },
+  smarterItem: {
+    width: 100,
+    height: 100,
+    alignItems: "center", // Centre le contenu horizontalement
+    justifyContent: "center", // Assure un alignement vertical cohérent
+    padding: 10, // Ajoute de l'espace interne
+    marginTop: 10, // Espacement avec les autres éléments
+  },
+  smarterImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+  },
+  username: {
+    marginTop: 5,
+    fontSize: 14,
+  },
+  categoryItem: {
+    width: 150,
+    minHeight: 150,
+    marginRight: 15,
+    borderRadius: 10,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, // Remplit entièrement le conteneur parent
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Couleur avec opacité (noir à 50%)
+  },
+  featuredItem: {
+    width: 150,
+    minHeight: 150, // Remplacez height par minHeight pour permettre au conteneur de s'agrandir
+    marginRight: 15,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+  },
+  featuredImage: {
+    width: "100%",
+    height: "auto", // Utilisez auto pour que l'image s'ajuste en fonction du texte
+    aspectRatio: 1.5, // Vous pouvez définir un ratio pour que l'image conserve une forme cohérente
+  },
+  featuredTitle: {
+    padding: 10,
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+  },
+  calendarContainer: {
+    marginVertical: 10,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center", // Centre le contenu horizontalement
+    overflow: "hidden",
+  },
 
-      loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5', // Couleur de fond douce
-      },
-      loadingText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333', // Texte gris foncé
-      },
-      modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fond semi-transparent
-        paddingHorizontal: 20, // Espacement pour éviter que le contenu ne touche les bords
-      },
-      modalTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#fff', // Blanc pour contraster avec le fond
-        marginBottom: 10,
-        textAlign: 'center',
-      },
-      modalText: {
-        fontSize: 16,
-        color: '#ddd', // Texte légèrement gris pour une bonne lisibilité
-        textAlign: 'center',
-        marginBottom: 20,
-        lineHeight: 24, // Espacement des lignes pour plus de lisibilité
-      },
-      button: {
-        backgroundColor: '#1E90FF', // Bleu vif
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        elevation: 2, // Ombre pour donner un effet de profondeur (Android uniquement)
-        shadowColor: '#000', // Ombre pour iOS
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-      },
-      buttonText: {
-        color: '#fff', // Texte blanc pour contraster avec le bouton
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
-      },
+  eventItem: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+  },
 
-      categoryButtonContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginVertical: 10,
-        paddingHorizontal: 10,
-      },
-      
-    
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
 
-      
-      categoryButton: {
-        width: 150, // Largeur fixe
-        height: 150, // Hauteur fixe
-        justifyContent: 'center', // Centrer le contenu verticalement
-        alignItems: 'center', // Centrer le contenu horizontalement
-        marginRight: 10, // Espacement entre les boutons
-        borderRadius: 10, // Coins arrondis
-      },
-      categoryIcon: {
-        marginBottom: 5, // Espacement entre l'icône et le texte
-      },
-      categoryText: {
-        color: '#fff', // Texte blanc
-        fontSize: 16, // Taille de la police du texte
-        fontWeight: 'bold', // Texte en gras
-      },
-      
+  eventDetails: {
+    fontSize: 14,
+    color: "#666",
+    marginVertical: 5,
+  },
 
-      title: {
-        fontSize: 20,
-        fontWeight: "bold",
-        marginBottom: 10,
-      },
-      followerList: {
-        marginTop: 10,
-      },
-      followerItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 10,
-      },
-      followerImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 10,
-      },
-      followerName: {
-        fontSize: 16,
-      },
-      backButton: {
-        marginTop: 20,
-        padding: 10,
-        backgroundColor: "#007BFF",
-        borderRadius: 5,
-        alignItems: "center",
-      },
-      backButtonText: {
-        color: "#fff",
-        fontWeight: "bold",
-      },
+  eventLocation: {
+    fontSize: 14,
+    color: "#888",
+  },
+
+  chartContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  infoContainer: {
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+
+  infoText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 15,
+  },
+  infoCard: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#3498db",
+    marginBottom: 10,
+    marginTop: 15,
+  },
+  infoContent: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  infoLabel: {
+    fontWeight: "bold",
+    color: "#666",
+  },
+  mayorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  mayorImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 15,
+  },
+  mayorInfo: {
+    flex: 1,
+  },
+  mayor: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#3498db",
+    marginBottom: 5,
+  },
+  mayorName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  mayorSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 5,
+  },
+  mayorContact: {
+    fontSize: 16,
+    color: "#333",
+    marginTop: 10,
+  },
+  contactBold: {
+    fontWeight: "bold",
+  },
+  officeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  officeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 15,
+    marginRight: 15,
+  },
+  officeInfo: {
+    flex: 1,
+  },
+  officeAddress: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 10,
+  },
+  Address: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#3498db",
+  },
+  officeContact: {
+    fontSize: 14,
+    color: "#666",
+  },
+  phone: {
+    fontWeight: "bold",
+  },
+  hours: {
+    fontWeight: "bold",
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5", // Couleur de fond douce
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333", // Texte gris foncé
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    paddingHorizontal: 20, // Espacement pour éviter que le contenu ne touche les bords
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#fff", // Blanc pour contraster avec le fond
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    color: "#ddd", // Texte légèrement gris pour une bonne lisibilité
+    textAlign: "center",
+    marginBottom: 20,
+    lineHeight: 24, // Espacement des lignes pour plus de lisibilité
+  },
+  button: {
+    backgroundColor: "#1E90FF", // Bleu vif
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    elevation: 2, // Ombre pour donner un effet de profondeur (Android uniquement)
+    shadowColor: "#000", // Ombre pour iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  buttonText: {
+    color: "#fff", // Texte blanc pour contraster avec le bouton
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  categoryButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 10,
+    paddingHorizontal: 10,
+  },
+
+  categoryButton: {
+    width: 120, // Largeur fixe
+    height: 120, // Hauteur fixe
+    marginTop : 10,
+    justifyContent: "center", // Centrer le contenu verticalement
+    alignItems: "center", // Centrer le contenu horizontalement
+    marginRight: 10, // Espacement entre les boutons
+    borderRadius:  90, // Coins arrondis
+  },
+  categoryIcon: {
+    marginBottom: 5, // Espacement entre l'icône et le texte
+  },
+  categoryText: {
+    color: "#fff", // Texte blanc
+    fontSize: 16, // Taille de la police du texte
+    fontWeight: "bold", // Texte en gras
+  },
+
+  containerFollower: {
+    flex: 1,
+    backgroundColor: "#f7f8fa", // Light gray for a soft look
+    padding: 20,
+  },
+
+  // Title with larger size and a stronger color
+  title: {
+    fontSize: 24, // Larger for better readability
+    fontWeight: "bold",
+    color: "#333", // Neutral dark text
+    marginBottom: 20,
+    textAlign: "center",
+  },
+
+  // FlatList container with consistent padding
+  followerList: {
+    paddingBottom: 20, // Space at the bottom
+  },
+
+  // Individual follower item container
+  followerItem: {
+    flexDirection: "row", // Align image and text horizontally
+    alignItems: "center",
+    backgroundColor: "#fff", // White background for contrast
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8, // Rounded corners for a modern look
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1, // Elevation for Android
+  },
+
+  // Follower image styling
+  followerImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25, // Circular image
+    marginRight: 12, // Space between image and text
+    borderWidth: 1,
+    borderColor: "#ddd", // Soft border for definition
+  },
+
+  // Container for follower text
+  followerTextContainer: {
+    flex: 1,
+  },
+
+  // Follower name styling
+  followerName: {
+    fontSize: 16,
+    fontWeight: "600", // Slightly bold for importance
+    color: "#444", // Dark gray for subtle contrast
+  },
+
+  // Back button container with modern style
+  backButton: {
+    marginTop: 20,
+    alignSelf: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    backgroundColor: "#2c3e50", // Primary blue
+    borderRadius: 30,
+  },
+
+  // Back button text styling
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff", // White text for contrast
+    textTransform: "uppercase", // Button style text
+  },
+  rankingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  rankingText: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  userImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#ccc",
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  closeButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#007BFF",
+    alignItems: "center",
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 16,
+  },
+
+  modalContentRanking: {
+    backgroundColor: 'white',
+    padding: 20,
+    paddingVertical: 80,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5, // Pour Android
+  },
+  rankingItemModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3, // Pour Android
+  },
+  rankingTextModal: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2d3748',
+    marginHorizontal: 8,
+  },
+  userImageModal: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: '#5a67d8',
+  },
+  closeButtonModal: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#5a67d8',
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5, // Pour Android
+  },
+  closeButtonTextModal: {
+    color: 'white',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 16,
+  },
 });

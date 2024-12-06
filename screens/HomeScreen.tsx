@@ -51,6 +51,13 @@ type User = {
 };
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
+interface TopUser {
+  id: string;
+  username: string;
+  photo: string | null; // Correspond à l'API modifiée
+  ranking: number; // Classement global
+}
+
 export default function HomeScreen({}) {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { location, loading: locationLoading } = useLocation();
@@ -63,6 +70,52 @@ export default function HomeScreen({}) {
     { id: string; username: string; image: { uri: string } }[]
   >([]);
   const [showFollowers, setShowFollowers] = useState(false); // État pour afficher les followers
+  const [ranking, setRanking] = useState<number | null>(null);
+  const [totalUsers, setTotalUsers] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [rankingData, setRankingData] = useState<TopUser[]>([]);
+
+  useEffect(() => {
+    const fetchRanking = async () => {
+      setLoading(true); // Démarre le chargement
+      setError(null); // Réinitialise l'état d'erreur
+      try {
+        // Récupérer l'ID utilisateur
+        const userId = await getUserIdFromToken();
+        if (!userId) {
+          throw new Error("Impossible de récupérer l'ID utilisateur.");
+        }
+
+        // Appel API pour le classement
+        const response = await fetch(
+          `${API_URL}/users/ranking?userId=${userId}`
+        );
+        if (!response.ok) {
+          throw new Error(`Erreur serveur : ${response.statusText}`);
+        }
+
+        const topUsersResponse = await fetch(`${API_URL}/users/all-rankings`);
+        if (topUsersResponse.ok) {
+          const data: TopUser[] = await topUsersResponse.json();
+          setRankingData(data);
+        }
+
+        const data: { ranking: number; totalUsers: number } =
+          await response.json();
+        setRanking(data.ranking);
+        setTotalUsers(data.totalUsers);
+      } catch (error: any) {
+        console.error("Erreur lors de la récupération du classement :", error);
+        setError(error.message || "Erreur inconnue.");
+      } finally {
+        setLoading(false); // Terminer le chargement
+      }
+    };
+
+    fetchRanking();
+  }, []);
 
   useEffect(() => {
     // Fonction principale regroupant les tâches
@@ -96,24 +149,40 @@ export default function HomeScreen({}) {
 
         // Récupération de la liste des utilisateurs populaires
         const topUsersResponse = await fetch(`${API_URL}/users/top10`);
+        if (!topUsersResponse.ok) {
+          console.error(
+            "Erreur lors de la récupération des utilisateurs populaires"
+          );
+          return;
+        }
         const topUsersData = await topUsersResponse.json();
+
         interface TopUser {
           id: string;
           username: string;
-          photos: { url: string }[];
+          photo: string | null; // Correspond à l'API modifiée
+          ranking: number; // Classement global
         }
 
         interface FormattedUser {
           id: string;
           username: string;
+          ranking: number;
           image: { uri: string };
         }
 
-        const formattedData: FormattedUser[] = topUsersData.map((user: TopUser) => ({
-          id: user.id,
-          username: user.username,
-          image: { uri: user.photos[0]?.url || "default-image-url" },
-        }));
+        const formattedData: FormattedUser[] = topUsersData.map(
+          (user: TopUser) => ({
+            id: user.id,
+            username: user.username,
+            ranking: user.ranking,
+            image: { uri: user.photo || "default-image-url" },
+          })
+        );
+
+        // Trier par classement (optionnel si déjà trié côté backend)
+        formattedData.sort((a, b) => a.ranking - b.ranking);
+
         setSmarterData(formattedData);
       } catch (err: any) {
         console.error(
@@ -127,7 +196,7 @@ export default function HomeScreen({}) {
     };
 
     fetchData();
-  }, [location]); // Ajouter `location` comme dépendance
+  }, [location]);
 
   if (isLoading) {
     return (
@@ -217,7 +286,7 @@ export default function HomeScreen({}) {
 
   if (showFollowers) {
     return (
-      <View style={styles.container}>
+      <View style={styles.containerFollower}>
         <Text style={styles.title}>Mes followers</Text>
         <FlatList
           data={user?.followers || []} // Liste des followers
@@ -378,8 +447,13 @@ export default function HomeScreen({}) {
               📈 {user?.followers?.length || 0} followers
             </Text>
           </TouchableOpacity>
-          <Text style={styles.userRanking}>
-            Classement: {user?.ranking || "Non classé"}
+          <Text
+            style={styles.userRanking}
+            onPress={() => setIsModalVisible(true)}
+          >
+            {ranking && totalUsers
+              ? `Tu es ${ranking}ème sur ${totalUsers} utilisateurs`
+              : "Classement non disponible"}
           </Text>
           <TouchableOpacity style={styles.trustBadge}>
             <Text style={styles.trustBadgeText}>
@@ -392,6 +466,35 @@ export default function HomeScreen({}) {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContentRanking}>
+          <FlatList
+            data={rankingData}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.rankingItemModal}>
+                <Text style={styles.rankingTextModal}>#{item.ranking}</Text>
+                <Image
+                  source={{ uri: item.photo || "default-image-url" }}
+                  style={styles.userImage}
+                />
+                <Text style={styles.rankingTextModal}>{item.username}</Text>
+              </View>
+            )}
+          />
+          <TouchableOpacity
+            onPress={() => setIsModalVisible(false)}
+            style={styles.closeButtonModal}
+          >
+            <Text style={styles.closeButtonTextModal}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
       <ScrollView

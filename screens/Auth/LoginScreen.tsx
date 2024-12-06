@@ -408,9 +408,9 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   icon: {
-    position: "absolute", 
-    right: 20, 
-    bottom:1,
+    position: "absolute",
+    right: 20,
+    bottom: 1,
   },
 
   inputPassword: {

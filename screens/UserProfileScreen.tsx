@@ -195,7 +195,7 @@ export default function UserProfileScreen({ route, navigation }) {
         <TouchableOpacity
           style={[
             styles.followButton,
-            { backgroundColor: isFollowing ? "red" : "green" },
+            { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
           ]}
           onPress={isFollowing ? handleUnfollow : handleFollow}
           disabled={isSubmitting} // Bloquer pendant la requête
@@ -280,9 +280,9 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   followButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    paddingVertical: 15,
+    paddingHorizontal:40,
+    borderRadius: 30,
   },
   followButtonText: {
     color: "white",

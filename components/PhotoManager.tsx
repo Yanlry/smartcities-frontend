@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    width: "70%",
+    width: "75%",
     height: 50,
     backgroundColor: "#6C63FF", // Couleur violet moderne
     borderRadius: 25, // Coins arrondis
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   // Texte du bouton
   buttonText: {
     color: "#FFFFFF", // Texte blanc
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     textTransform: "uppercase", // Texte en majuscules
     letterSpacing: 1, // Espacement pour un style élégant
