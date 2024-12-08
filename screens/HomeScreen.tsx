@@ -18,6 +18,7 @@ import CalendarPicker from "react-native-calendar-picker"; // Ajoutez un module 
 import { BarChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 import styles from "./styles/HomeScreen.styles";
+import axios from "axios";
 import { useLocation } from "../hooks/useLocation";
 import { processReports, Report } from "../services/reportService";
 import { formatCity } from "../utils/formatters";
@@ -48,6 +49,7 @@ type User = {
   profilePhoto?: { url: string };
   isSubscribed: boolean;
   isMunicipality: boolean;
+  votes: any[];
 };
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
@@ -76,6 +78,8 @@ export default function HomeScreen({}) {
   const [error, setError] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [rankingData, setRankingData] = useState<TopUser[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [featuredEvents, setFeaturedEvents] = useState<{ id: string; title: string; image: string }[]>([]);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -197,7 +201,68 @@ export default function HomeScreen({}) {
 
     fetchData();
   }, [location]);
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true); // Démarrer le chargement
+        setError(null); // Réinitialiser l'erreur
+  
+        const userId = await getUserIdFromToken();
+        if (!userId) {
+          throw new Error("Utilisateur non connecté ou ID introuvable.");
+        }
+  
+        const response = await axios.get(`${API_URL}/users/stats/${userId}`);
+        if (response.status !== 200) {
+          throw new Error(`Erreur API : ${response.statusText}`);
+        }
+  
+        setStats(response.data); // Mettre à jour les statistiques
+      } catch (error: any) {
+        console.error("Erreur dans fetchStats :", error.message || error);
+        setError("Impossible de récupérer les statistiques.");
+      } finally {
+        setLoading(false); // Arrêter le chargement
+      }
+    };
+  
+    fetchStats();
+  }, []);
 
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true); // Démarrer le chargement
+        setError(null); // Réinitialiser l'erreur
+  
+        const response = await axios.get(`${API_URL}/events`);
+        if (response.status !== 200) {
+          throw new Error(`Erreur API : ${response.statusText}`);
+        }
+  
+        const events = response.data.map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          image:
+            event.photos.find((photo: any) => photo.isProfile)?.url ||
+            event.photos[0]?.url ||
+            "https://via.placeholder.com/300",
+        }));
+  
+        setFeaturedEvents(events); // Mettre à jour l'état
+      } catch (error: any) {
+        console.error("Erreur dans fetchEvents :", error.message || error);
+        setError("Impossible de récupérer les événements.");
+      } finally {
+        setLoading(false); // Arrêter le chargement
+      }
+    };
+  
+    fetchEvents();
+  }, []);
+
+  
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -363,49 +428,7 @@ export default function HomeScreen({}) {
     },
   ];
 
-  const featuredEvents = [
-    {
-      id: "1",
-      title: "Exposition d'art moderne au centre Paul André Lequimme",
-      image: require("../assets/images/event1.png"),
-    },
-    {
-      id: "2",
-      title: "Chasse aux oeufs de Pâques organisé au jardin public",
-      image: require("../assets/images/event2.png"),
-    },
-    {
-      id: "3",
-      title: "Concert de jazz en plein air",
-      image: require("../assets/images/event3.png"),
-    },
-    {
-      id: "4",
-      title: "Festival des lumières - Illumination des monuments historiques",
-      image: require("../assets/images/event4.png"),
-    },
-    {
-      id: "5",
-      title: "Atelier de peinture pour enfants au parc municipal",
-      image: require("../assets/images/event5.png"),
-    },
-    {
-      id: "6",
-      title: "Marché fermier et dégustation de produits locaux",
-      image: require("../assets/images/event6.png"),
-    },
-    {
-      id: "7",
-      title: "Projection en plein air de films classiques",
-      image: require("../assets/images/event7.png"),
-    },
-    {
-      id: "8",
-      title: "Journée portes ouvertes des pompiers",
-      image: require("../assets/images/event8.png"),
-    },
-  ];
-
+ 
   const upcomingEvents = [
     {
       id: "1",
@@ -444,26 +467,81 @@ export default function HomeScreen({}) {
           </Text>
           <TouchableOpacity onPress={toggleFollowersList}>
             <Text style={styles.userStats}>
-              📈 {user?.followers?.length || 0} followers
+              📈 {user?.followers?.length || 0} relations
             </Text>
           </TouchableOpacity>
-          <Text
-            style={styles.userRanking}
-            onPress={() => setIsModalVisible(true)}
-          >
-            {ranking && totalUsers
-              ? `Tu es ${ranking}ème sur ${totalUsers} utilisateurs`
-              : "Classement non disponible"}
-          </Text>
-          <TouchableOpacity style={styles.trustBadge}>
-            <Text style={styles.trustBadgeText}>
-              ⭐⭐ Fiable à{" "}
-              {user?.trustRate
-                ? `${(user.trustRate * 100).toFixed(1)}%`
-                : "Non disponible"}{" "}
-              ⭐⭐
-            </Text>
-          </TouchableOpacity>
+
+          <View style={styles.statsContainer}>
+            {/* Bouton Classement */}
+            <TouchableOpacity
+              style={styles.rankingButton}
+              onPress={() => setIsModalVisible(true)}
+            >
+              <View style={styles.rankingButtonContent}>
+                <Text style={styles.rankingMainText}>
+                  {ranking && totalUsers
+                    ? `Numéro ${ranking}`
+                    : "Classement indisponible"}
+                </Text>
+                {ranking && totalUsers && (
+                  <Text style={styles.rankingSubText}>
+                    sur les {totalUsers} utilisateurs de la ville
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Votes */}
+            <View style={styles.votesContainer}>
+              {stats.votes.length > 0 ? (
+                (() => {
+                  interface Vote {
+                    type: "up" | "down";
+                  }
+
+                  interface VoteSummary {
+                    up: number;
+                    down: number;
+                  }
+
+                  const voteSummary: VoteSummary = stats.votes.reduce(
+                    (acc: VoteSummary, vote: Vote) => {
+                      if (vote.type === "up") {
+                        acc.up++;
+                      } else if (vote.type === "down") {
+                        acc.down++;
+                      }
+                      return acc;
+                    },
+                    { up: 0, down: 0 }
+                  );
+
+                  return (
+                    <View style={styles.voteSummary}>
+                      <View style={styles.voteItem}>
+                        <Ionicons
+                          name="thumbs-up-outline"
+                          size={24}
+                          color="#4CAF50"
+                        />
+                        <Text style={styles.voteCount}>{voteSummary.up}</Text>
+                      </View>
+                      <View style={styles.voteItem}>
+                        <Ionicons
+                          name="thumbs-down-outline"
+                          size={24}
+                          color="#F44336"
+                        />
+                        <Text style={styles.voteCount}>{voteSummary.down}</Text>
+                      </View>
+                    </View>
+                  );
+                })()
+              ) : (
+                <Text style={styles.noVotesText}>Pas encore de votes</Text>
+              )}
+            </View>
+          </View>
         </View>
       </View>
 
@@ -497,25 +575,33 @@ export default function HomeScreen({}) {
       </Modal>
 
       <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.horizontalScroll}
-      >
-        {smarterData.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.smarterItem}
-            onPress={() =>
-              navigation.navigate("UserProfileScreen", { userId: item.id })
-            } // Navigue vers UserProfile avec l'ID utilisateur
-          >
-            <Image source={item.image} style={styles.smarterImage} />
-            <Text style={styles.username}>{item.username}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {/* Affiche les 10 premiers utilisateurs */}
+          {smarterData.slice(0, 10).map((item, index) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.smarterItem}
+              onPress={() =>
+                navigation.navigate("UserProfileScreen", { userId: item.id })
+              }
+            >
+              <Text style={styles.username}>{`# ${index + 1}`}</Text>
+              <Image source={item.image} style={styles.smarterImage} />
+              <Text style={styles.username}>{item.username}</Text>
+            </TouchableOpacity>
+          ))}
 
+          {/* Ajout du bouton "Voir tout" */}
+          <TouchableOpacity
+            key="seeAll"
+            style={[styles.smarterItem, styles.seeAllButton]}
+            onPress={() => setIsModalVisible(true)} // Affiche le modal ou redirige
+          >
+            <Text style={styles.seeAllText}>Voir tout</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
       {/* Section Signalements Proche de Vous */}
       <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
       {reports.length === 0 ? (
@@ -578,16 +664,19 @@ export default function HomeScreen({}) {
 
       {/* Section À la Une */}
       <Text style={styles.sectionTitle}>À la Une</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.horizontalScroll}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {featuredEvents.map((item) => (
-          <View key={item.id} style={styles.featuredItem}>
-            <Image source={item.image} style={styles.featuredImage} />
+          <TouchableOpacity
+            key={item.id}
+            style={styles.featuredItem}
+            onPress={() => navigation.navigate("UserProfileScreen", { userId: item.id })}
+          >
+            <Image
+              source={{ uri: item.image }}
+              style={styles.featuredImage}
+            />
             <Text style={styles.featuredTitle}>{item.title}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 

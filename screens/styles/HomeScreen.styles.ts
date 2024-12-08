@@ -6,46 +6,6 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
-  profileContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  profileImage: {
-    width: 100,
-    height: 130,
-    borderRadius: 10,
-    marginRight: 20,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  noProfileImageText: {
-    color: "#999", // Couleur grise discrète
-    fontSize: 16, // Taille de police lisible
-    fontWeight: "bold", // Texte en gras pour plus de visibilité
-    marginBottom: 20, // Espacement avec le bouton
-  },
-  noReportsText: {
-    textAlign: "center",
-    color: "#888",
-    marginVertical: 20,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  userDetails: {
-    fontSize: 14,
-    color: "#666",
-  },
-  userStats: {
-    fontWeight: "bold",
-    fontSize: 14,
-    marginVertical: 5,
-    color: "#3498db",
-  },
   userRanking: {
     fontSize: 14,
     color: "#999",
@@ -68,11 +28,6 @@ export default StyleSheet.create({
   smiley: {
     fontSize: 48,
     color: "green",
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
   },
   reportItem: {
     padding: 15,
@@ -97,25 +52,57 @@ export default StyleSheet.create({
     fontWeight: "500",
     color: "#424242", // Texte blanc pour rester lisible sur les fonds colorés
   },
-  horizontalScroll: {
-    marginBottom: 20,
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
   },
   smarterItem: {
+    alignItems: "center",
+    padding: 10,
+    width: 120,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+    marginBottom: 10,
+  },
+  seeAllButton: {
+    backgroundColor: "#2c3e50", // Couleur accentuée (orange-rouge)
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 90,
+    margin: 35,
     width: 100,
     height: 100,
-    alignItems: "center", // Centre le contenu horizontalement
-    justifyContent: "center", // Assure un alignement vertical cohérent
-    padding: 10, // Ajoute de l'espace interne
-    marginTop: 10, // Espacement avec les autres éléments
+    marginHorizontal: 10,
+  },
+  seeAllText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   smarterImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 90,
+    marginBottom: 10,
+    marginTop: 5,
+    borderColor: "#ddd",
   },
   username: {
-    marginTop: 5,
-    fontSize: 14,
+    fontSize: 19,
+    fontWeight: "600",
+    color: "#555",
+    textAlign: "center",
+  },
+  rankNumber: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#ff6347", // Couleur accentuée (orange-rouge)
   },
   categoryItem: {
     width: 150,
@@ -157,31 +144,26 @@ export default StyleSheet.create({
     alignItems: "center", // Centre le contenu horizontalement
     overflow: "hidden",
   },
-
   eventItem: {
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
   },
-
   eventTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
-
   eventDetails: {
     fontSize: 14,
     color: "#666",
     marginVertical: 5,
   },
-
   eventLocation: {
     fontSize: 14,
     color: "#888",
   },
-
   chartContainer: {
     alignItems: "center",
     marginBottom: 20,
@@ -192,7 +174,6 @@ export default StyleSheet.create({
     borderRadius: 10,
     marginBottom: 20,
   },
-
   infoText: {
     fontSize: 14,
     color: "#666",
@@ -364,22 +345,20 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-
   categoryButtonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 10,
     paddingHorizontal: 10,
   },
-
   categoryButton: {
     width: 120, // Largeur fixe
     height: 120, // Hauteur fixe
-    marginTop : 10,
+    marginTop: 10,
     justifyContent: "center", // Centrer le contenu verticalement
     alignItems: "center", // Centrer le contenu horizontalement
     marginRight: 10, // Espacement entre les boutons
-    borderRadius:  90, // Coins arrondis
+    borderRadius: 90, // Coins arrondis
   },
   categoryIcon: {
     marginBottom: 5, // Espacement entre l'icône et le texte
@@ -389,43 +368,35 @@ export default StyleSheet.create({
     fontSize: 16, // Taille de la police du texte
     fontWeight: "bold", // Texte en gras
   },
-
   containerFollower: {
     flex: 1,
     backgroundColor: "#f7f8fa", // Light gray for a soft look
     padding: 20,
   },
-
-  // Title with larger size and a stronger color
   title: {
-    fontSize: 24, // Larger for better readability
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#333", // Neutral dark text
+    color: "#333",
     marginBottom: 20,
     textAlign: "center",
   },
-
-  // FlatList container with consistent padding
   followerList: {
     paddingBottom: 20, // Space at the bottom
   },
-
-  // Individual follower item container
   followerItem: {
     flexDirection: "row", // Align image and text horizontally
     alignItems: "center",
     backgroundColor: "#fff", // White background for contrast
     padding: 12,
     marginBottom: 12,
-    borderRadius: 8, // Rounded corners for a modern look
+    marginHorizontal: 1,
+    borderRadius: 90, // Rounded corners for a modern look
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1, // Elevation for Android
   },
-
-  // Follower image styling
   followerImage: {
     width: 50,
     height: 50,
@@ -434,20 +405,14 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd", // Soft border for definition
   },
-
-  // Container for follower text
   followerTextContainer: {
     flex: 1,
   },
-
-  // Follower name styling
   followerName: {
     fontSize: 16,
     fontWeight: "600", // Slightly bold for importance
     color: "#444", // Dark gray for subtle contrast
   },
-
-  // Back button container with modern style
   backButton: {
     marginTop: 20,
     alignSelf: "center",
@@ -456,8 +421,6 @@ export default StyleSheet.create({
     backgroundColor: "#2c3e50", // Primary blue
     borderRadius: 30,
   },
-
-  // Back button text styling
   backButtonText: {
     fontSize: 16,
     fontWeight: "bold",
@@ -494,26 +457,76 @@ export default StyleSheet.create({
     color: "white",
     fontSize: 16,
   },
-
+  noReportsText: {
+    textAlign: "center",
+    color: "#888",
+    marginVertical: 20,
+  },
+  profileContainer: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 20,
+    alignItems: "center",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
+  },
+  noProfileImageText: {
+    fontSize: 16,
+    color: "#999",
+    fontStyle: "italic",
+    marginBottom: 15,
+  },
+  profileInfo: {
+    alignItems: "center",
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  userDetails: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 10,
+  },
+  userStats: {
+    fontSize: 16,
+    color: "#1E90FF",
+    fontWeight: "bold",
+    marginTop: 10,
+  },
   modalContentRanking: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     paddingVertical: 80,
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5, // Pour Android
   },
   rankingItemModal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
     marginBottom: 16,
+    marginHorizontal: 8,
     padding: 16,
-    borderRadius: 8,
-    shadowColor: '#000',
+    borderRadius: 190,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -521,8 +534,8 @@ export default StyleSheet.create({
   },
   rankingTextModal: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2d3748',
+    fontWeight: "bold",
+    color: "#2d3748",
     marginHorizontal: 8,
   },
   userImageModal: {
@@ -530,24 +543,102 @@ export default StyleSheet.create({
     height: 64,
     borderRadius: 32,
     borderWidth: 2,
-    borderColor: '#5a67d8',
+    borderColor: "#5a67d8",
   },
   closeButtonModal: {
     marginTop: 16,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#5a67d8',
+    backgroundColor: "#5a67d8",
     borderRadius: 30,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5, // Pour Android
   },
   closeButtonTextModal: {
-    color: 'white',
-    fontWeight: '600',
-    textAlign: 'center',
+    color: "white",
+    fontWeight: "600",
+    textAlign: "center",
     fontSize: 16,
+  },
+  statsContainer: {
+    flexDirection: "row", // Met sur la même ligne
+    alignItems: "center", // Centre les éléments verticalement
+    justifyContent: "space-between", // Espace entre les éléments
+    marginVertical: 20,
+    marginBottom: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  rankingButton: {
+    backgroundColor: "#4CAF50", // Couleur verte pour le bouton
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+    marginVertical: 10,
+  },
+  rankingButtonContent: {
+    alignItems: "center", // Centre le texte principal et le sous-texte
+  },
+  rankingMainText: {
+    marginTop: 3,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff", // Texte blanc
+  },
+  rankingSubText: {
+    fontSize: 8,
+    color: "#d9ffe2", // Texte légèrement plus clair
+  },
+  votesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    flex: 1, // Permet d'occuper l'espace restant
+    marginLeft: 15, // Séparation entre le bouton et les votes
+  },
+  voteSummary: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  voteItem: {
+    width: 60, // Assurez-vous que largeur et hauteur sont égales
+    height: 60,
+    flexDirection: "row", // Change l'alignement interne pour centrer verticalement et horizontalement
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 30, // Moitié de la largeur/hauteur pour obtenir un cercle parfait
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+    marginHorizontal: 5,
+  },
+  voteCount: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginLeft: 8,
+  },
+  noVotesText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
   },
 });

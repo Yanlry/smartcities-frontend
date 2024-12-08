@@ -1,9 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 // @ts-ignore
 import { API_URL, ORS_API_KEY } from "@env"; // Import des variables depuis .env
-
 
 export interface Photo {
   id: number;
@@ -22,69 +21,59 @@ export interface Report {
   photos: Photo[]; // Ajouter les photos
 }
 
+/**
+ * Récupère les signalements dans un rayon donné.
+ */
 export const fetchReports = async (
   latitude: number,
   longitude: number,
   radiusKm: number = 10
 ): Promise<Report[]> => {
-
-  const response = await axios.get(`${API_URL}/reports`, {
-    params: { latitude, longitude, radiusKm },
-  });
-
-  // Pas de transformation nécessaire, les photos sont déjà incluses
-  return response.data;
-};
-
-export const fetchAllReportsInRegion = async (
-  latitude: number,
-  longitude: number,
-  radiusKm: number = 10
-): Promise<Report[]> => {
   try {
-    const rawReports = await fetchReports(latitude, longitude, radiusKm);
-
-    // Vérifier si aucun signalement n'a été trouvé
-    if (rawReports.length === 0) {
-      console.log('Aucun signalement trouvé dans la région.');
-      return []; // Retourne un tableau vide
+    if (!latitude || !longitude) {
+      throw new Error("Coordonnées invalides.");
     }
 
-    const destinations: [number, number][] = rawReports.map((report) => [
-      report.longitude,
-      report.latitude,
-    ]);
+    const response = await axios.get(`${API_URL}/reports`, {
+      params: { latitude, longitude, radiusKm },
+    });
 
-    const distances = await fetchDrivingDistances([longitude, latitude], destinations);
-
-    const enrichedReports = rawReports.map((report, index) => ({
-      ...report,
-      distance: distances[index] / 1000 || Infinity,
-    }));
-
-    return enrichedReports.sort((a, b) => a.distance - b.distance);
-  } catch (error) {
-    console.error('Erreur lors du chargement des signalements :', error);
-    throw new Error('Impossible de récupérer tous les signalements.');
+    return response.data;
+  } catch (error: any) {
+    console.error("Erreur dans fetchReports :", error.response?.data || error.message);
+    throw new Error("Impossible de récupérer les signalements.");
   }
 };
 
+const distanceCache = new Map<string, number[]>(); // Cache global pour les distances
+/**
+ * Calcule les distances de conduite en utilisant OpenRouteService.
+ */
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const fetchDrivingDistances = async (
   origin: [number, number],
   destinations: [number, number][]
 ): Promise<number[]> => {
+  console.log("fetchDrivingDistances - Origin :", origin);
+  console.log("fetchDrivingDistances - Destinations :", destinations);
+
+  if (!destinations || destinations.length === 0) {
+    console.log("Aucune destination pour le calcul des distances.");
+    return [];
+  }
+
+  const uniqueDestinations = Array.from(new Set(destinations.map((d) => JSON.stringify(d)))).map((d) => JSON.parse(d));
+  console.log("fetchDrivingDistances - Unique destinations :", uniqueDestinations);
+
   try {
-    // Si destinations est vide, retourne un tableau vide
-    if (!destinations || destinations.length === 0) {
-      console.log("Aucune destination pour le calcul des distances.");
-      return [];
-    }
+    // Ajoutez un délai avant chaque requête pour limiter la fréquence
+    await delay(1500); // 1,5 seconde entre les requêtes
 
     const response = await axios.post(
       'https://api.openrouteservice.org/v2/matrix/driving-car',
       {
-        locations: [origin, ...destinations],
+        locations: [origin, ...uniqueDestinations],
         metrics: ['distance'],
       },
       {
@@ -95,19 +84,29 @@ export const fetchDrivingDistances = async (
       }
     );
 
+    console.log("fetchDrivingDistances - Response :", response.data);
+
     if (!response.data?.distances || response.data.distances.length === 0) {
-      throw new Error('Aucune distance retournée par le service OpenRouteService.');
+      throw new Error("Aucune distance retournée par OpenRouteService.");
     }
 
-    return response.data.distances[0].slice(1);
-  } catch (error) {
-    console.error('Erreur dans fetchDrivingDistances :', error.response?.data || error.message);
-    throw error;
+    return response.data.distances[0].slice(1); // Exclut l'origine
+  } catch (error: any) {
+    console.error("Erreur dans fetchDrivingDistances :", error.response?.data || error.message);
+
+    if (error.response?.data?.error === "Quota exceeded") {
+      console.warn("Quota dépassé pour OpenRouteService. Calcul approximatif des distances.");
+      return destinations.map(() => Infinity); // Approximations
+    }
+
+    throw new Error("Impossible de calculer les distances.");
   }
 };
 
-
-export const processReports = async (
+/**
+ * Récupère et enrichit les signalements dans une région donnée.
+ */
+export const fetchAllReportsInRegion = async (
   latitude: number,
   longitude: number,
   radiusKm: number = 10
@@ -115,10 +114,9 @@ export const processReports = async (
   try {
     const rawReports = await fetchReports(latitude, longitude, radiusKm);
 
-    // Vérifier si aucun signalement n'a été trouvé
     if (rawReports.length === 0) {
-      console.log('Aucun signalement à traiter.');
-      return []; // Retourne un tableau vide
+      console.log("Aucun signalement trouvé dans la région.");
+      return [];
     }
 
     const destinations: [number, number][] = rawReports.map((report) => [
@@ -130,47 +128,59 @@ export const processReports = async (
 
     const enrichedReports = rawReports.map((report, index) => ({
       ...report,
-      distance: distances[index] / 1000 || Infinity,
+      distance: distances[index] / 1000 || Infinity, // Convertit en km
     }));
 
-    return enrichedReports
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 4);
-  } catch (error) {
-    console.error('Erreur lors du traitement des signalements :', error);
-    throw new Error('Impossible de traiter les signalements.');
+    return enrichedReports.sort((a, b) => a.distance - b.distance); // Trie par distance
+  } catch (error: any) {
+    console.error("Erreur dans fetchAllReportsInRegion :", error.message);
+    throw new Error("Impossible de charger les signalements enrichis.");
   }
 };
 
-
-// Fonction pour créer un signalement
-export const createReport = async (data: any) => {
-
+/**
+ * Traite les signalements et retourne les plus proches.
+ */
+export const processReports = async (
+  latitude: number,
+  longitude: number,
+  radiusKm: number = 10,
+  limit: number = 4
+): Promise<Report[]> => {
   try {
-    // Étape 1 : Récupérer le token depuis AsyncStorage
+    const enrichedReports = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
+
+    return enrichedReports.slice(0, limit); // Limite les résultats
+  } catch (error: any) {
+    console.error("Erreur dans processReports :", error.message);
+    throw new Error("Impossible de traiter les signalements.");
+  }
+};
+
+/**
+ * Crée un nouveau signalement.
+ */
+export const createReport = async (data: any): Promise<any> => {
+  try {
     const token = await AsyncStorage.getItem('authToken');
     if (!token) {
-      console.error('Aucun token trouvé dans AsyncStorage.');
-      throw new Error('Utilisateur non connecté');
+      console.error("Aucun token trouvé dans AsyncStorage.");
+      throw new Error("Utilisateur non connecté.");
     }
 
-    console.log('Token utilisé pour la requête :', token);
-
-    // Étape 2 : Décoder le token pour obtenir userId
     const decoded: any = jwtDecode(token);
-    const userId = decoded.userId;
+    const userId = decoded?.userId;
 
-    console.log('ID utilisateur récupéré du token :', userId);
+    if (!userId) {
+      console.error("ID utilisateur introuvable dans le token.");
+      throw new Error("Utilisateur non valide.");
+    }
 
-    // Étape 3 : Préparer les données à envoyer
     const reportData = {
       ...data,
-      userId, // Utilise toujours l'userId depuis le token
+      userId,
     };
 
-    console.log('Données envoyées au backend :', reportData);
-
-    // Étape 4 : Envoyer la requête au backend
     const response = await axios.post(`${API_URL}/reports`, reportData, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -178,12 +188,9 @@ export const createReport = async (data: any) => {
       },
     });
 
-    console.log('Réponse du backend :', response.data);
-
-    return response.data; // Retourne les données de la réponse
-  } catch (error) {
-    console.error('Erreur lors de la création du signalement :', error.response?.data || error.message);
-    throw error;
+    return response.data;
+  } catch (error: any) {
+    console.error("Erreur lors de la création du signalement :", error.response?.data || error.message);
+    throw new Error("Impossible de créer le signalement.");
   }
 };
-
