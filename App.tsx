@@ -18,6 +18,7 @@ import ReportDetailsScreen from './screens/ReportDetailsScreen';
 import CategoryReportsScreen from './screens/CategoryReportsScreen';
 import AddNewEventScreen from './screens/AddNewEventScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
+import KeyboardWrapper from "./components/KeyboardWrapper";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -77,7 +78,7 @@ export default function App() {
           headerShown: true,
           header: ({ navigation }) => <CustomHeader navigation={navigation} />,
           tabBarIcon: ({ color, size, focused }) => {
-            let iconName;
+            let iconName: string = '';
 
             if (route.name === 'Accueil') {
               iconName = 'home-outline';
@@ -149,6 +150,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
+      <KeyboardWrapper>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (
           <>
@@ -192,6 +194,7 @@ export default function App() {
           </>
         )}
       </Stack.Navigator>
+      </KeyboardWrapper>
     </NavigationContainer>
   );
 }

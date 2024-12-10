@@ -211,16 +211,15 @@ export default function LoginScreen({ navigation, onLogin }: any) {
             <Text style={styles.loginButtonText}>Se connecter</Text>
           </TouchableOpacity>
 
-          <Text style={styles.registerText}>Pas de compte ?</Text>
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              isRegisterClicked && styles.buttonClicked,
-            ]}
-            onPress={handleRegisterNavigation}
-          >
-            <Text style={styles.registerButtonText}>S'inscrire</Text>
-          </TouchableOpacity>
+          <Text style={styles.registerText} >
+            Pas de compte ?{" "}
+            <Text
+              style={{ fontWeight: "bold", textDecorationLine: "underline" }}
+              onPress={handleRegisterNavigation}
+            >
+              Inscrivez-vous
+            </Text>
+          </Text>
         </BlurView>
       </ImageBackground>
 
@@ -444,6 +443,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 50,
     backgroundColor: "#2c3e50", // Bleu moderne
+    shadowColor: "#2c3e50",
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   },
 
   buttonClicked: {
-    backgroundColor: "#28a745", // Vert agréable pour indiquer que le bouton a été cliqué
+    backgroundColor: "#11998e", // Vert agréable pour indiquer que le bouton a été cliqué
   },
 
   registerButtonText: {

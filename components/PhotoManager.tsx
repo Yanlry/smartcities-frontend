@@ -112,16 +112,17 @@ const styles = StyleSheet.create({
   button: {
     width: "75%",
     height: 50,
-    backgroundColor: "#6C63FF", // Couleur violet moderne
+    backgroundColor: "#11998e",
+    shadowColor: "#11998e",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
     borderRadius: 25, // Coins arrondis
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 15,
-    shadowColor: "#6C63FF", // Ombre de la même couleur que le bouton
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4, // Ombre pour Android
+    
   },
 
   // Texte du bouton

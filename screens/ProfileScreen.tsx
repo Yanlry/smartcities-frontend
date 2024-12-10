@@ -233,6 +233,11 @@ export default function ProfileScreen({ navigation, onLogout }) {
       }
 
       Alert.alert("Succès", "Mot de passe modifié avec succès.");
+      setFormData((prevState) => ({
+        ...prevState,
+        currentPassword: "", // Vide le champ actuel
+        newPassword: "", // Vide le champ du nouveau mot de passe
+      }));
     } catch (error: any) {
       Alert.alert(
         "Erreur",
@@ -340,6 +345,7 @@ export default function ProfileScreen({ navigation, onLogout }) {
             </Text>
 
             {/* Mot de passe actuel */}
+            {/* Mot de passe actuel */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Mot de passe actuel :</Text>
               <View style={styles.inputContainer}>
@@ -347,8 +353,10 @@ export default function ProfileScreen({ navigation, onLogout }) {
                   style={styles.input}
                   placeholder="Entrez votre mot de passe actuel"
                   secureTextEntry={!showCurrentPassword} // Contrôle la visibilité
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, currentPassword: text })
+                  value={formData.currentPassword} // Liaison avec currentPassword
+                  onChangeText={
+                    (text) =>
+                      setFormData({ ...formData, currentPassword: text }) // Met à jour uniquement currentPassword
                   }
                 />
                 <TouchableOpacity
@@ -365,6 +373,7 @@ export default function ProfileScreen({ navigation, onLogout }) {
             </View>
 
             {/* Nouveau mot de passe */}
+            {/* Nouveau mot de passe */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Nouveau mot de passe :</Text>
               <View style={styles.inputContainer}>
@@ -372,8 +381,9 @@ export default function ProfileScreen({ navigation, onLogout }) {
                   style={styles.input}
                   placeholder="Entrez le nouveau mot de passe"
                   secureTextEntry={!showNewPassword} // Contrôle la visibilité
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, newPassword: text })
+                  value={formData.newPassword} // Liaison avec newPassword
+                  onChangeText={
+                    (text) => setFormData({ ...formData, newPassword: text }) // Met à jour uniquement newPassword
                   }
                 />
                 <TouchableOpacity

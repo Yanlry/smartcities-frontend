@@ -204,7 +204,7 @@ export default StyleSheet.create({
   },
   button: {
     backgroundColor: "#2c3e50", // Couleur de fond
-    paddingVertical: 22, // Espacement vertical
+    paddingVertical: 15, // Espacement vertical
     paddingHorizontal: 30, // Espacement horizontal
     borderRadius: 30, // Coins arrondis
   },
@@ -217,16 +217,16 @@ export default StyleSheet.create({
   buttonPhoto: {
     width: "70%",
     height: 50,
-    backgroundColor: "#6C63FF", // Couleur violet moderne
     borderRadius: 25, // Coins arrondis
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 25,
-    shadowColor: "#6C63FF", // Ombre de la même couleur que le bouton
+    backgroundColor: "#11998e",
+    shadowColor: "#11998e",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4, // Ombre pour Android
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
   },
 
   // Texte du bouton

@@ -550,12 +550,13 @@ export default StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     backgroundColor: "#5a67d8",
+    shadowColor: "#5a67d8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
     borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5, // Pour Android
+   
   },
   closeButtonTextModal: {
     color: "white",
@@ -577,18 +578,17 @@ export default StyleSheet.create({
     elevation: 3,
   },
   rankingButton: {
-    backgroundColor: "#4CAF50", // Couleur verte pour le bouton
-    paddingVertical: 12,
+    backgroundColor: "#5a67d8",
+    shadowColor: "#5a67d8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-    marginVertical: 10,
   },
   rankingButtonContent: {
     alignItems: "center", // Centre le texte principal et le sous-texte

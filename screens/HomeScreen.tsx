@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-
 import {
   View,
   Text,
@@ -27,6 +26,7 @@ import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 // @ts-ignore
 import { API_URL } from "@env";
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
 type User = {
   id: string;
@@ -51,7 +51,6 @@ type User = {
   isMunicipality: boolean;
   votes: any[];
 };
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
 interface TopUser {
   id: string;
@@ -205,8 +204,8 @@ export default function HomeScreen({}) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        setLoading(true); // Démarrer le chargement
-        setError(null); // Réinitialiser l'erreur
+        setLoading(true);
+        setError(null);
   
         const userId = await getUserIdFromToken();
         if (!userId) {
@@ -218,18 +217,24 @@ export default function HomeScreen({}) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
   
-        setStats(response.data); // Mettre à jour les statistiques
+        const data = response.data;
+        // Vérifiez que les votes sont présents
+        if (!data.votes) {
+          data.votes = []; // Fournir une valeur par défaut
+        }
+  
+        setStats(data);
       } catch (error: any) {
         console.error("Erreur dans fetchStats :", error.message || error);
         setError("Impossible de récupérer les statistiques.");
       } finally {
-        setLoading(false); // Arrêter le chargement
+        setLoading(false);
       }
     };
   
     fetchStats();
   }, []);
-
+  
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -261,7 +266,6 @@ export default function HomeScreen({}) {
   
     fetchEvents();
   }, []);
-
   
   if (isLoading) {
     return (
@@ -299,6 +303,24 @@ export default function HomeScreen({}) {
     );
   }
 
+  if (!reports || reports.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+        <Text style={styles.loadingText}>Chargement des signalements...</Text>
+      </View>
+    );
+  }
+
+  if (!stats || !stats.votes) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff4500" />
+        <Text style={styles.loadingText}>Chargement des votes...</Text>
+      </View>
+    );
+  }
+
   const calculateYearsSince = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -332,7 +354,7 @@ export default function HomeScreen({}) {
   const toggleFollowersList = () => {
     setShowFollowers((prev) => !prev); // Inverse l'état d'affichage
   };
-
+ 
   const renderFollower = ({ item }) => (
     <TouchableOpacity
       style={styles.followerItem}
@@ -428,7 +450,6 @@ export default function HomeScreen({}) {
     },
   ];
 
- 
   const upcomingEvents = [
     {
       id: "1",
@@ -443,6 +464,7 @@ export default function HomeScreen({}) {
       location: "Maison Des Jeunes D’Haubourdin",
     },
   ];
+  
   return (
     <ScrollView style={styles.container}>
       {/* Section Profil */}
@@ -493,54 +515,60 @@ export default function HomeScreen({}) {
 
             {/* Votes */}
             <View style={styles.votesContainer}>
-              {stats.votes.length > 0 ? (
-                (() => {
-                  interface Vote {
-                    type: "up" | "down";
-                  }
+  {stats && stats.votes ? (
+    stats.votes.length > 0 ? (
+      (() => {
+        interface Vote {
+          type: "up" | "down";
+        }
 
-                  interface VoteSummary {
-                    up: number;
-                    down: number;
-                  }
+        interface VoteSummary {
+          up: number;
+          down: number;
+        }
 
-                  const voteSummary: VoteSummary = stats.votes.reduce(
-                    (acc: VoteSummary, vote: Vote) => {
-                      if (vote.type === "up") {
-                        acc.up++;
-                      } else if (vote.type === "down") {
-                        acc.down++;
-                      }
-                      return acc;
-                    },
-                    { up: 0, down: 0 }
-                  );
+        const voteSummary: VoteSummary = stats.votes.reduce(
+          (acc: VoteSummary, vote: Vote) => {
+            if (vote.type === "up") {
+              acc.up++;
+            } else if (vote.type === "down") {
+              acc.down++;
+            }
+            return acc;
+          },
+          { up: 0, down: 0 }
+        );
 
-                  return (
-                    <View style={styles.voteSummary}>
-                      <View style={styles.voteItem}>
-                        <Ionicons
-                          name="thumbs-up-outline"
-                          size={24}
-                          color="#4CAF50"
-                        />
-                        <Text style={styles.voteCount}>{voteSummary.up}</Text>
-                      </View>
-                      <View style={styles.voteItem}>
-                        <Ionicons
-                          name="thumbs-down-outline"
-                          size={24}
-                          color="#F44336"
-                        />
-                        <Text style={styles.voteCount}>{voteSummary.down}</Text>
-                      </View>
-                    </View>
-                  );
-                })()
-              ) : (
-                <Text style={styles.noVotesText}>Pas encore de votes</Text>
-              )}
+        return (
+          <View style={styles.voteSummary}>
+            <View style={styles.voteItem}>
+              <Ionicons
+                name="thumbs-up-outline"
+                size={24}
+                color="#4CAF50"
+              />
+              <Text style={styles.voteCount}>{voteSummary.up}</Text>
             </View>
+            <View style={styles.voteItem}>
+              <Ionicons
+                name="thumbs-down-outline"
+                size={24}
+                color="#F44336"
+              />
+              <Text style={styles.voteCount}>{voteSummary.down}</Text>
+            </View>
+          </View>
+        );
+      })()
+    ) : (
+      <Text style={styles.noVotesText}>Pas encore de votes</Text>
+    )
+  ) : (
+    // Afficher un état de chargement ou une valeur par défaut
+    <Text style={styles.loadingText}>Chargement des votes...</Text>
+  )}
+</View>
+
           </View>
         </View>
       </View>
