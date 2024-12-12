@@ -26,6 +26,7 @@ import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 // @ts-ignore
 import { API_URL } from "@env";
+
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
 type User = {
@@ -78,7 +79,17 @@ export default function HomeScreen({}) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [rankingData, setRankingData] = useState<TopUser[]>([]);
   const [stats, setStats] = useState<any>(null);
-  const [featuredEvents, setFeaturedEvents] = useState<{ id: string; title: string; image: string }[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<
+    { id: string; title: string; image: string }[]
+  >([]);
+  const [events, setEvents] = useState<Event[]>([]);
+
+  interface Event {
+    id: string;
+    title: string;
+    date: string;
+    location: string;
+  }
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -200,29 +211,29 @@ export default function HomeScreen({}) {
 
     fetchData();
   }, [location]);
-  
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
         setError(null);
-  
+
         const userId = await getUserIdFromToken();
         if (!userId) {
           throw new Error("Utilisateur non connecté ou ID introuvable.");
         }
-  
+
         const response = await axios.get(`${API_URL}/users/stats/${userId}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-  
+
         const data = response.data;
         // Vérifiez que les votes sont présents
         if (!data.votes) {
           data.votes = []; // Fournir une valeur par défaut
         }
-  
+
         setStats(data);
       } catch (error: any) {
         console.error("Erreur dans fetchStats :", error.message || error);
@@ -231,21 +242,21 @@ export default function HomeScreen({}) {
         setLoading(false);
       }
     };
-  
+
     fetchStats();
   }, []);
-  
+
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         setLoading(true); // Démarrer le chargement
         setError(null); // Réinitialiser l'erreur
-  
+
         const response = await axios.get(`${API_URL}/events`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-  
+
         const events = response.data.map((event: any) => ({
           id: event.id,
           title: event.title,
@@ -254,7 +265,7 @@ export default function HomeScreen({}) {
             event.photos[0]?.url ||
             "https://via.placeholder.com/300",
         }));
-  
+
         setFeaturedEvents(events); // Mettre à jour l'état
       } catch (error: any) {
         console.error("Erreur dans fetchEvents :", error.message || error);
@@ -263,10 +274,10 @@ export default function HomeScreen({}) {
         setLoading(false); // Arrêter le chargement
       }
     };
-  
+
     fetchEvents();
   }, []);
-  
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -321,6 +332,18 @@ export default function HomeScreen({}) {
     );
   }
 
+  const fetchEventsByDate = async (date) => {
+    try {
+      const response = await axios.get(`${API_URL}/events/by-date`, {
+        params: { date }, // Passez la date sélectionnée en paramètre
+      });
+      setEvents(response.data); // Mettez à jour les événements avec la réponse
+    } catch (error) {
+      console.error("Erreur lors de la récupération des événements :", error);
+      alert("Impossible de charger les événements pour cette date.");
+    }
+  };
+
   const calculateYearsSince = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -354,7 +377,7 @@ export default function HomeScreen({}) {
   const toggleFollowersList = () => {
     setShowFollowers((prev) => !prev); // Inverse l'état d'affichage
   };
- 
+
   const renderFollower = ({ item }) => (
     <TouchableOpacity
       style={styles.followerItem}
@@ -464,7 +487,8 @@ export default function HomeScreen({}) {
       location: "Maison Des Jeunes D’Haubourdin",
     },
   ];
-  
+
+
   return (
     <ScrollView style={styles.container}>
       {/* Section Profil */}
@@ -515,60 +539,61 @@ export default function HomeScreen({}) {
 
             {/* Votes */}
             <View style={styles.votesContainer}>
-  {stats && stats.votes ? (
-    stats.votes.length > 0 ? (
-      (() => {
-        interface Vote {
-          type: "up" | "down";
-        }
+              {stats && stats.votes ? (
+                stats.votes.length > 0 ? (
+                  (() => {
+                    interface Vote {
+                      type: "up" | "down";
+                    }
 
-        interface VoteSummary {
-          up: number;
-          down: number;
-        }
+                    interface VoteSummary {
+                      up: number;
+                      down: number;
+                    }
 
-        const voteSummary: VoteSummary = stats.votes.reduce(
-          (acc: VoteSummary, vote: Vote) => {
-            if (vote.type === "up") {
-              acc.up++;
-            } else if (vote.type === "down") {
-              acc.down++;
-            }
-            return acc;
-          },
-          { up: 0, down: 0 }
-        );
+                    const voteSummary: VoteSummary = stats.votes.reduce(
+                      (acc: VoteSummary, vote: Vote) => {
+                        if (vote.type === "up") {
+                          acc.up++;
+                        } else if (vote.type === "down") {
+                          acc.down++;
+                        }
+                        return acc;
+                      },
+                      { up: 0, down: 0 }
+                    );
 
-        return (
-          <View style={styles.voteSummary}>
-            <View style={styles.voteItem}>
-              <Ionicons
-                name="thumbs-up-outline"
-                size={24}
-                color="#4CAF50"
-              />
-              <Text style={styles.voteCount}>{voteSummary.up}</Text>
+                    return (
+                      <View style={styles.voteSummary}>
+                        <View style={styles.voteItem}>
+                          <Ionicons
+                            name="thumbs-up-outline"
+                            size={24}
+                            color="#4CAF50"
+                          />
+                          <Text style={styles.voteCount}>{voteSummary.up}</Text>
+                        </View>
+                        <View style={styles.voteItem}>
+                          <Ionicons
+                            name="thumbs-down-outline"
+                            size={24}
+                            color="#F44336"
+                          />
+                          <Text style={styles.voteCount}>
+                            {voteSummary.down}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })()
+                ) : (
+                  <Text style={styles.noVotesText}>Pas encore de votes</Text>
+                )
+              ) : (
+                // Afficher un état de chargement ou une valeur par défaut
+                <Text style={styles.loadingText}>Chargement des votes...</Text>
+              )}
             </View>
-            <View style={styles.voteItem}>
-              <Ionicons
-                name="thumbs-down-outline"
-                size={24}
-                color="#F44336"
-              />
-              <Text style={styles.voteCount}>{voteSummary.down}</Text>
-            </View>
-          </View>
-        );
-      })()
-    ) : (
-      <Text style={styles.noVotesText}>Pas encore de votes</Text>
-    )
-  ) : (
-    // Afficher un état de chargement ou une valeur par défaut
-    <Text style={styles.loadingText}>Chargement des votes...</Text>
-  )}
-</View>
-
           </View>
         </View>
       </View>
@@ -697,12 +722,12 @@ export default function HomeScreen({}) {
           <TouchableOpacity
             key={item.id}
             style={styles.featuredItem}
-            onPress={() => navigation.navigate("UserProfileScreen", { userId: item.id })}
+            onPress={() => {
+              console.log("Navigating to EventDetailsScreen with ID:", item.id);
+              navigation.navigate("EventDetailsScreen", { eventId: item.id });
+            }}
           >
-            <Image
-              source={{ uri: item.image }}
-              style={styles.featuredImage}
-            />
+            <Image source={{ uri: item.image }} style={styles.featuredImage} />
             <Text style={styles.featuredTitle}>{item.title}</Text>
           </TouchableOpacity>
         ))}
@@ -712,9 +737,13 @@ export default function HomeScreen({}) {
       <Text style={styles.sectionTitle}>Tous les événements</Text>
       <View style={styles.calendarContainer}>
         <CalendarPicker
-          onDateChange={(date) => console.log("Date sélectionnée :", date)}
-          previousTitle="<" // Utilisez un symbole pour réduire la largeur du bouton précédent
-          nextTitle=">" // Utilisez un symbole pour réduire la largeur du bouton suivant
+          onDateChange={(date) => {
+            const formattedDate = date.toISOString().split("T")[0];
+            console.log("Date sélectionnée :", formattedDate);
+            fetchEventsByDate(formattedDate); // Appelle l'API pour la date sélectionnée
+          }}
+          previousTitle="<"
+          nextTitle=">"
           weekdays={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]}
           months={[
             "Janvier",
@@ -735,19 +764,34 @@ export default function HomeScreen({}) {
             fontSize: 16,
           }}
           width={330}
+          selectedDayColor="#11998e" // Fond de la date sélectionnée
+          selectedDayTextColor="#FFFFFF" 
         />
       </View>
 
-      {/* List des évenements a venir */}
-      {upcomingEvents.map((event) => (
-        <View key={event.id} style={styles.eventItem}>
-          <Text style={styles.eventTitle}>{event.title}</Text>
-          <Text style={styles.eventDetails}>{event.date}</Text>
-          <Text style={styles.eventLocation}>
-            <Ionicons name="location-outline" size={16} /> {event.location}
+      {events.length > 0 ? (
+        events.map((event) => (
+          <TouchableOpacity
+            key={event.id}
+            style={styles.eventItem}
+            onPress={() =>
+              navigation.navigate("EventDetailsScreen", { eventId: event.id })
+            }
+          >
+            <Text style={styles.eventTitle}>{event.title}</Text>
+            <Text style={styles.eventDetails}>
+              {new Date(event.date).toLocaleDateString("fr-FR")}
+            </Text>
+            <Text style={styles.eventLocation}>📍 {event.location}</Text>
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.noEventsContainer}>
+          <Text style={styles.noEventsText}>
+            Aucun événement prévu pour cette date.
           </Text>
         </View>
-      ))}
+      )}
 
       {/* Section Statistiques du Mois */}
       <Text style={styles.sectionTitle}>Statistiques du mois</Text>

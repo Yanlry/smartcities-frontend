@@ -6,6 +6,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionSheet from 'react-native-actionsheet';
+import KeyboardWrapper from "./components/KeyboardWrapper";
+
 import HomeScreen from './screens/HomeScreen';
 import EventsScreen from './screens/EventsScreen';
 import ProfileScreen from './screens/ProfileScreen';
@@ -16,9 +18,10 @@ import RegisterScreen from './screens/Auth/RegisterScreen';
 import AddNewReportScreen from './screens/AddNewReportScreen';
 import ReportDetailsScreen from './screens/ReportDetailsScreen';
 import CategoryReportsScreen from './screens/CategoryReportsScreen';
+import EventDetailsScreen from './screens/EventDetailsScreen';
 import AddNewEventScreen from './screens/AddNewEventScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
-import KeyboardWrapper from "./components/KeyboardWrapper";
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -188,6 +191,7 @@ export default function App() {
             </Stack.Screen>
             <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
             <Stack.Screen name="ReportDetails" component={ReportDetailsScreen} />
+            <Stack.Screen name="EventDetailsScreen" component={EventDetailsScreen} />
             <Stack.Screen name="CategoryReports" component={CategoryReportsScreen} />
             <Stack.Screen name="AddNewEventScreen" component={AddNewEventScreen} />
             <Stack.Screen name="AddNewReportScreen" component={AddNewReportScreen} />

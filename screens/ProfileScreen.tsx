@@ -309,6 +309,16 @@ export default function ProfileScreen({ navigation, onLogout }) {
               editable={editable}
             />
           </View>
+            {/* Nom d'utilisateur */}
+            <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Nom d'utilisateur :</Text>
+            <TextInput
+              style={[styles.input, !editable && styles.inputDisabled]}
+              value={formData.username}
+              onChangeText={(text) => handleInputChange("username", text)}
+              editable={editable}
+            />
+          </View>
           {/* Email */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Email :</Text>
@@ -316,16 +326,6 @@ export default function ProfileScreen({ navigation, onLogout }) {
               style={[styles.input, !editable && styles.inputDisabled]}
               value={formData.email}
               onChangeText={(text) => handleInputChange("email", text)}
-              editable={editable}
-            />
-          </View>
-          {/* Nom d'utilisateur */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Nom d'utilisateur :</Text>
-            <TextInput
-              style={[styles.input, !editable && styles.inputDisabled]}
-              value={formData.username}
-              onChangeText={(text) => handleInputChange("username", text)}
               editable={editable}
             />
           </View>

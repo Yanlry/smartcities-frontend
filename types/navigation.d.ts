@@ -8,6 +8,7 @@ export type RootStackParamList = {
   UserProfileScreen: { userId: string };
   ReportDetails: { reportId: number }; // Typage attendu pour les paramètres
   CategoryReports: { category: string }; // Ajout pour gérer la navigation vers la page des rapports par catégorie
+  EventDetailsScreen: { eventId: string };
 };
 
 export type TabParamList = {

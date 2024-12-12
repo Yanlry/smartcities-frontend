@@ -27,7 +27,7 @@ export interface Report {
 export const fetchReports = async (
   latitude: number,
   longitude: number,
-  radiusKm: number = 10
+  radiusKm: number = 2000
 ): Promise<Report[]> => {
   try {
     if (!latitude || !longitude) {
@@ -109,7 +109,7 @@ export const fetchDrivingDistances = async (
 export const fetchAllReportsInRegion = async (
   latitude: number,
   longitude: number,
-  radiusKm: number = 10
+  radiusKm: number = 2000
 ): Promise<Report[]> => {
   try {
     const rawReports = await fetchReports(latitude, longitude, radiusKm);
@@ -144,7 +144,7 @@ export const fetchAllReportsInRegion = async (
 export const processReports = async (
   latitude: number,
   longitude: number,
-  radiusKm: number = 10,
+  radiusKm: number = 2000,
   limit: number = 4
 ): Promise<Report[]> => {
   try {
