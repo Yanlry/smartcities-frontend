@@ -24,8 +24,11 @@ import { formatCity } from "../utils/formatters";
 import { getTypeLabel, typeColors } from "../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
 import { getUserIdFromToken } from "../utils/tokenUtils";
+import Chart from "../components/Chart";
+import { useFetchStatistics } from "../hooks/useFetchStatistics";
 // @ts-ignore
 import { API_URL } from "@env";
+import { Picker } from "@react-native-picker/picker";
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
@@ -35,8 +38,9 @@ type User = {
   ranking: string;
   firstName: string;
   lastName: string;
-  email: string;
   username?: string;
+  useFullName: boolean;
+  email: string;
   trustRate?: number;
   followers?: any[];
   following?: any[];
@@ -56,8 +60,18 @@ type User = {
 interface TopUser {
   id: string;
   username: string;
-  photo: string | null; // Correspond à l'API modifiée
-  ranking: number; // Classement global
+  photo: string | null;
+  ranking: number;
+  useFullName: boolean; // Inclure cette propriété
+  firstName: string;
+  lastName: string;
+}
+
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
 }
 
 export default function HomeScreen({}) {
@@ -69,7 +83,12 @@ export default function HomeScreen({}) {
   const [user, setUser] = useState<User | null>(null);
   const isLoading = locationLoading || loadingReports || loadingUsers;
   const [smarterData, setSmarterData] = useState<
-    { id: string; username: string; image: { uri: string } }[]
+    {
+      id: string;
+      username: string;
+      displayName: string;
+      image: { uri: string };
+    }[]
   >([]);
   const [showFollowers, setShowFollowers] = useState(false); // État pour afficher les followers
   const [ranking, setRanking] = useState<number | null>(null);
@@ -83,13 +102,8 @@ export default function HomeScreen({}) {
     { id: string; title: string; image: string }[]
   >([]);
   const [events, setEvents] = useState<Event[]>([]);
-
-  interface Event {
-    id: string;
-    title: string;
-    date: string;
-    location: string;
-  }
+  const [modalNameVisible, setModalNameVisible] = useState(false);
+  const { data } = useFetchStatistics(`${API_URL}/reports/statistics`);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -132,15 +146,16 @@ export default function HomeScreen({}) {
   }, []);
 
   useEffect(() => {
-    // Fonction principale regroupant les tâches
     const fetchData = async () => {
       try {
-        // Récupération des données utilisateur
+        // Récupération de l'ID utilisateur
         const userId = await getUserIdFromToken();
         if (!userId) {
           console.error("ID utilisateur non trouvé");
           return;
         }
+
+        // Récupération des données utilisateur
         const userResponse = await fetch(`${API_URL}/users/${userId}`);
         if (!userResponse.ok) {
           console.error(
@@ -169,32 +184,27 @@ export default function HomeScreen({}) {
           );
           return;
         }
-        const topUsersData = await topUsersResponse.json();
 
-        interface TopUser {
-          id: string;
-          username: string;
-          photo: string | null; // Correspond à l'API modifiée
-          ranking: number; // Classement global
-        }
+        const topUsersData: TopUser[] = await topUsersResponse.json();
 
         interface FormattedUser {
           id: string;
           username: string;
+          displayName: string; // Nom à afficher dynamiquement
           ranking: number;
           image: { uri: string };
         }
 
-        const formattedData: FormattedUser[] = topUsersData.map(
-          (user: TopUser) => ({
-            id: user.id,
-            username: user.username,
-            ranking: user.ranking,
-            image: { uri: user.photo || "default-image-url" },
-          })
-        );
-
-        // Trier par classement (optionnel si déjà trié côté backend)
+        const formattedData: FormattedUser[] = topUsersData.map((user) => ({
+          id: user.id,
+          username: user.username,
+          displayName: user.useFullName
+            ? `${user.firstName} ${user.lastName}` // Nom complet si `useFullName` est vrai
+            : user.username, // Sinon, afficher le `username`
+          ranking: user.ranking,
+          image: { uri: user.photo || "default-image-url" },
+        }));
+        // Tri par classement (optionnel si déjà trié côté backend)
         formattedData.sort((a, b) => a.ranking - b.ranking);
 
         setSmarterData(formattedData);
@@ -332,9 +342,11 @@ export default function HomeScreen({}) {
     );
   }
 
-  const fetchEventsByDate = async (date) => {
+  const fetchEventsByDate = async (date: string): Promise<void> => {
     try {
-      const response = await axios.get(`${API_URL}/events/by-date`, {
+      const response = await axios.get<
+        { id: string; title: string; date: string; location: string }[]
+      >(`${API_URL}/events/by-date`, {
         params: { date }, // Passez la date sélectionnée en paramètre
       });
       setEvents(response.data); // Mettez à jour les événements avec la réponse
@@ -394,6 +406,48 @@ export default function HomeScreen({}) {
     </TouchableOpacity>
   );
 
+  const getRankingSuffix = (rank) => {
+    if (!rank) return ""; // Si le classement est null ou indéfini
+    return rank === 1 ? "er" : "ème";
+  };
+
+  // Détermine le nom à afficher en fonction de useFullName
+  const displayName = user?.useFullName
+    ? `${user.firstName} ${user.lastName}`
+    : user?.username;
+
+  const handleOptionChange = async (option: "fullName" | "username") => {
+    // Ferme le modal immédiatement pour améliorer l'expérience utilisateur
+    setModalNameVisible(false);
+
+    try {
+      const response = await fetch(`${API_URL}/users/display-preference`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          useFullName: option === "fullName",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour de la préférence.");
+      }
+
+      const updatedUser = await response.json(); // Récupère les données mises à jour
+
+      // Mets à jour l'état utilisateur existant
+      setUser((prevUser) => ({
+        ...prevUser!,
+        useFullName: option === "fullName", // Mets à jour la préférence locale
+      }));
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la préférence", error);
+    }
+  };
+
   if (showFollowers) {
     return (
       <View style={styles.containerFollower}>
@@ -413,32 +467,6 @@ export default function HomeScreen({}) {
       </View>
     );
   }
-
-  const screenWidth = Dimensions.get("window").width;
-
-  const data = {
-    labels: ["Danger", "Travaux", "Défaut", "Autre"],
-    datasets: [
-      {
-        data: [20, 35, 10, 25], // Remplacez par vos données de statistiques réelles
-      },
-    ],
-  };
-
-  const chartConfig = {
-    backgroundGradientFrom: "#f9f9fb",
-    backgroundGradientTo: "#f9f9fb",
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(46, 204, 110, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    style: {
-      borderRadius: 16,
-    },
-    propsForBackgroundLines: {
-      strokeWidth: 1,
-      stroke: "#e3e3e3",
-    },
-  };
 
   const categories = [
     {
@@ -473,72 +501,93 @@ export default function HomeScreen({}) {
     },
   ];
 
-  const upcomingEvents = [
-    {
-      id: "1",
-      title: "Marché d'Haubourdin",
-      date: "08:00 - 12:30",
-      location: "Place Ernest Blondeau",
-    },
-    {
-      id: "2",
-      title: "Sortie : Découverte du parc Mosaïc",
-      date: "15:00 - 15:15",
-      location: "Maison Des Jeunes D’Haubourdin",
-    },
-  ];
-
-
   return (
     <ScrollView style={styles.container}>
       {/* Section Profil */}
-      <View style={styles.profileContainer}>
-        {user?.profilePhoto?.url ? (
-          <Image
-            source={{ uri: user.profilePhoto.url }}
-            style={styles.profileImage}
-          />
-        ) : (
-          <Text style={styles.noProfileImageText}>Pas de photo de profil</Text>
-        )}
-        <View style={styles.profileInfo}>
-          <Text style={styles.userName}>
-            {user?.firstName} {user?.lastName}
-          </Text>
-          <Text style={styles.userDetails}>
-            Inscrit il y a{" "}
-            {user?.createdAt
-              ? calculateYearsSince(user.createdAt)
-              : "un certain temps"}
-          </Text>
-          <TouchableOpacity onPress={toggleFollowersList}>
-            <Text style={styles.userStats}>
-              📈 {user?.followers?.length || 0} relations
-            </Text>
-          </TouchableOpacity>
+      <View style={styles.cardContainer}>
+        {/* Header avec photo et informations principales */}
+        <View style={styles.header}>
+          {user?.profilePhoto?.url ? (
+            <Image
+              source={{ uri: user.profilePhoto.url }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.noProfileImage}>
+              <Text style={styles.noProfileImageText}>
+                Pas de photo de profil
+              </Text>
+            </View>
+          )}
 
-          <View style={styles.statsContainer}>
-            {/* Bouton Classement */}
-            <TouchableOpacity
-              style={styles.rankingButton}
-              onPress={() => setIsModalVisible(true)}
+          <View style={styles.userInfo}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.userName}>{displayName}</Text>
+              <TouchableOpacity
+                onPress={() => setModalNameVisible(true)}
+                style={styles.dropdownButton}
+              >
+                <Ionicons name="chevron-down-outline" size={24} color="#777" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal */}
+            <Modal
+              visible={modalNameVisible}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setModalNameVisible(false)}
             >
-              <View style={styles.rankingButtonContent}>
-                <Text style={styles.rankingMainText}>
-                  {ranking && totalUsers
-                    ? `Numéro ${ranking}`
-                    : "Classement indisponible"}
-                </Text>
-                {ranking && totalUsers && (
-                  <Text style={styles.rankingSubText}>
-                    sur les {totalUsers} utilisateurs de la ville
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContainerName}>
+                  <Text style={styles.modalTitleName}>
+                    Préférence d'affichage
                   </Text>
-                )}
-              </View>
-            </TouchableOpacity>
 
+                  <FlatList
+                    data={[
+                      {
+                        label: "Utiliser mon nom et prénom",
+                        value: "fullName",
+                      },
+                      {
+                        label: "Utiliser mon nom d'utilisateur",
+                        value: "username",
+                      },
+                    ]}
+                    keyExtractor={(item) => item.value}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.optionItem}
+                        onPress={() =>
+                          handleOptionChange(
+                            item.value as "fullName" | "username"
+                          )
+                        }
+                      >
+                        <Text style={styles.optionText}>{item.label}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setModalNameVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Fermer</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+
+            <Text style={styles.userDetails}>
+              Inscrit{" "}
+              {user?.createdAt
+                ? `il y a ${calculateYearsSince(user.createdAt)}`
+                : "depuis un certain temps"}
+            </Text>
             {/* Votes */}
-            <View style={styles.votesContainer}>
+            <View>
               {stats && stats.votes ? (
                 stats.votes.length > 0 ? (
                   (() => {
@@ -553,11 +602,8 @@ export default function HomeScreen({}) {
 
                     const voteSummary: VoteSummary = stats.votes.reduce(
                       (acc: VoteSummary, vote: Vote) => {
-                        if (vote.type === "up") {
-                          acc.up++;
-                        } else if (vote.type === "down") {
-                          acc.down++;
-                        }
+                        if (vote.type === "up") acc.up++;
+                        else acc.down++;
                         return acc;
                       },
                       { up: 0, down: 0 }
@@ -565,19 +611,19 @@ export default function HomeScreen({}) {
 
                     return (
                       <View style={styles.voteSummary}>
-                        <View style={styles.voteItem}>
+                        <View style={styles.voteButton}>
                           <Ionicons
                             name="thumbs-up-outline"
-                            size={24}
-                            color="#4CAF50"
+                            size={28}
+                            color="#6bd5a7"
                           />
                           <Text style={styles.voteCount}>{voteSummary.up}</Text>
                         </View>
-                        <View style={styles.voteItem}>
+                        <View style={styles.voteButton}>
                           <Ionicons
                             name="thumbs-down-outline"
-                            size={24}
-                            color="#F44336"
+                            size={28}
+                            color="#DC5D54"
                           />
                           <Text style={styles.voteCount}>
                             {voteSummary.down}
@@ -587,14 +633,44 @@ export default function HomeScreen({}) {
                     );
                   })()
                 ) : (
-                  <Text style={styles.noVotesText}>Pas encore de votes</Text>
+                  <Text style={styles.noVotesText}>
+                    Pas encore de votes. Votez pour monter dans le classement
+                  </Text>
                 )
               ) : (
-                // Afficher un état de chargement ou une valeur par défaut
                 <Text style={styles.loadingText}>Chargement des votes...</Text>
               )}
             </View>
           </View>
+        </View>
+
+        {/* Statistiques */}
+        <View style={styles.statistics}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={toggleFollowersList}
+          >
+            <Text style={styles.statNumber}>
+              {user?.followers?.length || 0}
+            </Text>
+            <Text style={styles.statLabel}>Relations</Text>
+          </TouchableOpacity>
+          <View style={styles.separator} />
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => setIsModalVisible(true)}
+          >
+            <Text style={styles.statNumber}>
+              {ranking && totalUsers
+                ? `${ranking}${getRankingSuffix(ranking)}`
+                : "?"}
+            </Text>
+            {ranking && totalUsers && (
+              <Text style={styles.statLabel}>
+                du classement sur {totalUsers}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -607,16 +683,22 @@ export default function HomeScreen({}) {
           <FlatList
             data={rankingData}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.rankingItemModal}>
-                <Text style={styles.rankingTextModal}>#{item.ranking}</Text>
-                <Image
-                  source={{ uri: item.photo || "default-image-url" }}
-                  style={styles.userImage}
-                />
-                <Text style={styles.rankingTextModal}>{item.username}</Text>
-              </View>
-            )}
+            renderItem={({ item }) => {
+              const displayName = item.useFullName
+                ? `${item.firstName} ${item.lastName}`
+                : item.username; // Choix basé sur `useFullName`
+
+              return (
+                <View style={styles.rankingItemModal}>
+                  <Text style={styles.rankingTextModal}>#{item.ranking}</Text>
+                  <Image
+                    source={{ uri: item.photo || "default-image-url" }}
+                    style={styles.userImage}
+                  />
+                  <Text style={styles.rankingTextModal}>{displayName}</Text>
+                </View>
+              );
+            }}
           />
           <TouchableOpacity
             onPress={() => setIsModalVisible(false)}
@@ -630,7 +712,6 @@ export default function HomeScreen({}) {
       <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
       <View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {/* Affiche les 10 premiers utilisateurs */}
           {smarterData.slice(0, 10).map((item, index) => (
             <TouchableOpacity
               key={item.id}
@@ -639,9 +720,12 @@ export default function HomeScreen({}) {
                 navigation.navigate("UserProfileScreen", { userId: item.id })
               }
             >
-              <Text style={styles.username}>{`# ${index + 1}`}</Text>
+              <Text style={styles.ranking}>{`# ${index + 1}`}</Text>
               <Image source={item.image} style={styles.smarterImage} />
-              <Text style={styles.username}>{item.username}</Text>
+              <Text style={styles.rankingName}>
+                {item.displayName || "Nom indisponible"}{" "}
+                {/* Fallback si displayName est vide */}
+              </Text>
             </TouchableOpacity>
           ))}
 
@@ -649,12 +733,13 @@ export default function HomeScreen({}) {
           <TouchableOpacity
             key="seeAll"
             style={[styles.smarterItem, styles.seeAllButton]}
-            onPress={() => setIsModalVisible(true)} // Affiche le modal ou redirige
+            onPress={() => setIsModalVisible(true)}
           >
             <Text style={styles.seeAllText}>Voir tout</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
+
       {/* Section Signalements Proche de Vous */}
       <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
       {reports.length === 0 ? (
@@ -673,7 +758,7 @@ export default function HomeScreen({}) {
                   calculateOpacity(report.createdAt, 0.5)
                 ),
               },
-              index === reports.length - 1 && { marginBottom: 20 }, // Ajoute marginBottom uniquement au dernier élément
+              index === reports.length - 1 && { marginBottom: 25 }, // Ajoute marginBottom uniquement au dernier élément
             ]}
             onPress={() => handlePressReport(report.id)}
           >
@@ -691,7 +776,7 @@ export default function HomeScreen({}) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 20 }}
+        style={{ marginBottom: 25 }}
       >
         {categories.map((category) => (
           <TouchableOpacity
@@ -717,7 +802,11 @@ export default function HomeScreen({}) {
 
       {/* Section À la Une */}
       <Text style={styles.sectionTitle}>À la Une</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 5 }}
+      >
         {featuredEvents.map((item) => (
           <TouchableOpacity
             key={item.id}
@@ -765,7 +854,7 @@ export default function HomeScreen({}) {
           }}
           width={330}
           selectedDayColor="#11998e" // Fond de la date sélectionnée
-          selectedDayTextColor="#FFFFFF" 
+          selectedDayTextColor="#FFFFFF"
         />
       </View>
 
@@ -794,22 +883,7 @@ export default function HomeScreen({}) {
       )}
 
       {/* Section Statistiques du Mois */}
-      <Text style={styles.sectionTitle}>Statistiques du mois</Text>
-      <View style={styles.chartContainer}>
-        <BarChart
-          data={data}
-          width={screenWidth}
-          height={220}
-          chartConfig={chartConfig}
-          yAxisLabel=" "
-          yAxisSuffix=""
-          fromZero
-          style={{
-            borderRadius: 16,
-            marginLeft: -10,
-          }}
-        />
-      </View>
+      <Chart data={data} />
 
       {/* Section Informations Mairie */}
       <Text style={styles.sectionTitle}>Informations mairie</Text>
@@ -847,10 +921,10 @@ export default function HomeScreen({}) {
       <View style={styles.mayorCard}>
         <Image
           source={require("../assets/images/mayor.png")}
-          style={styles.profileImage}
+          style={styles.profileImageMayor}
         />
-        <View style={styles.mayorInfo}>
-          <Text style={styles.mayor}>Maire actuel:</Text>
+        <View style={styles.mayorContainer}>
+          <Text style={styles.mayorInfo}>Maire actuel:</Text>
           <Text style={styles.mayorName}>Pierre BÉHARELLE</Text>
           <Text style={styles.mayorSubtitle}>
             Permanence en Mairie sur rendez-vous
@@ -865,7 +939,7 @@ export default function HomeScreen({}) {
       <View style={styles.officeCard}>
         <Image
           source={require("../assets/images/mairie.png")}
-          style={styles.profileImage}
+          style={styles.officeImage}
         />
         <View style={styles.officeInfo}>
           <View style={styles.officeAddress}>

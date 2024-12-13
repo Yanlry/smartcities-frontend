@@ -403,7 +403,7 @@ export default function AddNewReportScreen({navigation}) {
               {loading ? (
                 <ActivityIndicator size="large" color="#007BFF" />
               ) : (
-                <View style={{  height: 450, marginVertical: 30 }}>
+                <View style={{  height: 450, marginVertical: 20 }}>
                   <MapView
                     ref={mapRef} // Connectez la référence
                     style={{ flex: 1, borderRadius: 50 }}
@@ -463,14 +463,14 @@ export default function AddNewReportScreen({navigation}) {
             <View style={styles.submitButton}>
               <TouchableOpacity
                 style={[
-                  styles.button, // Style du bouton
+                  styles.buttonSubmit, // Style du bouton
                   isSubmitting && styles.buttonDisabled, // Applique un style désactivé si nécessaire
                 ]}
                 onPress={handleSubmit} // Appelle la fonction de soumission
                 disabled={isSubmitting} // Désactive le bouton si déjà en soumission
               >
                 <Text style={styles.buttonText}>
-                  {isSubmitting ? "Envoi en cours..." : "Créer l'événement"}
+                  {isSubmitting ? "Envoi en cours..." : "Signalez le problème"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -505,7 +505,7 @@ export default function AddNewReportScreen({navigation}) {
                   "Téléchargement en cours..."}
                 {progress >= 0.9 && "Finalisation..."}
               </Text>
-              <Progress.Bar progress={progress} width={200} color="#2c3e50" />
+              <Progress.Bar progress={progress} width={200} color="#d81b60" />
               <Text style={styles.modalText}>
                 {Math.round(progress * 100)}%
               </Text>

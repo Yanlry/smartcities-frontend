@@ -1,33 +1,420 @@
 import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
+  // STYLE GLOBAL
+
   container: {
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
-  userRanking: {
+
+  // LOADING
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5", // Couleur de fond douce
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333", // Texte gris foncé
+  },
+
+  // MODAL PARTAGE DE POSITION
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    paddingHorizontal: 20, // Espacement pour éviter que le contenu ne touche les bords
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#fff", // Blanc pour contraster avec le fond
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    color: "#ddd", // Texte légèrement gris pour une bonne lisibilité
+    textAlign: "center",
+    marginBottom: 20,
+    lineHeight: 24, // Espacement des lignes pour plus de lisibilité
+  },
+  button: {
+    backgroundColor: "#1E90FF", // Bleu vif
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    elevation: 2, // Ombre pour donner un effet de profondeur (Android uniquement)
+    shadowColor: "#000", // Ombre pour iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  buttonText: {
+    color: "#fff", // Texte blanc pour contraster avec le bouton
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  // MODAL FOLLOWER
+
+  containerFollower: {
+    flex: 1,
+    backgroundColor: "#f7f8fa", // Light gray for a soft look
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  followerList: {
+    paddingBottom: 20, // Space at the bottom
+  },
+  backButton: {
+    marginTop: 20,
+    alignSelf: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    backgroundColor: "#2c3e50", // Primary blue
+    borderRadius: 30,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff", // White text for contrast
+    textTransform: "uppercase", // Button style text
+  },
+
+  // PROFILE CONTAINER
+
+  cardContainer: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 20,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: "#ccc",
+    marginRight: 16,
+  },
+  noProfileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#e0e0e0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  noProfileImageText: {
+    color: "#888",
+    fontSize: 12,
+    fontStyle: "italic",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  dropdownButton: {
+    marginLeft: 8,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainerName: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    elevation: 10, // Ombre pour Android
+    shadowColor: "#000", // Ombre pour iOS
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    alignItems: "center",
+  },
+  modalTitleName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  optionItem: {
+    width: "100%",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#2c3e50", // Bouton vert
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+  },
+  userDetails: {
+    fontSize: 13,
+    color: "#777",
+    marginTop: 4,
+  },
+  followerItem: {
+    flexDirection: "row", // Align image and text horizontally
+    alignItems: "center",
+    backgroundColor: "#fff", // White background for contrast
+    padding: 12,
+    marginBottom: 12,
+    marginHorizontal: 1,
+    borderRadius: 90, // Rounded corners for a modern look
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1, // Elevation for Android
+  },
+  followerImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25, // Circular image
+    marginRight: 12, // Space between image and text
+    borderWidth: 1,
+    borderColor: "#ddd", // Soft border for definition
+  },
+  followerName: {
+    fontSize: 16,
+    fontWeight: "600", // Slightly bold for importance
+    color: "#444", // Dark gray for subtle contrast
+  },
+
+  statistics: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 15,
+    padding: 12,
+    marginTop: 10,
+  },
+  statItem: {
+    alignItems: "center",
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2563eb",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 4,
+  },
+  separator: {
+    height: 40,
+    width: 1,
+    backgroundColor: "#ddd",
+  },
+  voteSummary: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  votes: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  voteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    paddingTop: 20,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  voteCount: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginLeft: 8,
+  },
+  noVotesText: {
+    marginTop: 20,
     fontSize: 14,
     color: "#999",
-  },
-  trustBadge: {
-    backgroundColor: "#37323E",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 30,
-    marginTop: 5,
-  },
-  trustBadgeText: {
     textAlign: "center",
-    color: "#fff",
+  },
+  modalContentRanking: {
+    backgroundColor: "white",
+    padding: 20,
+    paddingVertical: 80,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5, // Pour Android
+  },
+  rankingItemModal: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+    marginBottom: 16,
+    marginHorizontal: 8,
+    padding: 16,
+    borderRadius: 190,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3, // Pour Android
+  },
+  userImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#ccc",
+  },
+  rankingTextModal: {
+    fontSize: 18,
     fontWeight: "bold",
+    color: "#2d3748",
+    marginHorizontal: 8,
   },
-  smileyContainer: {
-    marginLeft: 16,
+  closeButtonModal: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: "#5a67d8",
+    shadowColor: "#5a67d8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
+    borderRadius: 30,
   },
-  smiley: {
-    fontSize: 48,
-    color: "green",
+  closeButtonTextModal: {
+    color: "white",
+    fontWeight: "600",
+    textAlign: "center",
+    fontSize: 16,
+  },
+
+  // TOP 10 DES SMARTERS
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: "#333",
+  },
+  smarterItem: {
+    alignItems: "center",
+    padding: 10,
+    width: 120,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+    marginBottom: 20,
+  },
+  ranking: {
+    fontSize: 19,
+    fontWeight: "600",
+    color: "#555",
+    textAlign: "center",
+  },
+  rankingName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    textAlign: "center",
+  },
+  smarterImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 90,
+    marginBottom: 10,
+    marginTop: 5,
+    borderColor: "#ddd",
+  },
+  seeAllButton: {
+    backgroundColor: "#2c3e50", // Couleur accentuée (orange-rouge)
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 90,
+    margin: 35,
+    width: 100,
+    height: 100,
+    marginHorizontal: 10,
+  },
+  seeAllText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  // SIGNALEMENTS PROCHE
+
+  noReportsText: {
+    textAlign: "center",
+    color: "#888",
+    marginVertical: 20,
   },
   reportItem: {
     padding: 15,
@@ -52,65 +439,29 @@ export default StyleSheet.create({
     fontWeight: "500",
     color: "#424242", // Texte blanc pour rester lisible sur les fonds colorés
   },
-  smarterItem: {
-    alignItems: "center",
-    padding: 10,
-    width: 120,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-    marginBottom: 10,
+
+  // SELECTION DE CATEGORIE
+
+  categoryButton: {
+    width: 120, // Largeur fixe
+    height: 120, // Hauteur fixe
+    marginTop: 10,
+    justifyContent: "center", // Centrer le contenu verticalement
+    alignItems: "center", // Centrer le contenu horizontalement
+    marginRight: 10, // Espacement entre les boutons
+    borderRadius: 90, // Coins arrondis
   },
-  seeAllButton: {
-    backgroundColor: "#2c3e50", // Couleur accentuée (orange-rouge)
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 90,
-    margin: 35,
-    width: 100,
-    height: 100,
-    marginHorizontal: 10,
+  categoryIcon: {
+    marginBottom: 5, // Espacement entre l'icône et le texte
   },
-  seeAllText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
+  categoryText: {
+    color: "#fff", // Texte blanc
+    fontSize: 16, // Taille de la police du texte
+    fontWeight: "bold", // Texte en gras
   },
-  smarterImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 90,
-    marginBottom: 10,
-    marginTop: 5,
-    borderColor: "#ddd",
-  },
-  username: {
-    fontSize: 19,
-    fontWeight: "600",
-    color: "#555",
-    textAlign: "center",
-  },
-  rankNumber: {
-    fontSize: 25,
-    fontWeight: "bold",
-    color: "#ff6347", // Couleur accentuée (orange-rouge)
-  },
-  categoryItem: {
-    width: 150,
-    minHeight: 150,
-    marginRight: 15,
-    borderRadius: 10,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject, // Remplit entièrement le conteneur parent
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Couleur avec opacité (noir à 50%)
-  },
+
+  // EVENT A LA UNE
+
   featuredItem: {
     width: 150,
     minHeight: 150, // Remplacez height par minHeight pour permettre au conteneur de s'agrandir
@@ -130,12 +481,9 @@ export default StyleSheet.create({
     color: "#333",
     textAlign: "center",
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#333",
-  },
+
+  // CALENDRIER
+
   calendarContainer: {
     marginBottom: 20,
     backgroundColor: "#fff",
@@ -190,21 +538,11 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  chartContainer: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  infoContainer: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 15,
-  },
+
+  // PARTIE  MAIRIE
+
+  // SIGNALEMENT RESOLUS
+
   infoCard: {
     backgroundColor: "#fff",
     paddingHorizontal: 15,
@@ -233,6 +571,9 @@ export default StyleSheet.create({
     fontWeight: "bold",
     color: "#666",
   },
+
+  // FICHE INFORMATION MAIRE
+
   mayorCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -246,16 +587,16 @@ export default StyleSheet.create({
     shadowRadius: 5,
     elevation: 4,
   },
-  mayorImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 15,
+  profileImageMayor: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
   },
-  mayorInfo: {
+  mayorContainer: {
     flex: 1,
   },
-  mayor: {
+  mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#3498db",
@@ -279,6 +620,9 @@ export default StyleSheet.create({
   contactBold: {
     fontWeight: "bold",
   },
+
+  // FICHE CONTACT MAIRIE
+
   officeCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -293,10 +637,10 @@ export default StyleSheet.create({
     elevation: 4,
   },
   officeImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 15,
-    marginRight: 15,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
   },
   officeInfo: {
     flex: 1,
@@ -320,351 +664,5 @@ export default StyleSheet.create({
   },
   hours: {
     fontWeight: "bold",
-  },
-
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5", // Couleur de fond douce
-  },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333", // Texte gris foncé
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
-    paddingHorizontal: 20, // Espacement pour éviter que le contenu ne touche les bords
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#fff", // Blanc pour contraster avec le fond
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  modalText: {
-    fontSize: 16,
-    color: "#ddd", // Texte légèrement gris pour une bonne lisibilité
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 24, // Espacement des lignes pour plus de lisibilité
-  },
-  button: {
-    backgroundColor: "#1E90FF", // Bleu vif
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    elevation: 2, // Ombre pour donner un effet de profondeur (Android uniquement)
-    shadowColor: "#000", // Ombre pour iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  buttonText: {
-    color: "#fff", // Texte blanc pour contraster avec le bouton
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  categoryButtonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 10,
-    paddingHorizontal: 10,
-  },
-  categoryButton: {
-    width: 120, // Largeur fixe
-    height: 120, // Hauteur fixe
-    marginTop: 10,
-    justifyContent: "center", // Centrer le contenu verticalement
-    alignItems: "center", // Centrer le contenu horizontalement
-    marginRight: 10, // Espacement entre les boutons
-    borderRadius: 90, // Coins arrondis
-  },
-  categoryIcon: {
-    marginBottom: 5, // Espacement entre l'icône et le texte
-  },
-  categoryText: {
-    color: "#fff", // Texte blanc
-    fontSize: 16, // Taille de la police du texte
-    fontWeight: "bold", // Texte en gras
-  },
-  containerFollower: {
-    flex: 1,
-    backgroundColor: "#f7f8fa", // Light gray for a soft look
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  followerList: {
-    paddingBottom: 20, // Space at the bottom
-  },
-  followerItem: {
-    flexDirection: "row", // Align image and text horizontally
-    alignItems: "center",
-    backgroundColor: "#fff", // White background for contrast
-    padding: 12,
-    marginBottom: 12,
-    marginHorizontal: 1,
-    borderRadius: 90, // Rounded corners for a modern look
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1, // Elevation for Android
-  },
-  followerImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25, // Circular image
-    marginRight: 12, // Space between image and text
-    borderWidth: 1,
-    borderColor: "#ddd", // Soft border for definition
-  },
-  followerTextContainer: {
-    flex: 1,
-  },
-  followerName: {
-    fontSize: 16,
-    fontWeight: "600", // Slightly bold for importance
-    color: "#444", // Dark gray for subtle contrast
-  },
-  backButton: {
-    marginTop: 20,
-    alignSelf: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    backgroundColor: "#2c3e50", // Primary blue
-    borderRadius: 30,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff", // White text for contrast
-    textTransform: "uppercase", // Button style text
-  },
-  rankingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  rankingText: {
-    fontSize: 16,
-    marginRight: 10,
-  },
-  userImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#ccc",
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  closeButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: "#007BFF",
-    alignItems: "center",
-    borderRadius: 5,
-  },
-  closeButtonText: {
-    color: "white",
-    fontSize: 16,
-  },
-  noReportsText: {
-    textAlign: "center",
-    color: "#888",
-    marginVertical: 20,
-  },
-  profileContainer: {
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 20,
-    alignItems: "center",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 15,
-  },
-  noProfileImageText: {
-    fontSize: 16,
-    color: "#999",
-    fontStyle: "italic",
-    marginBottom: 15,
-  },
-  profileInfo: {
-    alignItems: "center",
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
-  },
-  userDetails: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 10,
-  },
-  userStats: {
-    fontSize: 16,
-    color: "#1E90FF",
-    fontWeight: "bold",
-    marginTop: 10,
-  },
-  modalContentRanking: {
-    backgroundColor: "white",
-    padding: 20,
-    paddingVertical: 80,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5, // Pour Android
-  },
-  rankingItemModal: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FAFAFA",
-    marginBottom: 16,
-    marginHorizontal: 8,
-    padding: 16,
-    borderRadius: 190,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3, // Pour Android
-  },
-  rankingTextModal: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2d3748",
-    marginHorizontal: 8,
-  },
-  userImageModal: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    borderColor: "#5a67d8",
-  },
-  closeButtonModal: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: "#5a67d8",
-    shadowColor: "#5a67d8",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 5,
-    borderRadius: 30,
-   
-  },
-  closeButtonTextModal: {
-    color: "white",
-    fontWeight: "600",
-    textAlign: "center",
-    fontSize: 16,
-  },
-  statsContainer: {
-    flexDirection: "row", // Met sur la même ligne
-    alignItems: "center", // Centre les éléments verticalement
-    justifyContent: "space-between", // Espace entre les éléments
-    marginVertical: 20,
-    marginBottom: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  rankingButton: {
-    backgroundColor: "#5a67d8",
-    shadowColor: "#5a67d8",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  rankingButtonContent: {
-    alignItems: "center", // Centre le texte principal et le sous-texte
-  },
-  rankingMainText: {
-    marginTop: 3,
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff", // Texte blanc
-  },
-  rankingSubText: {
-    fontSize: 8,
-    color: "#d9ffe2", // Texte légèrement plus clair
-  },
-  votesContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    flex: 1, // Permet d'occuper l'espace restant
-    marginLeft: 15, // Séparation entre le bouton et les votes
-  },
-  voteSummary: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  voteItem: {
-    width: 60, // Assurez-vous que largeur et hauteur sont égales
-    height: 60,
-    flexDirection: "row", // Change l'alignement interne pour centrer verticalement et horizontalement
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 30, // Moitié de la largeur/hauteur pour obtenir un cercle parfait
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-    marginHorizontal: 5,
-  },
-  voteCount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginLeft: 8,
-  },
-  noVotesText: {
-    fontSize: 14,
-    color: "#999",
-    textAlign: "center",
   },
 });

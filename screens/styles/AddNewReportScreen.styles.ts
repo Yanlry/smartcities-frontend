@@ -155,6 +155,17 @@ export default StyleSheet.create({
     paddingHorizontal: 20, // Espacement horizontal
     borderRadius: 30, // Coins arrondis
   },
+  buttonSubmit: {
+    backgroundColor: "#d81b60", // Bleu moderne
+    shadowColor: "#d81b60",
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
+    paddingVertical: 12, // Espacement vertical
+    paddingHorizontal: 20, // Espacement horizontal
+    borderRadius: 30, // Coins arrondis
+  },
   buttonDisabled: {
     backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
   },
