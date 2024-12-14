@@ -8,12 +8,14 @@ import {
   Image,
   TextInput,
   Alert,
+  Switch,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 import * as ImagePicker from "expo-image-picker";
 import styles from "./styles/ProfileScreen.styles";
+import axios from "axios";
 import Icon from "react-native-vector-icons/FontAwesome";
 
 type User = {
@@ -22,6 +24,7 @@ type User = {
   firstName: string;
   lastName: string;
   email: string;
+  showEmail: boolean;
   username?: string;
   trustRate?: number;
   followers?: any[];
@@ -46,6 +49,15 @@ export default function ProfileScreen({ navigation, onLogout }) {
   const [editable, setEditable] = useState(false); // Mode édition
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    username: "",
+    showEmail: false,
+    currentPassword: "",
+    newPassword: "",
+  });
 
   useEffect(() => {
     navigation.setOptions({
@@ -74,29 +86,19 @@ export default function ProfileScreen({ navigation, onLogout }) {
     fetchUser();
   }, [navigation]);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    username: "",
-    currentPassword: "",
-    newPassword: "",
-  });
-
-  // Synchronise `formData` avec `user` quand les données utilisateur sont disponibles
   useEffect(() => {
     if (user) {
       setFormData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        email: user.email || "",
+        email: user.showEmail ? user.email || "" : "", // Montre ou masque l'email selon `showEmail`
+        showEmail: user.showEmail || false,
         username: user.username || "",
         currentPassword: "",
         newPassword: "",
       });
     }
   }, [user]);
-
   const handleProfileImageUpdate = async () => {
     try {
       setIsSubmitting(true);
@@ -177,24 +179,41 @@ export default function ProfileScreen({ navigation, onLogout }) {
   }
 
   // Gestion des changements dans les inputs
-  const handleInputChange = (field, value) => {
+  interface FormData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+    showEmail: boolean;
+    currentPassword: string;
+    newPassword: string;
+  }
+
+  interface HandleInputChange {
+    (field: keyof FormData, value: string): void;
+  }
+
+  const handleInputChange: HandleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
 
-  // Fonction pour sauvegarder les modifications
   const handleSave = async () => {
     try {
-      // Simuler un appel API pour sauvegarder les données
-      const response = await fetch(
-        `http://192.168.1.100:3000/users/${user?.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        username: formData.username,
+        showEmail: formData.showEmail.toString(), // Convertir en chaîne ("true" ou "false")
+      };
+
+      const response = await fetch(`${API_URL}/users/${user?.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload), // N'envoie que les champs nécessaires
+      });
 
       if (!response.ok) {
         throw new Error("Une erreur s'est produite lors de la sauvegarde.");
@@ -309,8 +328,8 @@ export default function ProfileScreen({ navigation, onLogout }) {
               editable={editable}
             />
           </View>
-            {/* Nom d'utilisateur */}
-            <View style={styles.fieldContainer}>
+          {/* Nom d'utilisateur */}
+          <View style={styles.fieldContainer}>
             <Text style={styles.label}>Nom d'utilisateur :</Text>
             <TextInput
               style={[styles.input, !editable && styles.inputDisabled]}
@@ -320,19 +339,74 @@ export default function ProfileScreen({ navigation, onLogout }) {
             />
           </View>
           {/* Email */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Email :</Text>
-            <TextInput
-              style={[styles.input, !editable && styles.inputDisabled]}
-              value={formData.email}
-              onChangeText={(text) => handleInputChange("email", text)}
-              editable={editable}
-            />
-          </View>
+          {formData.showEmail && (
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Email :</Text>
+              <TextInput
+                style={[styles.input, !editable && styles.inputDisabled]}
+                value={formData.email} // L'email est visible ici uniquement si showEmail est activé
+                onChangeText={(text) => handleInputChange("email", text)}
+                editable={editable}
+              />
+            </View>
+          )}
+
+         <View style={styles.fieldContainer}>
+  <View style={styles.showEmail}>
+    <Text style={styles.labelEmail}>Activer ou désactiver le partage de votre email avec les autres utilisateurs.</Text>
+    <Switch
+      value={formData.showEmail}
+      onValueChange={async (value) => {
+        try {
+          // Envoyer la mise à jour au backend
+          const response = await axios.post(`${API_URL}/users/show-email`, {
+            userId: user?.id,
+            showEmail: value,
+          });
+
+          // Mettre à jour l'état local après la réussite
+          const updatedShowEmail = response.data.showEmail;
+
+          setFormData((prevState) => ({
+            ...prevState,
+            showEmail: updatedShowEmail,
+            email: updatedShowEmail ? user?.email || "" : "", // Met à jour l'email localement selon la visibilité
+          }));
+
+          // Optionnel : rafraîchir l'utilisateur
+          const refreshedUser = await fetch(`${API_URL}/users/${user?.id}`).then((res) => res.json());
+          setUser(refreshedUser);
+        } catch (error) {
+          console.error("Erreur lors de la mise à jour de la préférence :", error);
+          Alert.alert("Erreur", "Impossible de mettre à jour la préférence.");
+        }
+      }}
+    />
+  </View>
+</View>
+
           {/* Bouton Sauvegarder/Modifier */}
           <TouchableOpacity
             style={styles.buttonProfil}
-            onPress={editable ? handleSave : () => setEditable(true)}
+            onPress={() => {
+              if (editable) {
+                // Sauvegarder les modifications
+                handleSave();
+                setEditable(false); // Désactiver le mode édition
+              } else {
+                // Vérifier si l'email est affiché
+                if (!formData.showEmail) {
+                  Alert.alert(
+                    "Afficher l'email",
+                    "Veuillez afficher votre email avant de pouvoir entamer des modifications."
+                  );
+                  return;
+                }
+
+                // Passer en mode édition
+                setEditable(true);
+              }
+            }}
           >
             <Text style={styles.buttonTextProfil}>
               {editable ? "Sauvegarder" : "Modifier"}

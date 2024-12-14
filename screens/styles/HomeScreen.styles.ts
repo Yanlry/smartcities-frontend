@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
-  // STYLE GLOBAL
+  //  ------------------------------------------------ STYLE GLOBAL
 
   container: {
     flex: 1,
@@ -9,66 +9,66 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
   },
 
-  // LOADING
+  //  ------------------------------------------------ LOADING
 
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5", // Couleur de fond douce
+    backgroundColor: "#f5f5f5",  
   },
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333", // Texte gris foncé
+    color: "#333",  
   },
 
-  // MODAL PARTAGE DE POSITION
+  // ------------------------------------------------  MODAL PARTAGE DE POSITION
 
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
-    paddingHorizontal: 20, // Espacement pour éviter que le contenu ne touche les bords
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
+    paddingHorizontal: 20,   
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff", // Blanc pour contraster avec le fond
+    color: "#fff", 
     marginBottom: 10,
     textAlign: "center",
   },
   modalText: {
     fontSize: 16,
-    color: "#ddd", // Texte légèrement gris pour une bonne lisibilité
+    color: "#ddd",  
     textAlign: "center",
     marginBottom: 20,
-    lineHeight: 24, // Espacement des lignes pour plus de lisibilité
+    lineHeight: 24,  
   },
   button: {
-    backgroundColor: "#1E90FF", // Bleu vif
+    backgroundColor: "#1E90FF",  
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    elevation: 2, // Ombre pour donner un effet de profondeur (Android uniquement)
-    shadowColor: "#000", // Ombre pour iOS
+    elevation: 2,  
+    shadowColor: "#000",  
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   buttonText: {
-    color: "#fff", // Texte blanc pour contraster avec le bouton
+    color: "#fff",  
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
   },
 
-  // MODAL FOLLOWER
+  // ------------------------------------------------  MODAL FOLLOWER
 
   containerFollower: {
     flex: 1,
-    backgroundColor: "#f7f8fa", // Light gray for a soft look
+    backgroundColor: "#f7f8fa",  
     padding: 20,
   },
   title: {
@@ -79,24 +79,24 @@ export default StyleSheet.create({
     textAlign: "center",
   },
   followerList: {
-    paddingBottom: 20, // Space at the bottom
+    paddingBottom: 20,  
   },
   backButton: {
     marginTop: 20,
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#2c3e50", // Primary blue
+    backgroundColor: "#2c3e50",  
     borderRadius: 30,
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#fff", // White text for contrast
-    textTransform: "uppercase", // Button style text
+    color: "#fff",  
+    textTransform: "uppercase",  
   },
 
-  // PROFILE CONTAINER
+  //  ------------------------------------------------ PROFILE CONTAINER
 
   cardContainer: {
     backgroundColor: "#ffffff",
@@ -152,10 +152,9 @@ export default StyleSheet.create({
   dropdownButton: {
     marginLeft: 8,
   },
-
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
     justifyContent: "center",
     alignItems: "center",
   },
@@ -164,8 +163,8 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
-    elevation: 10, // Ombre pour Android
-    shadowColor: "#000", // Ombre pour iOS
+    elevation: 10,  
+    shadowColor: "#000", 
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -193,7 +192,7 @@ export default StyleSheet.create({
   },
   closeButton: {
     marginTop: 20,
-    backgroundColor: "#2c3e50", // Bouton vert
+    backgroundColor: "#2c3e50",  
     borderRadius: 30,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -210,33 +209,32 @@ export default StyleSheet.create({
     marginTop: 4,
   },
   followerItem: {
-    flexDirection: "row", // Align image and text horizontally
+    flexDirection: "row", 
     alignItems: "center",
-    backgroundColor: "#fff", // White background for contrast
+    backgroundColor: "#fff",  
     padding: 12,
     marginBottom: 12,
     marginHorizontal: 1,
-    borderRadius: 90, // Rounded corners for a modern look
+    borderRadius: 90,  
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 1, // Elevation for Android
+    elevation: 1,  
   },
   followerImage: {
     width: 50,
     height: 50,
-    borderRadius: 25, // Circular image
-    marginRight: 12, // Space between image and text
+    borderRadius: 25,  
+    marginRight: 12,  
     borderWidth: 1,
-    borderColor: "#ddd", // Soft border for definition
+    borderColor: "#ddd", 
   },
   followerName: {
     fontSize: 16,
-    fontWeight: "600", // Slightly bold for importance
-    color: "#444", // Dark gray for subtle contrast
+    fontWeight: "600",  
+    color: "#444", 
   },
-
   statistics: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -306,7 +304,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    elevation: 5, // Pour Android
+    elevation: 5,  
   },
   rankingItemModal: {
     flexDirection: "row",
@@ -320,7 +318,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 3, // Pour Android
+    elevation: 3,  
   },
   userImage: {
     width: 50,
@@ -353,7 +351,7 @@ export default StyleSheet.create({
     fontSize: 16,
   },
 
-  // TOP 10 DES SMARTERS
+  //  ------------------------------------------------ TOP 10 DES SMARTERS
 
   sectionTitle: {
     fontSize: 20,
@@ -393,7 +391,7 @@ export default StyleSheet.create({
     borderColor: "#ddd",
   },
   seeAllButton: {
-    backgroundColor: "#2c3e50", // Couleur accentuée (orange-rouge)
+    backgroundColor: "#2c3e50",  
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 90,
@@ -409,7 +407,7 @@ export default StyleSheet.create({
     textAlign: "center",
   },
 
-  // SIGNALEMENTS PROCHE
+  //  ------------------------------------------------ SIGNALEMENTS PROCHE
 
   noReportsText: {
     textAlign: "center",
@@ -425,46 +423,46 @@ export default StyleSheet.create({
   reportType: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#424242", // Couleur du texte en blanc pour contraste
+    color: "#424242",  
   },
   reportTitle: {
     fontSize: 14,
     marginTop: 5,
     fontWeight: "500",
-    color: "#424242", // Texte blanc pour rester lisible sur les fonds colorés
+    color: "#424242", 
   },
   reportCity: {
     fontSize: 14,
     marginTop: 5,
     fontWeight: "500",
-    color: "#424242", // Texte blanc pour rester lisible sur les fonds colorés
+    color: "#424242",  
   },
 
-  // SELECTION DE CATEGORIE
+  //  ------------------------------------------------ SELECTION DE CATEGORIE
 
   categoryButton: {
-    width: 120, // Largeur fixe
-    height: 120, // Hauteur fixe
+    width: 120,  
+    height: 120,  
     marginTop: 10,
-    justifyContent: "center", // Centrer le contenu verticalement
-    alignItems: "center", // Centrer le contenu horizontalement
-    marginRight: 10, // Espacement entre les boutons
-    borderRadius: 90, // Coins arrondis
+    justifyContent: "center",  
+    alignItems: "center",  
+    marginRight: 10,  
+    borderRadius: 90, 
   },
   categoryIcon: {
-    marginBottom: 5, // Espacement entre l'icône et le texte
+    marginBottom: 5,  
   },
   categoryText: {
-    color: "#fff", // Texte blanc
-    fontSize: 16, // Taille de la police du texte
-    fontWeight: "bold", // Texte en gras
+    color: "#fff", 
+    fontSize: 16,  
+    fontWeight: "bold", 
   },
 
-  // EVENT A LA UNE
+  //  ------------------------------------------------ EVENT A LA UNE
 
   featuredItem: {
     width: 150,
-    minHeight: 150, // Remplacez height par minHeight pour permettre au conteneur de s'agrandir
+    minHeight: 150, 
     marginRight: 15,
     borderRadius: 10,
     overflow: "hidden",
@@ -472,8 +470,8 @@ export default StyleSheet.create({
   },
   featuredImage: {
     width: "100%",
-    height: "auto", // Utilisez auto pour que l'image s'ajuste en fonction du texte
-    aspectRatio: 1.5, // Vous pouvez définir un ratio pour que l'image conserve une forme cohérente
+    height: "auto", 
+    aspectRatio: 1.5,  
   },
   featuredTitle: {
     padding: 10,
@@ -482,7 +480,7 @@ export default StyleSheet.create({
     textAlign: "center",
   },
 
-  // CALENDRIER
+  // ------------------------------------------------  CALENDRIER
 
   calendarContainer: {
     marginBottom: 20,
@@ -539,9 +537,9 @@ export default StyleSheet.create({
     textAlign: "center",
   },
 
-  // PARTIE  MAIRIE
+  // ------------------------------------------------  PARTIE  MAIRIE
 
-  // SIGNALEMENT RESOLUS
+  // ------------------------------------------------ SIGNALEMENT RESOLUS
 
   infoCard: {
     backgroundColor: "#fff",
@@ -572,7 +570,7 @@ export default StyleSheet.create({
     color: "#666",
   },
 
-  // FICHE INFORMATION MAIRE
+  // ------------------------------------------------  FICHE INFORMATION MAIRE
 
   mayorCard: {
     flexDirection: "row",
@@ -592,6 +590,7 @@ export default StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 15,
+    marginRight: 15,
   },
   mayorContainer: {
     flex: 1,
@@ -619,9 +618,10 @@ export default StyleSheet.create({
   },
   contactBold: {
     fontWeight: "bold",
+    marginTop: 5,
   },
 
-  // FICHE CONTACT MAIRIE
+  // ------------------------------------------------ FICHE CONTACT MAIRIE
 
   officeCard: {
     flexDirection: "row",
@@ -641,6 +641,7 @@ export default StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 15,
+    marginRight: 15,
   },
   officeInfo: {
     flex: 1,

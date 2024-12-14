@@ -12,17 +12,22 @@ import {
 import { API_URL } from "@env";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { getUserIdFromToken } from "../utils/tokenUtils";
+import axios from "axios";
+import { Linking } from 'react-native';
 
 type User = {
   id: string;
   firstName: string;
   lastName: string;
   username?: string;
+  useFullName?: boolean;
+  vote?: { id: number; value: number }[];
   email?: string;
   trustRate?: number;
   followers?: { id: number; username: string; profilePhoto?: string }[];
   following?: { id: number; username: string; profilePhoto?: string }[];
   profilePhoto?: { url: string };
+  showEmail?: boolean;
   latitude?: number;
   longitude?: number;
 };
@@ -35,6 +40,7 @@ export default function UserProfileScreen({ route, navigation }) {
   const [isFollowing, setIsFollowing] = useState(false); // État de suivi
   const [isSubmitting, setIsSubmitting] = useState(false); // Pour bloquer les clics pendant une requête
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ID de l'utilisateur connecté
+  const [stats, setStats] = useState<any>(null);
 
   // Chargement des données utilisateur
   useEffect(() => {
@@ -47,7 +53,9 @@ export default function UserProfileScreen({ route, navigation }) {
         // Récupérer les données de l'utilisateur à afficher
         const response = await fetch(`${API_URL}/users/${userId}`);
         if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des données utilisateur");
+          throw new Error(
+            "Erreur lors de la récupération des données utilisateur"
+          );
         }
 
         const data = await response.json();
@@ -66,6 +74,39 @@ export default function UserProfileScreen({ route, navigation }) {
     }
     fetchData();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const userId = await getUserIdFromToken();
+        if (!userId) {
+          throw new Error("Utilisateur non connecté ou ID introuvable.");
+        }
+
+        const response = await axios.get(`${API_URL}/users/stats/${userId}`);
+        if (response.status !== 200) {
+          throw new Error(`Erreur API : ${response.statusText}`);
+        }
+
+        const data = response.data;
+        if (!data.votes) {
+          data.votes = [];
+        }
+
+        setStats(data);
+      } catch (error: any) {
+        console.error("Erreur dans fetchStats :", error.message || error);
+        setError("Impossible de récupérer les statistiques.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Gestion du suivi (Follow)
   const handleFollow = async () => {
@@ -161,6 +202,10 @@ export default function UserProfileScreen({ route, navigation }) {
     );
   }
 
+  const displayName = user?.useFullName
+    ? `${user.firstName} ${user.lastName}`
+    : user?.username;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
@@ -169,13 +214,20 @@ export default function UserProfileScreen({ route, navigation }) {
             name="chevron-left"
             size={28}
             color="#333"
-            style={{ marginLeft: 10, marginRight: 80 }}
+            style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          Profil de {user?.username || "Utilisateur"}
+          {displayName || "Cet utilisateur"}
         </Text>
-        <Text style={styles.headerTitle}> </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("ProfileScreen")}>
+          <Icon
+            name="warning"
+            size={28}
+            color="#333"
+            style={{ marginRight: 10 }}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Image de profil */}
@@ -201,46 +253,77 @@ export default function UserProfileScreen({ route, navigation }) {
           disabled={isSubmitting} // Bloquer pendant la requête
         >
           <Text style={styles.followButtonText}>
-            {isFollowing ? "Se désabonner" : "Suivre"}
+            {isFollowing ? "Se désabonner" : "S'abonner"}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Informations de base */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Informations personnelles</Text>
-        <Text style={styles.field}>
-          Prénom : {user?.firstName || "Non renseigné"}
-        </Text>
-        <Text style={styles.field}>
-          Nom : {user?.lastName || "Non renseigné"}
-        </Text>
-        <Text style={styles.field}>
-          Nom d'utilisateur : {user?.username || "Non renseigné"}
-        </Text>
-        <Text style={styles.field}>
-          Email : {user?.email || "Non disponible"}
-        </Text>
-      </View>
+      <View style={styles.infoCardContainer}>
+  <Text style={styles.infoCardHeader}>Informations personnelles</Text>
+  
+  {/* Nom d'utilisateur */}
+  <View style={styles.infoItem}>
+    <Icon name="user" size={20} style={styles.icon} />
+    <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
+    <Text style={styles.infoValueName}>
+      {displayName || <Text style={styles.placeholderValue}>Non renseigné</Text>}
+    </Text>
+  </View>
+  
+  {/* Email */}
 
-      {/* Statistiques */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Statistiques</Text>
-        <Text style={styles.field}>
-          Followers : {user?.followers?.length || 0}
-        </Text>
-        <Text style={styles.field}>
-          Following : {user?.following?.length || 0}
-        </Text>
-      </View>
+<View style={styles.infoItem}>
+  <Icon name="envelope" size={20} style={styles.icon} />
+  <Text style={styles.infoLabel}>Email :</Text>
+  {user?.showEmail ? (
+    <Text
+      style={styles.infoValueEmail}
+      onPress={() => Linking.openURL(`mailto:${user.email}`)}
+    >
+      {user.email}
+    </Text>
+  ) : (
+    <Text style={styles.placeholderValue}>{displayName} n'est pas joignable</Text>
+  )}
+</View>
+
+
+</View>
+
+
+      <View style={styles.cardContainer}>
+  <Text style={styles.infoCardHeader}>Statistiques</Text>
+  <View style={styles.cardContent}>
+    <View style={styles.statItem}>
+      <Text style={styles.statNumber}>{user?.followers?.length || 0}</Text>
+      <Text style={styles.statLabel}>Followers</Text>
+    </View>
+    <View style={styles.statItem}>
+      <Text style={styles.statNumber}>{user?.following?.length || 0}</Text>
+      <Text style={styles.statLabel}>Following</Text>
+    </View>
+    <View style={styles.statItem}>
+      <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
+      <Text style={styles.statLabel}>Votes</Text>
+    </View>
+    <View style={styles.statItem}>
+      <Text style={styles.statNumber}>{stats?.numberOfReports || 0}</Text>
+      <Text style={styles.statLabel}>Signalements</Text>
+    </View>
+  </View>
+</View>
+
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 30,
+    backgroundColor: "#F5F5F5",
+    flexGrow: 1,
   },
   center: {
     flex: 1,
@@ -253,52 +336,140 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
     marginTop: 50,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "bold",
-    flex: 1,
-    textAlign: "center",
+    color: "#333",
   },
   profileImageContainer: {
     alignItems: "center",
-    marginBottom: 20,
   },
   profileImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: "#D6D6D6",
+    marginBottom: 10,
   },
   noProfileImageText: {
     color: "#999",
   },
   followButtonContainer: {
     alignItems: "center",
-    marginVertical: 20,
-  },
-  followButton: {
-    paddingVertical: 15,
-    paddingHorizontal:40,
-    borderRadius: 30,
-  },
-  followButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  section: {
     marginBottom: 20,
   },
-  sectionTitle: {
+  followButton: {
+    backgroundColor: "#57A773",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  followButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
     fontSize: 16,
+  },
+  infoCardContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  infoCardHeader: {
+    fontSize: 18,
     fontWeight: "bold",
+    color: "#333",
+    marginBottom: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+    paddingBottom: 20,
+  },
+  infoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    marginRight: 5, // Réduit l'espace entre "Email :" et la valeur
+  },
+  infoValueName: {
+    fontSize: 17,
+    color: "#333",
+    fontWeight: "600", // Ajout d'une légère distinction entre le label et la valeur
+  },
+  infoValueEmail: {
+    fontSize: 17,
+    color: "#333",
+    fontWeight: "600", // Ajout d'une légère distinction entre le label et la valeur
+  },
+  placeholderValue: {
+    fontSize: 14,
+    color: "#AAA",
+    fontStyle: "italic",
+  },
+  icon: {
+    marginRight: 10,
+    color: "#57A773",
+  },
+  cardContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  cardHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 10,
+  },
+  cardContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  statItem: {
+    alignItems: "center",
+  },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+  },
+  statLabel: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#888",
   },
   field: {
     fontSize: 14,
-    marginBottom: 5,
+    color: "#555",
+    marginBottom: 10,
+    lineHeight: 20,
   },
 });
+

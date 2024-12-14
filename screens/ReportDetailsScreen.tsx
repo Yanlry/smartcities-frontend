@@ -48,16 +48,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     })();
   }, []);
 
-  const latitudeMiddle =
-    location && report
-      ? (location.latitude + report.latitude) / 2
-      : location?.latitude || 0;
-
-  const longitudeMiddle =
-    location && report
-      ? (location.longitude + report.longitude) / 2
-      : location?.longitude || 0;
-
   useEffect(() => {
     if (mapRef.current && routeCoords.length > 0) {
       // Étape 1 : Ajuster les limites pour voir tout le tracé
@@ -417,8 +407,12 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
               })
             }
           >
-          <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
-            <Text style={styles.detailValue}>{report.user.username}</Text>
+            <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
+            <Text style={styles.detailValue}>
+              {report.user && report.user.useFullName
+                ? `${report.user.firstName} ${report.user.lastName}`
+                : report.user?.username || "Nom non disponible"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -130,12 +130,31 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
   fieldContainer: {
-    marginBottom: 15,
+    marginVertical: 10,
+  },
+  showEmail: {
+    backgroundColor: "#f9f9f9",
+    justifyContent: "space-between",
+    flexDirection: "row", // Place le texte et le switch côte à côte
+    alignItems: "center", // Centre verticalement le texte et le switch
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 20,
+    borderRadius: 50,
   },
   label: {
-    fontSize: 16,
-    color: "#555",
-    marginBottom: 5,
+    fontSize: 18, // Augmente la taille du texte
+    fontWeight: "400", // Donne une apparence plus proéminente
+    color: "#333", // Couleur sombre pour une bonne lisibilité
+    marginBottom: 5, // Espacement avec le champ suivant
+  }, 
+  labelEmail: {
+    flex:1,
+
+    fontSize: 12, // Augmente la taille du texte
+    fontWeight: "400", // Donne une apparence plus proéminente
+    color: "#333", // Couleur sombre pour une bonne lisibilité
+    marginBottom: 5, // Espacement avec le champ suivant
   },
   inputContainer: {
     flexDirection: "row", // Pour aligner l’icône à droite

@@ -13,9 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation";
 import { Ionicons } from "@expo/vector-icons";
-import CalendarPicker from "react-native-calendar-picker"; // Ajoutez un module de calendrier si nécessaire
-import { BarChart } from "react-native-chart-kit";
-import { Dimensions } from "react-native";
+import CalendarPicker from "react-native-calendar-picker";
 import styles from "./styles/HomeScreen.styles";
 import axios from "axios";
 import { useLocation } from "../hooks/useLocation";
@@ -28,7 +26,7 @@ import Chart from "../components/Chart";
 import { useFetchStatistics } from "../hooks/useFetchStatistics";
 // @ts-ignore
 import { API_URL } from "@env";
-import { Picker } from "@react-native-picker/picker";
+import { Linking } from "react-native";
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
@@ -62,7 +60,7 @@ interface TopUser {
   username: string;
   photo: string | null;
   ranking: number;
-  useFullName: boolean; // Inclure cette propriété
+  useFullName: boolean;
   firstName: string;
   lastName: string;
 }
@@ -90,7 +88,7 @@ export default function HomeScreen({}) {
       image: { uri: string };
     }[]
   >([]);
-  const [showFollowers, setShowFollowers] = useState(false); // État pour afficher les followers
+  const [showFollowers, setShowFollowers] = useState(false);
   const [ranking, setRanking] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -107,16 +105,14 @@ export default function HomeScreen({}) {
 
   useEffect(() => {
     const fetchRanking = async () => {
-      setLoading(true); // Démarre le chargement
-      setError(null); // Réinitialise l'état d'erreur
+      setLoading(true);
+      setError(null);
       try {
-        // Récupérer l'ID utilisateur
         const userId = await getUserIdFromToken();
         if (!userId) {
           throw new Error("Impossible de récupérer l'ID utilisateur.");
         }
 
-        // Appel API pour le classement
         const response = await fetch(
           `${API_URL}/users/ranking?userId=${userId}`
         );
@@ -138,7 +134,7 @@ export default function HomeScreen({}) {
         console.error("Erreur lors de la récupération du classement :", error);
         setError(error.message || "Erreur inconnue.");
       } finally {
-        setLoading(false); // Terminer le chargement
+        setLoading(false);
       }
     };
 
@@ -148,14 +144,12 @@ export default function HomeScreen({}) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupération de l'ID utilisateur
         const userId = await getUserIdFromToken();
         if (!userId) {
           console.error("ID utilisateur non trouvé");
           return;
         }
 
-        // Récupération des données utilisateur
         const userResponse = await fetch(`${API_URL}/users/${userId}`);
         if (!userResponse.ok) {
           console.error(
@@ -166,7 +160,6 @@ export default function HomeScreen({}) {
         const userData = await userResponse.json();
         setUser(userData);
 
-        // Chargement des signalements si la localisation est disponible
         if (location) {
           setLoadingReports(true);
           const reports = await processReports(
@@ -176,7 +169,6 @@ export default function HomeScreen({}) {
           setReports(reports);
         }
 
-        // Récupération de la liste des utilisateurs populaires
         const topUsersResponse = await fetch(`${API_URL}/users/top10`);
         if (!topUsersResponse.ok) {
           console.error(
@@ -190,7 +182,7 @@ export default function HomeScreen({}) {
         interface FormattedUser {
           id: string;
           username: string;
-          displayName: string; // Nom à afficher dynamiquement
+          displayName: string;
           ranking: number;
           image: { uri: string };
         }
@@ -199,12 +191,12 @@ export default function HomeScreen({}) {
           id: user.id,
           username: user.username,
           displayName: user.useFullName
-            ? `${user.firstName} ${user.lastName}` // Nom complet si `useFullName` est vrai
-            : user.username, // Sinon, afficher le `username`
+            ? `${user.firstName} ${user.lastName}`
+            : user.username,
           ranking: user.ranking,
           image: { uri: user.photo || "default-image-url" },
         }));
-        // Tri par classement (optionnel si déjà trié côté backend)
+
         formattedData.sort((a, b) => a.ranking - b.ranking);
 
         setSmarterData(formattedData);
@@ -239,9 +231,8 @@ export default function HomeScreen({}) {
         }
 
         const data = response.data;
-        // Vérifiez que les votes sont présents
         if (!data.votes) {
-          data.votes = []; // Fournir une valeur par défaut
+          data.votes = [];
         }
 
         setStats(data);
@@ -259,8 +250,8 @@ export default function HomeScreen({}) {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        setLoading(true); // Démarrer le chargement
-        setError(null); // Réinitialiser l'erreur
+        setLoading(true);
+        setError(null);
 
         const response = await axios.get(`${API_URL}/events`);
         if (response.status !== 200) {
@@ -276,12 +267,12 @@ export default function HomeScreen({}) {
             "https://via.placeholder.com/300",
         }));
 
-        setFeaturedEvents(events); // Mettre à jour l'état
+        setFeaturedEvents(events);
       } catch (error: any) {
         console.error("Erreur dans fetchEvents :", error.message || error);
         setError("Impossible de récupérer les événements.");
       } finally {
-        setLoading(false); // Arrêter le chargement
+        setLoading(false);
       }
     };
 
@@ -347,9 +338,9 @@ export default function HomeScreen({}) {
       const response = await axios.get<
         { id: string; title: string; date: string; location: string }[]
       >(`${API_URL}/events/by-date`, {
-        params: { date }, // Passez la date sélectionnée en paramètre
+        params: { date },
       });
-      setEvents(response.data); // Mettez à jour les événements avec la réponse
+      setEvents(response.data);
     } catch (error) {
       console.error("Erreur lors de la récupération des événements :", error);
       alert("Impossible de charger les événements pour cette date.");
@@ -365,7 +356,7 @@ export default function HomeScreen({}) {
       years * 12 +
       now.getMonth() -
       date.getMonth() -
-      (now.getDate() < date.getDate() ? 1 : 0); // Ajuste si le jour n'est pas encore passé
+      (now.getDate() < date.getDate() ? 1 : 0);
 
     if (years > 1) {
       return `${years} ans`;
@@ -379,15 +370,19 @@ export default function HomeScreen({}) {
   };
 
   const handlePressReport = (id: number) => {
-    navigation.navigate("ReportDetails", { reportId: id }); // Maintenant typé correctement
+    navigation.navigate("ReportDetails", { reportId: id });
   };
 
   const handleCategoryClick = (category: string) => {
-    navigation.navigate("CategoryReports", { category }); // Passe la catégorie sélectionnée à la nouvelle page
+    navigation.navigate("CategoryReports", { category });
   };
 
   const toggleFollowersList = () => {
-    setShowFollowers((prev) => !prev); // Inverse l'état d'affichage
+    setShowFollowers((prev) => !prev);
+  };
+
+  const handlePressPhoneNumber = () => {
+    Linking.openURL("tel:0320440251");
   };
 
   const renderFollower = ({ item }) => (
@@ -407,17 +402,15 @@ export default function HomeScreen({}) {
   );
 
   const getRankingSuffix = (rank) => {
-    if (!rank) return ""; // Si le classement est null ou indéfini
+    if (!rank) return "";
     return rank === 1 ? "er" : "ème";
   };
 
-  // Détermine le nom à afficher en fonction de useFullName
   const displayName = user?.useFullName
     ? `${user.firstName} ${user.lastName}`
     : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
-    // Ferme le modal immédiatement pour améliorer l'expérience utilisateur
     setModalNameVisible(false);
 
     try {
@@ -436,12 +429,9 @@ export default function HomeScreen({}) {
         throw new Error("Erreur lors de la mise à jour de la préférence.");
       }
 
-      const updatedUser = await response.json(); // Récupère les données mises à jour
-
-      // Mets à jour l'état utilisateur existant
       setUser((prevUser) => ({
         ...prevUser!,
-        useFullName: option === "fullName", // Mets à jour la préférence locale
+        useFullName: option === "fullName",
       }));
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la préférence", error);
@@ -453,8 +443,8 @@ export default function HomeScreen({}) {
       <View style={styles.containerFollower}>
         <Text style={styles.title}>Mes followers</Text>
         <FlatList
-          data={user?.followers || []} // Liste des followers
-          keyExtractor={(item) => item.id.toString()} // Utilise `item.id` comme clé
+          data={user?.followers || []}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderFollower}
           contentContainerStyle={styles.followerList}
         />
@@ -503,9 +493,7 @@ export default function HomeScreen({}) {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Section Profil */}
       <View style={styles.cardContainer}>
-        {/* Header avec photo et informations principales */}
         <View style={styles.header}>
           {user?.profilePhoto?.url ? (
             <Image
@@ -531,7 +519,6 @@ export default function HomeScreen({}) {
               </TouchableOpacity>
             </View>
 
-            {/* Modal */}
             <Modal
               visible={modalNameVisible}
               transparent={true}
@@ -543,7 +530,6 @@ export default function HomeScreen({}) {
                   <Text style={styles.modalTitleName}>
                     Préférence d'affichage
                   </Text>
-
                   <FlatList
                     data={[
                       {
@@ -569,7 +555,6 @@ export default function HomeScreen({}) {
                       </TouchableOpacity>
                     )}
                   />
-
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setModalNameVisible(false)}
@@ -644,7 +629,6 @@ export default function HomeScreen({}) {
           </View>
         </View>
 
-        {/* Statistiques */}
         <View style={styles.statistics}>
           <TouchableOpacity
             style={styles.statItem}
@@ -689,14 +673,22 @@ export default function HomeScreen({}) {
                 : item.username; // Choix basé sur `useFullName`
 
               return (
-                <View style={styles.rankingItemModal}>
+                <TouchableOpacity
+                  style={styles.rankingItemModal}
+                  onPress={() => {
+                    setIsModalVisible(false); // Fermer le modal
+                    navigation.navigate("UserProfileScreen", {
+                      userId: item.id,
+                    }); // Naviguer vers le profil utilisateur
+                  }}
+                >
                   <Text style={styles.rankingTextModal}>#{item.ranking}</Text>
                   <Image
                     source={{ uri: item.photo || "default-image-url" }}
                     style={styles.userImage}
                   />
                   <Text style={styles.rankingTextModal}>{displayName}</Text>
-                </View>
+                </TouchableOpacity>
               );
             }}
           />
@@ -724,12 +716,10 @@ export default function HomeScreen({}) {
               <Image source={item.image} style={styles.smarterImage} />
               <Text style={styles.rankingName}>
                 {item.displayName || "Nom indisponible"}{" "}
-                {/* Fallback si displayName est vide */}
               </Text>
             </TouchableOpacity>
           ))}
 
-          {/* Ajout du bouton "Voir tout" */}
           <TouchableOpacity
             key="seeAll"
             style={[styles.smarterItem, styles.seeAllButton]}
@@ -740,7 +730,6 @@ export default function HomeScreen({}) {
         </ScrollView>
       </View>
 
-      {/* Section Signalements Proche de Vous */}
       <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
       {reports.length === 0 ? (
         <Text style={styles.noReportsText}>
@@ -758,7 +747,7 @@ export default function HomeScreen({}) {
                   calculateOpacity(report.createdAt, 0.5)
                 ),
               },
-              index === reports.length - 1 && { marginBottom: 25 }, // Ajoute marginBottom uniquement au dernier élément
+              index === reports.length - 1 && { marginBottom: 25 },
             ]}
             onPress={() => handlePressReport(report.id)}
           >
@@ -771,7 +760,6 @@ export default function HomeScreen({}) {
         ))
       )}
 
-      {/* Section Catégories */}
       <Text style={styles.sectionTitle}>Catégories</Text>
       <ScrollView
         horizontal
@@ -785,7 +773,7 @@ export default function HomeScreen({}) {
             style={[
               styles.categoryButton,
               {
-                backgroundColor: hexToRgba(category.color, 0.5), // Opacité constante pour tous les boutons
+                backgroundColor: hexToRgba(category.color, 0.5),
               },
             ]}
           >
@@ -800,7 +788,6 @@ export default function HomeScreen({}) {
         ))}
       </ScrollView>
 
-      {/* Section À la Une */}
       <Text style={styles.sectionTitle}>À la Une</Text>
       <ScrollView
         horizontal
@@ -822,14 +809,13 @@ export default function HomeScreen({}) {
         ))}
       </ScrollView>
 
-      {/* Section Événements */}
       <Text style={styles.sectionTitle}>Tous les événements</Text>
       <View style={styles.calendarContainer}>
         <CalendarPicker
           onDateChange={(date) => {
             const formattedDate = date.toISOString().split("T")[0];
             console.log("Date sélectionnée :", formattedDate);
-            fetchEventsByDate(formattedDate); // Appelle l'API pour la date sélectionnée
+            fetchEventsByDate(formattedDate);
           }}
           previousTitle="<"
           nextTitle=">"
@@ -853,7 +839,7 @@ export default function HomeScreen({}) {
             fontSize: 16,
           }}
           width={330}
-          selectedDayColor="#11998e" // Fond de la date sélectionnée
+          selectedDayColor="#11998e"
           selectedDayTextColor="#FFFFFF"
         />
       </View>
@@ -885,18 +871,16 @@ export default function HomeScreen({}) {
       {/* Section Statistiques du Mois */}
       <Chart data={data} />
 
-      {/* Section Informations Mairie */}
       <Text style={styles.sectionTitle}>Informations mairie</Text>
-
-      {/* Informations de Signalement */}
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Attention : Travaux ! </Text>
         <Text style={styles.infoContent}>
           <Text style={styles.infoLabel}>Date :</Text> 15 septembre 2024{"\n"}
           <Text style={styles.infoLabel}>Lieu :</Text> Avenue de la Liberté
           {"\n"}
-          Des travaux de réfection de la chaussée auront lieu du 25 au 30
-          septembre. La circulation sera déviée. Veuillez suivre les panneaux de
+          <Text style={styles.infoLabel}>Détail :</Text> Des travaux de
+          réfection de la chaussée auront lieu du 25 au 30 septembre. La
+          circulation sera déviée. Veuillez suivre les panneaux de
           signalisation.
         </Text>
 
@@ -911,13 +895,12 @@ export default function HomeScreen({}) {
         <Text style={styles.infoTitle}>Alertes Importantes</Text>
         <Text style={styles.infoContent}>
           <Text style={styles.infoLabel}>Date :</Text> 18 septembre 2024{"\n"}
-          En raison des fortes pluies prévues cette semaine, nous vous
-          recommandons de limiter vos déplacements et de vérifier les alertes
-          météo régulièrement.
+          <Text style={styles.infoLabel}>Détail :</Text> En raison des fortes
+          pluies prévues cette semaine, nous vous recommandons de limiter vos
+          déplacements et de vérifier les alertes météo régulièrement.
         </Text>
       </View>
 
-      {/* Carte du Maire */}
       <View style={styles.mayorCard}>
         <Image
           source={require("../assets/images/mayor.png")}
@@ -927,15 +910,14 @@ export default function HomeScreen({}) {
           <Text style={styles.mayorInfo}>Maire actuel:</Text>
           <Text style={styles.mayorName}>Pierre BÉHARELLE</Text>
           <Text style={styles.mayorSubtitle}>
-            Permanence en Mairie sur rendez-vous
+            Permanence en Mairie sur rendez-vous au :
           </Text>
-          <Text style={styles.mayorContact}>
-            Contact : <Text style={styles.contactBold}>03 20 44 02 51</Text>
-          </Text>
+          <TouchableOpacity onPress={handlePressPhoneNumber}>
+            <Text style={styles.contactBold}>03 20 44 02 51</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Adresse de la Mairie */}
       <View style={styles.officeCard}>
         <Image
           source={require("../assets/images/mairie.png")}
@@ -943,11 +925,16 @@ export default function HomeScreen({}) {
         />
         <View style={styles.officeInfo}>
           <View style={styles.officeAddress}>
-            <Text style={styles.Address}>Adresse :{"\n"}</Text>
+            <Text style={styles.Address}>Contactez-nous :{"\n"}</Text>
             <Text>11 rue Sadi Carnot, {"\n"}59320 Haubourdin</Text>
           </View>
           <Text style={styles.officeContact}>
-            <Text style={styles.phone}>Téléphone :</Text> 03 20 44 02 90{"\n"}
+            <Text style={styles.phone}>Téléphone :</Text>
+            {"\n"}
+            <TouchableOpacity onPress={handlePressPhoneNumber}>
+              <Text style={styles.officeContact}>03 20 44 02 90</Text>
+            </TouchableOpacity>
+            {"\n"}
             <Text style={styles.hours}>Du lundi au vendredi :</Text>
             {"\n"}
             08:30 - 12:00, 13:30 - 17:00
