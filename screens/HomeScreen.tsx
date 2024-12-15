@@ -760,34 +760,6 @@ export default function HomeScreen({}) {
         ))
       )}
 
-      <Text style={styles.sectionTitle}>Catégories</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 25 }}
-      >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category.name}
-            onPress={() => handleCategoryClick(category.name)}
-            style={[
-              styles.categoryButton,
-              {
-                backgroundColor: hexToRgba(category.color, 0.5),
-              },
-            ]}
-          >
-            <Ionicons
-              name={category.icon as keyof typeof Ionicons.glyphMap}
-              size={40}
-              color="#fff"
-              style={styles.categoryIcon}
-            />
-            <Text style={styles.categoryText}>{category.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       <Text style={styles.sectionTitle}>À la Une</Text>
       <ScrollView
         horizontal
@@ -867,6 +839,34 @@ export default function HomeScreen({}) {
           </Text>
         </View>
       )}
+
+      <Text style={styles.sectionTitle}>Catégories</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 25 }}
+      >
+        {categories.map((category) => (
+          <TouchableOpacity
+            key={category.name}
+            onPress={() => handleCategoryClick(category.name)}
+            style={[
+              styles.categoryButton,
+              {
+                backgroundColor: hexToRgba(category.color, 0.5),
+              },
+            ]}
+          >
+            <Ionicons
+              name={category.icon as keyof typeof Ionicons.glyphMap}
+              size={40}
+              color="#fff"
+              style={styles.categoryIcon}
+            />
+            <Text style={styles.categoryText}>{category.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {/* Section Statistiques du Mois */}
       <Chart data={data} />

@@ -21,7 +21,7 @@ import CategoryReportsScreen from './screens/CategoryReportsScreen';
 import EventDetailsScreen from './screens/EventDetailsScreen';
 import AddNewEventScreen from './screens/AddNewEventScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
-
+import Sidebar from './components/Sidebar';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -30,7 +30,12 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const actionSheetRef = useRef<ActionSheet | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+  
   const clearAllTokens = async () => {
     await AsyncStorage.removeItem('authToken');
   };
@@ -50,14 +55,14 @@ export default function App() {
 
   const CustomHeader = ({ navigation }) => (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => console.log('Notifications clicked')}>
-        <Icon
-          name="notifications-outline"
-          size={28}
-          color="#333"
-          style={{ marginLeft: 10 }}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity onPress={toggleSidebar}>
+      <Icon
+        name="menu"
+        size={28}
+        color="#333"
+        style={{ marginLeft: 10 }}
+      />
+    </TouchableOpacity>
       <Text style={styles.headerTitle}>SmartCities</Text>
       <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
         <Icon
@@ -154,6 +159,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <KeyboardWrapper>
+      <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (
           <>
@@ -198,6 +204,8 @@ export default function App() {
           </>
         )}
       </Stack.Navigator>
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      </>
       </KeyboardWrapper>
     </NavigationContainer>
   );

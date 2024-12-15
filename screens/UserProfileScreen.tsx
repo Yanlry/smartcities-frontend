@@ -80,22 +80,18 @@ export default function UserProfileScreen({ route, navigation }) {
       try {
         setLoading(true);
         setError(null);
-
-        const userId = await getUserIdFromToken();
-        if (!userId) {
-          throw new Error("Utilisateur non connecté ou ID introuvable.");
-        }
-
+  
+        // Utiliser l'ID du profil visité (userId)
         const response = await axios.get(`${API_URL}/users/stats/${userId}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-
+  
         const data = response.data;
         if (!data.votes) {
           data.votes = [];
         }
-
+  
         setStats(data);
       } catch (error: any) {
         console.error("Erreur dans fetchStats :", error.message || error);
@@ -104,9 +100,10 @@ export default function UserProfileScreen({ route, navigation }) {
         setLoading(false);
       }
     };
-
+  
     fetchStats();
-  }, []);
+  }, [userId]); // Ajout de userId comme dépendance
+  
 
   // Gestion du suivi (Follow)
   const handleFollow = async () => {

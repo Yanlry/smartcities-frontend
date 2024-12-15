@@ -41,7 +41,8 @@ type User = {
   isMunicipality: boolean;
 };
 
-export default function ProfileScreen({ navigation, onLogout }) {
+export default function ProfileScreen({ navigation, onLogout, route }) {
+
   const [user, setUser] = useState<User | null>(null); // Type explicite ajouté ici
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export default function ProfileScreen({ navigation, onLogout }) {
     currentPassword: "",
     newPassword: "",
   });
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -99,6 +101,35 @@ export default function ProfileScreen({ navigation, onLogout }) {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id) return; // Ne pas exécuter si user.id est undefined
+  
+      try {
+        setLoading(true);
+        setError(null);
+  
+        // Utiliser l'ID du profil visité
+        const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
+        if (response.status !== 200) {
+          throw new Error(`Erreur API : ${response.statusText}`);
+        }
+  
+        const data = response.data;
+        setStats(data);
+      } catch (error: any) {
+        console.error("Erreur dans fetchStats :", error.message || error);
+        setError("Impossible de récupérer les statistiques.");
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchStats();
+  }, [user]); // Dépendance sur user
+  
+
   const handleProfileImageUpdate = async () => {
     try {
       setIsSubmitting(true);
@@ -225,6 +256,8 @@ export default function ProfileScreen({ navigation, onLogout }) {
       Alert.alert("Erreur", "Impossible de sauvegarder les modifications.");
     }
   };
+
+
 
   const handleChangePassword = async () => {
     if (!formData.currentPassword || !formData.newPassword) {
@@ -485,28 +518,25 @@ export default function ProfileScreen({ navigation, onLogout }) {
           </View>
         </View>
 
-        {/* Section Statistiques */}
+        {/* Section Activités */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistiques</Text>
+          <Text style={styles.sectionTitle}>Résumé des rapports</Text>
           <Text style={styles.field}>
-            Taux de confiance : {user?.trustRate || "Non calculé"}
+            Rapports : {stats?.numberOfReports || 0} signalement(s)
           </Text>
           <Text style={styles.field}>
-            Nombre de followers : {user?.followers?.length || 0}
-          </Text>
-          <Text style={styles.field}>
-            Nombre de suivis : {user?.following?.length || 0}
+            Total des votes : {stats?.votes?.length || 0}
           </Text>
         </View>
 
-        {/* Section Activités */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Activités récentes</Text>
+         {/* Résaux */}
+         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Social</Text>
           <Text style={styles.field}>
-            Rapports : {user?.reports?.length || 0} signalement(s)
+            Abonné a vous : {user?.followers?.length || 0} 
           </Text>
           <Text style={styles.field}>
-            Commentaires : {user?.comments?.length || 0}
+            Vous êtes abonné à : {user?.following?.length || 0} 
           </Text>
           <Text style={styles.field}>
             Publications : {user?.posts?.length || 0}
@@ -535,9 +565,6 @@ export default function ProfileScreen({ navigation, onLogout }) {
           <Text style={styles.sectionTitle}>Abonnements</Text>
           <Text style={styles.field}>
             Abonné : {user?.isSubscribed ? "Oui" : "Non"}
-          </Text>
-          <Text style={styles.field}>
-            Municipalité : {user?.isMunicipality ? "Oui" : "Non"}
           </Text>
         </View>
 

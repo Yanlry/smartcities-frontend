@@ -204,8 +204,7 @@ export default function AddNewReportScreen({navigation}) {
     if (
       !title.trim() ||
       !description.trim() ||
-      !query.trim() ||
-      photos.length === 0
+      !query.trim() 
     ) {
       Alert.alert(
         "Erreur",
