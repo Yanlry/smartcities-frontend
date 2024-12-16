@@ -25,7 +25,7 @@
     "babel-plugin-dotenv": "^0.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
-    "expo": "~52.0.18",
+    "expo": "~52.0.19",
     "expo-blur": "^14.0.1",
     "expo-image-picker": "~16.0.3",
     "expo-location": "~18.0.4",

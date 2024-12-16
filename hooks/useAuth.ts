@@ -22,7 +22,7 @@ export function useAuth() {
   const [progressModalVisible, setProgressModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);  
-  const { setToken, clearToken, getToken,  } = useToken(); // Ajout de getToken pour récupérer le token actuel
+  const { setToken, clearToken, setUserId,  } = useToken(); // Ajout de getToken pour récupérer le token actuel
 
   const steps = [
     { label: "Préparation des fichiers", progress: 0.2 },
@@ -69,6 +69,8 @@ export function useAuth() {
   const handleRegister = async (onSuccess: () => void) => {
     try {
       console.log("Inscription en cours...");
+      setIsRegisterClicked(true);
+      setIsLoading(true);
   
       // Validation locale des champs obligatoires
       if (!email || !password || !lastName || !firstName || !username) {
@@ -86,7 +88,7 @@ export function useAuth() {
   
       // Préparation des données du formulaire
       const formData = new FormData();
-      formData.append("email", email);
+      formData.append("email", email.toLowerCase());
       formData.append("password", password);
       formData.append("lastName", lastName);
       formData.append("firstName", firstName);
@@ -99,7 +101,7 @@ export function useAuth() {
             uri: photo.uri,
             name: photo.uri.split("/").pop(),
             type: photo.type || "image/jpeg",
-          } as any // Cast explicite pour TypeScript
+          } as any
         );
       });
   
@@ -109,24 +111,55 @@ export function useAuth() {
         body: formData,
       });
   
-      // Gestion des réponses serveur
-      if (response.status === 201) {
-        Alert.alert("Succès", "Inscription réussie !");
-        onSuccess(); // Callback pour gérer la redirection ou autre logique
-      } else if (response.status === 400) {
+      console.log("Réponse brute du backend :", response);
+  
+      if (response.ok) {
         const data = await response.json();
-        Alert.alert("Erreur", data.message || "Données invalides.");
-      } else if (response.status === 500) {
-        Alert.alert("Erreur", "Erreur interne du serveur. Veuillez réessayer plus tard.");
+        console.log("Données renvoyées par le backend :", data);
+  
+        // Extraction des champs id et token
+        const { id, token } = data;
+  
+        if (!id || !token) {
+          console.error("ID ou token manquant :", { id, token });
+          Alert.alert(
+            "Erreur",
+            "Inscription réussie, mais impossible de récupérer l'ID utilisateur ou le token."
+          );
+          return;
+        }
+  
+        // Enregistrement des données utilisateur
+        await setToken(token);
+        await setUserId(id);
+  
+        Alert.alert("Succès", "Inscription réussie !");
+        onSuccess(); // Callback pour redirection ou autre logique
       } else {
-        Alert.alert("Erreur", `Erreur inattendue : ${response.status}`);
+        // Gestion des erreurs spécifiques en fonction du code réponse
+        const errorData = await response.json();
+        console.error("Erreur lors de l'inscription :", errorData);
+  
+        if (response.status === 400) {
+          Alert.alert("Erreur", errorData.message || "Données invalides.");
+        } else if (response.status === 500) {
+          Alert.alert(
+            "Erreur",
+            "Erreur interne du serveur. Veuillez réessayer plus tard."
+          );
+        } else {
+          Alert.alert(
+            "Erreur",
+            errorData.message || `Erreur inattendue : ${response.status}`
+          );
+        }
       }
     } catch (error: any) {
-      // Gestion des erreurs réseau ou autres exceptions
       console.error("Erreur lors de l'inscription :", error);
       Alert.alert("Erreur", "Impossible de se connecter au serveur. Vérifiez votre connexion.");
     } finally {
-      setIsLoading(false); // Fin du chargement
+      setIsRegisterClicked(false);
+      setIsLoading(false);
     }
   };
   
@@ -163,3 +196,4 @@ export function useAuth() {
     isLoading,
   };
 }
+

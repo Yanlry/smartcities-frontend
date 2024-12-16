@@ -8,6 +8,7 @@ export function useToken() {
 
   const getToken = async () => {
     const token = await AsyncStorage.getItem('authToken');
+console.log('Token récupéré depuis AsyncStorage :', token);
     return token;
   };
 
@@ -23,7 +24,7 @@ export function useToken() {
 
   const getUserId = async () => {
     const userId = await AsyncStorage.getItem('userId');
-    console.log('userId récupéré depuis AsyncStorage :', userId);
+    console.log('ID utilisateur récupéré depuis AsyncStorage :', userId);
     return userId ? parseInt(userId, 10) : null;
   };
 

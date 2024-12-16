@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // Corrigez l'import ici si nécessaire
 
 export const getUserIdFromToken = async (): Promise<number | null> => {
   try {
-    const token = await AsyncStorage.getItem('authToken'); // Corrige la clé ici
+    // Récupérer le token depuis AsyncStorage
+    const token = await AsyncStorage.getItem('authToken');
     console.log('Token récupéré dans AsyncStorage:', token);
 
     if (!token) {
@@ -11,10 +12,12 @@ export const getUserIdFromToken = async (): Promise<number | null> => {
       return null;
     }
 
-    const decoded: { userId: number } = jwtDecode(token); // Décoder le token JWT
+    // Décoder le token JWT
+    const decoded: { sub: number } = jwtDecode(token);
     console.log('Payload décodé du token:', decoded);
 
-    return decoded.userId; // Retourne l'ID utilisateur
+    // Retourner l'ID utilisateur depuis le champ "sub"
+    return decoded.sub || null;
   } catch (error) {
     console.error('Erreur lors du décodage du token:', error);
     return null;
