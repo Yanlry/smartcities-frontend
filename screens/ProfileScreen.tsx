@@ -34,6 +34,8 @@ type User = {
   posts?: any[];
   organizedEvents?: any[];
   attendedEvents?: any[];
+  nomCommune?: string;
+  codePostal?: string;
   latitude?: number;
   longitude?: number;
   profilePhoto?: { url: string };
@@ -557,6 +559,12 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           </Text>
           <Text style={styles.field}>
             Longitude : {user?.longitude || "Non disponible"}
+          </Text>
+          <Text style={styles.field}>
+            Ville : {user?.nomCommune || "Non disponible"}
+          </Text>
+          <Text style={styles.field}>
+            Code postal : {user?.codePostal || "Non disponible"}
           </Text>
         </View>
 

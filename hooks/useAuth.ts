@@ -3,9 +3,7 @@ import { Alert } from 'react-native';
 import { register, login } from '../services/authService';
 import { useToken } from './useToken';
 // @ts-ignore
-import { API_URL, ORS_API_KEY } from '@env';
-import { getUserIdFromToken } from '../utils/tokenUtils';
-
+import { API_URL } from '@env';
 
 export function useAuth() {
   const [email, setEmail] = useState('');
@@ -66,9 +64,14 @@ export function useAuth() {
     }
   };
   
-  const handleRegister = async (onSuccess: () => void) => {
+  const handleRegister = async (
+    onSuccess: () => void,
+    cityData: { nom_commune: string; code_postal: string; latitude: number; longitude: number }
+  ) => {
     try {
       console.log("Inscription en cours...");
+      console.log("Données de localisation reçues :", cityData);
+  
       setIsRegisterClicked(true);
       setIsLoading(true);
   
@@ -94,16 +97,22 @@ export function useAuth() {
       formData.append("firstName", firstName);
       formData.append("username", username);
   
+      // Ajouter les champs de localisation avec des logs pour vérification
+      console.log("Ajout des données de localisation à FormData...");
+      formData.append("nom_commune", cityData.nom_commune);
+      formData.append("code_postal", cityData.code_postal);
+      formData.append("latitude", cityData.latitude.toString());
+      formData.append("longitude", cityData.longitude.toString());
+  
       photos.forEach((photo) => {
-        formData.append(
-          "photos",
-          {
-            uri: photo.uri,
-            name: photo.uri.split("/").pop(),
-            type: photo.type || "image/jpeg",
-          } as any
-        );
+        formData.append("photos", {
+          uri: photo.uri,
+          name: photo.uri.split("/").pop(),
+          type: photo.type || "image/jpeg",
+        } as any);
       });
+  
+      console.log("FormData prêt à être envoyé :", formData);
   
       // Requête d'inscription
       const response = await fetch(`${API_URL}/auth/signup`, {
@@ -117,51 +126,33 @@ export function useAuth() {
         const data = await response.json();
         console.log("Données renvoyées par le backend :", data);
   
-        // Extraction des champs id et token
         const { id, token } = data;
   
         if (!id || !token) {
-          console.error("ID ou token manquant :", { id, token });
-          Alert.alert(
-            "Erreur",
-            "Inscription réussie, mais impossible de récupérer l'ID utilisateur ou le token."
-          );
+          Alert.alert("Erreur", "Impossible de récupérer l'ID utilisateur ou le token.");
           return;
         }
   
-        // Enregistrement des données utilisateur
         await setToken(token);
         await setUserId(id);
   
         Alert.alert("Succès", "Inscription réussie !");
-        onSuccess(); // Callback pour redirection ou autre logique
+        onSuccess();
       } else {
-        // Gestion des erreurs spécifiques en fonction du code réponse
         const errorData = await response.json();
-        console.error("Erreur lors de l'inscription :", errorData);
-  
-        if (response.status === 400) {
-          Alert.alert("Erreur", errorData.message || "Données invalides.");
-        } else if (response.status === 500) {
-          Alert.alert(
-            "Erreur",
-            "Erreur interne du serveur. Veuillez réessayer plus tard."
-          );
-        } else {
-          Alert.alert(
-            "Erreur",
-            errorData.message || `Erreur inattendue : ${response.status}`
-          );
-        }
+        console.error("Erreur renvoyée par le backend :", errorData);
+        Alert.alert("Erreur", errorData.message || "Erreur lors de l'inscription.");
       }
     } catch (error: any) {
+      Alert.alert("Erreur", "Impossible de se connecter au serveur.");
       console.error("Erreur lors de l'inscription :", error);
-      Alert.alert("Erreur", "Impossible de se connecter au serveur. Vérifiez votre connexion.");
     } finally {
       setIsRegisterClicked(false);
       setIsLoading(false);
     }
   };
+  
+  
   
   const logout = async () => {
     console.log('Déconnexion en cours...');
