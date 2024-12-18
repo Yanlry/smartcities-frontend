@@ -99,6 +99,21 @@ export default StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  commentContainer: {
+    marginTop: 5,
+    padding: 10,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 5,
+  },
+  commentText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  commentDate: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 5,
+  },
   zoomPosition: {
     position: "absolute",
     bottom: 20,

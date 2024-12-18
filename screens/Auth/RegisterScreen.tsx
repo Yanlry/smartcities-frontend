@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   TextInput,
@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import PhotoManager from "../../components/PhotoManager";
 import { BlurView } from "expo-blur";
-import MapView from "react-native-maps";
 import franceCitiesRaw from "../../assets/france.json";
 
 const franceCities: City[] = franceCitiesRaw as City[];

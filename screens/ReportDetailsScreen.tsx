@@ -328,6 +328,20 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       </View>
 
       <View style={styles.card}>
+        <Text style={styles.title}>Commentaires :</Text>
+        {report.comments.map((comment) => (
+          <View key={comment.id} style={styles.commentContainer}>
+            <Text style={styles.commentText}>
+              {comment.user.username}: {comment.text}
+            </Text>
+            <Text style={styles.commentDate}>
+              Posté le {new Date(comment.createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.description}>{report.description}</Text>
       </View>
 

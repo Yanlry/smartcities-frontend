@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { register, login } from '../services/authService';
+import { login } from '../services/authService';
 import { useToken } from './useToken';
 // @ts-ignore
 import { API_URL } from '@env';
