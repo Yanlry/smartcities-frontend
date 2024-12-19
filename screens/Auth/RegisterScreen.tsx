@@ -58,51 +58,52 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     nom_commune: "",
     code_postal: "",
   });
-  
 
   const handleRegisterClick = () => {
     console.log("selectedLocation :", selectedLocation);
     console.log("latitude :", latitude);
     console.log("longitude :", longitude);
-  
+
     if (!selectedLocation || !latitude || !longitude) {
-      Alert.alert("Erreur", "Veuillez sélectionner une ville avant de vous inscrire.");
+      Alert.alert(
+        "Erreur",
+        "Veuillez sélectionner une ville avant de vous inscrire."
+      );
       return;
     }
-  
+
     const cityData = {
       nom_commune: selectedCity.nom_commune, // Utilise la valeur complète de l'état
       code_postal: selectedCity.code_postal,
       latitude,
       longitude,
     };
-  
+
     console.log("Données envoyées :", cityData);
-  
+
     handleRegister(onLogin, cityData);
   };
-  
-  
+
   const handleAddressSearch = () => {
     const trimmedQuery = query.trim(); // Supprime les espaces en début et en fin de chaîne
-  
+
     if (!trimmedQuery) {
       console.warn("Recherche annulée : champ query vide.");
       return;
     }
-  
+
     // Filtrer les villes par nom de commune ou code postal
     const filteredCities = franceCities.filter((city) => {
       // Supprimer les espaces inutiles dans Ligne_5 et Nom_commune pour comparer proprement
       const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
       const codePostal = city.Code_postal.toString().trim();
-  
+
       return (
         cityName.includes(trimmedQuery.toLowerCase()) || // Recherche dans le nom de la ville
         codePostal.startsWith(trimmedQuery) // Recherche par code postal
       );
     });
-  
+
     if (filteredCities.length > 0) {
       setSuggestions(filteredCities);
       setModalVisible(true);
@@ -114,48 +115,39 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       );
     }
   };
-  
 
   const handleSuggestionSelect = (item: any) => {
     const [latitude, longitude] = item.coordonnees_gps
       .split(",")
       .map((coord: string) => parseFloat(coord.trim()));
-  
+
     // Mettre à jour l'état avec les données de la ville sélectionnée
     setSelectedCity({
       nom_commune: item.Nom_commune,
       code_postal: item.Code_postal,
     });
-  
+
     console.log("Données préparées :", {
       nom_commune: item.Nom_commune,
       code_postal: item.Code_postal,
       latitude,
       longitude,
     });
-  
+
     // Met à jour les états
     setLatitude(latitude);
     setLongitude(longitude);
     setSelectedLocation({ latitude, longitude });
-  
+
     // Met à jour la requête avec la ville sélectionnée
-    setQuery(
-      `${item.Nom_commune} ${item.Ligne_5 ? `(${item.Ligne_5})` : ""}`
-    );
-  
+    setQuery(`${item.Nom_commune} ${item.Ligne_5 ? `(${item.Ligne_5})` : ""}`);
+
     setModalVisible(false);
   };
-  
-  
-  
 
   const handleLogin = () => {
     navigation.navigate("Login");
   };
-
-
-  
 
   // Affichage principal
   return (
@@ -249,42 +241,41 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
             {/* Suggestions d'adresses */}
             <Modal
-  visible={modalVisible}
-  animationType="slide"
-  transparent={true}
-  onRequestClose={() => setModalVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <ScrollView>
-        {suggestions.map((item, index) => {
-          // Extraire les coordonnées GPS
-          const [latitude, longitude] = item.coordonnees_gps
-            .split(",")
-            .map((coord: string) => parseFloat(coord.trim()));
-
-          const displayName =
-            item.Ligne_5 && item.Ligne_5.trim() !== ""
-              ? item.Ligne_5
-              : item.Nom_commune;
-
-          return (
-            <TouchableOpacity
-              key={`${item.Code_commune_INSEE}-${index}`}
-              style={styles.suggestionItem}
-              onPress={() => handleSuggestionSelect(item)}
+              visible={modalVisible}
+              animationType="slide"
+              transparent={true}
+              onRequestClose={() => setModalVisible(false)}
             >
-              <Text style={styles.suggestionText}>
-                {displayName} - {item.Code_postal}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    </View>
-  </View>
-</Modal>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <ScrollView>
+                    {suggestions.map((item, index) => {
+                      // Extraire les coordonnées GPS
+                      const [latitude, longitude] = item.coordonnees_gps
+                        .split(",")
+                        .map((coord: string) => parseFloat(coord.trim()));
 
+                      const displayName =
+                        item.Ligne_5 && item.Ligne_5.trim() !== ""
+                          ? item.Ligne_5
+                          : item.Nom_commune;
+
+                      return (
+                        <TouchableOpacity
+                          key={`${item.Code_commune_INSEE}-${index}`}
+                          style={styles.suggestionItem}
+                          onPress={() => handleSuggestionSelect(item)}
+                        >
+                          <Text style={styles.suggestionText}>
+                            {displayName} - {item.Code_postal}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
 
             {/* Gestion de la photo de profil */}
             <Text style={styles.titlePhoto}>

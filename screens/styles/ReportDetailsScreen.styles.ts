@@ -114,6 +114,33 @@ export default StyleSheet.create({
     color: "#666",
     marginTop: 5,
   },
+  replyButton: {
+    marginTop: 5,
+  },
+  replyButtonText: {
+    color: "#007bff",
+    fontSize: 12,
+  },
+  replyInputContainer: {
+    marginTop: 10,
+  },
+  replyInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 8,
+    marginBottom: 10,
+  },
+  submitReplyButton: {
+    backgroundColor: "#007bff",
+    padding: 8,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  submitReplyButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
   zoomPosition: {
     position: "absolute",
     bottom: 20,
@@ -168,6 +195,19 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  cardComment: {
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    marginHorizontal: 15,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    marginBottom: 10,
+  },
+  
   description: {
     fontSize: 16,
     color: "#555",
