@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,20 +10,67 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Image,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 // @ts-ignore
 import { API_URL } from "@env";
-import { useToken } from "../hooks/useToken"; // Importe le hook pour l'ID utilisateur
+import { useToken } from "../hooks/useToken";
+import { RootStackParamList } from "../types/navigation";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const CommentsSection = ({ report }) => {
-  const { getUserId } = useToken(); // Récupère l'ID utilisateur actuel
-  const [replyTo, setReplyTo] = useState(null); // ID du commentaire parent en cours de réponse
-  const [replyText, setReplyText] = useState(""); // Texte de la réponse
-  const [commentText, setCommentText] = useState(""); // Texte du nouveau commentaire
-  const [comments, setComments] = useState(report.comments); // État local pour les commentaires
-  const [expandedComments, setExpandedComments] = useState({}); // État pour savoir quelles réponses sont visibles
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { getToken, getUserId } = useToken();
+  const [replyTo, setReplyTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState(report.comments);
+  const [expandedComments, setExpandedComments] = useState({});
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  // Fonction pour envoyer un commentaire principal
+  useEffect(() => {
+    (async () => {
+      const userId = await getUserId();
+      setCurrentUserId(userId);
+    })();
+  }, []);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(
+          `${API_URL}/reports/${report.id}/comments`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        const data = await response.json();
+        console.log("Données des commentaires :", data);
+        setComments(data); // Assure-toi que la structure des données est respectée
+      } catch (error) {
+        console.error("Erreur lors du chargement des commentaires :", error);
+      }
+    };
+    fetchComments();
+  }, [report.id]);
+
+  const navigateToUserProfile = (userId: string) => {
+    navigation.navigate("UserProfileScreen", { userId });
+  };
+
+  const refreshComments = async () => {
+    try {
+      const response = await fetch(`${API_URL}/comments/${report.id}`);
+      const data = await response.json();
+      setComments(data);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des commentaires :", error);
+    }
+  };
+
   const submitComment = async () => {
     const userId = await getUserId();
     if (!commentText) return;
@@ -47,25 +94,34 @@ const CommentsSection = ({ report }) => {
         throw new Error("Erreur lors de l'envoi du commentaire.");
 
       const newComment = await response.json();
-      setComments([...comments, newComment]); // Ajoute le nouveau commentaire en local
+      console.log("Nouveau commentaire reçu dans le front :", newComment); // Ajoutez ce log
+
+      // Ajoutez un utilisateur local si absent
+      const enrichedComment = {
+        ...newComment,
+        user: newComment.user || {
+          id: userId,
+          username: "Utilisateur inconnu",
+        },
+      };
+
+      setComments([...comments, enrichedComment]); // Ajoute le commentaire enrichi en local
       setCommentText(""); // Réinitialise le champ
     } catch (error) {
       console.error(error.message);
     }
   };
 
-  // Fonction pour répondre à un commentaire existant
   const submitReply = async (parentId) => {
-    const userId = await getUserId();
     if (!replyText) return;
 
     const payload = {
       reportId: report.id,
-      userId: userId,
+      userId: currentUserId,
       text: replyText,
       latitude: report.latitude,
       longitude: report.longitude,
-      parentId: parentId,
+      parentId,
     };
 
     try {
@@ -80,7 +136,7 @@ const CommentsSection = ({ report }) => {
 
       const newReply = await response.json();
 
-      // Met à jour les commentaires localement
+      // Met à jour la liste des commentaires avec la réponse
       const updateComments = (commentsList) =>
         commentsList.map((comment) => {
           if (comment.id === parentId) {
@@ -96,106 +152,207 @@ const CommentsSection = ({ report }) => {
         });
 
       setComments(updateComments(comments));
-      setReplyText(""); // Réinitialise le champ de réponse
-      setReplyTo(null); // Ferme le champ de réponse
+      setReplyText("");
+      setReplyTo(null);
     } catch (error) {
       console.error(error.message);
     }
   };
 
+  const deleteComment = async (commentId) => {
+    try {
+      const response = await fetch(`${API_URL}/reports/comment/${commentId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression du commentaire.");
+      }
+
+      // Met à jour l'état local pour refléter la suppression
+      const updateComments = (commentsList) =>
+        commentsList
+          .map((comment) => {
+            if (comment.id === commentId) {
+              // Supprime les commentaires principaux
+              return null;
+            }
+            if (comment.replies) {
+              // Supprime les réponses liées
+              const updatedReplies = comment.replies.filter(
+                (reply) => reply.id !== commentId
+              );
+              return { ...comment, replies: updatedReplies };
+            }
+            return comment;
+          })
+          .filter(Boolean); // Retire les éléments null de la liste
+
+      const updatedComments = updateComments(comments);
+      console.log(
+        "Mise à jour des commentaires après suppression :",
+        updatedComments
+      ); // Vérifiez ici
+      setComments(updatedComments);
+    } catch (error) {
+      console.error("Erreur:", error.message);
+    }
+  };
+
   const toggleReplies = (commentId) => {
-    setExpandedComments((prevState) => ({
-      ...prevState,
-      [commentId]: !prevState[commentId],
+    setExpandedComments((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
     }));
   };
-  
+
   const renderComments = (comments, level = 0) => {
-    return comments.map((comment) => (
-      <View
-        key={comment.id}
-        style={[
-          styles.commentContainer,
-          { marginLeft: level * 20 }, // Décale les réponses
-        ]}
-      >
-        {/* Texte du commentaire */}
-        <Text style={styles.commentText}>
-          {comment.user && comment.user.useFullName
-            ? `${comment.user.firstName} ${comment.user.lastName}`
-            : comment.user?.username || "Utilisateur inconnu"}
-          : {comment.text}
-        </Text>
-        <Text style={styles.commentDate}>
-          Posté le {new Date(comment.createdAt).toLocaleDateString()}
-        </Text>
-  
-        {/* Bouton pour répondre */}
-        <TouchableOpacity
-          onPress={() => setReplyTo(comment.id)}
-          style={styles.replyButton}
+    return comments.map((comment) => {
+      // Log pour la photo du commentaire principal
+      console.log(
+        "Photo URL (commentaire principal):",
+        comment.user?.photos?.[0]?.url || "https://via.placeholder.com/50"
+      );
+
+      return (
+        <View
+          key={comment.id}
+          style={[styles.commentContainer, { marginLeft: level * 20 }]}
         >
-          <Text style={styles.replyButtonText}>Répondre</Text>
-        </TouchableOpacity>
-  
-        {/* Champ de saisie pour répondre */}
-        {replyTo === comment.id && (
-          <View style={styles.replyInputContainer}>
-            <TextInput
-              style={styles.replyInput}
-              placeholder="Écrire une réponse..."
-              value={replyText}
-              onChangeText={setReplyText}
-            />
+          <View style={styles.userInfoContainer}>
+            {/* Photo de profil */}
+            <Image
+  source={{
+    uri: comment.user?.profilePhoto || "https://via.placeholder.com/50",
+  }}
+  style={styles.userPhoto}
+/>
             <TouchableOpacity
-              onPress={() => submitReply(comment.id)}
-              style={styles.submitReplyButton}
+              onPress={() => navigateToUserProfile(comment.user?.id)}
             >
-              <Text style={styles.submitReplyButtonText}>Envoyer</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-  
-        {/* Affichage des réponses */}
-        {comment.replies && comment.replies.length > 0 && (
-          <>
-            {expandedComments[comment.id] && (
-              // Si les réponses sont développées, les afficher
-              comment.replies.map((reply) => (
-                <View
-                  key={reply.id}
-                  style={[
-                    styles.replyContainer,
-                    { marginLeft: (level + 1) * 20 },
-                  ]}
-                >
-                  <Text style={styles.replyText}>
-                    {reply.user && reply.user.useFullName
-                      ? `${reply.user.firstName} ${reply.user.lastName}`
-                      : reply.user?.username || "Utilisateur inconnu"}
-                    : {reply.text}
-                  </Text>
-                  <Text style={styles.replyDate}>
-                    Posté le {new Date(reply.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-              ))
-            )}
-            {/* Bouton pour afficher/masquer les réponses */}
-            <TouchableOpacity
-              onPress={() => toggleReplies(comment.id)}
-              style={styles.showMoreButton}
-            >
-              <Text style={styles.showMoreText}>
-                {expandedComments[comment.id]
-                  ? "Masquer les réponses"
-                  : `${comment.replies.length} commentaire - Afficher les réponses`}
+              <Text style={styles.userName}>
+                {comment.user?.useFullName
+                  ? `${comment.user.firstName} ${comment.user.lastName}`
+                  : comment.user?.username || "Utilisateur inconnu"}
               </Text>
             </TouchableOpacity>
-          </>
-        )}
-      </View>
-    ));
+          </View>
+
+          <Text style={styles.commentText}>{comment.text}</Text>
+          <Text style={styles.commentDate}>
+            Posté le {new Date(comment.createdAt).toLocaleDateString()}
+          </Text>
+
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              onPress={() => setReplyTo(comment.id)}
+              style={styles.replyButton}
+            >
+              <Text style={styles.replyButtonText}>Répondre</Text>
+            </TouchableOpacity>
+
+            {comment.user?.id === currentUserId && (
+              <TouchableOpacity
+                onPress={() => deleteComment(comment.id)}
+                style={styles.deleteButton}
+              >
+                <Text style={styles.deleteButtonText}>Supprimer</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {replyTo === comment.id && (
+            <View style={styles.replyInputContainer}>
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Écrire une réponse..."
+                value={replyText}
+                onChangeText={setReplyText}
+              />
+              <TouchableOpacity
+                onPress={() => submitReply(comment.id)}
+                style={styles.submitReplyButton}
+              >
+                <Text style={styles.submitReplyButtonText}>Envoyer</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {comment.replies && comment.replies.length > 0 && (
+            <>
+              {expandedComments[comment.id] &&
+                comment.replies.map((reply) => {
+                  // Log pour la photo de réponse
+                  console.log(
+                    "Photo URL (réponse):",
+                    reply.user?.photos?.[0]?.url ||
+                      "https://via.placeholder.com/50"
+                  );
+
+                  return (
+                    <View
+                      key={reply.id}
+                      style={[
+                        styles.replyContainer,
+                        { marginLeft: (level + 1) * 20 },
+                      ]}
+                    >
+                      <View style={styles.userInfoContainer}>
+                        <Image
+                          source={{
+                            uri:
+                              reply.user?.photos?.[0]?.url ||
+                              "https://via.placeholder.com/50", // Utiliser la première photo disponible
+                          }}
+                          style={styles.userPhoto}
+                        />
+                        <TouchableOpacity
+                          onPress={() => navigateToUserProfile(reply.user?.id)}
+                        >
+                          <Text style={styles.userName}>
+                            {reply.user?.useFullName
+                              ? `${reply.user.firstName} ${reply.user.lastName}`
+                              : reply.user?.username || "Utilisateur inconnu"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <Text style={styles.replyText}>{reply.text}</Text>
+                      <Text style={styles.replyDate}>
+                        Posté le{" "}
+                        {new Date(reply.createdAt).toLocaleDateString()}
+                      </Text>
+
+                      {reply.user?.id === currentUserId && (
+                        <TouchableOpacity
+                          onPress={() => deleteComment(reply.id)}
+                          style={styles.deleteButtonReply}
+                        >
+                          <Text style={styles.deleteButtonText}>Supprimer</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
+              <TouchableOpacity
+                onPress={() => toggleReplies(comment.id)}
+                style={styles.showMoreButton}
+              >
+                <Text style={styles.showMoreText}>
+                  {expandedComments[comment.id]
+                    ? "Masquer les réponses"
+                    : `${comment.replies.length} réponse(s) - Afficher`}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      );
+    });
   };
 
   return (
@@ -206,32 +363,25 @@ const CommentsSection = ({ report }) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           <View style={styles.addComment}>
-          <Text style={styles.title}>Commentaires :</Text>
-
-          {/* Champ de saisie pour les nouveaux commentaires */}
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Ajouter un commentaire..."
-              value={commentText}
-              onChangeText={setCommentText}
-            />
-            <TouchableOpacity
-              onPress={submitComment}
-              style={styles.submitCommentButton}
-            >
-              <Text style={styles.submitCommentText}>Envoyer</Text>
-            </TouchableOpacity>
+            <Text style={styles.title}>Commentaires :</Text>
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Ajouter un commentaire..."
+                value={commentText}
+                onChangeText={setCommentText}
+              />
+              <TouchableOpacity
+                onPress={submitComment}
+                style={styles.submitCommentButton}
+              >
+                <Text style={styles.submitCommentText}>Envoyer</Text>
+              </TouchableOpacity>
             </View>
           </View>
           <ScrollView style={styles.card}>
-            {/* Rendu des commentaires */}
             {renderComments(comments)}
           </ScrollView>
-
-          <View style={styles.alertContainer}>
-            <Text style={styles.alert}>Signalez un commentaire</Text>
-          </View>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -254,6 +404,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 15,
+  },
+  userInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  userPhoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
   },
   addComment: {
     padding: 10,
@@ -286,8 +447,19 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 5,
   },
+  userName: {
+    color: "#007bff",
+    fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  actionButtonsContainer: {
+    flexDirection: "row", // Place les boutons en ligne
+    gap: 10, // Espacement entre les boutons
+    alignItems: "center", // Aligne les boutons verticalement
+    marginTop: 10, // Espacement au-dessus des boutons
+  },
   replyButton: {
-    marginTop: 10,
     alignSelf: "flex-start",
     backgroundColor: "#4CAF50",
     paddingVertical: 4,
@@ -295,6 +467,25 @@ const styles = StyleSheet.create({
     borderRadius: 35,
   },
   replyButtonText: {
+    color: "#fff",
+    fontSize: 12,
+  },
+  deleteButton: {
+    backgroundColor: "#ff4d4f",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 35,
+    alignSelf: "flex-start",
+  },
+  deleteButtonReply: {
+    marginTop: 10,
+    backgroundColor: "#ff4d4f",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 35,
+    alignSelf: "flex-start",
+  },
+  deleteButtonText: {
     color: "#fff",
     fontSize: 12,
   },
@@ -328,7 +519,8 @@ const styles = StyleSheet.create({
   replyContainer: {
     marginTop: 10,
     marginLeft: 20,
-    padding: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     backgroundColor: "#f1f5f9",
     borderRadius: 38,
     borderLeftWidth: 3,
@@ -411,4 +603,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
 export default CommentsSection;
