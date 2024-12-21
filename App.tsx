@@ -1,27 +1,35 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, ActivityIndicator, View, Text, TouchableOpacity } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import Icon from 'react-native-vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import ActionSheet from 'react-native-actionsheet';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  StyleSheet,
+  ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+} from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import Icon from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import ActionSheet from "react-native-actionsheet";
 import KeyboardWrapper from "./components/KeyboardWrapper";
-
-import HomeScreen from './screens/HomeScreen';
-import EventsScreen from './screens/EventsScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import ReportScreen from './screens/ReportScreen';
-import MapScreen from './screens/MapScreen';
-import LoginScreen from './screens/Auth/LoginScreen';
-import RegisterScreen from './screens/Auth/RegisterScreen';
-import AddNewReportScreen from './screens/AddNewReportScreen';
-import ReportDetailsScreen from './screens/ReportDetailsScreen';
-import CategoryReportsScreen from './screens/CategoryReportsScreen';
-import EventDetailsScreen from './screens/EventDetailsScreen';
-import AddNewEventScreen from './screens/AddNewEventScreen';
-import UserProfileScreen from './screens/UserProfileScreen';
-import Sidebar from './components/Sidebar';
+import { LinearGradient } from "expo-linear-gradient";
+import HomeScreen from "./screens/HomeScreen";
+import EventsScreen from "./screens/EventsScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import ReportScreen from "./screens/ReportScreen";
+import MapScreen from "./screens/MapScreen";
+import LoginScreen from "./screens/Auth/LoginScreen";
+import RegisterScreen from "./screens/Auth/RegisterScreen";
+import AddNewReportScreen from "./screens/AddNewReportScreen";
+import ReportDetailsScreen from "./screens/ReportDetailsScreen";
+import CategoryReportsScreen from "./screens/CategoryReportsScreen";
+import EventDetailsScreen from "./screens/EventDetailsScreen";
+import AddNewEventScreen from "./screens/AddNewEventScreen";
+import UserProfileScreen from "./screens/UserProfileScreen";
+import Sidebar from "./components/Sidebar";
+import { StatusBar } from "react-native";
+import NotificationsScreen from "./screens/NotificationsScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -35,9 +43,9 @@ export default function App() {
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
-  
+
   const clearAllTokens = async () => {
-    await AsyncStorage.removeItem('authToken');
+    await AsyncStorage.removeItem("authToken");
   };
 
   useEffect(() => {
@@ -50,28 +58,30 @@ export default function App() {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    console.log('Utilisateur déconnecté.');
+    console.log("Utilisateur déconnecté.");
   };
 
   const CustomHeader = ({ navigation }) => (
+    <View style={{backgroundColor:"#fff"}}>
     <View style={styles.header}>
-        <TouchableOpacity onPress={toggleSidebar}>
-      <Icon
-        name="menu"
-        size={28}
-        color="#333"
-        style={{ marginLeft: 10 }}
-      />
-    </TouchableOpacity>
-      <Text style={styles.headerTitle}>SmartCities</Text>
-      <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
+      <TouchableOpacity onPress={toggleSidebar}>
         <Icon
-          name="person-outline"
+          name="menu"
           size={28}
-          color="#333"
+          color="#BEE5BF" // Couleur dorée
+          style={{ marginLeft: 10 }}
+        />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>SMARTCITIES</Text>
+      <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
+        <Icon
+          name="notifications-outline"
+          size={28}
+          color="#BEE5BF" // Couleur dorée
           style={{ marginRight: 10 }}
         />
       </TouchableOpacity>
+    </View>
     </View>
   );
 
@@ -81,67 +91,86 @@ export default function App() {
 
   const TabNavigator = ({ navigation }) => (
     <>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: true,
-          header: ({ navigation }) => <CustomHeader navigation={navigation} />,
-          tabBarIcon: ({ color, size, focused }) => {
-            let iconName: string = '';
+<Tab.Navigator
+  screenOptions={({ route }) => ({
+    // Utilisation de CustomHeader pour tous les écrans du Tab.Navigator
+    header: ({ navigation }) => <CustomHeader navigation={navigation} />,
+    tabBarIcon: ({ color, size, focused }) => {
+      let iconName = "";
 
-            if (route.name === 'Accueil') {
-              iconName = 'home-outline';
-            } else if (route.name === 'Evénements') {
-              iconName = 'calendar-outline';
-            } else if (route.name === 'Signalements') {
-              iconName = 'alert-circle-outline';
-            } else if (route.name === 'Carte') {
-              iconName = 'map-outline';
-            } else if (route.name === 'Ajouter') {
-              iconName = 'add-circle-outline';
-            }
+      if (route.name === "Accueil") {
+        iconName = "home-outline";
+      } else if (route.name === "Evénements") {
+        iconName = "calendar-outline";
+      } else if (route.name === "Signalements") {
+        iconName = "alert-circle-outline";
+      } else if (route.name === "Carte") {
+        iconName = "map-outline";
+      } else if (route.name === "Ajouter") {
+        iconName = "add-circle-outline";
+      }
 
-            return (
-              <Icon
-                name={iconName}
-                size={focused ? size + 5 : size}
-                color={color}
-                style={{ marginBottom: -5 }}
-              />
-            );
-          },
-          tabBarShowLabel: false,
-          tabBarStyle: {
-            height: 70,
-            paddingBottom: 10,
-            paddingTop: 5,
-          },
-        })}
-      >
-        <Tab.Screen name="Accueil" component={HomeScreen} />
-        <Tab.Screen name="Evénements" component={EventsScreen} />
-        <Tab.Screen
-          name="Ajouter"
-          component={EmptyScreen} // Composant dédié pour éviter les problèmes
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault(); // Empêche la navigation
-              actionSheetRef.current?.show(); // Affiche l'ActionSheet
-            },
+      return (
+        <View
+          style={{
+            width: 50,
+            height: 50,
+            backgroundColor: focused ? "#BEE5BF" : "transparent",
+            borderRadius: 25,
+            justifyContent: "center",
+            alignItems: "center",
           }}
-        />
-        <Tab.Screen name="Signalements" component={ReportScreen} />
-        <Tab.Screen name="Carte" component={MapScreen} />
-      </Tab.Navigator>
+        >
+          <Icon
+            name={iconName}
+            size={focused ? size + 5 : size}
+            color={focused ? "#29524A" : "#fff"} // Couleur conditionnelle
+          />
+        </View>
+      );
+    },
+    tabBarShowLabel: false,
+    tabBarStyle: {
+      height: 80,
+      paddingTop: 20,
+      paddingHorizontal: 20,
+      backgroundColor: "#29524A", // Couleur sombre
+      borderTopLeftRadius: 50, // Arrondi en haut à gauche
+      borderTopRightRadius: 50, // Arrondi en haut à droite
+      position: "absolute", // TabBar flottante
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -5 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 10, // Ombre pour Android
+    },
+  })}
+>
+  <Tab.Screen name="Accueil" component={HomeScreen} />
+  <Tab.Screen name="Evénements" component={EventsScreen} />
+  <Tab.Screen
+    name="Ajouter"
+    component={EmptyScreen}
+    listeners={{
+      tabPress: (e) => {
+        e.preventDefault();
+        actionSheetRef.current?.show();
+      },
+    }}
+  />
+  <Tab.Screen name="Signalements" component={ReportScreen} />
+  <Tab.Screen name="Carte" component={MapScreen} />
+</Tab.Navigator>
       <ActionSheet
         ref={(o) => (actionSheetRef.current = o)}
         title="Que souhaitez-vous ajouter ?"
-        options={['Ajouter un signalement', 'Ajouter un événement', 'Annuler']}
+        options={["Ajouter un signalement", "Ajouter un événement", "Annuler"]}
         cancelButtonIndex={2}
         onPress={(index) => {
           if (index === 0) {
-            navigation.navigate('AddNewReportScreen');
+            navigation.navigate("AddNewReportScreen");
           } else if (index === 1) {
-            navigation.navigate('AddNewEventScreen');
+            navigation.navigate("AddNewEventScreen");
           }
         }}
       />
@@ -157,81 +186,103 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <KeyboardWrapper>
-      <>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isLoggedIn ? (
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#111" />
+      <NavigationContainer>
+        <KeyboardWrapper>
           <>
-            <Stack.Screen name="Login">
-              {(props) => (
-                <LoginScreen
-                  {...props}
-                  onLogin={() => {
-                    setIsLoggedIn(true);
-                  }}
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              {!isLoggedIn ? (
+                <>
+                  <Stack.Screen name="Login">
+                    {(props) => (
+                      <LoginScreen
+                        {...props}
+                        onLogin={() => {
+                          setIsLoggedIn(true);
+                        }}
+                      />
+                    )}
+                  </Stack.Screen>
+                  <Stack.Screen name="Register">
+                    {(props) => (
+                      <RegisterScreen
+                        {...props}
+                        onLogin={() => {
+                          setIsLoggedIn(true);
+                        }}
+                      />
+                    )}
+                  </Stack.Screen>
+                </>
+              ) : (
+                <>
+                  <Stack.Screen name="Main" component={TabNavigator} />
+                  <Stack.Screen name="ProfileScreen">
+                    {(props) => (
+                      <ProfileScreen {...props} onLogout={handleLogout} />
+                    )}
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="UserProfileScreen"
+                    component={UserProfileScreen}
+                  />
+                  <Stack.Screen
+                    name="ReportDetails"
+                    component={ReportDetailsScreen}
+                  />
+                  <Stack.Screen
+                    name="EventDetailsScreen"
+                    component={EventDetailsScreen}
+                  />
+                  <Stack.Screen
+                    name="CategoryReports"
+                    component={CategoryReportsScreen}
+                  />
+                  <Stack.Screen
+                    name="AddNewEventScreen"
+                    component={AddNewEventScreen}
+                  />
+                  <Stack.Screen
+                    name="AddNewReportScreen"
+                    component={AddNewReportScreen}
+                  />   
+                  <Stack.Screen
+                  name="NotificationsScreen"
+                  component={NotificationsScreen}
                 />
+                </>
               )}
-            </Stack.Screen>
-            <Stack.Screen name="Register">
-              {(props) => (
-                <RegisterScreen
-                  {...props}
-                  onLogin={() => {
-                    setIsLoggedIn(true);
-                  }}
-                />
-              )}
-            </Stack.Screen>
+            </Stack.Navigator>
+            <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
           </>
-        ) : (
-          <>
-            <Stack.Screen name="Main" component={TabNavigator} />
-            <Stack.Screen name="ProfileScreen">
-              {(props) => (
-                <ProfileScreen
-                  {...props}
-                  onLogout={handleLogout}
-                />
-              )}
-            </Stack.Screen>
-            <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
-            <Stack.Screen name="ReportDetails" component={ReportDetailsScreen} />
-            <Stack.Screen name="EventDetailsScreen" component={EventDetailsScreen} />
-            <Stack.Screen name="CategoryReports" component={CategoryReportsScreen} />
-            <Stack.Screen name="AddNewEventScreen" component={AddNewEventScreen} />
-            <Stack.Screen name="AddNewReportScreen" component={AddNewReportScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      </>
-      </KeyboardWrapper>
-    </NavigationContainer>
+        </KeyboardWrapper>
+      </NavigationContainer>
+    </>
   );
 }
-
 
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f9f9fb',
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e3e3e3',
-    paddingTop: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#29524A", // Couleur sombre
+    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
+    borderBottomRightRadius: 50, // Arrondi en bas à droite
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff", // Couleur dorée
+    letterSpacing: 2, // Espacement pour un effet moderne
   },
 });

@@ -7,28 +7,37 @@ export default StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 15,
-    paddingTop:45,
-    paddingBottom: 10,
-    backgroundColor: "#F3F5F7", // Fond clair pour le header
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    backgroundColor: "#29524A", // Couleur sombre
+    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
+    borderBottomRightRadius: 50, // Arrondi en bas à droite
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingTop: 45,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff", // Couleur blanche
+    letterSpacing: 2, // Espacement pour un effet moderne
+    textAlign: "center",
   },
   typeBadge: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    marginHorizontal: 5, // Espacement entre les icônes
   },
   typeText: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
     paddingHorizontal: 15,
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    marginRight: 5,
   },
   backButton: {
     padding: 10,
@@ -41,12 +50,12 @@ export default StyleSheet.create({
     elevation: 3,
   },
   mapContainer: {
-    height: 400,
+    height: 350,
     backgroundColor: "#f4f4f4", // Ajout d'un fond clair autour de la carte
     borderRadius: 10,
     overflow: "hidden", // Assurez-vous que la carte reste à l'intérieur des bordures
-    marginHorizontal: 10,
-    marginVertical: 15,
+
+    marginTop: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -90,7 +99,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   upVoteButton: {
-    backgroundColor: "#B8E0C3",
+    backgroundColor: "#BEE5BF",
   },
   downVoteButton: {
     backgroundColor: "#F29A91",
@@ -318,6 +327,7 @@ export default StyleSheet.create({
   noPhotosText: {
     color: '#888',
     fontSize: 16,
+    marginTop: 10,
   },
   modalContainer: {
     flex: 1,

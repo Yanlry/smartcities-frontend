@@ -16,7 +16,9 @@ import { getUserIdFromToken } from "../utils/tokenUtils";
 import * as ImagePicker from "expo-image-picker";
 import styles from "./styles/ProfileScreen.styles";
 import axios from "axios";
-import Icon from "react-native-vector-icons/FontAwesome";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import Sidebar from "../components/Sidebar";
+
 
 type User = {
   id: string;
@@ -44,7 +46,6 @@ type User = {
 };
 
 export default function ProfileScreen({ navigation, onLogout, route }) {
-
   const [user, setUser] = useState<User | null>(null); // Type explicite ajouté ici
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     newPassword: "",
   });
   const [stats, setStats] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
 
   useEffect(() => {
     navigation.setOptions({
@@ -107,17 +110,17 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   useEffect(() => {
     const fetchStats = async () => {
       if (!user?.id) return; // Ne pas exécuter si user.id est undefined
-  
+
       try {
         setLoading(true);
         setError(null);
-  
+
         // Utiliser l'ID du profil visité
         const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-  
+
         const data = response.data;
         setStats(data);
       } catch (error: any) {
@@ -127,10 +130,9 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
         setLoading(false);
       }
     };
-  
+
     fetchStats();
   }, [user]); // Dépendance sur user
-  
 
   const handleProfileImageUpdate = async () => {
     try {
@@ -197,8 +199,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#333" />
-        <Text>Chargement des informations utilisateur...</Text>
+        <ActivityIndicator size="large" color="#29524A" />
+        <Text style={{fontSize:18, fontWeight:'bold', color:"#29524A"}}>Chargement des informations..</Text>
       </View>
     );
   }
@@ -259,8 +261,6 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     }
   };
 
-
-
   const handleChangePassword = async () => {
     if (!formData.currentPassword || !formData.newPassword) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs.");
@@ -300,20 +300,33 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.replace("Main")}>
-          <Icon
-            name="chevron-left"
-            size={28}
-            color="#333"
-            style={{ marginLeft: 10 }}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profil</Text>
-        <Text style={styles.headerTitle}> </Text>
-      </View>
+   <TouchableOpacity onPress={toggleSidebar}>
+        <Icon
+          name="menu"
+          size={28}
+          color="#BEE5BF" // Couleur dorée
+          style={{ marginLeft: 10 }}
+        />
+      </TouchableOpacity>
+  <View style={styles.typeBadge}>
+    <Text style={styles.headerTitle}>PROFIL</Text>
+  </View>
+  <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
+        <Icon
+          name="notifications"
+          size={28}
+          color="#BEE5BF" // Couleur dorée
+          style={{ marginRight: 10 }}
+        />
+      </TouchableOpacity>
+</View>
 
       <ScrollView contentContainerStyle={styles.profileContent}>
         <View style={styles.profileImageContainer}>
@@ -386,39 +399,53 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
             </View>
           )}
 
-         <View style={styles.fieldContainer}>
-  <View style={styles.showEmail}>
-    <Text style={styles.labelEmail}>Activer ou désactiver le partage de votre email avec les autres utilisateurs.</Text>
-    <Switch
-      value={formData.showEmail}
-      onValueChange={async (value) => {
-        try {
-          // Envoyer la mise à jour au backend
-          const response = await axios.post(`${API_URL}/users/show-email`, {
-            userId: user?.id,
-            showEmail: value,
-          });
+          <View style={styles.fieldContainer}>
+            <View style={styles.showEmail}>
+              <Text style={styles.labelEmail}>
+                Activer ou désactiver le partage de votre email avec les autres
+                utilisateurs.
+              </Text>
+              <Switch
+                value={formData.showEmail}
+                onValueChange={async (value) => {
+                  try {
+                    // Envoyer la mise à jour au backend
+                    const response = await axios.post(
+                      `${API_URL}/users/show-email`,
+                      {
+                        userId: user?.id,
+                        showEmail: value,
+                      }
+                    );
 
-          // Mettre à jour l'état local après la réussite
-          const updatedShowEmail = response.data.showEmail;
+                    // Mettre à jour l'état local après la réussite
+                    const updatedShowEmail = response.data.showEmail;
 
-          setFormData((prevState) => ({
-            ...prevState,
-            showEmail: updatedShowEmail,
-            email: updatedShowEmail ? user?.email || "" : "", // Met à jour l'email localement selon la visibilité
-          }));
+                    setFormData((prevState) => ({
+                      ...prevState,
+                      showEmail: updatedShowEmail,
+                      email: updatedShowEmail ? user?.email || "" : "", // Met à jour l'email localement selon la visibilité
+                    }));
 
-          // Optionnel : rafraîchir l'utilisateur
-          const refreshedUser = await fetch(`${API_URL}/users/${user?.id}`).then((res) => res.json());
-          setUser(refreshedUser);
-        } catch (error) {
-          console.error("Erreur lors de la mise à jour de la préférence :", error);
-          Alert.alert("Erreur", "Impossible de mettre à jour la préférence.");
-        }
-      }}
-    />
-  </View>
-</View>
+                    // Optionnel : rafraîchir l'utilisateur
+                    const refreshedUser = await fetch(
+                      `${API_URL}/users/${user?.id}`
+                    ).then((res) => res.json());
+                    setUser(refreshedUser);
+                  } catch (error) {
+                    console.error(
+                      "Erreur lors de la mise à jour de la préférence :",
+                      error
+                    );
+                    Alert.alert(
+                      "Erreur",
+                      "Impossible de mettre à jour la préférence."
+                    );
+                  }
+                }}
+              />
+            </View>
+          </View>
 
           {/* Bouton Sauvegarder/Modifier */}
           <TouchableOpacity
@@ -454,7 +481,6 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
             </Text>
 
             {/* Mot de passe actuel */}
-            {/* Mot de passe actuel */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Mot de passe actuel :</Text>
               <View style={styles.inputContainer}>
@@ -481,7 +507,6 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
               </View>
             </View>
 
-            {/* Nouveau mot de passe */}
             {/* Nouveau mot de passe */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Nouveau mot de passe :</Text>
@@ -520,52 +545,86 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           </View>
         </View>
 
-        {/* Section Activités */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Résumé des rapports</Text>
-          <Text style={styles.field}>
-            Rapports : {stats?.numberOfReports || 0} signalement(s)
-          </Text>
-          <Text style={styles.field}>
-            Total des votes : {stats?.votes?.length || 0}
-          </Text>
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Ville de référence</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+              {user?.nomCommune || "Non disponible"}
+              </Text>
+              <Text style={styles.statLabel}>Ville</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.codePostal || "Non disponible"}</Text>
+              <Text style={styles.statLabel}>Code postal</Text>
+            </View>
+          </View>
         </View>
 
-         {/* Résaux */}
-         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Social</Text>
-          <Text style={styles.field}>
-            Abonné a vous : {user?.followers?.length || 0} 
-          </Text>
-          <Text style={styles.field}>
-            Vous êtes abonné à : {user?.following?.length || 0} 
-          </Text>
-          <Text style={styles.field}>
-            Publications : {user?.posts?.length || 0}
-          </Text>
-          <Text style={styles.field}>
-            Événements organisés : {user?.organizedEvents?.length || 0}
-          </Text>
-          <Text style={styles.field}>
-            Événements participés : {user?.attendedEvents?.length || 0}
-          </Text>
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Statistiques de signalements</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfComments || 0}
+              </Text>
+              <Text style={styles.statLabel}>Commentaires</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
+              <Text style={styles.statLabel}>Votes</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfReports || 0}
+              </Text>
+              <Text style={styles.statLabel}>Signalements</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Section Géolocalisation */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Géolocalisation</Text>
-          <Text style={styles.field}>
-            Latitude : {user?.latitude || "Non disponible"}
-          </Text>
-          <Text style={styles.field}>
-            Longitude : {user?.longitude || "Non disponible"}
-          </Text>
-          <Text style={styles.field}>
-            Ville : {user?.nomCommune || "Non disponible"}
-          </Text>
-          <Text style={styles.field}>
-            Code postal : {user?.codePostal || "Non disponible"}
-          </Text>
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Relations</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.followers?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnées</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.following?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnements</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Social</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfPosts || 0}
+              </Text>
+              <Text style={styles.statLabel}>Publications{"\n"}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfEventsCreated || 0}
+              </Text>
+              <Text style={styles.statLabel}>Événements{"\n"}crées</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.following?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>
+                Participation{"\n"}aux événements
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Section Abonnement */}
@@ -580,6 +639,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           <Text style={styles.logoutText}>Se déconnecter</Text>
         </TouchableOpacity>
       </ScrollView>
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
   );
 }

@@ -7,20 +7,26 @@ export default StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e3e3e3",
-    paddingTop: 50,
-    backgroundColor: "#fff",
+    justifyContent: "space-between",
+    backgroundColor: "#29524A", // Couleur sombre
+    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
+    borderBottomRightRadius: 50, // Arrondi en bas à droite
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
-    marginLeft: 10,
+    color: "#fff", // Couleur blanche
+    letterSpacing: 2, // Espacement pour un effet moderne
+    textAlign: "center",
+  },
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileContent: {
     padding: 20,
@@ -56,8 +62,8 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#11998e",
-    shadowColor: "#11998e",
+    backgroundColor: "#29524A",
+    shadowColor: "#29524A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -183,8 +189,8 @@ export default StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     marginBottom: 20,
-    backgroundColor: "#007bff",
-    shadowColor: "#007bff",
+    backgroundColor: "#29524A",
+    shadowColor: "#29524A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -194,5 +200,50 @@ export default StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+
+  infoCardHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+    paddingBottom: 20,
+  },
+  cardContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  cardContent: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  statItem: {
+    justifyContent: "center", // Centre verticalement le contenu de statItem
+    alignItems: "center", // Centre horizontalement le contenu de statItem
+    padding: 10, // Espacement interne
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center", // Centre le nombre horizontalement
+    marginBottom: 5, // Espace entre le nombre et le texte
+    color: "#376D62", // Couleur sombre pour le nombre
+  },
+  statLabel: {
+    textAlign: "center", // Centre le texte horizontalement
+    fontSize: 14,
+    color: "#555", // Couleur du texte
+    fontWeight: "bold", // Texte en gras
+    lineHeight: 20, // Espacement entre les lignes
   },
 });

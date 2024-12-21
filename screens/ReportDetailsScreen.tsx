@@ -175,254 +175,259 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={{ marginLeft: 10 }} // Alignement gauche
         >
-          <Icon name="arrow-back-outline" size={24} color="#333" />
+          <Icon name="arrow-back-outline" size={28} color="#BEE5BF" />
         </TouchableOpacity>
         <View style={styles.typeBadge}>
-          {/* Image dynamique en fonction du type de signalement */}
           <Image source={getTypeIcon(report.type)} style={styles.icon} />
-          <Text style={styles.typeText}>{report.type.toUpperCase()}</Text>
+          <Text style={styles.headerTitle}>{report.type.toUpperCase()}</Text>
           <Image source={getTypeIcon(report.type)} style={styles.icon} />
         </View>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Icon name="alert-circle-outline" size={24} color="#333" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
+        <Icon
+          name="notifications-outline"
+          size={28}
+          color="#BEE5BF" // Couleur dorée
+          style={{ marginRight: 10 }}
+        />
+      </TouchableOpacity>
       </View>
-
-      <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          onMapReady={() => {
-            if (mapRef.current) {
-              const camera = {
-                center: {
-                  latitude: report.latitude,
-                  longitude: report.longitude,
-                },
-                pitch: 65,
-                heading: 0,
-                zoom: 15,
-                altitude: 100,
-              };
-              mapRef.current.setCamera(camera); // Définit la caméra initiale
-            }
-          }}
-        >
-          {/* Marqueur pour la position actuelle */}
-          <Marker
-            coordinate={{
-              latitude: location.latitude,
-              longitude: location.longitude,
+      <ScrollView style={styles.container}>
+        <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            onMapReady={() => {
+              if (mapRef.current) {
+                const camera = {
+                  center: {
+                    latitude: report.latitude,
+                    longitude: report.longitude,
+                  },
+                  pitch: 65,
+                  heading: 0,
+                  zoom: 15,
+                  altitude: 100,
+                };
+                mapRef.current.setCamera(camera); // Définit la caméra initiale
+              }
             }}
-            title="Votre position"
-            pinColor="red"
-          />
-
-          {/* Marqueur pour le signalement avec style */}
-          <Marker
-            coordinate={{
-              latitude: report.latitude,
-              longitude: report.longitude,
-            }}
-            title={report.title}
           >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                alignItems: "center",
-                justifyContent: "center",
+            {/* Marqueur pour la position actuelle */}
+            <Marker
+              coordinate={{
+                latitude: location.latitude,
+                longitude: location.longitude,
               }}
-            >
-              <Image
-                source={getTypeIcon(report.type)} // Dynamique selon le type de signalement
-                style={{ width: 40, height: 40, resizeMode: "contain" }}
-              />
-            </View>
-          </Marker>
-
-          {/* Ligne de tracé */}
-          {routeCoords.length > 0 && (
-            <Polyline
-              coordinates={routeCoords}
-              strokeColor="#1E90FF" // Couleur du tracé
-              strokeWidth={5} // Épaisseur du tracé
+              title="Votre position"
+              pinColor="red"
             />
-          )}
-        </MapView>
 
-        {/* Boutons de zoom */}
-        <TouchableOpacity
-          style={styles.zoomPosition}
-          onPress={() =>
-            handleZoomAndTilt(location.latitude, location.longitude)
-          }
-        >
-          <Ionicons name="location-sharp" size={18} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.zoomReport}
-          onPress={() => handleZoomAndTilt(report.latitude, report.longitude)}
-        >
-          <Text style={styles.zoomReprotText}>GO</Text>
-        </TouchableOpacity>
-      </View>
+            {/* Marqueur pour le signalement avec style */}
+            <Marker
+              coordinate={{
+                latitude: report.latitude,
+                longitude: report.longitude,
+              }}
+              title={report.title}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Image
+                  source={getTypeIcon(report.type)} // Dynamique selon le type de signalement
+                  style={{ width: 40, height: 40, resizeMode: "contain" }}
+                />
+              </View>
+            </Marker>
 
-      <View style={styles.content}>
-        <View style={styles.cardTitle}>
-          <Text style={styles.title}>{report.title}</Text>
+            {/* Ligne de tracé */}
+            {routeCoords.length > 0 && (
+              <Polyline
+                coordinates={routeCoords}
+                strokeColor="#29524A" // Couleur du tracé
+                strokeWidth={5} // Épaisseur du tracé
+              />
+            )}
+          </MapView>
+
+          {/* Boutons de zoom */}
+          <TouchableOpacity
+            style={styles.zoomPosition}
+            onPress={() =>
+              handleZoomAndTilt(location.latitude, location.longitude)
+            }
+          >
+            <Ionicons name="location-sharp" size={18} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.zoomReport}
+            onPress={() => handleZoomAndTilt(report.latitude, report.longitude)}
+          >
+            <Text style={styles.zoomReprotText}>GO</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Système de vote */}
-        <View style={styles.voteSection}>
-          <Text style={styles.votePrompt}>Avez-vous constaté le report ?</Text>
-          <View style={styles.voteContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                Alert.alert(
-                  "Confirmer le vote",
-                  "Vous vous apprêtez à voter POUR et à confirmer la présence de l'événement. Cette action est irréversible. Êtes-vous sûr ?",
-                  [
-                    { text: "Annuler", style: "cancel" },
-                    {
-                      text: "Confirmer",
-                      onPress: () => handleVote("up"),
-                    },
-                  ]
-                );
-              }}
-              style={[styles.voteButton, styles.upVoteButton]}
-            >
-              <Text style={styles.voteText}>👍 {votes.upVotes}</Text>
-            </TouchableOpacity>
+        <View style={styles.content}>
+          <View style={styles.cardTitle}>
+            <Text style={styles.title}>{report.title}</Text>
+          </View>
 
-            <TouchableOpacity
-              onPress={() => {
-                Alert.alert(
-                  "Confirmer le vote",
-                  "Vous vous apprêtez à voter CONTRE et à invalider cet événement. Cette action est irréversible. Êtes-vous sûr ?",
-                  [
-                    { text: "Annuler", style: "cancel" },
-                    {
-                      text: "Confirmer",
-                      onPress: () => handleVote("down"),
-                    },
-                  ]
-                );
-              }}
-              style={[styles.voteButton, styles.downVoteButton]}
+          {/* Système de vote */}
+          <View style={styles.voteSection}>
+            <Text style={styles.votePrompt}>
+              Avez-vous constaté le report ?
+            </Text>
+            <View style={styles.voteContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "Confirmer le vote",
+                    "Vous vous apprêtez à voter POUR et à confirmer la présence de l'événement. Cette action est irréversible. Êtes-vous sûr ?",
+                    [
+                      { text: "Annuler", style: "cancel" },
+                      {
+                        text: "Confirmer",
+                        onPress: () => handleVote("up"),
+                      },
+                    ]
+                  );
+                }}
+                style={[styles.voteButton, styles.upVoteButton]}
+              >
+                <Text style={styles.voteText}>👍 {votes.upVotes}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "Confirmer le vote",
+                    "Vous vous apprêtez à voter CONTRE et à invalider cet événement. Cette action est irréversible. Êtes-vous sûr ?",
+                    [
+                      { text: "Annuler", style: "cancel" },
+                      {
+                        text: "Confirmer",
+                        onPress: () => handleVote("down"),
+                      },
+                    ]
+                  );
+                }}
+                style={[styles.voteButton, styles.downVoteButton]}
+              >
+                <Text style={styles.voteText}>👎 {votes.downVotes}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.description}>{report.description}</Text>
+        </View>
+
+        <View style={styles.detailCardPhoto}>
+          <View style={styles.detailContainer}>
+            <Text style={styles.detailLabel}>📸 Photos :</Text>
+            {report.photos && report.photos.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {report.photos.map((photo: Photo) => (
+                  <TouchableOpacity
+                    key={photo.id}
+                    onPress={() => openModal(photo.url)}
+                  >
+                    <Image
+                      source={{ uri: photo.url }}
+                      style={styles.photo}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={styles.noPhotosText}>Aucune photo disponible.</Text>
+            )}
+          </View>
+          {selectedPhoto && (
+            <Modal
+              visible={modalVisible}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={closeModal}
             >
-              <Text style={styles.voteText}>👎 {votes.downVotes}</Text>
+              <View style={styles.modalContainer}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={closeModal}
+                >
+                  <Text style={styles.closeButtonText}>X</Text>
+                </TouchableOpacity>
+                <Image
+                  source={{ uri: selectedPhoto }}
+                  style={styles.modalPhoto}
+                  resizeMode="contain"
+                />
+              </View>
+            </Modal>
+          )}
+        </View>
+
+        <View style={[styles.card, styles.detailCard]}>
+          <View style={styles.detailContainer}>
+            <Text style={styles.detailLabel}>📏 Distance en voiture : </Text>
+            <Text style={styles.detailValue}>
+              {report.gpsDistance
+                ? `${report.gpsDistance.toFixed(2)} km`
+                : "Indisponible"}
+            </Text>
+          </View>
+          <View style={styles.detailContainer}>
+            <Text style={styles.detailLabel}>📍 Localisation : </Text>
+            <Text
+              style={styles.detailValue}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {formatCity(report.city)}
+            </Text>
+          </View>
+          <View style={styles.detailContainer}>
+            <Text style={styles.detailLabel}>📅 Créé le : </Text>
+            <Text style={styles.detailValue}>
+              {formatDate(report.createdAt)}
+            </Text>
+          </View>
+          <View style={styles.detailContainer}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("UserProfileScreen", {
+                  userId: report.user.id,
+                })
+              }
+            >
+              <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
+              <Text style={styles.detailValue}>
+                {report.user && report.user.useFullName
+                  ? `${report.user.firstName} ${report.user.lastName}`
+                  : report.user?.username || "Nom non disponible"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
 
-
-      <View style={styles.card}>
-        <Text style={styles.description}>{report.description}</Text>
-      </View>
-
-      <View style={styles.detailCardPhoto}>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>📸 Photos :</Text>
-          {report.photos && report.photos.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {report.photos.map((photo: Photo) => (
-                <TouchableOpacity
-                  key={photo.id}
-                  onPress={() => openModal(photo.url)}
-                >
-                  <Image
-                    source={{ uri: photo.url }}
-                    style={styles.photo}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <Text style={styles.noPhotosText}>Aucune photo disponible.</Text>
-          )}
+        <View>
+          {/* Autres sections de votre écran */}
+          <CommentsSection report={report} />
         </View>
-        {selectedPhoto && (
-          <Modal
-            visible={modalVisible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={closeModal}
-          >
-            <View style={styles.modalContainer}>
-              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                <Text style={styles.closeButtonText}>X</Text>
-              </TouchableOpacity>
-              <Image
-                source={{ uri: selectedPhoto }}
-                style={styles.modalPhoto}
-                resizeMode="contain"
-              />
-            </View>
-          </Modal>
-        )}
-      </View>
-
-      <View style={[styles.card, styles.detailCard]}>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>📏 Distance en voiture : </Text>
-          <Text style={styles.detailValue}>
-            {report.gpsDistance
-              ? `${report.gpsDistance.toFixed(2)} km`
-              : "Indisponible"}
-          </Text>
-        </View>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>📍 Localisation : </Text>
-          <Text
-            style={styles.detailValue}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {formatCity(report.city)}
-          </Text>
-        </View>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>📅 Créé le : </Text>
-          <Text style={styles.detailValue}>
-            Créé le : {formatDate(report.createdAt)}
-          </Text>
-        </View>
-        <View style={styles.detailContainer}>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("UserProfileScreen", {
-                userId: report.user.id,
-              })
-            }
-          >
-            <Text style={styles.detailLabel}>🕺 Publiée par : </Text>
-            <Text style={styles.detailValue}>
-              {report.user && report.user.useFullName
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : report.user?.username || "Nom non disponible"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View>
-  {/* Autres sections de votre écran */}
-  
-  <CommentsSection report={report} />
-</View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

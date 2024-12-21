@@ -1,14 +1,16 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
-  Main: NavigatorScreenParams<TabParamList>; // Si vous avez des onglets
+  Main: NavigatorScreenParams<TabParamList>;
   Login: undefined;
   Register: undefined;
   ProfileScreen: undefined;
   UserProfileScreen: { userId: string };
-  ReportDetails: { reportId: number }; // Typage attendu pour les paramètres
-  CategoryReports: { category: string }; // Ajout pour gérer la navigation vers la page des rapports par catégorie
+  ReportDetails: { reportId: number };
+  CategoryReports: { category: string };
   EventDetailsScreen: { eventId: string };
+  EventsScreen: undefined; // Ajout de la route "EventsScreen"
+  ReportsScreen: undefined; // Ajout de la route "EventsScreen"
 };
 
 export type TabParamList = {

@@ -6,14 +6,18 @@ import {
   Image,
   ScrollView,
   StyleSheet,
+  Alert,
   TouchableOpacity,
+  Modal,
+  TextInput,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 import axios from "axios";
-import { Linking } from 'react-native';
+import { Linking } from "react-native";
+import { useToken } from "../hooks/useToken";
 
 type User = {
   id: string;
@@ -33,6 +37,7 @@ type User = {
 };
 
 export default function UserProfileScreen({ route, navigation }) {
+  const { getToken, getUserId } = useToken();
   const { userId } = route.params; // ID de l'utilisateur à afficher
   const [user, setUser] = useState<User | null>(null); // Données de l'utilisateur
   const [loading, setLoading] = useState(true); // Chargement des données
@@ -41,7 +46,8 @@ export default function UserProfileScreen({ route, navigation }) {
   const [isSubmitting, setIsSubmitting] = useState(false); // Pour bloquer les clics pendant une requête
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ID de l'utilisateur connecté
   const [stats, setStats] = useState<any>(null);
-
+  const [isReportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState("");
   // Chargement des données utilisateur
   useEffect(() => {
     async function fetchData() {
@@ -80,18 +86,18 @@ export default function UserProfileScreen({ route, navigation }) {
       try {
         setLoading(true);
         setError(null);
-  
+
         // Utiliser l'ID du profil visité (userId)
         const response = await axios.get(`${API_URL}/users/stats/${userId}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-  
+
         const data = response.data;
         if (!data.votes) {
           data.votes = [];
         }
-  
+
         setStats(data);
       } catch (error: any) {
         console.error("Erreur dans fetchStats :", error.message || error);
@@ -100,10 +106,9 @@ export default function UserProfileScreen({ route, navigation }) {
         setLoading(false);
       }
     };
-  
+
     fetchStats();
   }, [userId]); // Ajout de userId comme dépendance
-  
 
   // Gestion du suivi (Follow)
   const handleFollow = async () => {
@@ -143,6 +148,57 @@ export default function UserProfileScreen({ route, navigation }) {
       console.error(error.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const openReportModal = () => setReportModalVisible(true);
+  const closeReportModal = () => {
+    setReportModalVisible(false);
+    setReportReason("");
+  };
+
+  const sendReport = async () => {
+    if (!reportReason.trim()) {
+      Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
+      return;
+    }
+
+    try {
+      const reporterId = await getUserId(); // Récupération de l'ID de l'utilisateur actuel
+
+      const response = await fetch(`${API_URL}/mails/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getToken()}`,
+        },
+        body: JSON.stringify({
+          to: "yannleroy23@gmail.com", // Adresse mail du destinataire
+          subject: "Signalement d'un profil utilisateur",
+          text: `Un profil utilisateur a été signalé avec l'ID: ${userId}. 
+                 Signalé par l'utilisateur avec l'ID: ${reporterId}. 
+                 Raison: ${reportReason}`,
+          html: `<p><strong>Un profil utilisateur a été signalé.</strong></p>
+                 <p>ID du profil: ${userId}</p>
+                 <p>Signalé par l'utilisateur avec l'ID: ${reporterId}</p>
+                 <p>Raison: ${reportReason}</p>`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du signalement du profil.");
+      }
+
+      const result = await response.json();
+      console.log("Signalement envoyé :", result);
+      Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
+      closeReportModal();
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du signalement :", error.message);
+      Alert.alert(
+        "Erreur",
+        "Une erreur s'est produite lors de l'envoi du signalement."
+      );
     }
   };
 
@@ -217,7 +273,7 @@ export default function UserProfileScreen({ route, navigation }) {
         <Text style={styles.headerTitle}>
           {displayName || "Cet utilisateur"}
         </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("ProfileScreen")}>
+        <TouchableOpacity onPress={openReportModal}>
           <Icon
             name="warning"
             size={28}
@@ -226,6 +282,35 @@ export default function UserProfileScreen({ route, navigation }) {
           />
         </TouchableOpacity>
       </View>
+      {/* Modal pour le signalement */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isReportModalVisible}
+        onRequestClose={closeReportModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Signaler ce profil</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Quelle est la raison de votre signalement ?"
+              value={reportReason}
+              onChangeText={setReportReason}
+              multiline={true}
+            />
+            <TouchableOpacity onPress={sendReport} style={styles.confirmButton}>
+              <Text style={styles.confirmButtonText}>Envoyer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={closeReportModal}
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Image de profil */}
       <View style={styles.profileImageContainer}>
@@ -257,60 +342,64 @@ export default function UserProfileScreen({ route, navigation }) {
 
       {/* Informations de base */}
       <View style={styles.infoCardContainer}>
-  <Text style={styles.infoCardHeader}>Informations personnelles</Text>
-  
-  {/* Nom d'utilisateur */}
-  <View style={styles.infoItem}>
-    <Icon name="user" size={20} style={styles.icon} />
-    <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
-    <Text style={styles.infoValueName}>
-      {displayName || <Text style={styles.placeholderValue}>Non renseigné</Text>}
-    </Text>
-  </View>
-  
-  {/* Email */}
+        <Text style={styles.infoCardHeader}>Informations personnelles</Text>
 
-<View style={styles.infoItem}>
-  <Icon name="envelope" size={20} style={styles.icon} />
-  <Text style={styles.infoLabel}>Email :</Text>
-  {user?.showEmail ? (
-    <Text
-      style={styles.infoValueEmail}
-      onPress={() => Linking.openURL(`mailto:${user.email}`)}
-    >
-      {user.email}
-    </Text>
-  ) : (
-    <Text style={styles.placeholderValue}>{displayName} n'est pas joignable</Text>
-  )}
-</View>
+        {/* Nom d'utilisateur */}
+        <View style={styles.infoItem}>
+          <Icon name="user" size={20} style={styles.icon} />
+          <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
+          <Text style={styles.infoValueName}>
+            {displayName || (
+              <Text style={styles.placeholderValue}>Non renseigné</Text>
+            )}
+          </Text>
+        </View>
 
+        {/* Email */}
 
-</View>
-
+        <View style={styles.infoItem}>
+          <Icon name="envelope" size={20} style={styles.icon} />
+          <Text style={styles.infoLabel}>Email :</Text>
+          {user?.showEmail ? (
+            <Text
+              style={styles.infoValueEmail}
+              onPress={() => Linking.openURL(`mailto:${user.email}`)}
+            >
+              {user.email}
+            </Text>
+          ) : (
+            <Text style={styles.placeholderValue}>
+              {displayName} n'est pas joignable
+            </Text>
+          )}
+        </View>
+      </View>
 
       <View style={styles.cardContainer}>
-  <Text style={styles.infoCardHeader}>Statistiques</Text>
-  <View style={styles.cardContent}>
-    <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{user?.followers?.length || 0}</Text>
-      <Text style={styles.statLabel}>Followers</Text>
-    </View>
-    <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{user?.following?.length || 0}</Text>
-      <Text style={styles.statLabel}>Following</Text>
-    </View>
-    <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
-      <Text style={styles.statLabel}>Votes</Text>
-    </View>
-    <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{stats?.numberOfReports || 0}</Text>
-      <Text style={styles.statLabel}>Signalements</Text>
-    </View>
-  </View>
-</View>
-
+        <Text style={styles.infoCardHeader}>Statistiques</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>
+              {user?.followers?.length || 0}
+            </Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>
+              {user?.following?.length || 0}
+            </Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
+            <Text style={styles.statLabel}>Votes</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{stats?.numberOfReports || 0}</Text>
+            <Text style={styles.statLabel}>Signalements</Text>
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -342,6 +431,82 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#333",
+  },
+  modalBackdrop: {
+    position: "absolute",
+    top: 0, // Occupe toute la hauteur
+    left: 0,
+    right: 0,
+    bottom: 0, // Occupe toute la hauteur
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000, // Toujours au-dessus
+  },
+  modalContainer: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 10, // Ombre pour un effet surélevé
+  },
+  textInput: {
+    borderWidth: 1,
+    height: 50,
+    width: "100%",
+    textAlign: "center",
+    borderColor: "#ccc", // Light gray border
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    backgroundColor: "#f9f9f9", // Subtle off-white background
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700", // Titre plus bold
+    color: "#333",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  confirmButton: {
+    backgroundColor: "#ff4d4f",
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    alignItems: "center",
+    marginBottom: 10,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  confirmButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#ddd",
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 20,
+  },
+  cancelButtonText: {
+    color: "#555",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
   profileImageContainer: {
     alignItems: "center",
@@ -388,15 +553,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 2,
   },
-  infoCardHeader: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 25,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFEFEF",
-    paddingBottom: 20,
-  },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -427,6 +583,22 @@ const styles = StyleSheet.create({
     marginRight: 10,
     color: "#57A773",
   },
+  cardHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
+
+  infoCardHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+    paddingBottom: 20,
+  },
   cardContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
@@ -437,12 +609,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 2,
-  },
-  cardHeader: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
   },
   cardContent: {
     flexDirection: "row",
@@ -469,4 +635,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

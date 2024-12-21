@@ -1,47 +1,101 @@
-import React, { useState } from 'react';
-import { Animated, View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  Animated,
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; // Installez : expo install @expo/vector-icons
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../types/navigation';
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
-  const [sidebarAnimation] = useState(new Animated.Value(-250)); // Position initiale hors de l'écran
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-  React.useEffect(() => {
-    if (isOpen) {
-      // Ouvrir la barre
-      Animated.timing(sidebarAnimation, {
-        toValue: 0, // Position visible
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      // Fermer la barre
-      Animated.timing(sidebarAnimation, {
-        toValue: -250, // Position hors de l'écran
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    }
+interface SidebarProps {
+  isOpen: boolean;
+  toggleSidebar: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
+  const [sidebarAnimation] = useState(new Animated.Value(-300));
+  const navigation = useNavigation<NavigationProp>();
+
+  useEffect(() => {
+    Animated.timing(sidebarAnimation, {
+      toValue: isOpen ? 0 : -300,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   }, [isOpen]);
+
+  const handleNavigation = (screen: keyof RootStackParamList) => {
+    navigation.navigate(screen);
+    toggleSidebar();
+  };
 
   return (
     <>
-      {/* Barre latérale */}
-      <Animated.View style={[styles.sidebar, { left: sidebarAnimation }]}>
-        <Text style={styles.sidebarTitle}>Menu</Text>
-        <TouchableOpacity style={styles.sidebarItem} onPress={() => alert('Home')}>
-          <Text style={styles.sidebarText}>Home</Text>
+      <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarAnimation }] }]}>
+        <Text style={styles.sidebarTitle}>M E N U</Text>
+
+        {/* Section principale */}
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('Main')}>
+        <MaterialCommunityIcons name="view-dashboard-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Tableau de bord</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarItem} onPress={() => alert('Profile')}>
-          <Text style={styles.sidebarText}>Profile</Text>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('ProfileScreen')}>
+        <MaterialCommunityIcons name="account-circle-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Mon profil</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarItem} onPress={() => alert('Settings')}>
-          <Text style={styles.sidebarText}>Settings</Text>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('EventsScreen')}>
+        <MaterialCommunityIcons name="calendar-star" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Tout les événements</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('ReportsScreen')}>
+        <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Tout les signalements</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} >
+          <Ionicons name="star-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Mes notes et commentaire</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} >
+          <Ionicons name="time-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Mon historique</Text>
+        </TouchableOpacity>
+
+        {/* Section supplémentaire */}
+        <View style={styles.footerSection}>
+          <TouchableOpacity style={styles.sidebarItem} >
+            <Ionicons name="settings-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>Préférences</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sidebarItem} >
+            <Ionicons name="help-circle-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>F.A.Q</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sidebarItem} >
+            <Ionicons name="document-text-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>Conditions d'utilisation</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sidebarItem}>
+            <Ionicons name="shield-checkmark-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>Confidentialité</Text>
+          </TouchableOpacity>
+          <Text style={styles.version}>v1.07.23</Text>
+        </View>
+
+        {/* Bouton de connexion */}
+        <TouchableOpacity style={styles.loginButton} onPress={() => handleNavigation('Login')}>
+          <Text style={styles.loginText}>CONNEXION</Text>
         </TouchableOpacity>
       </Animated.View>
 
       {/* Overlay */}
-      {isOpen && (
-        <TouchableOpacity style={styles.overlay} onPress={toggleSidebar} />
-      )}
+      {isOpen && <TouchableOpacity style={styles.overlay} onPress={toggleSidebar} />}
     </>
   );
 };
@@ -51,24 +105,60 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: 250,
+    width: 300,
     height: Dimensions.get('window').height,
-    backgroundColor: '#333',
-    padding: 20,
+    backgroundColor: '#29524A',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     zIndex: 2,
   },
   sidebarTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
+    color: '#BEE5BF',
+    fontSize: 28,
+    marginTop: 30,
     marginBottom: 20,
+    marginLeft: 15,
+    textAlign : 'center',
   },
   sidebarItem: {
-    marginVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: 'transparent',
   },
   sidebarText: {
     color: '#fff',
     fontSize: 18,
+    marginLeft: 15,
+  },
+  footerSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#fff',
+    paddingTop: 10,
+  },
+  version: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 10,
+  },
+  loginButton: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: '#BEE5BF',
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  loginText: {
+    color: '#111',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   overlay: {
     position: 'absolute',

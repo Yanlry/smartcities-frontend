@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  RefreshControl
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -72,8 +73,7 @@ interface Event {
   location: string;
 }
 
-export default function HomeScreen({}) {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+export default function HomeScreen({navigation}) {
   const { location, loading: locationLoading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -102,6 +102,7 @@ export default function HomeScreen({}) {
   const [events, setEvents] = useState<Event[]>([]);
   const [modalNameVisible, setModalNameVisible] = useState(false);
   const { data } = useFetchStatistics(`${API_URL}/reports/statistics`);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -282,7 +283,7 @@ export default function HomeScreen({}) {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#408476" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
@@ -309,8 +310,8 @@ export default function HomeScreen({}) {
   if (loadingReports) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Chargement en cours...</Text>
+        <ActivityIndicator size="large" color="#29524A" />
+        <Text style={{color:"#29524A"}}>Chargement en cours...</Text>
       </View>
     );
   }
@@ -318,7 +319,7 @@ export default function HomeScreen({}) {
   if (!reports || reports.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#29524A" />
         <Text style={styles.loadingText}>Chargement des signalements...</Text>
       </View>
     );
@@ -406,9 +407,7 @@ export default function HomeScreen({}) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.username;
+  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -491,8 +490,24 @@ export default function HomeScreen({}) {
     },
   ];
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+
+    // Simule une attente ou une action
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    setRefreshing(false);
+
+    // Naviguer vers une autre page après le rafraîchissement
+    navigation.replace("Main");
+  };
+  
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}  
+    refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }
+  >
       <View style={styles.cardContainer}>
         <View style={styles.header}>
           {user?.profilePhoto?.url ? (
@@ -515,7 +530,7 @@ export default function HomeScreen({}) {
                 onPress={() => setModalNameVisible(true)}
                 style={styles.dropdownButton}
               >
-                <Ionicons name="chevron-down-outline" size={24} color="#777" />
+                <Ionicons name="chevron-down-outline" size={24} color="#29524A" />
               </TouchableOpacity>
             </View>
 
@@ -600,7 +615,7 @@ export default function HomeScreen({}) {
                           <Ionicons
                             name="thumbs-up-outline"
                             size={28}
-                            color="#6bd5a7"
+                            color="#418074"
                           />
                           <Text style={styles.voteCount}>{voteSummary.up}</Text>
                         </View>
@@ -608,7 +623,7 @@ export default function HomeScreen({}) {
                           <Ionicons
                             name="thumbs-down-outline"
                             size={28}
-                            color="#DC5D54"
+                            color="#A73830"
                           />
                           <Text style={styles.voteCount}>
                             {voteSummary.down}

@@ -181,7 +181,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               style={styles.input}
               value={lastName}
               placeholder="Prénom"
-              placeholderTextColor="#999"
+              placeholderTextColor="#c7c7c7"
               onChangeText={setLastName}
               autoCorrect={false} // Désactive la correction automatique
               spellCheck={false} // Désactive la vérification orthographique
@@ -191,7 +191,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Nom"
-              placeholderTextColor="#999"
+              placeholderTextColor="#c7c7c7"
               autoCorrect={false} // Désactive la correction automatique
               spellCheck={false} // Désactive la vérification orthographique
             />
@@ -200,7 +200,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               value={username}
               onChangeText={setUsername}
               placeholder="Nom d'utilisateur"
-              placeholderTextColor="#999"
+              placeholderTextColor="#c7c7c7"
               autoCorrect={false} // Désactive la correction automatique
               spellCheck={false} // Désactive la vérification orthographique
             />
@@ -210,7 +210,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               onChangeText={setEmail}
               placeholder="Email"
               keyboardType="email-address"
-              placeholderTextColor="#999"
+              placeholderTextColor="#c7c7c7"
               autoCapitalize="none"
               autoCorrect={false} // Désactive la correction automatique
               spellCheck={false} // Désactive la vérification orthographique
@@ -221,23 +221,26 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               onChangeText={setPassword}
               placeholder="Mot de passe"
               secureTextEntry
-              placeholderTextColor="#999"
+              placeholderTextColor="#c7c7c7"
               autoCorrect={false} // Désactive la correction automatique
               spellCheck={false} // Désactive la vérification orthographique
             />
-            <TextInput
-              style={styles.inputSearch}
-              placeholder="Entrer le code postal de votre ville"
-              value={query}
-              placeholderTextColor="#c7c7c7"
-              onChangeText={setQuery}
-            />
-            <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleAddressSearch}
-            >
-              <Ionicons name="search-sharp" size={18} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.inputSearch}
+                placeholder="Rechercher par code postal"
+                value={query}
+                placeholderTextColor="#c7c7c7"
+                onChangeText={setQuery}
+              />
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleAddressSearch}
+              >
+                {/* Remplacez par une icône ou texte */}
+                <Ionicons name="search-sharp" size={20} color="black" />
+              </TouchableOpacity>
+            </View>
 
             {/* Suggestions d'adresses */}
             <Modal
@@ -507,28 +510,37 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#333",
   },
+  searchContainer: {
+    flexDirection: "row", // Aligne TextInput et TouchableOpacity horizontalement
+    alignItems: "center", // Centre verticalement
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 5,
+  },
   inputSearch: {
-    height: 50, // Assurez une hauteur uniforme
-    textAlignVertical: "center", // Centre le texte verticalement
-    paddingHorizontal: 10, // Ajoute un espace pour le texte à gauche et à droite
-    paddingLeft: 20, // Ajoutez un espacement à gauche
-
-    backgroundColor: "#f5f5f5",
-    width: "65%",
-    borderRadius: 30, // Ajoutez un arrondi aux coins
-    fontSize: 16, // Ajustez la taille de la police
-    color: "#333",
-    marginTop: 40,
+    flex: 1,
+    borderColor: "#ecf0f1", // Bordure grise légère
+    borderWidth: 1,
+    height: 50,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    width: "100%",
+    backgroundColor: "#ffffff", // Fond blanc
+    fontSize: 16,
+    color: "#34495e", // Texte gris foncé
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2, // Ombre douce
   },
   searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#34495E",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
-    marginTop: 40,
+    position: "absolute",
+    top: 12,
+    right: 10,
+    padding: 10,
+    borderRadius: 5,
   },
   // Lien pour se connecter
   loginLink: {

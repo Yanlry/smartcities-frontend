@@ -11,9 +11,18 @@ import axios from "axios";
 import { Share } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
+import { useToken } from "../hooks/useToken";
+import { RootStackParamList } from "../types/navigation";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
 
-const EventDetails = ({ route }) => {
+export default function EventDetails  ({ route }){
+  
+  const navigation =
+  useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { eventId } = route.params;
+  const [isRegistered, setIsRegistered] = useState(false);
+  const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
 
   interface Event {
     photos: { url: string }[];
@@ -21,9 +30,37 @@ const EventDetails = ({ route }) => {
     description: string;
     location: string;
     date: string;
+    attendees: { user: Participant }[]; // Liste des participants
+  }
+
+  interface Participant {
+    id: number;
+    firstName: string;
+    lastName: string;
+    username: string;
+    photos: { url: string }[];
   }
 
   const [event, setEvent] = useState<Event | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const userId = await getUserId(); // Récupère le userId depuis AsyncStorage
+        console.log(`ID utilisateur récupéré depuis AsyncStorage : ${userId}`);
+        setCurrentUserId(userId); // Met à jour l'état local
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération de l'utilisateur :",
+          error
+        );
+        alert("Impossible de récupérer l'utilisateur. Veuillez réessayer.");
+      }
+    };
+
+    fetchUserId();
+  }, []);
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -32,15 +69,37 @@ const EventDetails = ({ route }) => {
         const response = await axios.get(url);
         setEvent(response.data);
       } catch (error) {
-        console.error("Error fetching event details:", error);
+        console.error(
+          "Erreur lors du chargement des détails de l'événement :",
+          error
+        );
         alert("Impossible de récupérer les détails de l'événement.");
       }
     };
 
-    fetchEventDetails();
-  }, [eventId]);
+    const checkRegistration = async () => {
+      if (!currentUserId) return; // Attend que currentUserId soit défini
 
-  if (!event) {
+      try {
+        const url = `${API_URL}/events/${eventId}/is-registered?userId=${currentUserId}`;
+        const response = await axios.get(url);
+        setIsRegistered(response.data.isRegistered);
+      } catch (error) {
+        console.error(
+          "Erreur lors de la vérification de l'inscription :",
+          error
+        );
+      }
+    };
+
+    fetchEventDetails();
+
+    if (currentUserId) {
+      checkRegistration();
+    }
+  }, [eventId, currentUserId]);
+
+  if (!event || currentUserId === null) {
     return (
       <View style={styles.loading}>
         <Text>Chargement des informations...</Text>
@@ -84,6 +143,84 @@ const EventDetails = ({ route }) => {
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
+  const registerForEvent = async () => {
+    if (!currentUserId) {
+      alert("Erreur : utilisateur non identifié.");
+      return;
+    }
+  
+    try {
+      console.log(
+        `Tentative d'inscription avec eventId: ${eventId}, userId: ${currentUserId}`
+      );
+  
+      // Inscription à l'événement
+      await axios.post(`${API_URL}/events/${eventId}/join`, {
+        userId: currentUserId,
+      });
+  
+      alert("Inscription réussie !");
+      setIsRegistered(true); // Met à jour l'état pour refléter l'inscription
+  
+      // Met à jour les détails de l'événement pour inclure les participants
+      const updatedEventResponse = await axios.get(`${API_URL}/events/${eventId}`);
+      setEvent(updatedEventResponse.data); // Remplace l'événement dans l'état
+    } catch (error) {
+      if (error.response?.status === 404) {
+        alert("Événement ou utilisateur introuvable.");
+      } else if (error.response?.status === 400) {
+        alert(
+          "Erreur lors de l'inscription : Vous êtes peut-être déjà inscrit."
+        );
+      } else {
+        alert("Une erreur est survenue. Veuillez réessayer.");
+      }
+      console.error("Erreur lors de l'inscription :", error);
+    }
+  };
+
+  const unregisterFromEvent = async () => {
+    if (!currentUserId) {
+      alert("Erreur : utilisateur non identifié.");
+      return;
+    }
+  
+    try {
+      const response = await axios.delete(`${API_URL}/events/${eventId}/leave`, {
+        data: { userId: currentUserId },
+      });
+  
+      alert("Désinscription réussie !");
+      setIsRegistered(false);
+  
+      // Supprimer l'utilisateur de la liste des participants
+      setEvent((prevEvent) => {
+        if (!prevEvent) return prevEvent;
+        return {
+          ...prevEvent,
+          attendees: prevEvent.attendees.filter(
+            (attendee) => attendee.user.id !== currentUserId
+          ),
+          photos: prevEvent.photos || [], // Ensure photos is always defined
+        };
+      });
+    } catch (error) {
+      console.error("Erreur lors de la désinscription :", error);
+      alert("Une erreur est survenue lors de la désinscription.");
+    }
+  };
+
+  const navigateToUserProfile = (userId: string) => {
+    navigation.navigate("UserProfileScreen", { userId });
+  };
+
+  const getDisplayName = (user) => {
+    if (user.useFullName) {
+      return `${user.firstName} ${user.lastName}`; // Affiche le nom complet
+    }
+    return `${user.username}`; // Sinon, affiche le username
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Image en-tête */}
@@ -102,9 +239,18 @@ const EventDetails = ({ route }) => {
             <Text style={styles.buttonText}>Partager</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>S'inscrire</Text>
-          </TouchableOpacity>
+          {isRegistered ? (
+            <TouchableOpacity
+              style={styles.buttonLeave}
+              onPress={unregisterFromEvent}
+            >
+              <Text style={styles.buttonText}>Se désinscrire</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={registerForEvent}>
+              <Text style={styles.buttonText}>S'inscrire</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -118,10 +264,10 @@ const EventDetails = ({ route }) => {
           {event.date
             ? capitalizeFirstLetter(
                 new Date(event.date).toLocaleDateString("fr-FR", {
-                  weekday: "long", // Jour de la semaine
-                  year: "numeric", // Année
-                  month: "long", // Mois
-                  day: "numeric", // Jour
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
                 })
               )
             : "Date non disponible"}
@@ -133,6 +279,34 @@ const EventDetails = ({ route }) => {
       <Text style={styles.description}>
         {event.description || "Description indisponible"}
       </Text>
+
+      {/* Liste des participants */}
+      <Text style={styles.sectionMember}>Participants</Text>
+      {event.attendees.length > 0 ? (
+    event.attendees.map((attendee, index) => (
+      <TouchableOpacity
+        key={index}
+        style={styles.participant}
+        onPress={() => navigateToUserProfile(attendee.user.id.toString())} // Navigation au clic
+      >
+        <Image
+          source={{
+            uri:
+              attendee.user.photos?.[0]?.url ||
+              "https://via.placeholder.com/150",
+          }}
+          style={styles.participantPhoto}
+        />
+        <Text style={styles.participantName}>
+          {getDisplayName(attendee.user)}
+        </Text>
+      </TouchableOpacity>
+    ))
+  ) : (
+    <Text style={styles.noParticipants}>
+      Aucun participant inscrit pour le moment.
+    </Text>
+  )}
     </ScrollView>
   );
 };
@@ -165,6 +339,29 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 10,
+  },
+  participantList: {
+    marginTop: 10,
+  },
+  participant: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  participantPhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  participantName: {
+     color: "#004FA3",
+    fontWeight: "bold",
+    fontSize: 17,
+  },
+  noParticipants: {
+    fontStyle: "italic",
+    color: "gray",
   },
   actions: {
     flexDirection: "row",
@@ -199,6 +396,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  buttonLeave: {
+    backgroundColor: "#E84855",
+    shadowColor: "#E84855",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 30,
+  },
   infoContainer: {
     marginBottom: 20,
     padding: 10,
@@ -221,11 +430,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#333",
   },
+  sectionMember: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 20,
+    marginBottom: 20,
+    color: "#333",
+  },
   description: {
     fontSize: 16,
     lineHeight: 24,
     color: "#555",
   },
 });
-
-export default EventDetails;

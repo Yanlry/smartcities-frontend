@@ -6,9 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  Image
+  Image,
 } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Marker, Camera, Region } from 'react-native-maps';
 import { useLocation } from '../hooks/useLocation';
 import { fetchAllReportsInRegion, Report } from '../services/reportService';
 import { useNavigation } from '@react-navigation/native';
@@ -19,21 +19,21 @@ import { getTypeIcon } from '../utils/typeIcons';
 type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
 export default function MapScreen() {
-
   const { location, loading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
-  const [mapRegion, setMapRegion] = useState<Region | null>(null); // Région visible
+  const [mapRegion, setMapRegion] = useState<Region | null>(null);
+  const [mapType, setMapType] = useState<'standard' | 'satellite' | 'hybrid' | 'terrain'>('standard');
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation<MapScreenNavigationProp>();
-  // Charger les signalements de la région actuelle
+
   const fetchReportsInRegion = async () => {
     if (!mapRegion) return;
 
     setLoadingReports(true);
     try {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
-      const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111; // Conversion approx. des deltas en km
+      const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111;
 
       const result = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
       setReports(result);
@@ -54,13 +54,42 @@ export default function MapScreen() {
         longitudeDelta: 0.05,
       });
 
-      // Charger les signalements initiaux
       fetchReportsInRegion();
+
+      // Configure la caméra pour une vue 3D
+      if (mapRef.current) {
+        const camera: Camera = {
+          center: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+          },
+          pitch: 60, // Inclinaison pour la vue 3D
+          heading: 0, // Orientation vers le nord
+          zoom: 17, // Niveau de zoom
+          altitude: 1000, // Altitude de la caméra
+        };
+        mapRef.current.animateCamera(camera, { duration: 2000 });
+      }
     }
   }, [location]);
 
   const handleRegionChangeComplete = (region: Region) => {
     setMapRegion(region);
+  };
+
+  const toggleMapType = () => {
+    setMapType((prevType) => {
+      switch (prevType) {
+        case 'standard':
+          return 'satellite';
+        case 'satellite':
+          return 'hybrid';
+        case 'hybrid':
+          return 'terrain';
+        default:
+          return 'standard';
+      }
+    });
   };
 
   if (loading || loadingReports) {
@@ -73,8 +102,8 @@ export default function MapScreen() {
 
   if (!location) {
     Alert.alert(
-      "Localisation indisponible",
-      "Impossible de récupérer votre position actuelle."
+      'Localisation indisponible',
+      'Impossible de récupérer votre position actuelle.'
     );
     return (
       <View style={styles.errorContainer}>
@@ -89,22 +118,25 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         region={mapRegion || undefined}
-        onRegionChangeComplete={handleRegionChangeComplete} // Met à jour la région visible
+        onRegionChangeComplete={handleRegionChangeComplete}
+        mapType={mapType}
+        showsBuildings={true} // Affiche les bâtiments en 3D
+        pitchEnabled={true} // Active l'inclinaison
+        rotateEnabled={true} // Active la rotation
+        showsCompass={true} // Affiche la boussole
       >
-        {/* Marqueur pour la position actuelle */}
         <Marker
           coordinate={{
             latitude: location.latitude,
             longitude: location.longitude,
           }}
           title="Vous êtes ici"
-          pinColor=""
+          pinColor="blue"
         />
 
-        {/* Marqueurs pour les rapports */}
         {reports.map((report) => (
           <Marker
-            key={report.id} // Ajout d'une clé unique
+            key={report.id}
             coordinate={{
               latitude: report.latitude,
               longitude: report.longitude,
@@ -114,40 +146,29 @@ export default function MapScreen() {
               navigation.navigate('ReportDetails', { reportId: report.id })
             }
           >
-            <View
-              style={{
-                width: 50,
-                height: 50,
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.9,
-                shadowRadius: 3,
-                elevation: 5, // Pour Android
-              }}
-            >
-              <Image
-                source={getTypeIcon(report.type)} // Dynamique selon le type de signalement
-                style={{ width: 40, height: 40, resizeMode: "contain" }}
-              />
-            </View>
+            <Image
+              source={getTypeIcon(report.type)}
+              style={{ width: 40, height: 40, resizeMode: 'contain' }}
+            />
           </Marker>
         ))}
-
       </MapView>
 
-      {/* Bouton de recherche dans cette zone */}
+      <TouchableOpacity style={styles.mapTypeButton} onPress={toggleMapType}>
+        <Text style={styles.mapTypeButtonText}>
+          {mapType === 'standard' ? 'Vue Satellite' : mapType === 'satellite' ? 'Vue Hybride' : mapType === 'hybrid' ? 'Vue Terrain' : 'Vue Standard'}
+        </Text>
+      </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.searchButton}
         onPress={fetchReportsInRegion}
       >
-        <Text style={styles.searchButtonText}>Recherche dans cette zone</Text>
+        <Text style={styles.searchButtonText}>Rechercher dans cette zone</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -166,14 +187,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  mapTypeButton: {
+    position: 'absolute',
+    top: 550,
+    left: '35%',
+    backgroundColor: '#fff',
+    padding: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+  },
+  mapTypeButtonText: {
+    color: '#000',
+  },
+
   searchButton: {
     position: 'absolute',
-    bottom: 20,
+    top: 595,
     left: '50%',
     transform: [{ translateX: -100 }],
     width: 200,
-    backgroundColor: '#1E90FF',
-    borderRadius: 10,
+    backgroundColor: '#CA483F',
+    borderRadius: 30,
     padding: 10,
     alignItems: 'center',
   },

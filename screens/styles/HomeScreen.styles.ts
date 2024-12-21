@@ -20,7 +20,7 @@ export default StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",  
+    color: "#29524A",  
   },
 
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
@@ -147,7 +147,7 @@ export default StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "#29524A",
   },
   dropdownButton: {
     marginLeft: 8,
@@ -179,20 +179,22 @@ export default StyleSheet.create({
   },
   optionItem: {
     width: "100%",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: "#29524A",
+    borderRadius: 30,
+    marginTop: 10,
     marginBottom: 10,
     alignItems: "center",
   },
   optionText: {
     fontSize: 16,
-    color: "#333",
+    color: "#f9f9f9",
+    fontWeight: "bold",
   },
   closeButton: {
     marginTop: 20,
-    backgroundColor: "#2c3e50",  
+    backgroundColor: "#d81b60",  
     borderRadius: 30,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -250,7 +252,7 @@ export default StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#2563eb",
+    color: "#408476",
   },
   statLabel: {
     fontSize: 12,
@@ -286,7 +288,7 @@ export default StyleSheet.create({
   voteCount: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
+    color: "#29524A",
     marginLeft: 8,
   },
   noVotesText: {
@@ -357,7 +359,7 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#333",
+    color: "#29524A",
   },
   smarterItem: {
     alignItems: "center",
@@ -391,7 +393,7 @@ export default StyleSheet.create({
     borderColor: "#ddd",
   },
   seeAllButton: {
-    backgroundColor: "#2c3e50",  
+    backgroundColor: "#29524A",  
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 90,
@@ -510,7 +512,7 @@ export default StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#11998e",
+    color: "#52A393",
   },
   eventDetails: {
     fontSize: 14,
@@ -555,7 +557,7 @@ export default StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#3498db",
+    color: "#52A393",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -598,7 +600,7 @@ export default StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#3498db",
+    color: "#52A393",
     marginBottom: 5,
   },
   mayorName: {
@@ -629,7 +631,7 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 15,
-    marginBottom: 20,
+    marginBottom: 90,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -654,7 +656,7 @@ export default StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#3498db",
+    color: "#52A393",
   },
   officeContact: {
     fontSize: 14,

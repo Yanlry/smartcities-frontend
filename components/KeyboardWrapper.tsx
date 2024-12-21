@@ -6,7 +6,7 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
-
+ 
 const KeyboardWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <KeyboardAvoidingView

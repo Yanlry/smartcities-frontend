@@ -158,11 +158,11 @@ export default function LoginScreen({ navigation, onLogin }: any) {
     <View style={styles.container}>
       {/* Image d'arrière-plan */}
       <ImageBackground
-        source={require("../../assets/images/background.png")}
+        source={require("../../assets/images/2.jpg")}
         style={styles.background}
       >
         {/* Section floue au centre */}
-        <BlurView intensity={80} style={styles.blurContainer}>
+        <BlurView intensity={40} style={styles.blurContainer}>
           <Text style={styles.title}>Bienvenue sur Smartcities !</Text>
           <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
 
@@ -208,7 +208,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
             style={[styles.loginButton, isLoginClicked && styles.buttonClicked]}
             onPress={handleLoginClick}
           >
-            <Text style={styles.loginButtonText}>Se connecter</Text>
+            <Text style={styles.loginButtonText}>CONNEXION</Text>
           </TouchableOpacity>
 
           <Text style={styles.registerText} >
@@ -356,10 +356,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // Section floue
   blurContainer: {
     width: "90%",
-    backgroundColor: "rgba(255, 255, 255, 0.3)", // Fond translucide
+    backgroundColor: "rgba(255, 255, 255, 0.1)", // Plus translucide avec 5 % d'opacité
     borderRadius: 20,
     padding: 20,
     alignItems: "center",
@@ -374,7 +373,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: "#29524A",
     marginBottom: 10,
     textAlign: "center",
   },
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
   // Sous-titre
   subtitle: {
     fontSize: 18,
-    color: "#2c3e50",
+    color: "#29524A",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -442,8 +441,8 @@ const styles = StyleSheet.create({
   loginButton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#2c3e50", // Bleu moderne
-    shadowColor: "#2c3e50",
+    backgroundColor: "#29524A", // Bleu moderne
+    shadowColor: "#29524A",
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -464,7 +463,7 @@ const styles = StyleSheet.create({
   registerText: {
     marginTop: 15,
     fontSize: 16,
-    color: "#2c3e50",
+    color: "#29524A",
   },
 
   // Bouton "S'inscrire"
@@ -477,10 +476,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 2,
-    borderColor: "#2c3e50",
+    borderColor: "#29524A",
   },
   passwordText: {
-    color: "#2c3e50",
+    color: "#29524A",
     fontSize: 16,
     textAlign: "center",
     width: "100%",
@@ -488,11 +487,11 @@ const styles = StyleSheet.create({
   },
 
   buttonClicked: {
-    backgroundColor: "#11998e", // Vert agréable pour indiquer que le bouton a été cliqué
+    backgroundColor: "#BEE5BF", // Vert agréable pour indiquer que le bouton a été cliqué
   },
 
   registerButtonText: {
-    color: "#2c3e50",
+    color: "#29524A",
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -514,15 +513,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#2c3e50",
+    color: "#29524A",
   },
   modalText: {
-    color: "#2c3e50",
+    color: "#29524A",
     marginBottom: 20,
   },
   modalButton: {
     padding: 15,
-    backgroundColor: "#2c3e50",
+    backgroundColor: "#29524A",
     borderRadius: 30,
     marginTop: 10,
     width: "100%",
