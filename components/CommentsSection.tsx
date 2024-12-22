@@ -34,7 +34,7 @@ const CommentsSection = ({ report }) => {
   const [selectedCommentId, setSelectedCommentId] = useState(null);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
-  
+
   useEffect(() => {
     (async () => {
       const userId = await getUserId();
@@ -93,22 +93,17 @@ const CommentsSection = ({ report }) => {
       if (!response.ok)
         throw new Error("Erreur lors de l'envoi du commentaire.");
 
+      // Récupérer le commentaire créé avec les données utilisateur incluses
       const newComment = await response.json();
-      console.log("Nouveau commentaire reçu dans le front :", newComment);
+      console.log("Nouveau commentaire reçu avec utilisateur :", newComment);
 
-      // Ajoutez un utilisateur local si absent
-      const enrichedComment = {
-        ...newComment,
-        user: newComment.user || {
-          id: userId,
-          username: "Utilisateur inconnu",
-        },
-      };
+      // Ajoutez le commentaire en haut de la liste
+      setComments((prevComments) => [newComment, ...prevComments]);
 
-      setComments([...comments, enrichedComment]); // Ajoute le commentaire enrichi en local
-      setCommentText(""); // Réinitialise le champ
+      // Réinitialisez le champ de saisie
+      setCommentText("");
     } catch (error) {
-      console.error(error.message);
+      console.error("Erreur lors de l'envoi du commentaire :", error.message);
     }
   };
 
@@ -139,27 +134,24 @@ const CommentsSection = ({ report }) => {
         throw new Error("Erreur lors de l'envoi de la réponse.");
 
       const newReply = await response.json();
+      console.log("Nouvelle réponse créée avec utilisateur :", newReply);
 
-      // Met à jour la liste des commentaires avec la réponse
-      const updateComments = (commentsList) =>
-        commentsList.map((comment) => {
-          if (comment.id === parentId) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), newReply],
-            };
-          }
-          return {
-            ...comment,
-            replies: comment.replies ? updateComments(comment.replies) : [],
-          };
-        });
+      // Met à jour les réponses du commentaire parent
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === parentId
+            ? {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+              }
+            : comment
+        )
+      );
 
-      setComments(updateComments(comments));
-      setReplyText("");
+      setReplyText(""); // Réinitialisez le champ de saisie
       setReplyTo(null);
     } catch (error) {
-      console.error(error.message);
+      console.error("Erreur lors de l'envoi de la réponse :", error.message);
     }
   };
 
@@ -226,7 +218,13 @@ const CommentsSection = ({ report }) => {
   };
 
   const renderComments = (comments, level = 0) => {
-    return comments.map((comment) => (
+    // Trier les commentaires par date décroissante (les plus récents en premier)
+    const sortedComments = comments.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return sortedComments.map((comment) => (
       <TouchableWithoutFeedback
         key={comment.id}
         onLongPress={() => openReportModal(comment.id)} // Ouvre le modal pour signaler
@@ -255,7 +253,11 @@ const CommentsSection = ({ report }) => {
 
           <Text style={styles.commentText}>{comment.text}</Text>
           <Text style={styles.commentDate}>
-            Posté le {new Date(comment.createdAt).toLocaleDateString()}
+            Posté le {new Date(comment.createdAt).toLocaleDateString()} à{" "}
+            {new Date(comment.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </Text>
 
           <View style={styles.actionButtonsContainer}>
@@ -313,70 +315,7 @@ const CommentsSection = ({ report }) => {
           {comment.replies && comment.replies.length > 0 && (
             <>
               {expandedComments[comment.id] &&
-                comment.replies.map((reply) => (
-                  <TouchableWithoutFeedback
-                    key={reply.id}
-                    onLongPress={() => openReportModal(reply.id)} // Signalement des réponses
-                  >
-                    <View
-                      style={[
-                        styles.replyContainer,
-                        { marginLeft: (level + 1) * 20 },
-                      ]}
-                    >
-                      <View style={styles.userInfoContainer}>
-                        <Image
-                          source={{
-                            uri:
-                              reply.user?.photos?.[0]?.url ||
-                              "https://via.placeholder.com/50",
-                          }}
-                          style={styles.userPhoto}
-                        />
-                        <TouchableOpacity
-                          onPress={() => navigateToUserProfile(reply.user?.id)}
-                        >
-                          <Text style={styles.userName}>
-                            {reply.user?.useFullName
-                              ? `${reply.user.firstName} ${reply.user.lastName}`
-                              : reply.user?.username || "Utilisateur inconnu"}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      <Text style={styles.replyText}>{reply.text}</Text>
-                      <Text style={styles.replyDate}>
-                        Posté le{" "}
-                        {new Date(reply.createdAt).toLocaleDateString()}
-                      </Text>
-
-                      {reply.user?.id === currentUserId && (
-                        <TouchableOpacity
-                          onPress={() =>
-                            Alert.alert(
-                              "Confirmation de suppression", // Titre de l'alerte
-                              "Êtes-vous sûr de vouloir supprimer ce commentaire ?", // Message
-                              [
-                                {
-                                  text: "Annuler",
-                                  style: "cancel", // Style de bouton
-                                },
-                                {
-                                  text: "Supprimer",
-                                  onPress: () => deleteComment(reply.id), // Fonction appelée en cas de confirmation
-                                  style: "destructive", // Style destructeur pour indiquer une action risquée
-                                },
-                              ]
-                            )
-                          }
-                          style={styles.deleteButtonReply}
-                        >
-                          <Text style={styles.deleteButtonText}>Supprimer</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </TouchableWithoutFeedback>
-                ))}
+                renderComments(comment.replies, level + 1)}
               <TouchableOpacity
                 onPress={() => toggleReplies(comment.id)}
                 style={styles.showMoreButton}
@@ -472,7 +411,7 @@ const CommentsSection = ({ report }) => {
                 </TouchableOpacity>
               </View>
             </View>
-  
+
             {comments.length === 0 ? (
               <Text style={styles.noCommentsText}>
                 Aucun commentaire publié
@@ -481,7 +420,7 @@ const CommentsSection = ({ report }) => {
               renderComments(comments)
             )}
           </ScrollView>
-  
+
           {/* Modal pour le signalement */}
           <Modal
             animationType="fade"
@@ -516,7 +455,7 @@ const CommentsSection = ({ report }) => {
               </View>
             </View>
           </Modal>
-  
+
           {comments.length > 0 && (
             <View style={styles.alertContainer}>
               <Text style={styles.alert}>
@@ -532,7 +471,7 @@ const CommentsSection = ({ report }) => {
 
 const styles = StyleSheet.create({
   card: {
-    flex:1,
+    flex: 1,
     marginHorizontal: 5,
     paddingHorizontal: 15,
     borderRadius: 10,
@@ -789,7 +728,7 @@ const styles = StyleSheet.create({
   commentInput: {
     flex: 1,
     fontSize: 14,
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: "#ddd",

@@ -8,7 +8,7 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -73,7 +73,7 @@ interface Event {
   location: string;
 }
 
-export default function HomeScreen({navigation}) {
+export default function HomeScreen({ navigation }) {
   const { location, loading: locationLoading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -311,7 +311,7 @@ export default function HomeScreen({navigation}) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#29524A" />
-        <Text style={{color:"#29524A"}}>Chargement en cours...</Text>
+        <Text style={{ color: "#29524A" }}>Chargement en cours...</Text>
       </View>
     );
   }
@@ -407,7 +407,9 @@ export default function HomeScreen({navigation}) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
+  const displayName = user?.useFullName
+    ? `${user.firstName} ${user.lastName}`
+    : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -501,13 +503,14 @@ export default function HomeScreen({navigation}) {
     // Naviguer vers une autre page après le rafraîchissement
     navigation.replace("Main");
   };
-  
+
   return (
-    <ScrollView style={styles.container}  
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }
-  >
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.cardContainer}>
         <View style={styles.header}>
           {user?.profilePhoto?.url ? (
@@ -530,7 +533,11 @@ export default function HomeScreen({navigation}) {
                 onPress={() => setModalNameVisible(true)}
                 style={styles.dropdownButton}
               >
-                <Ionicons name="chevron-down-outline" size={24} color="#29524A" />
+                <Ionicons
+                  name="chevron-down-outline"
+                  size={24}
+                  color="#29524A"
+                />
               </TouchableOpacity>
             </View>
 
@@ -674,47 +681,63 @@ export default function HomeScreen({navigation}) {
       </View>
 
       <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalContentRanking}>
-          <FlatList
-            data={rankingData}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              const displayName = item.useFullName
-                ? `${item.firstName} ${item.lastName}`
-                : item.username; // Choix basé sur `useFullName`
+  visible={isModalVisible}
+  animationType="slide"
+  onRequestClose={() => setIsModalVisible(false)}
+>
+  <View style={styles.modalContentRanking}>
+    <Text style={styles.titleModal}>Classement de la ville</Text>
+    <FlatList
+      data={rankingData}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={({ item }) => {
+        const displayName = item.useFullName
+          ? `${item.firstName} ${item.lastName}`
+          : item.username; // Choix basé sur `useFullName`
 
-              return (
-                <TouchableOpacity
-                  style={styles.rankingItemModal}
-                  onPress={() => {
-                    setIsModalVisible(false); // Fermer le modal
-                    navigation.navigate("UserProfileScreen", {
-                      userId: item.id,
-                    }); // Naviguer vers le profil utilisateur
-                  }}
-                >
-                  <Text style={styles.rankingTextModal}>#{item.ranking}</Text>
-                  <Image
-                    source={{ uri: item.photo || "default-image-url" }}
-                    style={styles.userImage}
-                  />
-                  <Text style={styles.rankingTextModal}>{displayName}</Text>
-                </TouchableOpacity>
-              );
-            }}
-          />
+        const isTopThree = item.ranking <= 3; // Vérifie si l'utilisateur est dans le top 3
+        const badgeColor = item.ranking === 1 ? "#FFD700" : item.ranking === 2 ? "#C0C0C0" : "#CD7F32"; // Or, argent, bronze
+        const borderColor = item.ranking === 1 ? "#FFD700" : item.ranking === 2 ? "#C0C0C0" : "#CD7F32"; // Contours correspondants
+
+        return (
           <TouchableOpacity
-            onPress={() => setIsModalVisible(false)}
-            style={styles.closeButtonModal}
+            style={[
+              styles.rankingItemModal,
+              isTopThree ? { borderColor: borderColor, borderWidth: 2, borderRadius: 50} : styles.nonTopThreeItem,
+            ]}
+            onPress={() => {
+              setIsModalVisible(false); // Fermer le modal
+              navigation.navigate("UserProfileScreen", {
+                userId: item.id,
+              }); // Naviguer vers le profil utilisateur
+            }}
           >
-            <Text style={styles.closeButtonTextModal}>Fermer</Text>
+            {isTopThree && (
+              <View style={[styles.badge, { backgroundColor: badgeColor }]}>
+                <Text style={styles.badgeText}>
+                  {item.ranking === 1 ? "🥇" : item.ranking === 2 ? "🥈" : "🥉"}
+                </Text>
+              </View>
+            )}
+            <Image
+              source={{ uri: item.photo || "default-image-url" }}
+              style={[styles.userImage, isTopThree && styles.topThreeImage]}
+            />
+            <Text style={[styles.rankingTextModal, !isTopThree && styles.nonTopThreeText]}>
+  {isTopThree ? displayName : `#${item.ranking} - ${displayName}`}
+</Text>
           </TouchableOpacity>
-        </View>
-      </Modal>
+        );
+      }}
+    />
+    <TouchableOpacity
+      onPress={() => setIsModalVisible(false)}
+      style={styles.closeButtonModal}
+    >
+      <Text style={styles.closeButtonTextModal}>Fermer</Text>
+    </TouchableOpacity>
+  </View>
+</Modal>
 
       <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
       <View>
@@ -776,25 +799,35 @@ export default function HomeScreen({navigation}) {
       )}
 
       <Text style={styles.sectionTitle}>À la Une</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 5 }}
-      >
-        {featuredEvents.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.featuredItem}
-            onPress={() => {
-              console.log("Navigating to EventDetailsScreen with ID:", item.id);
-              navigation.navigate("EventDetailsScreen", { eventId: item.id });
-            }}
-          >
-            <Image source={{ uri: item.image }} style={styles.featuredImage} />
-            <Text style={styles.featuredTitle}>{item.title}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {featuredEvents.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 5 }}
+        >
+          {featuredEvents.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.featuredItem}
+              onPress={() => {
+                console.log(
+                  "Navigating to EventDetailsScreen with ID:",
+                  item.id
+                );
+                navigation.navigate("EventDetailsScreen", { eventId: item.id });
+              }}
+            >
+              <Image
+                source={{ uri: item.image }}
+                style={styles.featuredImage}
+              />
+              <Text style={styles.featuredTitle}>{item.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      ) : (
+        <Text style={styles.noEventsTextOne}>Aucun événement disponible</Text>
+      )}
 
       <Text style={styles.sectionTitle}>Tous les événements</Text>
       <View style={styles.calendarContainer}>

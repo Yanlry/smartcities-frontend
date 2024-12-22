@@ -13,7 +13,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { BlurView } from "expo-blur";
 // @ts-ignore
 import { API_URL } from "@env";
-import Icon from "react-native-vector-icons/FontAwesome";
+import Icon from "react-native-vector-icons/MaterialIcons";
+
 
 export default function LoginScreen({ navigation, onLogin }: any) {
   const {
@@ -192,9 +193,9 @@ export default function LoginScreen({ navigation, onLogin }: any) {
               onPress={() => setIsPasswordVisible(!isPasswordVisible)} // Toggle visibilité
             >
               <Icon
-                name={isPasswordVisible ? "eye-slash" : "eye"} // Icône selon l'état
-                size={20}
-                color="#333"
+                name={isPasswordVisible ? "visibility-off" : "visibility"} // Icône selon l'état
+                size={26}
+                color="#666"
                 style={styles.icon}
               />
             </TouchableOpacity>
@@ -408,7 +409,7 @@ const styles = StyleSheet.create({
   icon: {
     position: "absolute",
     right: 20,
-    bottom: 1,
+    bottom: -5,
   },
 
   inputPassword: {

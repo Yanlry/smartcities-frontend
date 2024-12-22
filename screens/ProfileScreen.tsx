@@ -18,7 +18,7 @@ import styles from "./styles/ProfileScreen.styles";
 import axios from "axios";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
-
+import { useNotification } from "../context/NotificationContext";
 
 type User = {
   id: string;
@@ -64,6 +64,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   });
   const [stats, setStats] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { unreadCount } = useNotification(); // Récupération du compteur
 
 
   useEffect(() => {
@@ -306,8 +307,9 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-   <TouchableOpacity onPress={toggleSidebar}>
+     <View style={styles.header}>
+        {/* Bouton pour ouvrir le menu */}
+        <TouchableOpacity onPress={toggleSidebar}>
         <Icon
           name="menu"
           size={28}
@@ -315,18 +317,31 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           style={{ marginLeft: 10 }}
         />
       </TouchableOpacity>
-  <View style={styles.typeBadge}>
-    <Text style={styles.headerTitle}>PROFIL</Text>
-  </View>
-  <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
-        <Icon
-          name="notifications"
-          size={28}
-          color="#BEE5BF" // Couleur dorée
-          style={{ marginRight: 10 }}
-        />
-      </TouchableOpacity>
-</View>
+
+        {/* Titre de la page */}
+        <View style={styles.typeBadge}>
+          <Text style={styles.headerTitle}>PROFIL</Text>
+        </View>
+
+        {/* Bouton de notifications avec compteur */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("NotificationsScreen")}
+        >
+          <View>
+            <Icon
+              name="notifications"
+              size={28}
+              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+              style={{ marginRight: 10 }}
+            />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={styles.profileContent}>
         <View style={styles.profileImageContainer}>
@@ -498,7 +513,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                   onPress={() => setShowCurrentPassword(!showCurrentPassword)} // Toggle visibilité
                 >
                   <Icon
-                    name={showCurrentPassword ? "eye-slash" : "eye"} // Icône selon l'état
+                    name={showCurrentPassword ? "visibility-off" : "visibility"} // Icône selon l'état
                     size={20}
                     color="gray"
                     style={styles.icon}
@@ -524,7 +539,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                   onPress={() => setShowNewPassword(!showNewPassword)} // Toggle visibilité
                 >
                   <Icon
-                    name={showNewPassword ? "eye-slash" : "eye"} // Icône selon l'état
+                    name={showNewPassword ? "visibility-off" : "visibility"} // Icône selon l'état
                     size={20}
                     color="gray"
                     style={styles.icon}

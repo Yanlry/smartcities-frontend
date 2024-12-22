@@ -82,11 +82,11 @@ export default StyleSheet.create({
     paddingBottom: 20,  
   },
   backButton: {
-    marginTop: 20,
+    marginBottom: 70,
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#2c3e50",  
+    backgroundColor: "#29524A",  
     borderRadius: 30,
   },
   backButtonText: {
@@ -297,61 +297,95 @@ export default StyleSheet.create({
     color: "#999",
     textAlign: "center",
   },
-  modalContentRanking: {
-    backgroundColor: "white",
+
+ modalContentRanking: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
     padding: 20,
-    paddingVertical: 80,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,  
+  },
+  titleModal: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 40,
+    marginBottom: 40,
+    color: "#333",
   },
   rankingItemModal: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FAFAFA",
-    marginBottom: 16,
-    marginHorizontal: 8,
-    padding: 16,
-    borderRadius: 190,
+    marginBottom: 15,
+    backgroundColor: "#FFF",
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 30,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,  
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
+  
   userImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#ccc",
+    marginRight: 10,
+  },
+  topThreeImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
   rankingTextModal: {
-    fontSize: 18,
+    fontSize: 16,
+    color: "#333",
+  },
+  topThreeText: {
     fontWeight: "bold",
-    color: "#2d3748",
-    marginHorizontal: 8,
+    fontSize: 18,
+  },
+  badge: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  badgeText: {
+    fontSize: 18,
+    color: "#FFF",
+    fontWeight: "bold",
   },
   closeButtonModal: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: "#5a67d8",
-    shadowColor: "#5a67d8",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 5,
+    alignSelf: "center",
+    marginTop: 20,
+    marginBottom: 10,
+    backgroundColor: "#29524A",
+    paddingVertical: 15,
+    paddingHorizontal: 50,
     borderRadius: 30,
   },
   closeButtonTextModal: {
-    color: "white",
-    fontWeight: "600",
-    textAlign: "center",
+    color: "#FFF",
+    fontWeight: "bold",
     fontSize: 16,
   },
+  nonTopThreeItem: {
+    backgroundColor: "#EFEFEF", // Couleur de fond pour ceux hors du top 3
+    borderWidth: 0, // Pas de contour
+    borderRadius:60,
+    paddingLeft: 10,
+  },
+  nonTopThreeText: {
+    color: "#666", // Couleur plus subtile pour ceux hors du top 3
+    fontWeight: "normal", // Style plus léger pour différencier
+  },
+
 
   //  ------------------------------------------------ TOP 10 DES SMARTERS
 
@@ -538,7 +572,14 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-
+  noEventsTextOne: {
+    fontSize: 16,
+    color: "#d81b60",
+    marginTop: 30,
+    marginBottom: 40,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
   // ------------------------------------------------  PARTIE  MAIRIE
 
   // ------------------------------------------------ SIGNALEMENT RESOLUS

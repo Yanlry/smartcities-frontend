@@ -28,6 +28,22 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "red",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
   profileContent: {
     padding: 20,
   },
@@ -177,7 +193,7 @@ export default StyleSheet.create({
     borderRadius: 30,
   },
   icon: {
-    marginRight: 1,
+    marginRight: 15,
   },
   inputDisabled: {
     backgroundColor: "#f9f9f9",

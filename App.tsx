@@ -30,6 +30,7 @@ import UserProfileScreen from "./screens/UserProfileScreen";
 import Sidebar from "./components/Sidebar";
 import { StatusBar } from "react-native";
 import NotificationsScreen from "./screens/NotificationsScreen";
+import { NotificationProvider, useNotification } from "./context/NotificationContext";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -61,29 +62,42 @@ export default function App() {
     console.log("Utilisateur déconnecté.");
   };
 
-  const CustomHeader = ({ navigation }) => (
-    <View style={{backgroundColor:"#fff"}}>
-    <View style={styles.header}>
-      <TouchableOpacity onPress={toggleSidebar}>
-        <Icon
-          name="menu"
-          size={28}
-          color="#BEE5BF" // Couleur dorée
-          style={{ marginLeft: 10 }}
-        />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>SMARTCITIES</Text>
-      <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
-        <Icon
-          name="notifications-outline"
-          size={28}
-          color="#BEE5BF" // Couleur dorée
-          style={{ marginRight: 10 }}
-        />
-      </TouchableOpacity>
-    </View>
-    </View>
-  );
+  const CustomHeader = ({ navigation }) => {
+    const { unreadCount } = useNotification(); // Récupère le compteur du contexte
+
+    return (
+      <View style={{ backgroundColor: "#fff" }}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={toggleSidebar}>
+            <Icon
+              name="menu"
+              size={28}
+              color="#BEE5BF"
+              style={{ marginLeft: 10 }}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>SMARTCITIES</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("NotificationsScreen")}
+          >
+            <View>
+              <Icon
+                name="notifications"
+                size={28}
+                color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+                style={{ marginRight: 10 }}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   const EmptyScreen = () => {
     return null; // Écran vide intentionnellement
@@ -91,76 +105,75 @@ export default function App() {
 
   const TabNavigator = ({ navigation }) => (
     <>
-<Tab.Navigator
-  screenOptions={({ route }) => ({
-    // Utilisation de CustomHeader pour tous les écrans du Tab.Navigator
-    header: ({ navigation }) => <CustomHeader navigation={navigation} />,
-    tabBarIcon: ({ color, size, focused }) => {
-      let iconName = "";
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          header: ({ navigation }) => <CustomHeader navigation={navigation} />,
+          tabBarIcon: ({ color, size, focused }) => {
+            let iconName = "";
 
-      if (route.name === "Accueil") {
-        iconName = "home-outline";
-      } else if (route.name === "Evénements") {
-        iconName = "calendar-outline";
-      } else if (route.name === "Signalements") {
-        iconName = "alert-circle-outline";
-      } else if (route.name === "Carte") {
-        iconName = "map-outline";
-      } else if (route.name === "Ajouter") {
-        iconName = "add-circle-outline";
-      }
+            if (route.name === "Accueil") {
+              iconName = "home-outline";
+            } else if (route.name === "Evénements") {
+              iconName = "calendar-outline";
+            } else if (route.name === "Signalements") {
+              iconName = "alert-circle-outline";
+            } else if (route.name === "Carte") {
+              iconName = "map-outline";
+            } else if (route.name === "Ajouter") {
+              iconName = "add-circle-outline";
+            }
 
-      return (
-        <View
-          style={{
-            width: 50,
-            height: 50,
-            backgroundColor: focused ? "#BEE5BF" : "transparent",
-            borderRadius: 25,
-            justifyContent: "center",
-            alignItems: "center",
+            return (
+              <View
+                style={{
+                  width: 50,
+                  height: 50,
+                  backgroundColor: focused ? "#BEE5BF" : "transparent",
+                  borderRadius: 25,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Icon
+                  name={iconName}
+                  size={focused ? size + 5 : size}
+                  color={focused ? "#29524A" : "#fff"}
+                />
+              </View>
+            );
+          },
+          tabBarShowLabel: false,
+          tabBarStyle: {
+            height: 80,
+            paddingTop: 20,
+            paddingHorizontal: 20,
+            backgroundColor: "#29524A",
+            borderTopLeftRadius: 50,
+            borderTopRightRadius: 50,
+            position: "absolute",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -5 },
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            elevation: 10,
+          },
+        })}
+      >
+        <Tab.Screen name="Accueil" component={HomeScreen} />
+        <Tab.Screen name="Evénements" component={EventsScreen} />
+        <Tab.Screen
+          name="Ajouter"
+          component={EmptyScreen}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              actionSheetRef.current?.show();
+            },
           }}
-        >
-          <Icon
-            name={iconName}
-            size={focused ? size + 5 : size}
-            color={focused ? "#29524A" : "#fff"} // Couleur conditionnelle
-          />
-        </View>
-      );
-    },
-    tabBarShowLabel: false,
-    tabBarStyle: {
-      height: 80,
-      paddingTop: 20,
-      paddingHorizontal: 20,
-      backgroundColor: "#29524A", // Couleur sombre
-      borderTopLeftRadius: 50, // Arrondi en haut à gauche
-      borderTopRightRadius: 50, // Arrondi en haut à droite
-      position: "absolute", // TabBar flottante
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: -5 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-      elevation: 10, // Ombre pour Android
-    },
-  })}
->
-  <Tab.Screen name="Accueil" component={HomeScreen} />
-  <Tab.Screen name="Evénements" component={EventsScreen} />
-  <Tab.Screen
-    name="Ajouter"
-    component={EmptyScreen}
-    listeners={{
-      tabPress: (e) => {
-        e.preventDefault();
-        actionSheetRef.current?.show();
-      },
-    }}
-  />
-  <Tab.Screen name="Signalements" component={ReportScreen} />
-  <Tab.Screen name="Carte" component={MapScreen} />
-</Tab.Navigator>
+        />
+        <Tab.Screen name="Signalements" component={ReportScreen} />
+        <Tab.Screen name="Carte" component={MapScreen} />
+      </Tab.Navigator>
       <ActionSheet
         ref={(o) => (actionSheetRef.current = o)}
         title="Que souhaitez-vous ajouter ?"
@@ -186,7 +199,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <NotificationProvider>
       <StatusBar barStyle="light-content" backgroundColor="#111" />
       <NavigationContainer>
         <KeyboardWrapper>
@@ -246,11 +259,11 @@ export default function App() {
                   <Stack.Screen
                     name="AddNewReportScreen"
                     component={AddNewReportScreen}
-                  />   
+                  />
                   <Stack.Screen
-                  name="NotificationsScreen"
-                  component={NotificationsScreen}
-                />
+                    name="NotificationsScreen"
+                    component={NotificationsScreen}
+                  />
                 </>
               )}
             </Stack.Navigator>
@@ -258,9 +271,10 @@ export default function App() {
           </>
         </KeyboardWrapper>
       </NavigationContainer>
-    </>
+    </NotificationProvider>
   );
 }
+
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -284,5 +298,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff", // Couleur dorée
     letterSpacing: 2, // Espacement pour un effet moderne
+  },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "red",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
