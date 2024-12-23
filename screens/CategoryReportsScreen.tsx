@@ -15,11 +15,11 @@ import { fetchReportsByCategory } from "../services/categoryService";
 
 type CategoryReportsScreenRouteProp = RouteProp<
   RootStackParamList,
-  "CategoryReports"
+  "CategoryReportsScreen"
 >;
 type CategoryReportsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  "CategoryReports"
+  "CategoryReportsScreen"
 >; // Ajouté
 
 export default function CategoryReportsScreen() {
@@ -37,7 +37,7 @@ export default function CategoryReportsScreen() {
   };
 
   const handlePressReport = (id: number) => {
-    navigation.navigate("ReportDetails", { reportId: id }); // Maintenant typé correctement
+    navigation.navigate("ReportDetailsScreen", { reportId: id }); // Maintenant typé correctement
   };
 
   useEffect(() => {

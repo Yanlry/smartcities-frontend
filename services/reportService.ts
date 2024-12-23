@@ -45,6 +45,42 @@ export const fetchReports = async (
   }
 };
 
+
+export const createReport = async (data: any): Promise<any> => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    if (!token) {
+      console.error("Aucun token trouvé dans AsyncStorage.");
+      throw new Error("Utilisateur non connecté.");
+    }
+
+    const decoded: any = jwtDecode(token);
+    const userId = decoded?.userId;
+
+    if (!userId) {
+      console.error("ID utilisateur introuvable dans le token.");
+      throw new Error("Utilisateur non valide.");
+    }
+
+    const reportData = {
+      ...data,
+      userId,
+    };
+
+    const response = await axios.post(`${API_URL}/reports`, reportData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Erreur lors de la création du signalement :", error.response?.data || error.message);
+    throw new Error("Impossible de créer le signalement.");
+  }
+};
+
 const distanceCache = new Map<string, number[]>(); // Cache global pour les distances
 /**
  * Calcule les distances de conduite en utilisant OpenRouteService.
@@ -55,25 +91,20 @@ export const fetchDrivingDistances = async (
   origin: [number, number],
   destinations: [number, number][]
 ): Promise<number[]> => {
-  console.log("fetchDrivingDistances - Origin :", origin);
-  console.log("fetchDrivingDistances - Destinations :", destinations);
-
-  if (!destinations || destinations.length === 0) {
-    console.log("Aucune destination pour le calcul des distances.");
-    return [];
+  const cacheKey = `${JSON.stringify(origin)}:${JSON.stringify(destinations)}`;
+  
+  if (distanceCache.has(cacheKey)) {
+    console.log("Distances récupérées depuis le cache.");
+    return distanceCache.get(cacheKey)!;
   }
 
-  const uniqueDestinations = Array.from(new Set(destinations.map((d) => JSON.stringify(d)))).map((d) => JSON.parse(d));
-  console.log("fetchDrivingDistances - Unique destinations :", uniqueDestinations);
-
   try {
-    // Ajoutez un délai avant chaque requête pour limiter la fréquence
-    await delay(1500); // 1,5 seconde entre les requêtes
+    await delay(1500); // Délai pour respecter les quotas API
 
     const response = await axios.post(
       'https://api.openrouteservice.org/v2/matrix/driving-car',
       {
-        locations: [origin, ...uniqueDestinations],
+        locations: [origin, ...destinations],
         metrics: ['distance'],
       },
       {
@@ -84,19 +115,19 @@ export const fetchDrivingDistances = async (
       }
     );
 
-    console.log("fetchDrivingDistances - Response :", response.data);
-
     if (!response.data?.distances || response.data.distances.length === 0) {
       throw new Error("Aucune distance retournée par OpenRouteService.");
     }
 
-    return response.data.distances[0].slice(1); // Exclut l'origine
+    const distances = response.data.distances[0].slice(1); // Exclut l'origine
+    distanceCache.set(cacheKey, distances);
+    return distances;
   } catch (error: any) {
     console.error("Erreur dans fetchDrivingDistances :", error.response?.data || error.message);
 
     if (error.response?.data?.error === "Quota exceeded") {
-      console.warn("Quota dépassé pour OpenRouteService. Calcul approximatif des distances.");
-      return destinations.map(() => Infinity); // Approximations
+      console.warn("Quota dépassé pour OpenRouteService. Retour par défaut.");
+      return destinations.map(() => Infinity); // Fallback
     }
 
     throw new Error("Impossible de calculer les distances.");
@@ -157,40 +188,3 @@ export const processReports = async (
   }
 };
 
-/**
- * Crée un nouveau signalement.
- */
-export const createReport = async (data: any): Promise<any> => {
-  try {
-    const token = await AsyncStorage.getItem('authToken');
-    if (!token) {
-      console.error("Aucun token trouvé dans AsyncStorage.");
-      throw new Error("Utilisateur non connecté.");
-    }
-
-    const decoded: any = jwtDecode(token);
-    const userId = decoded?.userId;
-
-    if (!userId) {
-      console.error("ID utilisateur introuvable dans le token.");
-      throw new Error("Utilisateur non valide.");
-    }
-
-    const reportData = {
-      ...data,
-      userId,
-    };
-
-    const response = await axios.post(`${API_URL}/reports`, reportData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    return response.data;
-  } catch (error: any) {
-    console.error("Erreur lors de la création du signalement :", error.response?.data || error.message);
-    throw new Error("Impossible de créer le signalement.");
-  }
-};

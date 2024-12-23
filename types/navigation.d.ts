@@ -6,8 +6,8 @@ export type RootStackParamList = {
   Register: undefined;
   ProfileScreen: undefined;
   UserProfileScreen: { userId: string };
-  ReportDetails: { reportId: number };
-  CategoryReports: { category: string };
+  ReportDetailsScreen: { reportId: number };
+  CategoryReportsScreen: { category: string };
   EventDetailsScreen: { eventId: string };
   EventsScreen: undefined;
   ReportScreen: undefined;

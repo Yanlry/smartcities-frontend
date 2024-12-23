@@ -9,6 +9,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CalendarPicker from "react-native-calendar-picker";
@@ -25,7 +26,6 @@ import { useFetchStatistics } from "../hooks/useFetchStatistics";
 // @ts-ignore
 import { API_URL } from "@env";
 import { Linking } from "react-native";
-
 
 type User = {
   id: string;
@@ -100,36 +100,39 @@ export default function HomeScreen({ navigation }) {
   const [modalNameVisible, setModalNameVisible] = useState(false);
   const { data } = useFetchStatistics(`${API_URL}/reports/statistics`);
   const [refreshing, setRefreshing] = useState(false);
+  const [helpModal, setHelpModal] = useState(false);
 
   useEffect(() => {
     const fetchRanking = async () => {
       setLoading(true);
       setError(null);
-    
+
       try {
         const userId = await getUserIdFromToken();
         if (!userId) {
           throw new Error("Impossible de récupérer l'ID utilisateur.");
         }
-    
+
         const userResponse = await fetch(`${API_URL}/users/${userId}`);
         if (!userResponse.ok) {
           throw new Error("Impossible de récupérer les données utilisateur.");
         }
         const userData = await userResponse.json();
-    
+
         const cityName = userData.nomCommune;
         if (!cityName) {
           throw new Error("La ville de l'utilisateur est introuvable.");
         }
-    
+
         const rankingResponse = await fetch(
-          `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
+          `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(
+            cityName
+          )}`
         );
         if (!rankingResponse.ok) {
           throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
         }
-    
+
         const rankingData = await rankingResponse.json();
         setRankingData(rankingData.users); // Met à jour les données de classement
         setRanking(rankingData.ranking); // Classement de l'utilisateur
@@ -153,7 +156,7 @@ export default function HomeScreen({ navigation }) {
           console.error("ID utilisateur non trouvé");
           return;
         }
-  
+
         const userResponse = await fetch(`${API_URL}/users/${userId}`);
         if (!userResponse.ok) {
           console.error(
@@ -163,12 +166,12 @@ export default function HomeScreen({ navigation }) {
         }
         const userData = await userResponse.json();
         setUser(userData);
-  
+
         const cityName = userData.nomCommune;
         if (!cityName) {
           throw new Error("La ville de l'utilisateur est introuvable.");
         }
-  
+
         const topUsersResponse = await fetch(
           `${API_URL}/users/top10?cityName=${encodeURIComponent(cityName)}`
         );
@@ -178,9 +181,9 @@ export default function HomeScreen({ navigation }) {
           );
           return;
         }
-  
+
         const topUsersData: TopUser[] = await topUsersResponse.json();
-  
+
         const formattedData = topUsersData.map((user) => ({
           id: user.id,
           username: user.username,
@@ -190,10 +193,10 @@ export default function HomeScreen({ navigation }) {
           ranking: user.ranking,
           image: { uri: user.photo || "default-image-url" },
         }));
-  
+
         formattedData.sort((a, b) => a.ranking - b.ranking);
         setSmarterData(formattedData);
-  
+
         if (location) {
           setLoadingReports(true);
           const reports = await processReports(
@@ -212,7 +215,7 @@ export default function HomeScreen({ navigation }) {
         setLoadingReports(false);
       }
     };
-  
+
     fetchData();
   }, [location]);
 
@@ -372,11 +375,11 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handlePressReport = (id: number) => {
-    navigation.navigate("ReportDetails", { reportId: id });
+    navigation.navigate("ReportDetailsScreen", { reportId: id });
   };
 
   const handleCategoryClick = (category: string) => {
-    navigation.navigate("CategoryReports", { category });
+    navigation.navigate("CategoryReportsScreen", { category });
   };
 
   const toggleFollowersList = () => {
@@ -437,6 +440,27 @@ export default function HomeScreen({ navigation }) {
       }));
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la préférence", error);
+    }
+  };
+
+  const formatTime = (dateString) => {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+
+    const diffInMs = now.getTime() - eventDate.getTime();
+    const diffInSeconds = Math.floor(diffInMs / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInSeconds < 60) {
+      return `Il y a ${diffInSeconds} seconde${diffInSeconds > 1 ? "s" : ""}`;
+    } else if (diffInMinutes < 60) {
+      return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`;
+    } else if (diffInHours < 24) {
+      return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`;
+    } else {
+      return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
     }
   };
 
@@ -529,7 +553,7 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.userInfo}>
             <View style={styles.nameContainer}>
-              <Text style={styles.userName}>{displayName}</Text>
+              <Text onPress={() => setModalNameVisible(true)} style={styles.userName}>{displayName}</Text>
               <TouchableOpacity
                 onPress={() => setModalNameVisible(true)}
                 style={styles.dropdownButton}
@@ -588,6 +612,12 @@ export default function HomeScreen({ navigation }) {
               </View>
             </Modal>
 
+            <Text style={styles.userCity}>
+              Engagé pour{" "}
+              <Text style={styles.cityNameUser}>
+                {user?.nomCommune || "une commune non définie"}
+              </Text>
+            </Text>
             <Text style={styles.userDetails}>
               Inscrit{" "}
               {user?.createdAt
@@ -682,162 +712,210 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <Modal
-  visible={isModalVisible}
-  animationType="slide"
-  onRequestClose={() => setIsModalVisible(false)}
->
-  <View style={styles.modalContentRanking}>
-  <View style={styles.titleContainer}>
-    <Text style={styles.titleText}>
-      Classement à : <Text style={styles.cityName}>{user?.nomCommune || "ville inconnue"}</Text>
-    </Text>
-  </View>
-    <FlatList
-      data={rankingData}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => {
-        const displayName = item.useFullName
-          ? `${item.firstName} ${item.lastName}`
-          : item.username; // Choix basé sur `useFullName`
+        visible={isModalVisible}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContentRanking}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleText}>
+              Classement à :{" "}
+              <Text style={styles.cityName}>
+                {user?.nomCommune || "ville inconnue"}
+              </Text>
+            </Text>
+          </View>
+          <FlatList
+            data={rankingData}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => {
+              const displayName = item.useFullName
+                ? `${item.firstName} ${item.lastName}`
+                : item.username; // Choix basé sur `useFullName`
 
-        const isTopThree = item.ranking <= 3; // Vérifie si l'utilisateur est dans le top 3
-        const badgeColor = item.ranking === 1 ? "#FFD700" : item.ranking === 2 ? "#C0C0C0" : "#CD7F32"; // Or, argent, bronze
-        const borderColor = item.ranking === 1 ? "#FFD700" : item.ranking === 2 ? "#C0C0C0" : "#CD7F32"; // Contours correspondants
+              const isTopThree = item.ranking <= 3; // Vérifie si l'utilisateur est dans le top 3
+              const badgeColor =
+                item.ranking === 1
+                  ? "#FFD700"
+                  : item.ranking === 2
+                  ? "#C0C0C0"
+                  : "#CD7F32"; // Or, argent, bronze
+              const borderColor =
+                item.ranking === 1
+                  ? "#FFD700"
+                  : item.ranking === 2
+                  ? "#C0C0C0"
+                  : "#CD7F32"; // Contours correspondants
 
-        return (
-          <TouchableOpacity
-            style={[
-              styles.rankingItemModal,
-              isTopThree ? { borderColor: borderColor, borderWidth: 2, borderRadius: 50} : styles.nonTopThreeItem,
-            ]}
-            onPress={() => {
-              setIsModalVisible(false); // Fermer le modal
-              navigation.navigate("UserProfileScreen", {
-                userId: item.id,
-              }); // Naviguer vers le profil utilisateur
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.rankingItemModal,
+                    isTopThree
+                      ? {
+                          borderColor: borderColor,
+                          borderWidth: 2,
+                          borderRadius: 50,
+                        }
+                      : styles.nonTopThreeItem,
+                  ]}
+                  onPress={() => {
+                    setIsModalVisible(false); // Fermer le modal
+                    navigation.navigate("UserProfileScreen", {
+                      userId: item.id,
+                    }); // Naviguer vers le profil utilisateur
+                  }}
+                >
+                  {isTopThree && (
+                    <View
+                      style={[styles.badge, { backgroundColor: badgeColor }]}
+                    >
+                      <Text style={styles.badgeText}>
+                        {item.ranking === 1
+                          ? "🥇"
+                          : item.ranking === 2
+                          ? "🥈"
+                          : "🥉"}
+                      </Text>
+                    </View>
+                  )}
+                  <Image
+                    source={{ uri: item.photo || "default-image-url" }}
+                    style={[
+                      styles.userImage,
+                      isTopThree && styles.topThreeImage,
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.rankingTextModal,
+                      !isTopThree && styles.nonTopThreeText,
+                    ]}
+                  >
+                    {isTopThree
+                      ? displayName
+                      : `#${item.ranking} - ${displayName}`}
+                  </Text>
+                </TouchableOpacity>
+              );
             }}
+          />
+          <TouchableOpacity
+            onPress={() => setIsModalVisible(false)}
+            style={styles.closeButtonModal}
           >
-            {isTopThree && (
-              <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-                <Text style={styles.badgeText}>
-                  {item.ranking === 1 ? "🥇" : item.ranking === 2 ? "🥈" : "🥉"}
+            <Text style={styles.closeButtonTextModal}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      <Text style={styles.sectionTitleTop10}>🏆 Top 10 des Smarter</Text>
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {smarterData.slice(0, 10).map((item, index) => {
+            const borderColor =
+              index + 1 === 1
+                ? "#FFD700" // Or
+                : index + 1 === 2
+                ? "#C0C0C0" // Argent
+                : index + 1 === 3
+                ? "#CD7F32" // Bronze
+                : "#fff"; // Couleur par défaut pour les autres
+
+            const medal =
+              index + 1 === 1
+                ? "🥇" // Médaille d'or
+                : index + 1 === 2
+                ? "🥈" // Médaille d'argent
+                : index + 1 === 3
+                ? "🥉" // Médaille de bronze
+                : null; // Pas de médaille pour les autres
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.smarterItem}
+                onPress={() =>
+                  navigation.navigate("UserProfileScreen", { userId: item.id })
+                }
+              >
+                {/* Conteneur pour gérer la médaille et l'image */}
+                <View style={{ position: "relative" }}>
+                  {/* Médaille */}
+                  {medal && <Text style={styles.medal}>{medal}</Text>}
+                  {/* Image avec le contour */}
+                  <Image
+                    source={{ uri: item.image.uri || "default-image-url" }}
+                    style={[styles.smarterImage, { borderColor: borderColor }]}
+                  />
+                </View>
+                {/* Nom de l'utilisateur */}
+                <Text style={styles.rankingName}>
+                  {item.displayName || "Nom indisponible"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Bouton Voir Tout */}
+          <TouchableOpacity
+            key="seeAll"
+            style={[styles.smarterItem, styles.seeAllButton]}
+            onPress={() => setIsModalVisible(true)}
+          >
+            <Text style={styles.seeAllText}>Voir tout</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
+      <Text style={styles.sectionTitle}>🚨 Signalements à proximité</Text>
+      {reports.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.noReportsText}>
+            Aucun signalement pour l'instant.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+          {reports.map((report, index) => (
+            <TouchableOpacity
+              key={report.id}
+              style={[
+                styles.reportCard,
+                {
+                  borderLeftColor: typeColors[report.type] || "#CCCCCC",
+                  borderRightColor: typeColors[report.type] || "#CCCCCC",
+                  backgroundColor: hexToRgba(
+                    typeColors[report.type] || "#F5F5F5",
+                    calculateOpacity(report.createdAt, 0.15)
+                  ),
+                },
+                index === reports.length - 1 && { marginBottom: 25 },
+              ]}
+              onPress={() => handlePressReport(report.id)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.cardHeader}>
+                <Text style={styles.reportType}>{report.title}</Text>
+                <Text style={styles.reportDistance}>
+                  {report.distance.toFixed(2)} km
                 </Text>
               </View>
-            )}
-            <Image
-              source={{ uri: item.photo || "default-image-url" }}
-              style={[styles.userImage, isTopThree && styles.topThreeImage]}
-            />
-            <Text style={[styles.rankingTextModal, !isTopThree && styles.nonTopThreeText]}>
-  {isTopThree ? displayName : `#${item.ranking} - ${displayName}`}
-</Text>
-          </TouchableOpacity>
-        );
-      }}
-    />
-    <TouchableOpacity
-      onPress={() => setIsModalVisible(false)}
-      style={styles.closeButtonModal}
-    >
-      <Text style={styles.closeButtonTextModal}>Fermer</Text>
-    </TouchableOpacity>
-  </View>
-</Modal>
-
-<Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
-<View>
-  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-    {smarterData.slice(0, 10).map((item, index) => {
-      const borderColor =
-        index + 1 === 1
-          ? "#FFD700" // Or
-          : index + 1 === 2
-          ? "#C0C0C0" // Argent
-          : index + 1 === 3
-          ? "#CD7F32" // Bronze
-          : "#fff"; // Couleur par défaut pour les autres
-
-      const medal =
-        index + 1 === 1
-          ? "🥇" // Médaille d'or
-          : index + 1 === 2
-          ? "🥈" // Médaille d'argent
-          : index + 1 === 3
-          ? "🥉" // Médaille de bronze
-          : null; // Pas de médaille pour les autres
-
-      return (
-        <TouchableOpacity
-          key={item.id}
-          style={styles.smarterItem}
-          onPress={() =>
-            navigation.navigate("UserProfileScreen", { userId: item.id })
-          }
-        >
-          {/* Conteneur pour gérer la médaille et l'image */}
-          <View style={{ position: "relative" }}>
-            {/* Médaille */}
-            {medal && (
-              <Text style={styles.medal}>
-                {medal}
+              <Text style={styles.reportDetails}>
+                {getTypeLabel(report.type)}
               </Text>
-            )}
-            {/* Image avec le contour */}
-            <Image
-              source={{ uri: item.image.uri || "default-image-url" }}
-              style={[styles.smarterImage, { borderColor: borderColor }]}
-            />
-          </View>
-          {/* Nom de l'utilisateur */}
-          <Text style={styles.rankingName}>
-            {item.displayName || "Nom indisponible"}
-          </Text>
-        </TouchableOpacity>
-      );
-    })}
-
-    {/* Bouton Voir Tout */}
-    <TouchableOpacity
-      key="seeAll"
-      style={[styles.smarterItem, styles.seeAllButton]}
-      onPress={() => setIsModalVisible(true)}
-    >
-      <Text style={styles.seeAllText}>Voir tout</Text>
-    </TouchableOpacity>
-  </ScrollView>
-</View>
-
-      <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
-      {reports.length === 0 ? (
-        <Text style={styles.noReportsText}>
-          Aucun signalement à proximité pour le moment.
-        </Text>
-      ) : (
-        reports.map((report, index) => (
-          <TouchableOpacity
-            key={report.id}
-            style={[
-              styles.reportItem,
-              {
-                backgroundColor: hexToRgba(
-                  typeColors[report.type] || "#CCCCCC",
-                  calculateOpacity(report.createdAt, 0.5)
-                ),
-              },
-              index === reports.length - 1 && { marginBottom: 25 },
-            ]}
-            onPress={() => handlePressReport(report.id)}
-          >
-            <Text style={styles.reportType}>
-              {getTypeLabel(report.type)} {report.distance.toFixed(2)} km
-            </Text>
-            <Text style={styles.reportTitle}>{report.title}</Text>
-            <Text style={styles.reportCity}>📍 {formatCity(report.city)}</Text>
-          </TouchableOpacity>
-        ))
+              <View style={styles.cardFooter}>
+                <Text style={styles.reportCity}>{formatCity(report.city)}</Text>
+                <Text style={styles.reportTime}>
+                  {formatTime(report.createdAt)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       )}
 
-      <Text style={styles.sectionTitle}>À la Une</Text>
+      <Text style={styles.sectionTitle}>📰 À la Une</Text>
       {featuredEvents.length > 0 ? (
         <ScrollView
           horizontal
@@ -868,7 +946,7 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.noEventsTextOne}>Aucun événement disponible</Text>
       )}
 
-      <Text style={styles.sectionTitle}>Tous les événements</Text>
+      <Text style={styles.sectionTitle}>📅 Tous les événements</Text>
       <View style={styles.calendarContainer}>
         <CalendarPicker
           onDateChange={(date) => {
@@ -927,7 +1005,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>Catégories</Text>
+      <Text style={styles.sectionTitle}>🗂️ Catégories</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -958,7 +1036,7 @@ export default function HomeScreen({ navigation }) {
       {/* Section Statistiques du Mois */}
       <Chart data={data} />
 
-      <Text style={styles.sectionTitle}>Informations mairie</Text>
+      <Text style={styles.sectionTitle}>🏛️ Informations mairie</Text>
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Attention : Travaux ! </Text>
         <Text style={styles.infoContent}>

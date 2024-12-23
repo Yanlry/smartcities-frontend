@@ -8,7 +8,13 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
-
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 10,
+    marginBottom: 15,
+    color: "#29524A",
+  },
   //  ------------------------------------------------ LOADING
 
   loadingContainer: {
@@ -205,8 +211,17 @@ export default StyleSheet.create({
     color: "#fff",
     textAlign: "center",
   },
+  userCity: {
+    fontSize: 12,
+    color: "#777", // Couleur par défaut pour le texte
+    marginTop: 4,
+  },
+  cityNameUser: {
+    color: "#29524A", // Texte de la ville en bleu
+    fontWeight: "bold", // Optionnel pour mettre en valeur la ville
+  },
   userDetails: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#777",
     marginTop: 4,
   },
@@ -244,7 +259,6 @@ export default StyleSheet.create({
     backgroundColor: "#f9f9f9",
     borderRadius: 15,
     padding: 12,
-    marginTop: 10,
   },
   statItem: {
     alignItems: "center",
@@ -277,7 +291,6 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 10,
-    paddingTop: 20,
     borderRadius: 25,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -411,9 +424,11 @@ export default StyleSheet.create({
     color: '#007BFF', // Couleur pour le nom de la ville
   },
 
+  
   //  ------------------------------------------------ TOP 10 DES SMARTERS
 
-  sectionTitle: {
+
+  sectionTitleTop10: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 15,
@@ -466,35 +481,77 @@ export default StyleSheet.create({
 
   //  ------------------------------------------------ SIGNALEMENTS PROCHE
 
-  noReportsText: {
-    textAlign: "center",
-    color: "#888",
-    marginVertical: 20,
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
-  reportItem: {
-    padding: 15,
-    paddingLeft: 30,
-    marginVertical: 5,
+  noReportsText: {
+    fontSize: 18,
+    color: "#999",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  emptyStateImage: {
+    width: 150,
+    height: 150,
+    resizeMode: "contain",
+    opacity: 0.8,
+  },
+  scrollViewContainer: {
+  },
+  reportCard: {
+    backgroundColor: "#FFF",
     borderRadius: 50,
+    padding: 15,
+    paddingHorizontal: 30,
+    marginVertical: 3,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
   reportType: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#424242",  
+    color: "#333",
   },
-  reportTitle: {
+  reportDistance: {
     fontSize: 14,
-    marginTop: 5,
-    fontWeight: "500",
-    color: "#424242", 
+    color: "#666",
+    fontStyle: "italic",
+  },
+  reportDetails: {
+    fontSize: 14,
+    color: "#555",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   reportCity: {
-    fontSize: 14,
-    marginTop: 5,
-    fontWeight: "500",
-    color: "#424242",  
-  },
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
 
+  },
+  reportTime: {
+    fontSize: 10,
+    color: "#999",
+  },
   //  ------------------------------------------------ SELECTION DE CATEGORIE
 
   categoryButton: {

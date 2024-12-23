@@ -46,9 +46,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         <MaterialCommunityIcons name="view-dashboard-outline" size={24} color="#BEE5BF" />
           <Text style={styles.sidebarText}>Tableau de bord</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('RankingScreen')}>
+            <Ionicons name="trophy-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>Classement</Text>
+          </TouchableOpacity>
         <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('ProfileScreen')}>
         <MaterialCommunityIcons name="account-circle-outline" size={24} color="#BEE5BF" />
-          <Text style={styles.sidebarText}>Mon profil</Text>
+          <Text style={styles.sidebarText}>Paramétres du profil</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('ReportScreen')}>
         <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="#BEE5BF" />
@@ -58,10 +62,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         <MaterialCommunityIcons name="calendar-star" size={24} color="#BEE5BF" />
           <Text style={styles.sidebarText}>Tout les événements</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('RankingScreen')}>
-            <Ionicons name="trophy-outline" size={24} color="#BEE5BF" />
-            <Text style={styles.sidebarText}>Classement de la ville</Text>
-          </TouchableOpacity>
         <TouchableOpacity style={styles.sidebarItem} >
             <Ionicons name="earth-outline" size={24} color="#BEE5BF" />
             <Text style={styles.sidebarText}>Informations Mairie</Text>
