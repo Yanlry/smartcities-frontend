@@ -13,7 +13,6 @@ import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ActionSheet from "react-native-actionsheet";
 import KeyboardWrapper from "./components/KeyboardWrapper";
-import { LinearGradient } from "expo-linear-gradient";
 import HomeScreen from "./screens/HomeScreen";
 import EventsScreen from "./screens/EventsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
@@ -31,6 +30,8 @@ import Sidebar from "./components/Sidebar";
 import { StatusBar } from "react-native";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import { NotificationProvider, useNotification } from "./context/NotificationContext";
+import ChatScreen from "./screens/ChatScreen";
+import RankingScreen from "./screens/RankingScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -113,8 +114,8 @@ export default function App() {
 
             if (route.name === "Accueil") {
               iconName = "home-outline";
-            } else if (route.name === "Evénements") {
-              iconName = "calendar-outline";
+            } else if (route.name === "Chat") {
+              iconName = "chatbubble-ellipses-outline";
             } else if (route.name === "Signalements") {
               iconName = "alert-circle-outline";
             } else if (route.name === "Carte") {
@@ -160,7 +161,7 @@ export default function App() {
         })}
       >
         <Tab.Screen name="Accueil" component={HomeScreen} />
-        <Tab.Screen name="Evénements" component={EventsScreen} />
+        <Tab.Screen name="Chat" component={ChatScreen} />
         <Tab.Screen
           name="Ajouter"
           component={EmptyScreen}
@@ -241,15 +242,23 @@ export default function App() {
                     component={UserProfileScreen}
                   />
                   <Stack.Screen
-                    name="ReportDetails"
+                    name="ReportDetailsScreen"
                     component={ReportDetailsScreen}
+                  />
+                  <Stack.Screen
+                    name="ReportScreen"
+                    component={ReportScreen}
                   />
                   <Stack.Screen
                     name="EventDetailsScreen"
                     component={EventDetailsScreen}
                   />
                   <Stack.Screen
-                    name="CategoryReports"
+                  name="EventsScreen"
+                  component={EventsScreen}
+                />
+                  <Stack.Screen
+                    name="CategoryReportsScreen"
                     component={CategoryReportsScreen}
                   />
                   <Stack.Screen
@@ -263,6 +272,14 @@ export default function App() {
                   <Stack.Screen
                     name="NotificationsScreen"
                     component={NotificationsScreen}
+                  />
+                  <Stack.Screen
+                    name="ChatScreen"
+                    component={ChatScreen}
+                  />
+                  <Stack.Screen
+                    name="RankingScreen"
+                    component={RankingScreen}
                   />
                 </>
               )}
@@ -291,7 +308,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,
     paddingHorizontal: 20,
-    paddingTop: 45,
+    paddingTop: 50,
   },
   headerTitle: {
     fontSize: 24,

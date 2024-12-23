@@ -1,6 +1,118 @@
 import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
+
+  editButton: {
+    marginTop: 10,
+    marginHorizontal: 20,
+    padding: 10,
+    backgroundColor: "#29524A",
+    borderRadius: 30,
+    alignItems: "center",
+  },
+  editButtonText: {
+    color: "#fff",
+    fontSize: 16,
+  },
+  editContainer: {
+    marginTop: 20,
+    padding: 20,
+    borderRadius: 35,
+    backgroundColor: "#f9f9f9",
+  },
+  inputCity: {
+    height: 40,
+    width: "100%",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    borderRadius: 30,
+  },
+  cityPreview: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 10,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  saveButton: {
+    padding: 10,
+    width: "40%",
+    backgroundColor: "#29524A",
+    borderRadius: 30,
+  },
+  saveButtonText: {
+    color: "#fff",
+    textAlign: "center",
+
+  },
+  cancelButton: {
+    padding: 10,
+    width: "40%",
+    backgroundColor: "#B2352E",
+    borderRadius: 30,
+  },
+  cancelButtonText: {
+    textAlign: "center",
+    color: "#fff",
+  },
+  modalContent: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 50,
+    width: "100%",  
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  suggestionItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  suggestionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  closeButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#B2352E",
+    borderRadius: 30,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding:50,
+  },
+searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width : "100%",
+    marginBottom: 15,
+  },
+searchButton: {
+    position: "absolute",
+    right:3,
+    top:0,
+    padding: 10,
+    borderRadius: 5,
+  },
+
+
   container: {
     flex: 1,
     backgroundColor: "#f9f9fb",

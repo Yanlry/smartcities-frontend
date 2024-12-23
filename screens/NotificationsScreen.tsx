@@ -233,7 +233,7 @@ export default function NotificationsScreen({ navigation }) {
         style={styles.markAsReadButton}
         onPress={() => markNotificationAsRead(item.id)}
       >
-        <Icon name="done" size={24} color="#FFF" />
+        <Icon name="done" size={24} color="black" />
         <Text style={styles.markAsReadText}>Marquer comme lu</Text>
       </TouchableOpacity>
     );
@@ -404,8 +404,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   markAsReadButton: {
-    width: 200,
-    backgroundColor: "#29524A", // Vert pour "Marquer comme lu"
+    width: 150,
+    backgroundColor: "#FFE347", // Vert pour "Marquer comme lu"
     justifyContent: "center",
     height: "80%",
     marginTop: 10,
@@ -415,14 +415,13 @@ const styles = StyleSheet.create({
   },
   
   markAsReadText: {
-    color: "#FFF",
-    fontWeight: "bold",
+    color: "black",
     textTransform: "uppercase",
     fontSize: 14,
   },
   
   deleteButton: {
-    width: 200,
+    width: 150,
     marginTop: 10,
     height: "80%",
     justifyContent: "center",
@@ -445,7 +444,7 @@ const styles = StyleSheet.create({
   },
   
   markAllButton: {
-    backgroundColor: "#29524A", // Vert agréable
+    backgroundColor: "#FFE347", // Vert agréable
     marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -458,9 +457,8 @@ const styles = StyleSheet.create({
   },
   
   markAllButtonText: {
-    color: "#FFF", // Texte blanc
+    color: "black", // Texte blanc
     fontSize: 16,
-    fontWeight: "bold",
     textTransform: "uppercase",
   },
   notificationContent: {
@@ -491,7 +489,7 @@ const styles = StyleSheet.create({
   },
   unreadNotification: {
     borderLeftWidth: 5,
-    borderLeftColor: "#FFD700", // Doré pour les notifications non lues
+    borderLeftColor: "#B2352E", // Doré pour les notifications non lues
   },
   notificationMessage: {
     fontSize: 16,

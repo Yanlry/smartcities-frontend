@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   Switch,
+  Modal
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -19,6 +20,18 @@ import axios from "axios";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
 import { useNotification } from "../context/NotificationContext";
+import franceCitiesRaw from "../assets/france.json";
+const franceCities: City[] = franceCitiesRaw as City[];
+import { Ionicons } from "@expo/vector-icons";
+
+interface City {
+  Code_commune_INSEE: number;
+  Nom_commune: string;
+  Code_postal: string;
+  Libelle_acheminement: string;
+  Ligne_5: string;
+  coordonnees_gps: string;
+}
 
 type User = {
   id: string;
@@ -65,7 +78,25 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   const [stats, setStats] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { unreadCount } = useNotification(); // Récupération du compteur
+  const [isEditingCity, setIsEditingCity] = useState(false);
+  const [suggestions, setSuggestions] = useState<City[]>([]); // Stocke les villes correspondantes
+  const [query, setQuery] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  // Gestion des changements dans les inputs
+  interface FormData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+    showEmail: boolean;
+    currentPassword: string;
+    newPassword: string;
+  }
 
+  interface HandleInputChange {
+    (field: keyof FormData, value: string): void;
+  }
 
   useEffect(() => {
     navigation.setOptions({
@@ -135,6 +166,25 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     fetchStats();
   }, [user]); // Dépendance sur user
 
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#29524A" />
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#29524A" }}>
+          Chargement des informations..
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Erreur : {error}</Text>
+      </View>
+    );
+  }
+
   const handleProfileImageUpdate = async () => {
     try {
       setIsSubmitting(true);
@@ -196,38 +246,6 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       setIsSubmitting(false);
     }
   };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#29524A" />
-        <Text style={{fontSize:18, fontWeight:'bold', color:"#29524A"}}>Chargement des informations..</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>Erreur : {error}</Text>
-      </View>
-    );
-  }
-
-  // Gestion des changements dans les inputs
-  interface FormData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    username: string;
-    showEmail: boolean;
-    currentPassword: string;
-    newPassword: string;
-  }
-
-  interface HandleInputChange {
-    (field: keyof FormData, value: string): void;
-  }
 
   const handleInputChange: HandleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -305,22 +323,87 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     setIsSidebarOpen((prev) => !prev);
   };
 
+  const handleSearchCity = () => {
+    const trimmedQuery = query.trim(); // Supprime les espaces inutiles
+  
+    if (!trimmedQuery) {
+      Alert.alert("Erreur", "Veuillez entrer un code postal ou un nom de ville.");
+      return;
+    }
+  
+    // Détecter si la recherche est un code postal (entier)
+    const isCodePostal = /^[0-9]{5}$/.test(trimmedQuery);
+  
+    // Filtrer les villes par code postal ou nom de ville
+    const filteredCities = franceCities.filter((city) => {
+      const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
+      const codePostal = city.Code_postal.toString().trim();
+  
+      return isCodePostal
+        ? codePostal === trimmedQuery // Recherche par code postal
+        : cityName.includes(trimmedQuery.toLowerCase()); // Recherche par nom de ville
+    });
+  
+    if (filteredCities.length > 0) {
+      setSuggestions(filteredCities);
+      setModalVisible(true);
+    } else {
+      setSuggestions([]);
+      Alert.alert("Erreur", "Aucune ville ou code postal correspondant trouvé.");
+    }
+  };
+
+  const handleCitySelection = (city: City) => {
+    setSelectedCity(city);
+    setModalVisible(false); // Fermer le modal
+    setQuery(`${city.Nom_commune} (${city.Code_postal})`); // Mettre à jour le champ de recherche
+  };
+
+  const handleSaveCity = async () => {
+    if (!selectedCity) {
+      Alert.alert("Erreur", "Veuillez sélectionner une ville avant d'enregistrer.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(`${API_URL}/users/${user?.id}`, {
+        nomCommune: selectedCity.Nom_commune,
+        codePostal: selectedCity.Code_postal,
+      });
+
+      if (response.status === 200) {
+        Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
+        setUser((prev: any) => ({
+          ...prev,
+          nomCommune: selectedCity.Nom_commune,
+          codePostal: selectedCity.Code_postal,
+        }));
+        setIsEditingCity(false)
+      } else {
+        throw new Error("Erreur serveur");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour :", error);
+      Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
+    }
+  };
+
   return (
     <View style={styles.container}>
-     <View style={styles.header}>
+      <View style={styles.header}>
         {/* Bouton pour ouvrir le menu */}
         <TouchableOpacity onPress={toggleSidebar}>
-        <Icon
-          name="menu"
-          size={28}
-          color="#BEE5BF" // Couleur dorée
-          style={{ marginLeft: 10 }}
-        />
-      </TouchableOpacity>
+          <Icon
+            name="menu"
+            size={28}
+            color="#BEE5BF" // Couleur dorée
+            style={{ marginLeft: 10 }}
+          />
+        </TouchableOpacity>
 
         {/* Titre de la page */}
         <View style={styles.typeBadge}>
-          <Text style={styles.headerTitle}>PROFIL</Text>
+          <Text style={styles.headerTitle}>MON PROFIL</Text>
         </View>
 
         {/* Bouton de notifications avec compteur */}
@@ -561,23 +644,91 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
         </View>
 
         <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Ville de référence</Text>
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-              {user?.nomCommune || "Non disponible"}
-              </Text>
-              <Text style={styles.statLabel}>Ville</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{user?.codePostal || "Non disponible"}</Text>
-              <Text style={styles.statLabel}>Code postal</Text>
-            </View>
+  <Text style={styles.infoCardHeader}>Ville de référence</Text>
+
+  {/* Affichage de la ville actuelle */}
+  <View style={styles.cardContent}>
+    <View style={styles.statItem}>
+      <Text style={styles.statNumber}>{user?.nomCommune || "Non disponible"}</Text>
+      <Text style={styles.statLabel}>Ville</Text>
+    </View>
+    <View style={styles.statItem}>
+      <Text style={styles.statNumber}>{user?.codePostal || "Non disponible"}</Text>
+      <Text style={styles.statLabel}>Code postal</Text>
+    </View>
+  </View>
+
+  {/* Bouton pour activer la modification */}
+  <TouchableOpacity style={styles.editButton} onPress={() => setIsEditingCity(true)}>
+    <Text style={styles.editButtonText}>Modifier ma ville</Text>
+  </TouchableOpacity>
+
+  {/* Mode édition */}
+  {isEditingCity && (
+    <View style={styles.editContainer}>
+      {/* Champ de recherche */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.inputCity}
+          placeholder="Rechercher par code postal"
+          value={query}
+          onChangeText={setQuery}
+          placeholderTextColor="#c7c7c7"
+        />
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearchCity}>
+          <Ionicons name="search-sharp" size={20} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Modal pour afficher les suggestions */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView>
+              {suggestions.map((item, index) => (
+                <TouchableOpacity
+                  key={`${item.Code_commune_INSEE}-${index}`}
+                  style={styles.suggestionItem}
+                  onPress={() => handleCitySelection(item)}
+                >
+                  <Text style={styles.suggestionText}>
+                    {item.Nom_commune} ({item.Code_postal})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Fermer</Text>
+            </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Boutons Sauvegarder et Annuler */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveCity}>
+          <Text style={styles.saveButtonText}>Enregistrer</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditingCity(false)}>
+          <Text style={styles.cancelButtonText}>Annuler</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )}
+</View>
 
         <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Statistiques de signalements</Text>
+          <Text style={styles.infoCardHeader}>
+            Statistiques de signalements
+          </Text>
           <View style={styles.cardContent}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
@@ -620,9 +771,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           <Text style={styles.infoCardHeader}>Social</Text>
           <View style={styles.cardContent}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {stats?.numberOfPosts || 0}
-              </Text>
+              <Text style={styles.statNumber}>{stats?.numberOfPosts || 0}</Text>
               <Text style={styles.statLabel}>Publications{"\n"}</Text>
             </View>
             <View style={styles.statItem}>
@@ -633,7 +782,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {user?.following?.length || 0}
+                {stats?.numberOfEventsAttended || 0}
               </Text>
               <Text style={styles.statLabel}>
                 Participation{"\n"}aux événements

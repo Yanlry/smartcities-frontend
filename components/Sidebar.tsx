@@ -50,26 +50,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         <MaterialCommunityIcons name="account-circle-outline" size={24} color="#BEE5BF" />
           <Text style={styles.sidebarText}>Mon profil</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('ReportScreen')}>
+        <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Tout les signalements</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('EventsScreen')}>
         <MaterialCommunityIcons name="calendar-star" size={24} color="#BEE5BF" />
           <Text style={styles.sidebarText}>Tout les événements</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('ReportsScreen')}>
-        <MaterialCommunityIcons name="alert-octagon-outline" size={24} color="#BEE5BF" />
-          <Text style={styles.sidebarText}>Tout les signalements</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => handleNavigation('RankingScreen')}>
+            <Ionicons name="trophy-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>Classement de la ville</Text>
+          </TouchableOpacity>
         <TouchableOpacity style={styles.sidebarItem} >
-          <Ionicons name="star-outline" size={24} color="#BEE5BF" />
-          <Text style={styles.sidebarText}>Mes notes et commentaire</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarItem} >
-          <Ionicons name="time-outline" size={24} color="#BEE5BF" />
-          <Text style={styles.sidebarText}>Mon historique</Text>
-        </TouchableOpacity>
+            <Ionicons name="earth-outline" size={24} color="#BEE5BF" />
+            <Text style={styles.sidebarText}>Informations Mairie</Text>
+          </TouchableOpacity>
 
         {/* Section supplémentaire */}
         <View style={styles.footerSection}>
-          <TouchableOpacity style={styles.sidebarItem} >
+        <TouchableOpacity style={styles.sidebarItem} >
             <Ionicons name="settings-outline" size={24} color="#BEE5BF" />
             <Text style={styles.sidebarText}>Préférences</Text>
           </TouchableOpacity>

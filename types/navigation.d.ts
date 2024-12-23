@@ -9,8 +9,10 @@ export type RootStackParamList = {
   ReportDetails: { reportId: number };
   CategoryReports: { category: string };
   EventDetailsScreen: { eventId: string };
-  EventsScreen: undefined; // Ajout de la route "EventsScreen"
-  ReportsScreen: undefined; // Ajout de la route "EventsScreen"
+  EventsScreen: undefined;
+  ReportScreen: undefined;
+  NotificationsScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
+  RankingScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
 };
 
 export type TabParamList = {

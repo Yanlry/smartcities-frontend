@@ -13,11 +13,12 @@ import {
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
-import Icon from "react-native-vector-icons/FontAwesome";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 import axios from "axios";
 import { Linking } from "react-native";
 import { useToken } from "../hooks/useToken";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import Sidebar from "../components/Sidebar";
 
 type User = {
   id: string;
@@ -48,6 +49,8 @@ export default function UserProfileScreen({ route, navigation }) {
   const [stats, setStats] = useState<any>(null);
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Chargement des données utilisateur
   useEffect(() => {
     async function fetchData() {
@@ -151,7 +154,10 @@ export default function UserProfileScreen({ route, navigation }) {
     }
   };
 
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
   const openReportModal = () => setReportModalVisible(true);
+
   const closeReportModal = () => {
     setReportModalVisible(false);
     setReportReason("");
@@ -260,28 +266,35 @@ export default function UserProfileScreen({ route, navigation }) {
     : user?.username;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+    <View>
+       <View style={styles.header}>
+        {/* Bouton pour ouvrir le menu */}
+        <TouchableOpacity onPress={toggleSidebar}>
           <Icon
-            name="chevron-left"
+            name="menu"
             size={28}
-            color="#333"
+            color="#BEE5BF" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {displayName || "Cet utilisateur"}
-        </Text>
+
+        {/* Titre de la page */}
+        <View style={styles.typeBadge}>
+          <Text style={styles.headerTitle}>PROFIL</Text>
+        </View>
+
+        {/* Bouton de notifications avec compteur */}
         <TouchableOpacity onPress={openReportModal}>
           <Icon
-            name="warning"
+            name="error"
             size={28}
-            color="#333"
+            color="#BEE5BF"
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
       </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      
       {/* Modal pour le signalement */}
       <Modal
         animationType="slide"
@@ -346,7 +359,7 @@ export default function UserProfileScreen({ route, navigation }) {
 
         {/* Nom d'utilisateur */}
         <View style={styles.infoItem}>
-          <Icon name="user" size={20} style={styles.icon} />
+          <Icon name="person" size={22} style={styles.icon} />
           <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
           <Text style={styles.infoValueName}>
             {displayName || (
@@ -358,7 +371,7 @@ export default function UserProfileScreen({ route, navigation }) {
         {/* Email */}
 
         <View style={styles.infoItem}>
-          <Icon name="envelope" size={20} style={styles.icon} />
+          <Icon name="drafts" size={22} style={styles.icon} />
           <Text style={styles.infoLabel}>Email :</Text>
           {user?.showEmail ? (
             <Text
@@ -401,6 +414,10 @@ export default function UserProfileScreen({ route, navigation }) {
         </View>
       </View>
     </ScrollView>
+    <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    
+    </View>
+
   );
 }
 
@@ -422,15 +439,26 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    marginTop: 50,
+    justifyContent: "space-between",
+    backgroundColor: "#29524A", // Couleur sombre
+    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
+    borderBottomRightRadius: 50, // Arrondi en bas à droite
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
+    color: "#fff", // Couleur blanche
+    letterSpacing: 2, // Espacement pour un effet moderne
+    textAlign: "center",
+  },
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalBackdrop: {
     position: "absolute",
@@ -457,13 +485,13 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    height: 50,
+    height: 90,
     width: "100%",
-    textAlign: "center",
     borderColor: "#ccc", // Light gray border
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
+    marginTop: 10,
     backgroundColor: "#f9f9f9", // Subtle off-white background
     marginBottom: 20,
   },
@@ -510,10 +538,12 @@ const styles = StyleSheet.create({
   },
   profileImageContainer: {
     alignItems: "center",
+    marginTop: 15,
+    marginBottom: 5,
   },
   profileImage: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     borderRadius: 60,
     borderWidth: 3,
     borderColor: "#D6D6D6",

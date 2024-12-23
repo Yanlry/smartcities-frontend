@@ -6,6 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator, 
+  Alert
 } from "react-native";
 import axios from "axios";
 import { Share } from "react-native";
@@ -15,14 +17,19 @@ import { useToken } from "../hooks/useToken";
 import { RootStackParamList } from "../types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import Sidebar from "../components/Sidebar";
+import { useNotification } from "../context/NotificationContext";
 
-export default function EventDetails  ({ route }){
-  
+export default function EventDetails({ route }) {
   const navigation =
-  useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { eventId } = route.params;
   const [isRegistered, setIsRegistered] = useState(false);
   const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { unreadCount } = useNotification(); // Récupération du compteur
+  const [isLoading, setIsLoading] = useState(true); 
 
   interface Event {
     photos: { url: string }[];
@@ -31,6 +38,8 @@ export default function EventDetails  ({ route }){
     location: string;
     date: string;
     attendees: { user: Participant }[]; // Liste des participants
+    organizer: Participant; // Organisateur de l'événement
+    useFullName: boolean;
   }
 
   interface Participant {
@@ -39,6 +48,7 @@ export default function EventDetails  ({ route }){
     lastName: string;
     username: string;
     photos: { url: string }[];
+    useFullName: boolean;
   }
 
   const [event, setEvent] = useState<Event | null>(null);
@@ -121,7 +131,7 @@ export default function EventDetails  ({ route }){
                 day: "numeric",
               })}`
             : "Date non disponible"
-        }\n\nLien : https://smartcities/events/${eventId}`, // Vous pouvez remplacer par une URL réelle
+        }\n\nLien : https://smartcities.com/events/${eventId}`, // Vous pouvez remplacer par une URL réelle
       });
 
       if (result.action === Share.sharedAction) {
@@ -143,27 +153,45 @@ export default function EventDetails  ({ route }){
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
   const registerForEvent = async () => {
     if (!currentUserId) {
       alert("Erreur : utilisateur non identifié.");
       return;
     }
-  
+
     try {
       console.log(
         `Tentative d'inscription avec eventId: ${eventId}, userId: ${currentUserId}`
       );
-  
+
       // Inscription à l'événement
       await axios.post(`${API_URL}/events/${eventId}/join`, {
         userId: currentUserId,
       });
-  
-      alert("Inscription réussie !");
+
+     // Afficher une alerte personnalisée
+    Alert.alert(
+      "Inscription réussie", // Titre de l'alerte
+      "Votre inscription est confirmée, profitez bien de l’événement !", // Message de l'alerte
+      [
+        {
+          text: "OK", // Bouton de confirmation
+          onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
+        },
+      ],
+      { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
+    );
+
       setIsRegistered(true); // Met à jour l'état pour refléter l'inscription
-  
+
       // Met à jour les détails de l'événement pour inclure les participants
-      const updatedEventResponse = await axios.get(`${API_URL}/events/${eventId}`);
+      const updatedEventResponse = await axios.get(
+        `${API_URL}/events/${eventId}`
+      );
       setEvent(updatedEventResponse.data); // Remplace l'événement dans l'état
     } catch (error) {
       if (error.response?.status === 404) {
@@ -184,15 +212,29 @@ export default function EventDetails  ({ route }){
       alert("Erreur : utilisateur non identifié.");
       return;
     }
-  
+
     try {
-      const response = await axios.delete(`${API_URL}/events/${eventId}/leave`, {
-        data: { userId: currentUserId },
-      });
-  
-      alert("Désinscription réussie !");
+      const response = await axios.delete(
+        `${API_URL}/events/${eventId}/leave`,
+        {
+          data: { userId: currentUserId },
+        }
+      );
+
+       // Afficher une alerte personnalisée
+    Alert.alert(
+      "Désinscription enregistrée", // Titre de l'alerte
+      "N’hésitez pas à vous réinscrire si vous changez d’avis !", // Message de l'alerte
+      [
+        {
+          text: "OK", // Bouton de confirmation
+          onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
+        },
+      ],
+      { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
+    );
       setIsRegistered(false);
-  
+
       // Supprimer l'utilisateur de la liste des participants
       setEvent((prevEvent) => {
         if (!prevEvent) return prevEvent;
@@ -222,101 +264,162 @@ export default function EventDetails  ({ route }){
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Image en-tête */}
+    <View>
+      <View style={styles.headerNav}>
+        {/* Bouton pour ouvrir le menu */}
+        <TouchableOpacity onPress={toggleSidebar}>
+          <Icon
+            name="menu"
+            size={28}
+            color="#BEE5BF" // Couleur dorée
+            style={{ marginLeft: 10 }}
+          />
+        </TouchableOpacity>
+
+        {/* Titre de la page */}
+        <View style={styles.typeBadge}>
+          <Text style={styles.headerTitleNav}>MON PROFIL</Text>
+        </View>
+
+        {/* Bouton de notifications avec compteur */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("NotificationsScreen")}
+        >
+          <View>
+            <Icon
+              name="notifications"
+              size={28}
+              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+              style={{ marginRight: 10 }}
+            />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Image en-tête */}
+        <View style={styles.imageContainer}>
+      {isLoading && (
+        <ActivityIndicator
+          size="large"
+          color="#29524A"
+          style={styles.loader}
+        />
+      )}
       <Image
         source={{
           uri: event.photos?.[0]?.url || "https://via.placeholder.com/600",
         }}
         style={styles.image}
+        onLoad={() => setIsLoading(false)} // Une fois l'image chargée
       />
+    </View>
 
-      {/* Titre et Actions */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{event.title || "Titre indisponible"}</Text>
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-            <Text style={styles.buttonText}>Partager</Text>
-          </TouchableOpacity>
+        {/* Titre et Actions */}
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            {event.title || "Titre indisponible"}
+          </Text>
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+              <Text style={styles.buttonText}>Partager</Text>
+            </TouchableOpacity>
 
-          {isRegistered ? (
-            <TouchableOpacity
-              style={styles.buttonLeave}
-              onPress={unregisterFromEvent}
-            >
-              <Text style={styles.buttonText}>Se désinscrire</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={registerForEvent}>
-              <Text style={styles.buttonText}>S'inscrire</Text>
-            </TouchableOpacity>
-          )}
+            {isRegistered ? (
+              <TouchableOpacity
+                style={styles.buttonLeave}
+                onPress={unregisterFromEvent}
+              >
+                <Text style={styles.buttonText}>Se désinscrire</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.button}
+                onPress={registerForEvent}
+              >
+                <Text style={styles.buttonText}>S'inscrire</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
 
-      {/* Informations Clés */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.info}>
-          📍 {event.location || "Localisation non précisée"}
-        </Text>
-        <Text style={styles.info}>
-          📅{" "}
-          {event.date
-            ? capitalizeFirstLetter(
-                new Date(event.date).toLocaleDateString("fr-FR", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })
-              )
-            : "Date non disponible"}
-        </Text>
-      </View>
+        {/* Informations Clés */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.info}>
+            📍 {event.location || "Localisation non précisée"}
+          </Text>
+          <Text style={styles.info}>
+            📅{" "}
+            {event.date
+              ? capitalizeFirstLetter(
+                  new Date(event.date).toLocaleDateString("fr-FR", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                )
+              : "Date non disponible"}
+          </Text>
+          <Text style={styles.info}>
+            👤 Organisé par :{" "}
+            {event.organizer
+              ? event.organizer.useFullName
+                ? `${event.organizer.firstName} ${event.organizer.lastName}`
+                : event.organizer.username
+              : "Organisateur non disponible"}
+          </Text>
+        </View>
 
-      {/* Description */}
-      <Text style={styles.sectionTitle}>Description</Text>
-      <Text style={styles.description}>
-        {event.description || "Description indisponible"}
-      </Text>
-
-      {/* Liste des participants */}
-      <Text style={styles.sectionMember}>Participants</Text>
-      {event.attendees.length > 0 ? (
-    event.attendees.map((attendee, index) => (
-      <TouchableOpacity
-        key={index}
-        style={styles.participant}
-        onPress={() => navigateToUserProfile(attendee.user.id.toString())} // Navigation au clic
-      >
-        <Image
-          source={{
-            uri:
-              attendee.user.photos?.[0]?.url ||
-              "https://via.placeholder.com/150",
-          }}
-          style={styles.participantPhoto}
-        />
-        <Text style={styles.participantName}>
-          {getDisplayName(attendee.user)}
+        {/* Description */}
+        <Text style={styles.sectionTitle}>Description</Text>
+        <Text style={styles.description}>
+          {event.description || "Description indisponible"}
         </Text>
-      </TouchableOpacity>
-    ))
-  ) : (
-    <Text style={styles.noParticipants}>
-      Aucun participant inscrit pour le moment.
-    </Text>
-  )}
-    </ScrollView>
+
+        {/* Liste des participants */}
+        <Text style={styles.sectionMember}>Liste des participants</Text>
+        {event.attendees.length > 0 ? (
+          event.attendees.map((attendee, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.participant}
+              onPress={() => navigateToUserProfile(attendee.user.id.toString())} // Navigation au clic
+            >
+              <Image
+                source={{
+                  uri:
+                    attendee.user.photos?.[0]?.url ||
+                    "https://via.placeholder.com/150",
+                }}
+                style={styles.participantPhoto}
+              />
+              <Text style={styles.participantName}>
+                {getDisplayName(attendee.user)}
+              </Text>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={styles.noParticipants}>
+            Aucun participant inscrit pour le moment.
+          </Text>
+        )}
+      </ScrollView>
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
+    height: "100%",
     backgroundColor: "#f9f9f9",
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: 15,
   },
   loading: {
     flex: 1,
@@ -328,8 +431,60 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 250,
     borderRadius: 12,
-    marginTop: 50,
+    marginTop: 10,
     marginBottom: 20,
+  },
+  headerNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#29524A", // Couleur sombre
+    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
+    borderBottomRightRadius: 50, // Arrondi en bas à droite
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingTop: 45,
+  },
+  headerTitleNav: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff", // Couleur blanche
+    letterSpacing: 2, // Espacement pour un effet moderne
+    textAlign: "center",
+  },
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: 200, // Ajustez selon vos besoins
+    backgroundColor: "#f5f5f5", // Couleur de fond pendant le chargement
+    position: "relative",
+    marginTop: 40,
+    marginBottom: 40,
+  },
+  loader: {
+    position: "absolute", // Place le loader au-dessus de l'image
+  },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "red",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   header: {
     marginBottom: 20,
@@ -355,7 +510,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   participantName: {
-     color: "#004FA3",
+    color: "#004FA3",
     fontWeight: "bold",
     fontSize: 17,
   },
@@ -380,8 +535,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   button: {
-    backgroundColor: "#11998e",
-    shadowColor: "#11998e",
+    backgroundColor: "#29524A",
+    shadowColor: "#29524A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -433,7 +588,7 @@ const styles = StyleSheet.create({
   sectionMember: {
     fontSize: 20,
     fontWeight: "bold",
-    marginTop: 20,
+    marginTop: 30,
     marginBottom: 20,
     color: "#333",
   },

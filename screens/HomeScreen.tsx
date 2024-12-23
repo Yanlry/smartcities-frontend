@@ -10,9 +10,6 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../types/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import CalendarPicker from "react-native-calendar-picker";
 import styles from "./styles/HomeScreen.styles";
@@ -29,7 +26,6 @@ import { useFetchStatistics } from "../hooks/useFetchStatistics";
 import { API_URL } from "@env";
 import { Linking } from "react-native";
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
 type User = {
   id: string;
@@ -39,6 +35,7 @@ type User = {
   lastName: string;
   username?: string;
   useFullName: boolean;
+  nomCommune: string;
   email: string;
   trustRate?: number;
   followers?: any[];
@@ -108,30 +105,36 @@ export default function HomeScreen({ navigation }) {
     const fetchRanking = async () => {
       setLoading(true);
       setError(null);
+    
       try {
         const userId = await getUserIdFromToken();
         if (!userId) {
           throw new Error("Impossible de récupérer l'ID utilisateur.");
         }
-
-        const response = await fetch(
-          `${API_URL}/users/ranking?userId=${userId}`
+    
+        const userResponse = await fetch(`${API_URL}/users/${userId}`);
+        if (!userResponse.ok) {
+          throw new Error("Impossible de récupérer les données utilisateur.");
+        }
+        const userData = await userResponse.json();
+    
+        const cityName = userData.nomCommune;
+        if (!cityName) {
+          throw new Error("La ville de l'utilisateur est introuvable.");
+        }
+    
+        const rankingResponse = await fetch(
+          `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
         );
-        if (!response.ok) {
-          throw new Error(`Erreur serveur : ${response.statusText}`);
+        if (!rankingResponse.ok) {
+          throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
         }
-
-        const topUsersResponse = await fetch(`${API_URL}/users/all-rankings`);
-        if (topUsersResponse.ok) {
-          const data: TopUser[] = await topUsersResponse.json();
-          setRankingData(data);
-        }
-
-        const data: { ranking: number; totalUsers: number } =
-          await response.json();
-        setRanking(data.ranking);
-        setTotalUsers(data.totalUsers);
-      } catch (error: any) {
+    
+        const rankingData = await rankingResponse.json();
+        setRankingData(rankingData.users); // Met à jour les données de classement
+        setRanking(rankingData.ranking); // Classement de l'utilisateur
+        setTotalUsers(rankingData.totalUsers); // Nombre total d'utilisateurs
+      } catch (error) {
         console.error("Erreur lors de la récupération du classement :", error);
         setError(error.message || "Erreur inconnue.");
       } finally {
@@ -150,7 +153,7 @@ export default function HomeScreen({ navigation }) {
           console.error("ID utilisateur non trouvé");
           return;
         }
-
+  
         const userResponse = await fetch(`${API_URL}/users/${userId}`);
         if (!userResponse.ok) {
           console.error(
@@ -160,35 +163,25 @@ export default function HomeScreen({ navigation }) {
         }
         const userData = await userResponse.json();
         setUser(userData);
-
-        if (location) {
-          setLoadingReports(true);
-          const reports = await processReports(
-            location.latitude,
-            location.longitude
-          );
-          setReports(reports);
+  
+        const cityName = userData.nomCommune;
+        if (!cityName) {
+          throw new Error("La ville de l'utilisateur est introuvable.");
         }
-
-        const topUsersResponse = await fetch(`${API_URL}/users/top10`);
+  
+        const topUsersResponse = await fetch(
+          `${API_URL}/users/top10?cityName=${encodeURIComponent(cityName)}`
+        );
         if (!topUsersResponse.ok) {
           console.error(
             "Erreur lors de la récupération des utilisateurs populaires"
           );
           return;
         }
-
+  
         const topUsersData: TopUser[] = await topUsersResponse.json();
-
-        interface FormattedUser {
-          id: string;
-          username: string;
-          displayName: string;
-          ranking: number;
-          image: { uri: string };
-        }
-
-        const formattedData: FormattedUser[] = topUsersData.map((user) => ({
+  
+        const formattedData = topUsersData.map((user) => ({
           id: user.id,
           username: user.username,
           displayName: user.useFullName
@@ -197,10 +190,18 @@ export default function HomeScreen({ navigation }) {
           ranking: user.ranking,
           image: { uri: user.photo || "default-image-url" },
         }));
-
+  
         formattedData.sort((a, b) => a.ranking - b.ranking);
-
         setSmarterData(formattedData);
+  
+        if (location) {
+          setLoadingReports(true);
+          const reports = await processReports(
+            location.latitude,
+            location.longitude
+          );
+          setReports(reports);
+        }
       } catch (err: any) {
         console.error(
           "Erreur lors de la récupération des données :",
@@ -211,7 +212,7 @@ export default function HomeScreen({ navigation }) {
         setLoadingReports(false);
       }
     };
-
+  
     fetchData();
   }, [location]);
 
@@ -686,7 +687,11 @@ export default function HomeScreen({ navigation }) {
   onRequestClose={() => setIsModalVisible(false)}
 >
   <View style={styles.modalContentRanking}>
-    <Text style={styles.titleModal}>Classement de la ville</Text>
+  <View style={styles.titleContainer}>
+    <Text style={styles.titleText}>
+      Classement à : <Text style={styles.cityName}>{user?.nomCommune || "ville inconnue"}</Text>
+    </Text>
+  </View>
     <FlatList
       data={rankingData}
       keyExtractor={(item) => item.id.toString()}
@@ -739,34 +744,68 @@ export default function HomeScreen({ navigation }) {
   </View>
 </Modal>
 
-      <Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
-      <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {smarterData.slice(0, 10).map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.smarterItem}
-              onPress={() =>
-                navigation.navigate("UserProfileScreen", { userId: item.id })
-              }
-            >
-              <Text style={styles.ranking}>{`# ${index + 1}`}</Text>
-              <Image source={item.image} style={styles.smarterImage} />
-              <Text style={styles.rankingName}>
-                {item.displayName || "Nom indisponible"}{" "}
-              </Text>
-            </TouchableOpacity>
-          ))}
+<Text style={styles.sectionTitle}>Top 10 des Smarter</Text>
+<View>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    {smarterData.slice(0, 10).map((item, index) => {
+      const borderColor =
+        index + 1 === 1
+          ? "#FFD700" // Or
+          : index + 1 === 2
+          ? "#C0C0C0" // Argent
+          : index + 1 === 3
+          ? "#CD7F32" // Bronze
+          : "#fff"; // Couleur par défaut pour les autres
 
-          <TouchableOpacity
-            key="seeAll"
-            style={[styles.smarterItem, styles.seeAllButton]}
-            onPress={() => setIsModalVisible(true)}
-          >
-            <Text style={styles.seeAllText}>Voir tout</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
+      const medal =
+        index + 1 === 1
+          ? "🥇" // Médaille d'or
+          : index + 1 === 2
+          ? "🥈" // Médaille d'argent
+          : index + 1 === 3
+          ? "🥉" // Médaille de bronze
+          : null; // Pas de médaille pour les autres
+
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={styles.smarterItem}
+          onPress={() =>
+            navigation.navigate("UserProfileScreen", { userId: item.id })
+          }
+        >
+          {/* Conteneur pour gérer la médaille et l'image */}
+          <View style={{ position: "relative" }}>
+            {/* Médaille */}
+            {medal && (
+              <Text style={styles.medal}>
+                {medal}
+              </Text>
+            )}
+            {/* Image avec le contour */}
+            <Image
+              source={{ uri: item.image.uri || "default-image-url" }}
+              style={[styles.smarterImage, { borderColor: borderColor }]}
+            />
+          </View>
+          {/* Nom de l'utilisateur */}
+          <Text style={styles.rankingName}>
+            {item.displayName || "Nom indisponible"}
+          </Text>
+        </TouchableOpacity>
+      );
+    })}
+
+    {/* Bouton Voir Tout */}
+    <TouchableOpacity
+      key="seeAll"
+      style={[styles.smarterItem, styles.seeAllButton]}
+      onPress={() => setIsModalVisible(true)}
+    >
+      <Text style={styles.seeAllText}>Voir tout</Text>
+    </TouchableOpacity>
+  </ScrollView>
+</View>
 
       <Text style={styles.sectionTitle}>Signalements proches de vous</Text>
       {reports.length === 0 ? (

@@ -385,7 +385,31 @@ export default StyleSheet.create({
     color: "#666", // Couleur plus subtile pour ceux hors du top 3
     fontWeight: "normal", // Style plus léger pour différencier
   },
-
+  titleContainer: {
+    backgroundColor: '#f8f9fa', // Couleur claire pour le fond
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3, // Pour Android
+    marginTop: 30, // Espace avec le titre
+    marginBottom: 25, // Espace avec la liste
+    alignItems: 'center',
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  cityName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007BFF', // Couleur pour le nom de la ville
+  },
 
   //  ------------------------------------------------ TOP 10 DES SMARTERS
 
@@ -399,18 +423,16 @@ export default StyleSheet.create({
     alignItems: "center",
     padding: 10,
     width: 120,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
     marginBottom: 10,
   },
-  ranking: {
-    fontSize: 19,
-    fontWeight: "600",
-    color: "#555",
-    textAlign: "center",
+  smarterImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50, // Assure l'image circulaire
+    marginBottom: 10,
+    marginTop: 5,
+    borderWidth: 3, // Épaisseur du contour
+    borderColor: "#ddd", // Couleur par défaut (changée dynamiquement)
   },
   rankingName: {
     fontSize: 14,
@@ -418,22 +440,21 @@ export default StyleSheet.create({
     color: "#555",
     textAlign: "center",
   },
-  smarterImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 90,
-    marginBottom: 10,
-    marginTop: 5,
-    borderColor: "#ddd",
+  medal: {
+    fontSize: 40, // Taille de la médaille
+    position: "absolute",
+    top: 0, // Position légèrement au-dessus de l'image
+    left: 0, // Décalage vers la gauche
+    zIndex: 1, // Assure que la médaille est au-dessus de l'image
   },
   seeAllButton: {
-    backgroundColor: "#29524A",  
+    backgroundColor: "#29524A",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 90,
-    margin: 35,
+    borderRadius: 50,
     width: 100,
     height: 100,
+    marginTop: 18,
     marginHorizontal: 10,
   },
   seeAllText: {
