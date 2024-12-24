@@ -152,6 +152,16 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     };
   }, [userId]);
 
+  const updateUnreadCount = (receiverId: number) => {
+    setConversations((prevConversations) =>
+      prevConversations.map((conversation) =>
+        conversation.participants.includes(receiverId)
+          ? { ...conversation, unreadCount: 0 }
+          : conversation
+      )
+    );
+  };
+
   const renderConversation = ({ item }: { item: Conversation }) => {
     const truncatedMessage =
       item.lastMessage.length > 100
@@ -170,6 +180,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
         navigation.navigate("ChatScreen", {
           senderId: userId,
           receiverId: item.participants.find((id) => id !== Number(userId)),
+          onConversationRead: updateUnreadCount, // Passer la fonction
         })
       }
     >

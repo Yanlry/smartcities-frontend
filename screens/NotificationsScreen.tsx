@@ -8,6 +8,7 @@ import {
   FlatList,
   Alert,
   Image,
+  RefreshControl
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
@@ -32,7 +33,8 @@ export default function NotificationsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const { getToken } = useToken(); // Récupération du token avec le hook
   const { unreadCount } = useNotification(); // Récupération du compteur
-
+  const [refreshing, setRefreshing] = useState(false);
+  
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -79,6 +81,57 @@ export default function NotificationsScreen({ navigation }) {
     fetchNotifications();
   }, []);
 
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const token = await getToken();
+      if (!token) throw new Error("Token non trouvé.");
+
+      const response = await fetch(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.json();
+        throw new Error(
+          errorDetails.message || "Erreur lors de la récupération des notifications."
+        );
+      }
+
+      const data: Notification[] = await response.json();
+      console.log("Notifications reçues :", data);
+
+      setNotifications(
+        data.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Erreur lors de la récupération des notifications :",
+        error.message
+      );
+      Alert.alert("Erreur", "Impossible de récupérer les notifications.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fonction appelée pour rafraîchir les données
+  const onRefresh = async () => {
+    console.log("Rafraîchissement des notifications...");
+    setRefreshing(true);
+    await fetchNotifications();
+    setRefreshing(false);
+  };
+
+  // Charger les notifications au montage du composant
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   const markNotificationAsRead = async (notificationId: number) => {
@@ -199,32 +252,43 @@ export default function NotificationsScreen({ navigation }) {
     console.log("Notification cliquée :", notification);
 
     // Marquer la notification comme lue
-    await markNotificationAsRead(notification.id);
+    try {
+        await markNotificationAsRead(notification.id);
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour de la notification comme lue :", error);
+    }
 
     // Redirection basée sur le type de notification
     switch (notification.type) {
-      case "COMMENT":
-        navigation.navigate("ReportDetailsScreen", {
-          reportId: notification.relatedId, // Passez l'ID du signalement
-        });
-        break;
+        case "COMMENT":
+            navigation.navigate("ReportDetailsScreen", {
+                reportId: notification.relatedId, // Passez l'ID du signalement
+            });
+            break;
 
-      case "FOLLOW":
-        navigation.navigate("UserProfileScreen", {
-          userId: notification.relatedId, // Passez l'ID de l'utilisateur qui suit
-        });
-        break;
+        case "FOLLOW":
+            navigation.navigate("UserProfileScreen", {
+                userId: notification.relatedId, // Passez l'ID de l'utilisateur qui suit
+            });
+            break;
 
-      case "VOTE":
-        navigation.navigate("ReportDetailsScreen", {
-          reportId: notification.relatedId, // Passez l'ID du signalement
-        });
-        break;
+        case "VOTE":
+            navigation.navigate("ReportDetailsScreen", {
+                reportId: notification.relatedId, // Passez l'ID du signalement
+            });
+            break;
 
-      default:
-        console.warn("Type de notification inconnu :", notification.type);
+        case "new_message":
+            navigation.navigate("ChatScreen", {
+                senderId: notification.userId, // Passez l'ID de l'expéditeur
+                receiverId: notification.initiatorId,   // Passez l'ID du destinataire
+            });
+            break;
+
+        default:
+            console.warn("Type de notification inconnu :", notification.type);
     }
-  };
+};
 
   const renderNotification = ({ item }) => {
     // Action à gauche : Marquer comme lu
@@ -341,20 +405,32 @@ export default function NotificationsScreen({ navigation }) {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       <FlatList
-        data={notifications}
-        renderItem={renderNotification}
-        keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Aucune notification disponible.</Text>
-        }
-        contentContainerStyle={{ padding: 20 }}
-      />
-      {/* Bouton de notifications avec compteur */}
-      <View style={styles.markAllButtonContainer}>
-        <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
-          <Text style={styles.markAllButtonText}>Tout marquer comme lu</Text>
-        </TouchableOpacity>
-      </View>
+  data={notifications}
+  renderItem={renderNotification}
+  keyExtractor={(item) => item.id.toString()}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={["#4caf50"]}
+    />
+  }
+  ListEmptyComponent={
+    <View style={styles.emptyContainer}>
+      <Icon name="notifications-off" size={50} color="#ccc" />
+      <Text style={styles.emptyText}>Aucune notification disponible.</Text>
+    </View>
+  }
+  contentContainerStyle={styles.flatListContent}
+/>
+{/* Bouton de notifications avec compteur */}
+<View style={styles.markAllButtonContainer}>
+  <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
+    <Text style={styles.markAllButtonText}>
+      Tout marquer comme lu ({unreadCount})
+    </Text>
+  </TouchableOpacity>
+</View>
     </View>
   );
 }
@@ -439,10 +515,17 @@ const styles = StyleSheet.create({
   },
   markAllButtonContainer: {
     alignItems: "center",
-
     marginBottom: 20,
   },
-  
+  flatListContent: {
+    padding: 20,
+    flexGrow: 1, // Pour centrer le contenu si la liste est vide
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
   markAllButton: {
     backgroundColor: "#FFE347", // Vert agréable
     marginTop: 10,
