@@ -23,6 +23,7 @@ import Sidebar from "../components/Sidebar";
 type User = {
   id: string;
   firstName: string;
+  ranking: number;
   lastName: string;
   username?: string;
   useFullName?: boolean;
@@ -35,6 +36,8 @@ type User = {
   showEmail?: boolean;
   latitude?: number;
   longitude?: number;
+  nomCommune?: string;
+  codePostal?: string;
 };
 
 export default function UserProfileScreen({ route, navigation }) {
@@ -57,6 +60,7 @@ export default function UserProfileScreen({ route, navigation }) {
       try {
         // Récupérer l'ID de l'utilisateur connecté
         const userIdFromToken = await getUserIdFromToken();
+
         setCurrentUserId(userIdFromToken);
 
         // Récupérer les données de l'utilisateur à afficher
@@ -68,14 +72,21 @@ export default function UserProfileScreen({ route, navigation }) {
         }
 
         const data = await response.json();
+
         setUser(data);
 
         // Vérifier si l'utilisateur connecté suit déjà cet utilisateur
-        const isCurrentlyFollowing = data.followers?.some(
-          (follower) => follower.id === userIdFromToken
-        );
+        const isCurrentlyFollowing: boolean =
+          data.followers?.some(
+            (follower: { id: number }) => follower.id === userIdFromToken
+          ) || false;
+
         setIsFollowing(isCurrentlyFollowing);
       } catch (err) {
+        console.error(
+          "Erreur lors de la récupération des données :",
+          err.message
+        );
         setError(err.message);
       } finally {
         setLoading(false);
@@ -267,7 +278,7 @@ export default function UserProfileScreen({ route, navigation }) {
 
   return (
     <View>
-       <View style={styles.header}>
+      <View style={styles.header}>
         {/* Bouton pour ouvrir le menu */}
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
@@ -293,131 +304,232 @@ export default function UserProfileScreen({ route, navigation }) {
           />
         </TouchableOpacity>
       </View>
-    <ScrollView contentContainerStyle={styles.container}>
-      
-      {/* Modal pour le signalement */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isReportModalVisible}
-        onRequestClose={closeReportModal}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Signaler ce profil</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Quelle est la raison de votre signalement ?"
-              value={reportReason}
-              onChangeText={setReportReason}
-              multiline={true}
-            />
-            <TouchableOpacity onPress={sendReport} style={styles.confirmButton}>
-              <Text style={styles.confirmButtonText}>Envoyer</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={closeReportModal}
-              style={styles.cancelButton}
-            >
-              <Text style={styles.cancelButtonText}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Image de profil */}
-      <View style={styles.profileImageContainer}>
-        {user?.profilePhoto?.url ? (
-          <Image
-            source={{ uri: user.profilePhoto.url }}
-            style={styles.profileImage}
-          />
-        ) : (
-          <Text style={styles.noProfileImageText}>Pas de photo de profil</Text>
-        )}
-      </View>
-
-      {/* Bouton de suivi */}
-      <View style={styles.followButtonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.followButton,
-            { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
-          ]}
-          onPress={isFollowing ? handleUnfollow : handleFollow}
-          disabled={isSubmitting} // Bloquer pendant la requête
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Modal pour le signalement */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isReportModalVisible}
+          onRequestClose={closeReportModal}
         >
-          <Text style={styles.followButtonText}>
-            {isFollowing ? "Se désabonner" : "S'abonner"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Signaler ce profil</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Quelle est la raison de votre signalement ?"
+                value={reportReason}
+                onChangeText={setReportReason}
+                multiline={true}
+              />
+              <TouchableOpacity
+                onPress={sendReport}
+                style={styles.confirmButton}
+              >
+                <Text style={styles.confirmButtonText}>Envoyer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={closeReportModal}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
-      {/* Informations de base */}
-      <View style={styles.infoCardContainer}>
-        <Text style={styles.infoCardHeader}>Informations personnelles</Text>
-
-        {/* Nom d'utilisateur */}
-        <View style={styles.infoItem}>
-          <Icon name="person" size={22} style={styles.icon} />
-          <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
-          <Text style={styles.infoValueName}>
-            {displayName || (
-              <Text style={styles.placeholderValue}>Non renseigné</Text>
+        {/* Image de profil avec style basé sur le classement */}
+        <View style={styles.profileContainer}>
+          {/* Image avec bordure conditionnelle */}
+          <View
+            style={[
+              styles.profileImageContainer,
+              user?.ranking === 1
+                ? styles.goldBorder
+                : user?.ranking === 2
+                ? styles.silverBorder
+                : user?.ranking === 3
+                ? styles.bronzeBorder
+                : null, // Pas de bordure si classement > 3
+            ]}
+          >
+            {user?.profilePhoto?.url ? (
+              <Image
+                source={{ uri: user.profilePhoto.url }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Text style={styles.noProfileImageText}>
+                Pas de photo de profil
+              </Text>
             )}
-          </Text>
-        </View>
+          </View>
 
-        {/* Email */}
-
-        <View style={styles.infoItem}>
-          <Icon name="drafts" size={22} style={styles.icon} />
-          <Text style={styles.infoLabel}>Email :</Text>
-          {user?.showEmail ? (
-            <Text
-              style={styles.infoValueEmail}
-              onPress={() => Linking.openURL(`mailto:${user.email}`)}
-            >
-              {user.email}
-            </Text>
-          ) : (
-            <Text style={styles.placeholderValue}>
-              {displayName} n'est pas joignable
-            </Text>
+          {/* Médaille au-dessus de l'image si classement <= 3 */}
+          {user?.ranking && user.ranking <= 3 && (
+            <View style={styles.medalContainer}>
+              <Text style={styles.medalText}>
+                {user.ranking === 1 ? "🥇" : user.ranking === 2 ? "🥈" : "🥉"}
+              </Text>
+            </View>
           )}
         </View>
-      </View>
 
-      <View style={styles.cardContainer}>
-        <Text style={styles.infoCardHeader}>Statistiques</Text>
-        <View style={styles.cardContent}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {user?.followers?.length || 0}
+        {/* Bouton de suivi */}
+        <View style={styles.followButtonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.followButton,
+              { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
+            ]}
+            onPress={isFollowing ? handleUnfollow : handleFollow}
+            disabled={isSubmitting} // Bloquer pendant la requête
+          >
+            <Text style={styles.followButtonText}>
+              {isFollowing ? "Se désabonner" : "S'abonner"}
             </Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {user?.following?.length || 0}
+          </TouchableOpacity>
+        </View>
+
+        {/* Informations de base */}
+        <View style={styles.infoCardContainer}>
+          <Text style={styles.infoCardHeader}>Informations personnelles</Text>
+
+          {/* Nom d'utilisateur */}
+          <View style={styles.infoItem}>
+            <Icon name="person" size={22} style={styles.icon} />
+            <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
+            <Text style={styles.infoValueName}>
+              {displayName || (
+                <Text style={styles.placeholderValue}>Non renseigné</Text>
+              )}
             </Text>
-            <Text style={styles.statLabel}>Following</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
-            <Text style={styles.statLabel}>Votes</Text>
+
+          {/* Email */}
+
+          <View style={styles.infoItem}>
+            <Icon name="drafts" size={22} style={styles.icon} />
+            <Text style={styles.infoLabel}>Email :</Text>
+            {user?.showEmail ? (
+              <Text
+                style={styles.infoValueEmail}
+                onPress={() => Linking.openURL(`mailto:${user.email}`)}
+              >
+                {user.email}
+              </Text>
+            ) : (
+              <Text style={styles.placeholderValue}>
+                {displayName} n'est pas joignable
+              </Text>
+            )}
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats?.numberOfReports || 0}</Text>
-            <Text style={styles.statLabel}>Signalements</Text>
+          {/* Nom d'utilisateur */}
+          {currentUserId && userId && (
+  <View style={styles.sendChatContainer}>
+    <TouchableOpacity
+      style={styles.sendChat}
+      onPress={() =>
+        navigation.navigate("ChatScreen", {
+          receiverId: userId,
+          senderId: currentUserId,
+        })
+      }
+    >
+      <Text style={styles.sendChatText}>Envoyer un message</Text>
+    </TouchableOpacity>
+  </View>
+)}
+        </View>
+
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Ville de référence</Text>
+
+          {/* Affichage de la ville actuelle */}
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.nomCommune || "Non disponible"}
+              </Text>
+              <Text style={styles.statLabel}>Ville</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.codePostal || "Non disponible"}
+              </Text>
+              <Text style={styles.statLabel}>Code postal</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
-    <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-    
-    </View>
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>
+            Statistiques de signalements
+          </Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfComments || 0}
+              </Text>
+              <Text style={styles.statLabel}>Commentaires</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
+              <Text style={styles.statLabel}>Votes</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfReports || 0}
+              </Text>
+              <Text style={styles.statLabel}>Signalements</Text>
+            </View>
+          </View>
+        </View>
 
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Relations</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.followers?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnées</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.following?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnements</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Social</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats?.numberOfPosts || 0}</Text>
+              <Text style={styles.statLabel}>Publications{"\n"}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfEventsCreated || 0}
+              </Text>
+              <Text style={styles.statLabel}>Événements{"\n"}crées</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {stats?.numberOfEventsAttended || 0}
+              </Text>
+              <Text style={styles.statLabel}>
+                Participation{"\n"}aux événements
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.separator}></View>
+      </ScrollView>
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    </View>
   );
 }
 
@@ -502,6 +614,21 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: "center",
   },
+  sendChatContainer: {
+    alignItems: "center",
+    marginTop: 5,
+  },
+  sendChat: {
+    backgroundColor: "#57A773",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+  },
+  sendChatText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 16,
+  },
   confirmButton: {
     backgroundColor: "#ff4d4f",
     paddingVertical: 12,
@@ -536,22 +663,53 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  profileImageContainer: {
+  profileContainer: {
     alignItems: "center",
-    marginTop: 15,
-    marginBottom: 5,
-  },
-  profileImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: "#D6D6D6",
+    justifyContent: "center",
+    marginTop: 20,
     marginBottom: 10,
   },
-  noProfileImageText: {
-    color: "#999",
+  profileImageContainer: {
+    width: 150, // Taille de l'image de profil
+    height: 150,
+    borderRadius: 90, // Cercle parfait
+    justifyContent: "center",
+    alignItems: "center",
   },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 90, // Cercle parfait
+  },
+  noProfileImageText: {
+    fontSize: 14,
+    color: "#888",
+  },
+  goldBorder: {
+    borderWidth: 5,
+    borderColor: "#FFD700", // Couleur or
+  },
+  silverBorder: {
+    borderWidth: 5,
+    borderColor: "#C0C0C0", // Couleur argent
+  },
+  bronzeBorder: {
+    borderWidth: 5,
+    borderColor: "#CD7F32", // Couleur bronze
+  },
+  medalContainer: {
+    position: "absolute",
+    top: -20, // Médaille au-dessus de l'image
+    zIndex: 2, // Priorité d'affichage
+    backgroundColor: "white", // Fond blanc pour contraste
+    padding: 5,
+    borderRadius: 50,
+    elevation: 3, // Ombre pour l'effet de profondeur
+  },
+  medalText: {
+    fontSize: 40, // Taille de la médaille (emoji)
+  },
+
   followButtonContainer: {
     alignItems: "center",
     marginBottom: 20,
@@ -642,26 +800,35 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     alignItems: "center",
   },
   statItem: {
-    alignItems: "center",
+    justifyContent: "center", // Centre verticalement le contenu de statItem
+    alignItems: "center", // Centre horizontalement le contenu de statItem
+    padding: 10, // Espacement interne
   },
   statNumber: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#333",
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center", // Centre le nombre horizontalement
+    marginBottom: 5, // Espace entre le nombre et le texte
+    color: "#376D62", // Couleur sombre pour le nombre
   },
   statLabel: {
+    textAlign: "center", // Centre le texte horizontalement
     fontSize: 14,
-    fontWeight: "400",
-    color: "#888",
+    color: "#555", // Couleur du texte
+    fontWeight: "bold", // Texte en gras
+    lineHeight: 20, // Espacement entre les lignes
   },
   field: {
     fontSize: 14,
     color: "#555",
     marginBottom: 10,
     lineHeight: 20,
+  },
+  separator: {
+    marginBottom: 70,
   },
 });

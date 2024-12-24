@@ -143,7 +143,7 @@ export default function MapScreen() {
             }}
             title={report.title}
             onCalloutPress={() =>
-              navigation.navigate('ReportDetails', { reportId: report.id })
+              navigation.navigate('ReportDetailsScreen', { reportId: report.id })
             }
           >
             <Image
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   mapTypeButton: {
     position: 'absolute',
-    top: 550,
+    top: 640,
     left: '35%',
     backgroundColor: '#fff',
     padding: 10,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
 
   searchButton: {
     position: 'absolute',
-    top: 595,
+    top: 685,
     left: '50%',
     transform: [{ translateX: -100 }],
     width: 200,

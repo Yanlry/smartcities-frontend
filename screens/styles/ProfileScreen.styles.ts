@@ -283,6 +283,7 @@ searchButton: {
     marginBottom: 5, // Espacement avec le champ suivant
   }, 
   labelEmail: {
+    marginTop: 5,
     flex:1,
 
     fontSize: 12, // Augmente la taille du texte
@@ -329,6 +330,8 @@ searchButton: {
     fontSize: 16,
     fontWeight: "bold",
   },
+
+
 
   infoCardHeader: {
     fontSize: 18,

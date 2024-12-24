@@ -36,7 +36,7 @@ const Chart: React.FC<ChartProps> = ({ data }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📊 Statistiques du mois</Text>
+      <Text style={styles.title}>📊 Statistiques de la ville</Text>
       <BarChart
         data={{
           labels: data.labels,

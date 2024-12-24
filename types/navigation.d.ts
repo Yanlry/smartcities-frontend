@@ -13,6 +13,7 @@ export type RootStackParamList = {
   ReportScreen: undefined;
   NotificationsScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
   RankingScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
+  ConversationsScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
 };
 
 export type TabParamList = {

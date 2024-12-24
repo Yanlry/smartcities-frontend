@@ -204,7 +204,7 @@ export default function NotificationsScreen({ navigation }) {
     // Redirection basée sur le type de notification
     switch (notification.type) {
       case "COMMENT":
-        navigation.navigate("ReportDetails", {
+        navigation.navigate("ReportDetailsScreen", {
           reportId: notification.relatedId, // Passez l'ID du signalement
         });
         break;
@@ -216,7 +216,7 @@ export default function NotificationsScreen({ navigation }) {
         break;
 
       case "VOTE":
-        navigation.navigate("ReportDetails", {
+        navigation.navigate("ReportDetailsScreen", {
           reportId: notification.relatedId, // Passez l'ID du signalement
         });
         break;
@@ -446,6 +446,7 @@ const styles = StyleSheet.create({
   markAllButton: {
     backgroundColor: "#FFE347", // Vert agréable
     marginTop: 10,
+    marginBottom: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25, // Bords arrondis pour un look moderne
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
   
   markAllButtonText: {
     color: "black", // Texte blanc
-    fontSize: 16,
+    fontSize: 12,
     textTransform: "uppercase",
   },
   notificationContent: {

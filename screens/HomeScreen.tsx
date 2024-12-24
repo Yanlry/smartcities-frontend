@@ -98,7 +98,9 @@ export default function HomeScreen({ navigation }) {
   >([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [modalNameVisible, setModalNameVisible] = useState(false);
-  const { data } = useFetchStatistics(`${API_URL}/reports/statistics`);
+  const nomCommune = user?.nomCommune || ""; // Nom de la commune de l'utilisateur
+  const { data } = useFetchStatistics(`${API_URL}/reports/statistics`, nomCommune);
+
   const [refreshing, setRefreshing] = useState(false);
   const [helpModal, setHelpModal] = useState(false);
 
@@ -754,7 +756,7 @@ export default function HomeScreen({ navigation }) {
                     isTopThree
                       ? {
                           borderColor: borderColor,
-                          borderWidth: 2,
+                          borderWidth: 3,
                           borderRadius: 50,
                         }
                       : styles.nonTopThreeItem,

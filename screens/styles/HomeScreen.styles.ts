@@ -6,6 +6,7 @@ export default StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: 100,
     paddingHorizontal: 20,
   },
   sectionTitle: {
@@ -76,6 +77,7 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: "#f7f8fa",  
     padding: 20,
+    paddingTop: 120,
   },
   title: {
     fontSize: 24,
@@ -400,8 +402,8 @@ export default StyleSheet.create({
   },
   titleContainer: {
     backgroundColor: '#f8f9fa', // Couleur claire pour le fond
-    padding: 12,
-    borderRadius: 8,
+    padding: 15,
+    borderRadius: 30,
     borderWidth: 1,
     borderColor: '#ddd',
     shadowColor: '#000',
@@ -409,7 +411,7 @@ export default StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3, // Pour Android
-    marginTop: 30, // Espace avec le titre
+    marginTop: 35, // Espace avec le titre
     marginBottom: 25, // Espace avec la liste
     alignItems: 'center',
   },

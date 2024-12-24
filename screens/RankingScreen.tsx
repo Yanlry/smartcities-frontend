@@ -164,11 +164,22 @@ const RankingScreen = ({ navigation }) => {
         : item.ranking === 2
         ? "#C0C0C0"
         : "#CD7F32"; // Or, argent, bronze
+    const borderColor =
+      item.ranking === 1
+        ? "#FFD700"
+        : item.ranking === 2
+        ? "#C0C0C0"
+        : "#CD7F32"; // Contours correspondants
 
     return (
       <TouchableOpacity
-        style={styles.rankingItem}
-        onPress={() => navigation.navigate("UserProfileScreen", { userId: item.id })}
+        style={[
+          styles.rankingItem,
+          isTopThree && { borderColor: borderColor, borderWidth: 2 },
+        ]}
+        onPress={() =>
+          navigation.navigate("UserProfileScreen", { userId: item.id })
+        }
       >
         {isTopThree && (
           <View style={[styles.badge, { backgroundColor: badgeColor }]}>
@@ -181,9 +192,17 @@ const RankingScreen = ({ navigation }) => {
           source={{
             uri: item.photo || "https://via.placeholder.com/150",
           }}
-          style={styles.userImage}
+          style={[
+            styles.userImage,
+            isTopThree && styles.topThreeImage, // Style conditionnel pour agrandir l'image
+          ]}
         />
-        <View style={styles.userInfo}>
+        <View
+          style={[
+            styles.userInfo,
+            isTopThree && styles.topThreeUserInfo, // Style conditionnel pour centrer le texte
+          ]}
+        >
           <Text style={styles.userName}>
             {item.useFullName
               ? `${item.firstName} ${item.lastName}`
@@ -278,6 +297,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  topThreeImage: {
+    width: 70, // Agrandir l'image
+    height: 70,
+    borderRadius: 35,
+  },
+  topThreeUserInfo: {
+    marginTop: 15, // Centrer le texte
   },
   badge: {
     width: 40,
