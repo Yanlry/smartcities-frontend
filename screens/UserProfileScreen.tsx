@@ -38,6 +38,7 @@ type User = {
   longitude?: number;
   nomCommune?: string;
   codePostal?: string;
+  isSubscribed?: boolean;
 };
 
 export default function UserProfileScreen({ route, navigation }) {
@@ -523,6 +524,24 @@ export default function UserProfileScreen({ route, navigation }) {
               <Text style={styles.statLabel}>
                 Participation{"\n"}aux événements
               </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Options</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+               {user?.isSubscribed ? "Oui" : "Non"}
+              </Text>
+              <Text style={styles.statLabel}>  SMART+</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+              {user?.isSubscribed ? "Oui" : "Non"}
+              </Text>
+              <Text style={styles.statLabel}>Affiliation mairie</Text>
             </View>
           </View>
         </View>

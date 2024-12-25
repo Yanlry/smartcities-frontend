@@ -142,8 +142,11 @@ const RankingScreen = ({ navigation }) => {
       <View style={styles.header}>
         <View style={styles.header}>
           <Text style={styles.title}>
-            Bienvenue à 
-            <Text style={styles.highlight}> {cityName || "Ville inconnue"}</Text>
+            Bienvenue à
+            <Text style={styles.highlight}>
+              {" "}
+              {cityName || "Ville inconnue"}
+            </Text>
           </Text>
         </View>
         <Text style={styles.subtitle}>
@@ -154,68 +157,72 @@ const RankingScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-  data={rankingData}
-  keyExtractor={(item) => item.id.toString()}
-  renderItem={({ item }) => {
-    const isTopThree = item.ranking <= 3;
-    const badgeColor =
-      item.ranking === 1
-        ? "#FFD700"
-        : item.ranking === 2
-        ? "#C0C0C0"
-        : "#CD7F32"; // Or, argent, bronze
-    const borderColor =
-      item.ranking === 1
-        ? "#FFD700"
-        : item.ranking === 2
-        ? "#C0C0C0"
-        : "#CD7F32"; // Contours correspondants
+        data={rankingData}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => {
+          const isTopThree = item.ranking <= 3;
+          const badgeColor =
+            item.ranking === 1
+              ? "#FFD700"
+              : item.ranking === 2
+              ? "#C0C0C0"
+              : "#CD7F32"; // Or, argent, bronze
+          const borderColor =
+            item.ranking === 1
+              ? "#FFD700"
+              : item.ranking === 2
+              ? "#C0C0C0"
+              : "#CD7F32"; // Contours correspondants
 
-    return (
-      <TouchableOpacity
-        style={[
-          styles.rankingItem,
-          isTopThree && { borderColor: borderColor, borderWidth: 2 },
-        ]}
-        onPress={() =>
-          navigation.navigate("UserProfileScreen", { userId: item.id })
-        }
-      >
-        {isTopThree && (
-          <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-            <Text style={styles.badgeText}>
-              {item.ranking === 1 ? "🥇" : item.ranking === 2 ? "🥈" : "🥉"}
-            </Text>
-          </View>
-        )}
-        <Image
-          source={{
-            uri: item.photo || "https://via.placeholder.com/150",
-          }}
-          style={[
-            styles.userImage,
-            isTopThree && styles.topThreeImage, // Style conditionnel pour agrandir l'image
-          ]}
-        />
-        <View
-          style={[
-            styles.userInfo,
-            isTopThree && styles.topThreeUserInfo, // Style conditionnel pour centrer le texte
-          ]}
-        >
-          <Text style={styles.userName}>
-            {item.useFullName
-              ? `${item.firstName} ${item.lastName}`
-              : item.username || "Utilisateur inconnu"}
-          </Text>
-          <Text style={styles.userRanking}>
-            {isTopThree ? "" : `Classement : ${item.ranking}`}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }}
-/>
+          return (
+            <TouchableOpacity
+              style={[
+                styles.rankingItem,
+                isTopThree && { borderColor: borderColor, borderWidth: 2 },
+              ]}
+              onPress={() =>
+                navigation.navigate("UserProfileScreen", { userId: item.id })
+              }
+            >
+              {isTopThree && (
+                <View style={[styles.badge, { backgroundColor: badgeColor }]}>
+                  <Text style={styles.badgeText}>
+                    {item.ranking === 1
+                      ? "🥇"
+                      : item.ranking === 2
+                      ? "🥈"
+                      : "🥉"}
+                  </Text>
+                </View>
+              )}
+              <Image
+                source={{
+                  uri: item.photo || "https://via.placeholder.com/150",
+                }}
+                style={[
+                  styles.userImage,
+                  isTopThree && styles.topThreeImage, // Style conditionnel pour agrandir l'image
+                ]}
+              />
+              <View
+                style={[
+                  styles.userInfo,
+                  isTopThree && styles.topThreeUserInfo, // Style conditionnel pour centrer le texte
+                ]}
+              >
+                <Text style={styles.userName}>
+                  {item.useFullName
+                    ? `${item.firstName} ${item.lastName}`
+                    : item.username || "Utilisateur inconnu"}
+                </Text>
+                <Text style={styles.userRanking}>
+                  {isTopThree ? "" : `Classement : ${item.ranking}`}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+      />
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
   );

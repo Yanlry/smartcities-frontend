@@ -34,6 +34,8 @@ import { AuthProvider } from "./context/AuthContext";
 import ChatScreen from "./screens/ChatScreen";
 import RankingScreen from "./screens/RankingScreen";
 import ConversationsScreen from "./screens/ConversationsScreen";
+import SocialScreen from "./screens/SocialScreen";
+import CityScreen from "./screens/CityScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -183,8 +185,8 @@ export default function App() {
               iconName = "home-outline";
             } else if (route.name === "Conversations") {
               iconName = "chatbubble-ellipses-outline";
-            } else if (route.name === "Signalements") {
-              iconName = "alert-circle-outline";
+            } else if (route.name === "Social") {
+              iconName = "people-outline";
             } else if (route.name === "Carte") {
               iconName = "map-outline";
             } else if (route.name === "Ajouter") {
@@ -243,7 +245,7 @@ export default function App() {
             },
           }}
         />
-        <Tab.Screen name="Signalements" component={ReportScreen} />
+        <Tab.Screen name="Social" component={SocialScreen} />
         <Tab.Screen name="Carte" component={MapScreen} />
       </Tab.Navigator>
     );
@@ -337,6 +339,14 @@ export default function App() {
                   <Stack.Screen
                     name="ConversationsScreen"
                     component={ConversationsScreen}
+                  />
+                  <Stack.Screen
+                     name="SignalementsScreen" 
+                     component={ReportScreen}
+                  />
+                  <Stack.Screen
+                     name="CityScreen" 
+                     component={CityScreen}
                   />
                 </>
               )}

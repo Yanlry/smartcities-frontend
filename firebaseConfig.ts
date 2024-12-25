@@ -1,14 +1,16 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+// @ts-ignore
+import { FIREBASE_API_KEY, FIREBASE_APP_ID,FIREBASE_MEASUREMENT_ID, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID,FIREBASE_STORAGE_BUCKET, FIREBASE_MESSAGING_SENDER_ID  } from "@env";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCIN0bh0G6-d6cNQh6lhuNUDIyFEQo0cG8",
-  authDomain: "smartcities-f6268.firebaseapp.com",
-  projectId: "smartcities-f6268",
-  storageBucket: "smartcities-f6268.appspot.com",
-  messagingSenderId: "245832573252",
-  appId: "1:245832573252:web:71ec66fa1491bc20a1f711",
-  measurementId: "G-N0FS36H7G5",
+  apiKey: `${FIREBASE_API_KEY}`,
+  authDomain: `${FIREBASE_AUTH_DOMAIN}`,
+  projectId: `${FIREBASE_PROJECT_ID}`,
+  storageBucket: `${FIREBASE_STORAGE_BUCKET}`,
+  messagingSenderId: `${FIREBASE_MESSAGING_SENDER_ID}`,
+  appId: `${FIREBASE_APP_ID}`,
+  measurementId: `${FIREBASE_MEASUREMENT_ID}`,
 };
 
 // Initialiser Firebase

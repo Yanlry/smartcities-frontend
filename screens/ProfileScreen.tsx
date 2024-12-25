@@ -791,17 +791,25 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           </View>
         </View>
 
-        {/* Section Abonnement */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Abonnements</Text>
-          <Text style={styles.field}>
-            Abonné : {user?.isSubscribed ? "Oui" : "Non"}
-          </Text>
-        </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-          <Text style={styles.logoutText}>Se déconnecter</Text>
-        </TouchableOpacity>
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Options</Text>
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+               {user?.isSubscribed ? "Oui" : "Non"}
+              </Text>
+              <Text style={styles.statLabel}>  SMART+</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+              {user?.isSubscribed ? "Oui" : "Non"}
+              </Text>
+              <Text style={styles.statLabel}>Affiliation mairie</Text>
+            </View>
+          </View>
+        </View>
+        
       </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>

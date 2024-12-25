@@ -4,7 +4,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/Sidebar";
 
-export default function ReportScreen({ navigation }) {
+export default function CityScreen({ navigation }) {
   const { unreadCount } = useNotification(); // Récupération du compteur
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -27,7 +27,7 @@ export default function ReportScreen({ navigation }) {
 
         {/* Titre de la page */}
         <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>MES SIGNALEMENTS</Text>
+          <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
         </View>
 
         {/* Bouton de notifications avec compteur */}
@@ -52,7 +52,7 @@ export default function ReportScreen({ navigation }) {
 
       <View>
         <Text style={styles.title}>
-            Ici seront lister tout mes report
+            Bienvenue sur la page de ville !
         </Text>
       </View>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />

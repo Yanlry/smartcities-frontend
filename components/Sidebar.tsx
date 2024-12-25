@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     navigation.navigate(screen as any); // Cast explicite si nécessaire
     toggleSidebar();
   };
-  
+
   const handleLogoutWithSidebarClose = () => {
     toggleSidebar(); // Fermez la Sidebar
     setTimeout(() => {
@@ -70,10 +70,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.sidebarItem}
+          onPress={() => handleNavigation("CityScreen")}
+        >
+          <Ionicons name="earth-outline" size={24} color="#BEE5BF" />
+          <Text style={styles.sidebarText}>Tout sur ma ville</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.sidebarItem}
           onPress={() => handleNavigation("RankingScreen")}
         >
           <Ionicons name="trophy-outline" size={24} color="#BEE5BF" />
-          <Text style={styles.sidebarText}>Classement</Text>
+          <Text style={styles.sidebarText}>Classement général</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.sidebarItem}
@@ -84,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             size={24}
             color="#BEE5BF"
           />
-          <Text style={styles.sidebarText}>Paramétres du profil</Text>
+          <Text style={styles.sidebarText}>Informations personnelles</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.sidebarItem}
@@ -95,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             size={24}
             color="#BEE5BF"
           />
-          <Text style={styles.sidebarText}>Tout les signalements</Text>
+          <Text style={styles.sidebarText}>Mes signalements</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.sidebarItem}
@@ -106,11 +113,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             size={24}
             color="#BEE5BF"
           />
-          <Text style={styles.sidebarText}>Tout les événements</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sidebarItem}>
-          <Ionicons name="earth-outline" size={24} color="#BEE5BF" />
-          <Text style={styles.sidebarText}>Informations Mairie</Text>
+          <Text style={styles.sidebarText}>Mes événements</Text>
         </TouchableOpacity>
 
         {/* Section supplémentaire */}
