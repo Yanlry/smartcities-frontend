@@ -572,6 +572,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
+  
   modalBackdrop: {
     position: "absolute",
     top: 0, // Occupe toute la hauteur

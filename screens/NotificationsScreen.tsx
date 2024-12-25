@@ -315,45 +315,59 @@ export default function NotificationsScreen({ navigation }) {
   
     return (
       <Swipeable
-        renderLeftActions={renderLeftActions}
-        renderRightActions={renderRightActions}
-        onSwipeableOpen={(direction) => {
-          // Vérifie si l'action a été glissée vers la gauche ou la droite
-          if (direction === "left") {
-            markNotificationAsRead(item.id); // Marque comme lu
-          } else if (direction === "right") {
-            deleteNotification(item.id); // Supprime
-          }
-        }}
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
+      onSwipeableOpen={(direction) => {
+        if (direction === "left") {
+          markNotificationAsRead(item.id); // Marque comme lu
+        } else if (direction === "right") {
+          // Demander confirmation avant suppression
+          Alert.alert(
+            "Confirmer la suppression",
+            "Voulez-vous vraiment supprimer cette notification ?",
+            [
+              {
+                text: "Annuler",
+                style: "cancel", // Ferme l'alerte sans supprimer
+              },
+              {
+                text: "Supprimer",
+                style: "destructive",
+                onPress: () => deleteNotification(item.id), // Supprime la notification
+              },
+            ]
+          );
+        }
+      }}
+    >
+      <TouchableOpacity
+        style={[
+          styles.notificationItem,
+          !item.isRead && styles.unreadNotification,
+        ]}
+        onPress={() => handleNotificationClick(item)}
       >
-        <TouchableOpacity
-          style={[
-            styles.notificationItem,
-            !item.isRead && styles.unreadNotification,
-          ]}
-          onPress={() => handleNotificationClick(item)}
-        >
-          <View style={styles.notificationContent}>
-            {/* Afficher la photo de profil */}
-            <Image
-              source={{
-                uri:
-                  item.initiator?.profilePhoto ||
-                  item.initiatorDetails?.profilePhoto?.url ||
-                  "https://via.placeholder.com/150",
-              }}
-              style={styles.profilePhoto}
-            />
-            {/* Texte de la notification */}
-            <View style={styles.notificationTextContainer}>
-              <Text style={styles.notificationMessage}>{item.message}</Text>
-              <Text style={styles.notificationDate}>
-                {new Date(item.createdAt).toLocaleString()}
-              </Text>
-            </View>
+        <View style={styles.notificationContent}>
+          {/* Afficher la photo de profil */}
+          <Image
+            source={{
+              uri:
+                item.initiator?.profilePhoto ||
+                item.initiatorDetails?.profilePhoto?.url ||
+                "https://via.placeholder.com/150",
+            }}
+            style={styles.profilePhoto}
+          />
+          {/* Texte de la notification */}
+          <View style={styles.notificationTextContainer}>
+            <Text style={styles.notificationMessage}>{item.message}</Text>
+            <Text style={styles.notificationDate}>
+              {new Date(item.createdAt).toLocaleString()}
+            </Text>
           </View>
-        </TouchableOpacity>
-      </Swipeable>
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
     );
   };
   if (loading) {

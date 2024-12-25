@@ -78,6 +78,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
       setIsLoading(false); // Fin du chargement
     }
   };
+  
   const handleResetPassword = async () => {
     setIsLoading(true);
     // Étape 2 : Réinitialisation du mot de passe avec le token
@@ -159,11 +160,11 @@ export default function LoginScreen({ navigation, onLogin }: any) {
     <View style={styles.container}>
       {/* Image d'arrière-plan */}
       <ImageBackground
-        source={require("../../assets/images/2.jpg")}
+        source={require("../../assets/images/1.jpg")}
         style={styles.background}
       >
         {/* Section floue au centre */}
-        <BlurView intensity={40} style={styles.blurContainer}>
+        <BlurView intensity={80} style={styles.blurContainer}>
           <Text style={styles.title}>Bienvenue sur Smartcities !</Text>
           <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
 

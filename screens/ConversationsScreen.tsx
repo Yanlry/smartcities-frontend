@@ -156,6 +156,11 @@ const ConversationsScreen = ({ navigation, route }: any) => {
           : conversation
       )
     );
+  
+    // Optionnel : Retourner l'état mis à jour pour validation
+    return conversations.filter((conversation) =>
+      conversation.participants.includes(receiverId)
+    );
   };
 
   const renderConversation = ({ item }: { item: Conversation }) => {
@@ -177,13 +182,17 @@ const ConversationsScreen = ({ navigation, route }: any) => {
             ? styles.unreadConversation
             : null,
         ]}
-        onPress={() =>
+        onPress={() => {
+          const receiverId = item.participants.find((id) => id !== Number(userId));
+          if (receiverId !== undefined) {
+            updateUnreadCount(receiverId);
+          }
+        
           navigation.navigate("ChatScreen", {
             senderId: userId,
             receiverId: item.participants.find((id) => id !== Number(userId)),
-            onConversationRead: updateUnreadCount, // Passer la fonction
-          })
-        }
+          });
+        }}
       >
         <View>
           {item.profilePhoto ? (
@@ -305,6 +314,7 @@ const styles = StyleSheet.create({
     color: "#888",
     alignSelf: "flex-end",
     marginRight: 10,
+    marginBottom: 17,
   },
 });
 
