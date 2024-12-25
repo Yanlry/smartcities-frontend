@@ -23,6 +23,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     participants: number[];
     lastMessage: string;
     otherParticipantName?: string;
+    lastMessageTimestamp?: string | null;
     unreadCount?: number; // Indicateur pour les messages non lus
     profilePhoto?: string | null; // Photo de profil du participant
   }
@@ -76,11 +77,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     const unsubscribe = onSnapshot(
       q,
       async (snapshot) => {
-        console.log(
-          "Nombre de documents récupérés dans le snapshot :",
-          snapshot.docs.length
-        );
-
+    
         const fetchedConversations = await Promise.all(
           snapshot.docs.map(async (doc) => {
             const data = doc.data();
@@ -91,7 +88,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
               otherParticipant
                 ? await fetchUserDetails(otherParticipant)
                 : { name: "Inconnu", profilePhoto: null };
-
+    
             // Récupérer les messages non lus pour chaque conversation
             const messagesRef = collection(db, "messages");
             const unreadMessagesQuery = query(
@@ -100,7 +97,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
               where("senderId", "==", otherParticipant),
               where("isRead", "==", false)
             );
-
+    
             const unreadMessagesSnapshot = await new Promise(
               (resolve, reject) => {
                 onSnapshot(
@@ -110,31 +107,31 @@ const ConversationsScreen = ({ navigation, route }: any) => {
                 );
               }
             );
-
+    
             const unreadCount = (unreadMessagesSnapshot as any).docs.length;
-
-            console.log(
-              "Messages non lus pour cette conversation :",
-              unreadCount
-            );
-
+    
             return {
               id: doc.id,
               participants: data.participants,
               lastMessage: data.lastMessage,
+              lastMessageTimestamp: data.lastMessageTimestamp?.seconds
+                ? new Date(data.lastMessageTimestamp.seconds * 1000).toISOString()
+                : null,
               otherParticipantName,
               profilePhoto,
               unreadCount,
             };
           })
         );
-
-        console.log(
-          "Conversations après récupération des noms et des non lus :",
-          fetchedConversations
-        );
-
-        setConversations(fetchedConversations);
+    
+        // Trier les conversations par `lastMessageTimestamp` (ordre décroissant)
+        const sortedConversations = fetchedConversations.sort((a, b) => {
+          if (!a.lastMessageTimestamp) return 1; // Les conversations sans timestamp vont en bas
+          if (!b.lastMessageTimestamp) return -1;
+          return new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime();
+        });
+    
+        setConversations(sortedConversations);
         setLoading(false);
       },
       (error) => {
@@ -147,7 +144,6 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     );
 
     return () => {
-      console.log("Nettoyage de l'abonnement Firestore.");
       unsubscribe();
     };
   }, [userId]);
@@ -167,55 +163,77 @@ const ConversationsScreen = ({ navigation, route }: any) => {
       item.lastMessage.length > 100
         ? item.lastMessage.substring(0, 100) + "..."
         : item.lastMessage;
-
+  
+    const lastMessageTime =
+      item.lastMessageTimestamp
+        ? formatLastMessageTime(item.lastMessageTimestamp)
+        : "N/A";
+  
     return (
       <TouchableOpacity
-      style={[
-        styles.conversationItem,
-        item.unreadCount && item.unreadCount > 0
-          ? styles.unreadConversation
-          : null,
-      ]}
-      onPress={() =>
-        navigation.navigate("ChatScreen", {
-          senderId: userId,
-          receiverId: item.participants.find((id) => id !== Number(userId)),
-          onConversationRead: updateUnreadCount, // Passer la fonction
-        })
-      }
-    >
-      <View>
-        {item.profilePhoto ? (
-          <Image
-            source={{ uri: item.profilePhoto }}
-            style={styles.profilePhoto}
-          />
-        ) : (
-          <View style={styles.defaultProfilePhoto} />
-        )}
-      </View>
-      <View style={styles.conversationDetails}>
-        <Text style={styles.conversationTitle}>
-          {item.otherParticipantName || "Nom inconnu"}
-        </Text>
-        <Text style={styles.lastMessage}>
-          {typeof truncatedMessage === "string" ? truncatedMessage : "Aucun message"}
-        </Text>
-      </View>
-    
-      {item.unreadCount && typeof item.unreadCount === "number" && item.unreadCount > 0 ? (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadBadgeText}>{String(item.unreadCount)}</Text>
+        style={[
+          styles.conversationItem,
+          item.unreadCount && item.unreadCount > 0
+            ? styles.unreadConversation
+            : null,
+        ]}
+        onPress={() =>
+          navigation.navigate("ChatScreen", {
+            senderId: userId,
+            receiverId: item.participants.find((id) => id !== Number(userId)),
+            onConversationRead: updateUnreadCount, // Passer la fonction
+          })
+        }
+      >
+        <View>
+          {item.profilePhoto ? (
+            <Image
+              source={{ uri: item.profilePhoto }}
+              style={styles.profilePhoto}
+            />
+          ) : (
+            <View style={styles.defaultProfilePhoto} />
+          )}
         </View>
-      ) : null}
-    </TouchableOpacity>
+        <View style={styles.conversationDetails}>
+          <Text style={styles.conversationTitle}>
+            {item.otherParticipantName || "Nom inconnu"}
+          </Text>
+          <Text style={styles.lastMessage}>
+            {typeof truncatedMessage === "string" ? truncatedMessage : "Aucun message"}
+          </Text>
+        </View>
+        <Text style={styles.timestamp}>{lastMessageTime}</Text>
+        {item.unreadCount && typeof item.unreadCount === "number" && item.unreadCount > 0 ? (
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadBadgeText}>{String(item.unreadCount)}</Text>
+          </View>
+        ) : null}
+      </TouchableOpacity>
     );
   };
+
+  const formatLastMessageTime = (timestamp: string) => {
+    const messageDate = new Date(timestamp);
+    const today = new Date();
+  
+    const isToday =
+      messageDate.getDate() === today.getDate() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getFullYear() === today.getFullYear();
+  
+    if (isToday) {
+      return messageDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } else {
+      return messageDate.toLocaleDateString();
+    }
+  };
+
 
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#408476" />
       ) : conversations.length > 0 ? (
         <FlatList
           data={conversations}
@@ -282,6 +300,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   unreadBadgeText: { color: "#fff", fontSize: 12, fontWeight: "bold" },
+  timestamp: {
+    fontSize: 12,
+    color: "#888",
+    alignSelf: "flex-end",
+    marginRight: 10,
+  },
 });
 
 export default ConversationsScreen;

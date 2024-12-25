@@ -255,6 +255,14 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   };
 
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp.seconds * 1000);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
+  };
   
   return (
     <View style={styles.container}>
@@ -299,6 +307,9 @@ const ChatScreen = ({ route, navigation }: any) => {
             ]}
           >
             <Text style={styles.messageText}>{item.message}</Text>
+            <Text style={styles.timestamp}>
+              {formatTimestamp(item.timestamp)}
+            </Text>
             {lastSentMessage && item.id === lastSentMessage.id && (
               <Text style={styles.messageStatus}>
                 {lastSentMessage.isRead ? "Lu" : "En attente de lecture"}
@@ -362,9 +373,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   messageBubble: { padding: 10, borderRadius: 10, marginVertical: 5 },
-  sentMessage: { backgroundColor: "#e1ffc7", alignSelf: "flex-end" },
-  receivedMessage: { backgroundColor: "#f1f1f1", alignSelf: "flex-start" },
-  messageText: { fontSize: 19 },
+  sentMessage: { backgroundColor: "#e1ffc7", alignSelf: "flex-end",  borderRadius: 20, paddingHorizontal: 15, marginLeft: 50 },
+  receivedMessage: { backgroundColor: "#f1f1f1", alignSelf: "flex-start", borderRadius: 20, paddingHorizontal: 15, marginRight: 50 },
+  messageText: { fontSize: 18 },
   messageStatus: { fontSize: 12, color: "#666", marginTop: 5 },
   inputContainer: {
     flexDirection: "row",
@@ -384,6 +395,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 30,
     marginLeft: 10,
+  },
+  timestamp: {
+    fontSize: 8,
+    color: "#888",
+    marginTop: 5,
+    alignSelf: "flex-end", // Alignement à droite pour les messages envoyés
   },
   sendButtonText: { color: "#fff", fontWeight: "bold" },
 });

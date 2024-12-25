@@ -29,7 +29,8 @@ import UserProfileScreen from "./screens/UserProfileScreen";
 import Sidebar from "./components/Sidebar";
 import { StatusBar } from "react-native";
 import NotificationsScreen from "./screens/NotificationsScreen";
-import { NotificationProvider, useNotification } from "./context/NotificationContext";
+import { NotificationProvider,useNotification} from "./context/NotificationContext";
+import { AuthProvider } from "./context/AuthContext";
 import ChatScreen from "./screens/ChatScreen";
 import RankingScreen from "./screens/RankingScreen";
 import ConversationsScreen from "./screens/ConversationsScreen";
@@ -44,7 +45,10 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
+    setIsSidebarOpen((prevState) => {
+      console.log("Sidebar state before toggle:", prevState);
+      return !prevState;
+    });
   };
 
   const clearAllTokens = async () => {
@@ -59,9 +63,14 @@ export default function App() {
     initializeApp();
   }, []);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    console.log("Utilisateur déconnecté.");
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("userToken"); // Supprimez les données de session
+      setIsLoggedIn(false); // Réinitialise l'état de connexion
+      console.log("Déconnexion réussie");
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion :", error);
+    }
   };
 
   const CustomHeader = ({ navigation }) => {
@@ -108,7 +117,7 @@ export default function App() {
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
-  
+
     // Fonction pour récupérer l'ID utilisateur
     const fetchUserId = async () => {
       try {
@@ -122,11 +131,14 @@ export default function App() {
         console.log("Payload décodé :", payload);
         return payload.userId;
       } catch (error) {
-        console.error("Erreur lors de la récupération de l'ID utilisateur :", error);
+        console.error(
+          "Erreur lors de la récupération de l'ID utilisateur :",
+          error
+        );
         return null;
       }
     };
-  
+
     // Récupérer l'ID utilisateur lors du chargement
     useEffect(() => {
       const initializeUserId = async () => {
@@ -134,35 +146,39 @@ export default function App() {
         setUserId(id);
         setLoading(false);
       };
-  
+
       initializeUserId();
     }, []);
-  
+
     if (loading) {
       return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <ActivityIndicator size="large" color="#0000ff" />
         </View>
       );
     }
-  
+
     if (!userId) {
       return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <Text>Erreur : utilisateur non connecté.</Text>
         </View>
       );
     }
-  
+
     console.log("UserId dans TabNavigator :", userId);
-  
+
     return (
       <Tab.Navigator
         screenOptions={({ route }) => ({
           header: ({ navigation }) => <CustomHeader navigation={navigation} />,
           tabBarIcon: ({ color, size, focused }) => {
             let iconName = "";
-  
+
             if (route.name === "Accueil") {
               iconName = "home-outline";
             } else if (route.name === "Conversations") {
@@ -174,7 +190,7 @@ export default function App() {
             } else if (route.name === "Ajouter") {
               iconName = "add-circle-outline";
             }
-  
+
             return (
               <View
                 style={{
@@ -242,6 +258,7 @@ export default function App() {
   }
 
   return (
+    <AuthProvider handleLogout={handleLogout}>
     <NotificationProvider>
       <StatusBar barStyle="light-content" backgroundColor="#111" />
       <NavigationContainer>
@@ -276,7 +293,10 @@ export default function App() {
                   <Stack.Screen name="Main" component={TabNavigator} />
                   <Stack.Screen name="ProfileScreen">
                     {(props) => (
-                      <ProfileScreen {...props} onLogout={handleLogout} />
+                      <ProfileScreen
+                        {...props}
+                        onLogout={handleLogout} // Passez handleLogout ici
+                      />
                     )}
                   </Stack.Screen>
                   <Stack.Screen
@@ -287,18 +307,12 @@ export default function App() {
                     name="ReportDetailsScreen"
                     component={ReportDetailsScreen}
                   />
-                  <Stack.Screen
-                    name="ReportScreen"
-                    component={ReportScreen}
-                  />
+                  <Stack.Screen name="ReportScreen" component={ReportScreen} />
                   <Stack.Screen
                     name="EventDetailsScreen"
                     component={EventDetailsScreen}
                   />
-                  <Stack.Screen
-                  name="EventsScreen"
-                  component={EventsScreen}
-                />
+                  <Stack.Screen name="EventsScreen" component={EventsScreen} />
                   <Stack.Screen
                     name="CategoryReportsScreen"
                     component={CategoryReportsScreen}
@@ -315,10 +329,7 @@ export default function App() {
                     name="NotificationsScreen"
                     component={NotificationsScreen}
                   />
-                  <Stack.Screen
-                    name="ChatScreen"
-                    component={ChatScreen}
-                  />
+                  <Stack.Screen name="ChatScreen" component={ChatScreen} />
                   <Stack.Screen
                     name="RankingScreen"
                     component={RankingScreen}
@@ -330,14 +341,17 @@ export default function App() {
                 </>
               )}
             </Stack.Navigator>
-            <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+            <Sidebar
+              isOpen={isSidebarOpen}
+              toggleSidebar={toggleSidebar}
+            />
           </>
         </KeyboardWrapper>
       </NavigationContainer>
     </NotificationProvider>
+    </AuthProvider>
   );
 }
-
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -385,7 +399,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
 
 // import React, { useState, useEffect, useRef } from "react";
 // import {
@@ -685,7 +698,6 @@ const styles = StyleSheet.create({
 //     </NotificationProvider>
 //   );
 // }
-
 
 // const styles = StyleSheet.create({
 //   loadingContainer: {
