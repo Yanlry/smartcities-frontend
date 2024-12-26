@@ -1,61 +1,76 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/Sidebar";
+// @ts-ignore
+import { API_URL } from "@env";
+import { useToken } from "../hooks/useToken";
 
 export default function ReportScreen({ navigation }) {
-  const { unreadCount } = useNotification(); // Récupération du compteur
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [reports, setReports] = useState([]);
+  const {getUserId} = useToken();
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
+  useEffect(() => {
+    const fetchUserReports = async () => {
+      try {
+        // Résolution de la promesse pour récupérer le userId
+        const userId = await getUserId();
+
+        if (!userId) {
+          console.error("Impossible de récupérer l'ID utilisateur.");
+          return;
+        }
+
+        console.log("ID utilisateur récupéré :", userId);
+
+        // Requête fetch avec le userId
+        const response = await fetch(`${API_URL}/reports?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ! statut : ${response.status}`);
+        }
+
+        const data = await response.json();
+        setReports(data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des rapports :", error);
+      }
+    };
+
+    fetchUserReports();
+  }, [getUserId]);
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.reportCard}
+      onPress={() => navigation.navigate("ReportDetailsScreen", { reportId: item.id })}
+    >
+      <Text style={styles.reportTitle}>{item.title}</Text>
+      <Text style={styles.reportDescription} numberOfLines={2}>
+        {item.description}
+      </Text>
+      <View style={styles.reportFooter}>
+        <Text style={styles.reportDate}>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
+        <Icon name="chevron-right" size={24} color="#BEE5BF" />
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerNav}>
-        {/* Bouton pour ouvrir le menu */}
-        <TouchableOpacity onPress={toggleSidebar}>
-          <Icon
-            name="menu"
-            size={28}
-            color="#BEE5BF" // Couleur dorée
-            style={{ marginLeft: 10 }}
-          />
-        </TouchableOpacity>
-
-        {/* Titre de la page */}
-        <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>MES SIGNALEMENTS</Text>
-        </View>
-
-        {/* Bouton de notifications avec compteur */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("NotificationsScreen")}
-        >
-          <View>
-            <Icon
-              name="notifications"
-              size={28}
-              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
-              style={{ marginRight: 10 }}
-            />
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <View>
-        <Text style={styles.title}>
-            Ici seront lister tout mes report
-        </Text>
-      </View>
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Text style={styles.headerTitle}>Mes Rapports</Text>
+      <FlatList
+        data={reports}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.reportsList}
+      />
     </View>
   );
 }
@@ -63,49 +78,49 @@ export default function ReportScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#1E1E2C",
+    padding: 10,
+    paddingTop: 60,
   },
-  headerNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    paddingTop: 45,
-  },
-  headerTitleNav: {
+  headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#fff", // Couleur blanche
-    letterSpacing: 2, // Espacement pour un effet moderne
+    color: "#BEE5BF",
     textAlign: "center",
+    marginBottom: 10,
   },
-  typeBadgeNav: {
+  reportsList: {
+    paddingVertical: 10,
+  },
+  reportCard: {
+    backgroundColor: "#2A2A3B",
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  reportTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#BEE5BF",
+    marginBottom: 5,
+  },
+  reportDescription: {
+    fontSize: 14,
+    color: "#B0B0C3",
+    marginBottom: 10,
+  },
+  reportFooter: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
   },
-  badge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+  reportDate: {
+    fontSize: 12,
+    color: "#6F6F81",
   },
-  badgeText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 26,
-  },
-  title:{
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-    justifyContent: "center",
-    marginTop: 20,
-  }
 });

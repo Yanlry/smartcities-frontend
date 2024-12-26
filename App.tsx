@@ -119,7 +119,8 @@ export default function App() {
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    const actionSheetRef = useRef<ActionSheet | null>(null); // Référence pour l'ActionSheet
+  
     // Fonction pour récupérer l'ID utilisateur
     const fetchUserId = async () => {
       try {
@@ -140,7 +141,7 @@ export default function App() {
         return null;
       }
     };
-
+  
     // Récupérer l'ID utilisateur lors du chargement
     useEffect(() => {
       const initializeUserId = async () => {
@@ -148,10 +149,10 @@ export default function App() {
         setUserId(id);
         setLoading(false);
       };
-
+  
       initializeUserId();
     }, []);
-
+  
     if (loading) {
       return (
         <View
@@ -161,7 +162,7 @@ export default function App() {
         </View>
       );
     }
-
+  
     if (!userId) {
       return (
         <View
@@ -171,83 +172,100 @@ export default function App() {
         </View>
       );
     }
-
+  
     console.log("UserId dans TabNavigator :", userId);
-
+  
     return (
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          header: ({ navigation }) => <CustomHeader navigation={navigation} />,
-          tabBarIcon: ({ color, size, focused }) => {
-            let iconName = "";
-
-            if (route.name === "Accueil") {
-              iconName = "home-outline";
-            } else if (route.name === "Conversations") {
-              iconName = "chatbubble-ellipses-outline";
-            } else if (route.name === "Social") {
-              iconName = "people-outline";
-            } else if (route.name === "Carte") {
-              iconName = "map-outline";
-            } else if (route.name === "Ajouter") {
-              iconName = "add-circle-outline";
-            }
-
-            return (
-              <View
-                style={{
-                  width: 50,
-                  height: 50,
-                  backgroundColor: focused ? "#BEE5BF" : "transparent",
-                  borderRadius: 25,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Icon
-                  name={iconName}
-                  size={focused ? size + 5 : size}
-                  color={focused ? "#29524A" : "#fff"}
-                />
-              </View>
-            );
-          },
-          tabBarShowLabel: false,
-          tabBarStyle: {
-            height: 80,
-            paddingTop: 20,
-            paddingHorizontal: 20,
-            backgroundColor: "#29524A",
-            borderTopLeftRadius: 50,
-            borderTopRightRadius: 50,
-            position: "absolute",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: -5 },
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
-            elevation: 10,
-          },
-        })}
-      >
-        <Tab.Screen name="Accueil" component={HomeScreen} />
-        <Tab.Screen
-          name="Conversations"
-          component={ConversationsScreen}
-          initialParams={{ userId }} // Passer userId ici
-        />
-        <Tab.Screen
-          name="Ajouter"
-          component={EmptyScreen}
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-              actionSheetRef.current?.show();
+      <>
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            header: ({ navigation }) => <CustomHeader navigation={navigation} />,
+            tabBarIcon: ({ color, size, focused }) => {
+              let iconName = "";
+  
+              if (route.name === "Accueil") {
+                iconName = "home-outline";
+              } else if (route.name === "Conversations") {
+                iconName = "chatbubble-ellipses-outline";
+              } else if (route.name === "Social") {
+                iconName = "people-outline";
+              } else if (route.name === "Carte") {
+                iconName = "map-outline";
+              } else if (route.name === "Ajouter") {
+                iconName = "add-circle-outline";
+              }
+  
+              return (
+                <View
+                  style={{
+                    width: 50,
+                    height: 50,
+                    backgroundColor: focused ? "#BEE5BF" : "transparent",
+                    borderRadius: 25,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Icon
+                    name={iconName}
+                    size={focused ? size + 5 : size}
+                    color={focused ? "#29524A" : "#fff"}
+                  />
+                </View>
+              );
             },
+            tabBarShowLabel: false,
+            tabBarStyle: {
+              height: 80,
+              paddingTop: 20,
+              paddingHorizontal: 20,
+              backgroundColor: "#29524A",
+              borderTopLeftRadius: 50,
+              borderTopRightRadius: 50,
+              position: "absolute",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -5 },
+              shadowOpacity: 0.1,
+              shadowRadius: 10,
+              elevation: 10,
+            },
+          })}
+        >
+          <Tab.Screen name="Accueil" component={HomeScreen} />
+          <Tab.Screen
+            name="Conversations"
+            component={ConversationsScreen}
+            initialParams={{ userId }} // Passer userId ici
+          />
+          <Tab.Screen
+            name="Ajouter"
+            component={EmptyScreen} // Utilisation d'un écran vide comme placeholder
+            listeners={{
+              tabPress: (e) => {
+                e.preventDefault(); // Empêche la navigation
+                actionSheetRef.current?.show(); // Affiche l'ActionSheet
+              },
+            }}
+          />
+          <Tab.Screen name="Social" component={SocialScreen} />
+          <Tab.Screen name="Carte" component={MapScreen} />
+        </Tab.Navigator>
+  
+        {/* ActionSheet pour ajouter un signalement ou un événement */}
+        <ActionSheet
+          ref={(o) => (actionSheetRef.current = o)}
+          title="Que souhaitez-vous ajouter ?"
+          options={["Ajouter un signalement", "Ajouter un événement", "Annuler"]}
+          cancelButtonIndex={2}
+          onPress={(index) => {
+            if (index === 0) {
+              navigation.navigate("AddNewReportScreen");
+            } else if (index === 1) {
+              navigation.navigate("AddNewEventScreen");
+            }
           }}
         />
-        <Tab.Screen name="Social" component={SocialScreen} />
-        <Tab.Screen name="Carte" component={MapScreen} />
-      </Tab.Navigator>
+      </>
     );
   };
 

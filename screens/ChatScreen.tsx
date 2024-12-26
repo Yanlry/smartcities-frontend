@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Modal,
+  Image
 } from "react-native";
 import {
   collection,
@@ -27,6 +28,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useToken } from "../hooks/useToken";
 // @ts-ignore
 import { API_URL } from "@env";
+import axios from "axios";
 
 type Message = {
   id: string;
@@ -48,6 +50,53 @@ const ChatScreen = ({ route, navigation }: any) => {
   const [lastSentMessage, setLastSentMessage] = useState<Message | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
+  const [userDetails, setUserDetails] = useState<{ id: string; name: string; profilePhoto: string | null }>({ id: "", name: "Utilisateur inconnu", profilePhoto: null });
+  const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState('');
+
+    // Fonction pour récupérer les détails d'un utilisateur (nom et photo de profil)
+    const fetchUserDetails = async (
+      userId: number
+    ): Promise<{ id: string; name: string; profilePhoto: string | null }> => {
+      try {
+        const response = await axios.get(`${API_URL}/users/${userId}`);
+        const user = response.data;
+  
+        const name = user.useFullName
+          ? `${user.firstName} ${user.lastName}`
+          : user.username || "Utilisateur inconnu";
+  
+        const profilePhoto = user.profilePhoto?.url || null;
+  
+        return { id: user.id, name, profilePhoto };
+      } catch (error) {
+        console.error(
+          `Erreur lors de la récupération des détails pour l'utilisateur ${userId} :`,
+          error
+        );
+        return { id: "", name: "Utilisateur inconnu", profilePhoto: null };
+      }
+    };
+
+    const fetchCurrentUserDetails = async (userId) => {
+      try {
+        const response = await axios.get(`${API_URL}/users/${userId}`);
+        const user = response.data;
+  
+        const name = user.useFullName
+          ? `${user.firstName} ${user.lastName}`
+          : user.username || "Utilisateur inconnu";
+  
+        const profilePhoto = user.profilePhoto?.url || null;
+  
+        return { id: user.id, name, profilePhoto };
+      } catch (error) {
+        console.error(
+          `Erreur lors de la récupération des détails pour l'utilisateur ${userId} :`,
+          error
+        );
+        return { id: "", name: "Utilisateur inconnu", profilePhoto: null };
+      }
+    };
 
   useEffect(() => {
     const messagesRef = collection(db, "messages");
@@ -116,13 +165,49 @@ const ChatScreen = ({ route, navigation }: any) => {
   }, [messages]);
 
   useEffect(() => {
+    const fetchDetails = async () => {
+      const details = await fetchUserDetails(receiverId);
+      setUserDetails(details);
+    };
+  
+    fetchDetails();
+  }, [receiverId]);
+  
+  useEffect(() => {
     if (route.params && route.params.receiverId) {
       const { receiverId } = route.params;
-
+  
+      navigation.setOptions({
+        headerTitle: () => (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {userDetails.profilePhoto && (
+              <Image
+                source={{ uri: userDetails.profilePhoto }}
+                style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
+              />
+            )}
+            <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff" }}>
+              {userDetails.name}
+            </Text>
+          </View>
+        ),
+        onConversationRead: () => {
+          console.log(`Marquer la conversation avec ${receiverId} comme lue`);
+          if (onConversationRead) {
+            onConversationRead(receiverId);
+          }
+        },
+      });
+    }
+  }, [navigation, route.params, userDetails]);
+  
+  useEffect(() => {
+    if (route.params && route.params.receiverId) {
+      const { receiverId } = route.params;
+  
       navigation.setOptions({
         onConversationRead: () => {
           console.log(`Marquer la conversation avec ${receiverId} comme lue`);
-          // Appeler une fonction ou gérer la logique selon vos besoins
           if (onConversationRead) {
             onConversationRead(receiverId);
           }
@@ -130,6 +215,15 @@ const ChatScreen = ({ route, navigation }: any) => {
       });
     }
   }, [navigation, route.params]);
+
+  useEffect(() => {
+    const fetchCurrentUserProfilePhoto = async () => {
+      const currentUserDetails = await fetchCurrentUserDetails(senderId);
+      setCurrentUserProfilePhoto(currentUserDetails.profilePhoto);
+    };
+
+    fetchCurrentUserProfilePhoto();
+  }, []);
 
   const sendMessage = async () => {
     if (newMessage.trim().length === 0) {
@@ -352,9 +446,11 @@ const ChatScreen = ({ route, navigation }: any) => {
           />
         </TouchableOpacity>
 
-        <View style={styles.typeBadge}>
-          <Text style={styles.headerTitle}>CHAT</Text>
-        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('UserProfileScreen', { userId: userDetails.id })}>
+      <View style={styles.typeBadge}>
+        <Text style={styles.headerTitle}>{userDetails.name}</Text>
+      </View>
+    </TouchableOpacity>
 
         <TouchableOpacity onPress={openReportModal}>
           <Icon
@@ -401,99 +497,114 @@ const ChatScreen = ({ route, navigation }: any) => {
       </Modal>
 
       <FlatList
-        ref={flatListRef}
-        style={{ padding: 10 }}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => {
-          // Utiliser une valeur par défaut si le timestamp est invalide
-          const currentMessageDate = item.timestamp?.seconds
-            ? new Date(item.timestamp.seconds * 1000)
-            : new Date(); // Valeur par défaut : date et heure actuelles
+  ref={flatListRef}
+  style={{ padding: 10 }}
+  data={messages}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item, index }) => {
+    const currentMessageDate = item.timestamp?.seconds
+      ? new Date(item.timestamp.seconds * 1000)
+      : new Date();
 
-          const previousMessageDate =
-            index > 0 && messages[index - 1].timestamp?.seconds
-              ? new Date(messages[index - 1].timestamp.seconds * 1000)
-              : null;
+    const previousMessageDate =
+      index > 0 && messages[index - 1].timestamp?.seconds
+        ? new Date(messages[index - 1].timestamp.seconds * 1000)
+        : null;
 
-          const shouldShowDateHeader =
-            !previousMessageDate ||
-            currentMessageDate.toDateString() !==
-              previousMessageDate.toDateString();
+    const shouldShowDateHeader =
+      !previousMessageDate ||
+      currentMessageDate.toDateString() !== previousMessageDate.toDateString();
 
-          return (
-            <View>
-              {/* Afficher la date si c'est un nouveau jour */}
-              {shouldShowDateHeader && (
-                <Text style={styles.dateHeader}>
-                  {currentMessageDate.toLocaleDateString("fr-FR", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year:
-                      currentMessageDate.getFullYear() !==
-                      new Date().getFullYear()
-                        ? "numeric"
-                        : undefined,
-                  })}
+    const isSentByCurrentUser = item.senderId === senderId;
+
+    return (
+      <View>
+        {shouldShowDateHeader && (
+          <Text style={styles.dateHeader}>
+            {currentMessageDate.toLocaleDateString("fr-FR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year:
+                currentMessageDate.getFullYear() !== new Date().getFullYear()
+                  ? "numeric"
+                  : undefined,
+            })}
+          </Text>
+        )}
+
+        <View
+          style={[
+            styles.messageContainer,
+            isSentByCurrentUser ? styles.sentMessageContainer : styles.receivedMessageContainer,
+          ]}
+        >
+          {!isSentByCurrentUser && userDetails.profilePhoto && (
+            <TouchableOpacity onPress={() => navigation.navigate('UserProfileScreen', { userId: userDetails.id })}>
+            <Image
+              source={{ uri: userDetails.profilePhoto }}
+              style={styles.profilePhoto}
+            />
+            </TouchableOpacity>
+          )}
+
+          <View
+            style={[
+              styles.messageBubble,
+              isSentByCurrentUser ? styles.sentMessage : styles.receivedMessage,
+            ]}
+          >
+            <Text
+              style={
+                isSentByCurrentUser
+                  ? styles.sentMessageText
+                  : styles.receivedMessageText
+              }
+            >
+              {item.message}
+            </Text>
+
+            <View
+              style={[
+                styles.infoMessage,
+                isSentByCurrentUser ? styles.sentInfoMessage : styles.receivedInfoMessage,
+              ]}
+            >
+              {lastSentMessage && item.id === lastSentMessage.id && (
+                <Text style={styles.messageStatus}>
+                  {lastSentMessage.isRead ? "Lu - " : "Non lu - "}
                 </Text>
               )}
-
-              {/* Message */}
-              <View
-                style={[
-                  styles.messageBubble,
-                  item.senderId === senderId
-                    ? styles.sentMessage
-                    : styles.receivedMessage,
-                ]}
-              >
-                <Text
-                  style={
-                    item.senderId === senderId
-                      ? styles.sentMessageText
-                      : styles.receivedMessageText
-                  }
-                >
-                  {item.message}
-                </Text>
-
-                {/* Infos supplémentaires (statut, heure) */}
-                <View
-                  style={[
-                    styles.infoMessage,
-                    item.senderId === senderId
-                      ? styles.sentInfoMessage
-                      : styles.receivedInfoMessage,
-                  ]}
-                >
-                  {lastSentMessage && item.id === lastSentMessage.id && (
-                    <Text style={styles.messageStatus}>
-                      {lastSentMessage.isRead ? "Lu - " : "Non lu - "}
-                    </Text>
-                  )}
-                  <Text style={styles.timestamp}>
-                    {currentMessageDate.toLocaleTimeString("fr-FR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
-                </View>
-              </View>
+              <Text style={styles.timestamp}>
+                {currentMessageDate.toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
             </View>
-          );
-        }}
-        onContentSizeChange={() => {
-          if (flatListRef.current) {
-            flatListRef.current.scrollToEnd({ animated: true });
-          }
-        }}
-        onLayout={() => {
-          if (flatListRef.current) {
-            flatListRef.current.scrollToEnd({ animated: true });
-          }
-        }}
-      />
+          </View>
+
+          {isSentByCurrentUser && currentUserProfilePhoto && (
+            <Image
+              source={{ uri: currentUserProfilePhoto }}
+              style={styles.profilePhoto}
+            />
+          )}
+        </View>
+      </View>
+    );
+  }}
+  onContentSizeChange={() => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }}
+  onLayout={() => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }}
+/>
 
       {/* Input */}
       <View style={styles.inputContainer}>
@@ -681,6 +792,24 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 30,
     marginLeft: 10,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginVertical: 5,
+  },
+  sentMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  receivedMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  profilePhoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginHorizontal: 10,
+    marginBottom: 10,
   },
   sendButtonText: { color: "#fff", fontWeight: "bold" },
 });
