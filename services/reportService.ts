@@ -21,6 +21,33 @@ export interface Report {
   photos: Photo[]; // Ajouter les photos
 }
 
+export interface Event {
+  id: number;
+  name: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  startDate: string;
+  endDate: string;
+}
+
+export const fetchAllEventsInRegion = async (
+  latitude: number,
+  longitude: number,
+  radiusKm: number = 2000
+): Promise<Event[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/events`, {
+      params: { latitude, longitude, radiusKm },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Erreur dans fetchAllEventsInRegion :", error.response?.data || error.message);
+    throw new Error("Impossible de récupérer les événements.");
+  }
+};
+
 /**
  * Récupère les signalements dans un rayon donné.
  */

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   ActivityIndicator,
@@ -7,23 +7,32 @@ import {
   TouchableOpacity,
   Text,
   Image,
-} from 'react-native';
-import MapView, { Marker, Camera, Region } from 'react-native-maps';
-import { useLocation } from '../hooks/useLocation';
-import { fetchAllReportsInRegion, Report } from '../services/reportService';
-import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../types/navigation';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { getTypeIcon } from '../utils/typeIcons';
+} from "react-native";
+import MapView, { Marker, Camera, Region } from "react-native-maps";
+import { useLocation } from "../hooks/useLocation";
+import {
+  fetchAllReportsInRegion,
+  Report,
+  fetchAllEventsInRegion,
+  Event as ReportEvent,
+} from "../services/reportService";
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../types/navigation";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { getTypeIcon } from "../utils/typeIcons";
 
-type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
+type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
 export default function MapScreen() {
   const { location, loading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
+  const [events, setEvents] = useState<ReportEvent[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
-  const [mapType, setMapType] = useState<'standard' | 'satellite' | 'hybrid' | 'terrain'>('standard');
+  const [mapType, setMapType] = useState<
+    "standard" | "satellite" | "hybrid" | "terrain"
+  >("standard");
+  const [filter, setFilter] = useState<"all" | "reports" | "events">("all");
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation<MapScreenNavigationProp>();
 
@@ -35,14 +44,70 @@ export default function MapScreen() {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
       const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111;
 
-      const result = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
+      const result = await fetchAllReportsInRegion(
+        latitude,
+        longitude,
+        radiusKm
+      );
       setReports(result);
     } catch (error) {
-      console.error('Erreur lors du chargement des signalements :', error);
-      Alert.alert('Erreur', "Impossible de récupérer les signalements dans cette zone.");
+      console.error("Erreur lors du chargement des signalements :", error);
+      Alert.alert(
+        "Erreur",
+        "Impossible de récupérer les signalements dans cette zone."
+      );
     } finally {
       setLoadingReports(false);
     }
+  };
+
+  const fetchEventsInRegion = async () => {
+    if (!mapRegion) return;
+
+    setLoadingReports(true);
+    try {
+      const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
+      const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111;
+
+      const result = await fetchAllEventsInRegion(
+        latitude,
+        longitude,
+        radiusKm
+      );
+      setEvents(result);
+    } catch (error) {
+      console.error("Erreur lors du chargement des événements :", error);
+      Alert.alert(
+        "Erreur",
+        "Impossible de récupérer les événements dans cette zone."
+      );
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const fetchDataInRegion = async () => {
+    if (!mapRegion) return;
+
+    setLoadingReports(true);
+    try {
+      // Appel simultané des deux fonctions
+      await Promise.all([fetchReportsInRegion(), fetchEventsInRegion()]);
+    } catch (error) {
+      console.error("Erreur lors du chargement des données :", error);
+      Alert.alert(
+        "Erreur",
+        "Impossible de récupérer les données dans cette zone."
+      );
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const filteredMarkers = (): (Report | ReportEvent)[] => {
+    if (filter === "reports") return reports;
+    if (filter === "events") return events;
+    return [...reports, ...events];
   };
 
   useEffect(() => {
@@ -54,19 +119,18 @@ export default function MapScreen() {
         longitudeDelta: 0.05,
       });
 
-      fetchReportsInRegion();
+      fetchDataInRegion();
 
-      // Configure la caméra pour une vue 3D
       if (mapRef.current) {
         const camera: Camera = {
           center: {
             latitude: location.latitude,
             longitude: location.longitude,
           },
-          pitch: 60, // Inclinaison pour la vue 3D
-          heading: 0, // Orientation vers le nord
-          zoom: 17, // Niveau de zoom
-          altitude: 1000, // Altitude de la caméra
+          pitch: 60,
+          heading: 0,
+          zoom: 17,
+          altitude: 1000,
         };
         mapRef.current.animateCamera(camera, { duration: 2000 });
       }
@@ -80,14 +144,14 @@ export default function MapScreen() {
   const toggleMapType = () => {
     setMapType((prevType) => {
       switch (prevType) {
-        case 'standard':
-          return 'satellite';
-        case 'satellite':
-          return 'hybrid';
-        case 'hybrid':
-          return 'terrain';
+        case "standard":
+          return "satellite";
+        case "satellite":
+          return "hybrid";
+        case "hybrid":
+          return "terrain";
         default:
-          return 'standard';
+          return "standard";
       }
     });
   };
@@ -102,8 +166,8 @@ export default function MapScreen() {
 
   if (!location) {
     Alert.alert(
-      'Localisation indisponible',
-      'Impossible de récupérer votre position actuelle.'
+      "Localisation indisponible",
+      "Impossible de récupérer votre position actuelle."
     );
     return (
       <View style={styles.errorContainer}>
@@ -120,52 +184,95 @@ export default function MapScreen() {
         region={mapRegion || undefined}
         onRegionChangeComplete={handleRegionChangeComplete}
         mapType={mapType}
-        showsBuildings={true} // Affiche les bâtiments en 3D
-        pitchEnabled={true} // Active l'inclinaison
-        rotateEnabled={true} // Active la rotation
-        showsCompass={true} // Affiche la boussole
+        showsBuildings
+        pitchEnabled
+        rotateEnabled
+        showsCompass
       >
-        <Marker
-          coordinate={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-          }}
-          title="Vous êtes ici"
-          pinColor="blue"
-        />
+        {filteredMarkers().map((item) => {
+  // Vérifie si l'élément est un rapport
+  const isReport = (item: Report | ReportEvent): item is Report =>
+    (item as Report).type !== undefined;
 
-        {reports.map((report) => (
-          <Marker
-            key={report.id}
-            coordinate={{
-              latitude: report.latitude,
-              longitude: report.longitude,
-            }}
-            title={report.title}
-            onCalloutPress={() =>
-              navigation.navigate('ReportDetailsScreen', { reportId: report.id })
-            }
-          >
-            <Image
-              source={getTypeIcon(report.type)}
-              style={{ width: 40, height: 40, resizeMode: 'contain' }}
-            />
-          </Marker>
-        ))}
+  return (
+    <Marker
+      key={item.id}
+      coordinate={{
+        latitude: item.latitude,
+        longitude: item.longitude,
+      }}
+      onPress={() => {
+        // Affiche le titre lorsque l'utilisateur clique
+        if (isReport(item)) {
+          navigation.navigate("ReportDetailsScreen", { reportId: item.id });
+        } else {
+          navigation.navigate("EventDetailsScreen", { eventId: item.id.toString() });
+        }
+      }}
+    >
+      <View style={{ alignItems: "center" }}>
+        {/* Affiche le titre au-dessus de l'image */}
+        <Text style={{ backgroundColor: "white", padding: 4, borderRadius: 5 }}>
+          {isReport(item) ? item.title : item.name}
+        </Text>
+        {/* Image du marqueur */}
+        <Image
+          source={
+            isReport(item)
+              ? getTypeIcon(item.type)
+              : require("../assets/images/1.jpg")
+          }
+          style={{ width: 40, height: 40, resizeMode: "contain" }}
+        />
+      </View>
+    </Marker>
+  );
+})}
       </MapView>
 
       <TouchableOpacity style={styles.mapTypeButton} onPress={toggleMapType}>
         <Text style={styles.mapTypeButtonText}>
-          {mapType === 'standard' ? 'Vue Satellite' : mapType === 'satellite' ? 'Vue Hybride' : mapType === 'hybrid' ? 'Vue Terrain' : 'Vue Standard'}
+          {mapType === "standard"
+            ? "Vue Satellite"
+            : mapType === "satellite"
+            ? "Vue Hybride"
+            : mapType === "hybrid"
+            ? "Vue Terrain"
+            : "Vue Standard"}
         </Text>
       </TouchableOpacity>
-
       <TouchableOpacity
         style={styles.searchButton}
-        onPress={fetchReportsInRegion}
+        onPress={fetchDataInRegion} // Appelle les deux fonctions en même temps
       >
         <Text style={styles.searchButtonText}>Rechercher dans cette zone</Text>
       </TouchableOpacity>
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterButton, filter === "all" && styles.activeFilter]}
+          onPress={() => setFilter("all")}
+        >
+          <Text style={styles.filterText}>Tous</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            filter === "reports" && styles.activeFilter,
+          ]}
+          onPress={() => setFilter("reports")}
+        >
+          <Text style={styles.filterText}>Signalements</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            filter === "events" && styles.activeFilter,
+          ]}
+          onPress={() => setFilter("events")}
+        >
+          <Text style={styles.filterText}>Événements</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -179,45 +286,63 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   mapTypeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 640,
-    left: '35%',
-    backgroundColor: '#fff',
+    left: "35%",
+    backgroundColor: "#fff",
     padding: 10,
     paddingHorizontal: 20,
     borderRadius: 30,
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 2,
   },
   mapTypeButtonText: {
-    color: '#000',
+    color: "#000",
   },
 
   searchButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 685,
-    left: '50%',
+    left: "50%",
     transform: [{ translateX: -100 }],
     width: 200,
-    backgroundColor: '#CA483F',
+    backgroundColor: "#CA483F",
     borderRadius: 30,
     padding: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
+
+  filterContainer: {
+    position: "absolute",
+    bottom: 600,
+    right: 10,
+    justifyContent: "space-around",
+    width: "22%",
+    textAlign: "center",
+  },
+  filterButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 30,
+    backgroundColor: "#f9f9f9",
+  },
+  activeFilter: { backgroundColor: "#007BFF", borderColor: "#007BFF"},
+  filterText: { color: "#000", fontSize : 10, textAlign : "center" },
 });
