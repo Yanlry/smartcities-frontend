@@ -917,7 +917,7 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
       )}
 
-      <Text style={styles.sectionTitle}>📰 À la Une</Text>
+      <Text style={styles.sectionTitle}>🎉 Événement a venir</Text>
       {featuredEvents.length > 0 ? (
         <ScrollView
           horizontal
@@ -945,7 +945,7 @@ export default function HomeScreen({ navigation }) {
           ))}
         </ScrollView>
       ) : (
-        <Text style={styles.noEventsTextOne}>Aucun événement disponible</Text>
+        <Text style={styles.noEventsTextOne}>Aucun événement prévue prochainement</Text>
       )}
 
       <Text style={styles.sectionTitle}>📅 Tous les événements</Text>

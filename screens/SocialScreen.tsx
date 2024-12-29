@@ -1,86 +1,94 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
-
-const initialPosts = [
-  {
-    id: '1',
-    user: 'John Doe',
-    avatar: 'https://example.com/avatar1.jpg',
-    content: 'Bonjour à tous ! Quelqu\'un connaît un bon restaurant en ville ?',
-    timestamp: 'Il y a 2 heures',
-    likes: 5,
-    comments: [
-      { id: '1', user: 'Jane Smith', content: 'Oui, le restaurant "Le Gourmet" est excellent !' },
-    ],
-  },
-  {
-    id: '2',
-    user: 'Jane Smith',
-    avatar: 'https://example.com/avatar2.jpg',
-    content: 'Il y a un marché fermier ce week-end. Venez nombreux !',
-    timestamp: 'Il y a 5 heures',
-    likes: 3,
-    comments: [],
-  },
-  // Ajoutez plus de publications ici
-];
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
+// @ts-ignore
+import { API_URL } from '@env';
 
 export default function SocialScreen() {
-  const [posts, setPosts] = useState(initialPosts);
+  const [posts, setPosts] = useState([]);
   const [newPostContent, setNewPostContent] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLike = (postId) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId ? { ...post, likes: post.likes + 1 } : post
-      )
-    );
-  };
+  // Charger les publications depuis le backend
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
-  const handleAddPost = () => {
-    if (newPostContent.trim()) {
-      const newPost = {
-        id: (posts.length + 1).toString(),
-        user: 'Current User',
-        avatar: 'https://example.com/current_user_avatar.jpg',
-        content: newPostContent,
-        timestamp: 'À l\'instant',
-        likes: 0,
-        comments: [],
-      };
-      setPosts([newPost, ...posts]);
-      setNewPostContent('');
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/posts`); // Endpoint pour lister les publications
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des publications');
+      }
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      Alert.alert('Erreur', error.message || 'Impossible de charger les publications.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.postContainer}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.postContent}>
-        <Text style={styles.userName}>{item.user}</Text>
-        <Text style={styles.postText}>{item.content}</Text>
-        <Text style={styles.timestamp}>{item.timestamp}</Text>
-        <View style={styles.postActions}>
-          <TouchableOpacity onPress={() => handleLike(item.id)}>
-            <Text style={styles.likeButton}>Like ({item.likes})</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.commentButton}>Comment ({item.comments.length})</Text>
-          </TouchableOpacity>
-        </View>
-        {item.comments.length > 0 && (
-          <View style={styles.commentsSection}>
-            {item.comments.map((comment) => (
-              <View key={comment.id} style={styles.commentContainer}>
-                <Text style={styles.commentUser}>{comment.user}</Text>
-                <Text style={styles.commentText}>{comment.content}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+  const handleLike = async (postId) => {
+    try {
+      const response = await fetch(`${API_URL}/posts/${postId}/like`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Erreur lors du like de la publication');
+      }
+      fetchPosts(); // Recharge les publications pour mettre à jour les likes
+    } catch (error) {
+      Alert.alert('Erreur', error.message || 'Impossible d\'aimer la publication.');
+    }
+  };
+
+  const handleAddPost = async () => {
+    if (newPostContent.trim()) {
+      try {
+        const response = await fetch(`${API_URL}/posts`, { // Correction ici
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: newPostContent,
+            authorId: 1, // Remplacez par l'ID de l'utilisateur connecté
+          }),
+        });
+        if (!response.ok) {
+          throw new Error('Erreur lors de la création de la publication');
+        }
+        setNewPostContent('');
+        fetchPosts(); // Recharge les publications après ajout
+      } catch (error) {
+        Alert.alert('Erreur', error.message || 'Impossible de créer la publication.');
+      }
+    }
+  };
+
+const renderItem = ({ item }) => (
+  <View style={styles.postContainer}>
+    <Image
+      source={{ uri: item.profilePhoto || 'https://via.placeholder.com/150' }}
+      style={styles.avatar}
+    />
+    <View style={styles.postContent}>
+      <Text style={styles.userName}>{item.authorName}</Text>
+      <Text style={styles.postTitle}>{item.title}</Text> {/* Affiche le titre */}
+      <Text style={styles.postText}>{item.content}</Text>
+      <Text style={styles.timestamp}>{item.timestamp}</Text>
+      <View style={styles.postActions}>
+        <TouchableOpacity onPress={() => handleLike(item.id)}>
+          <Text style={styles.likeButton}>Like ({item.likesCount || 0})</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text style={styles.commentButton}>Comment ({item.comments?.length || 0})</Text>
+        </TouchableOpacity>
       </View>
     </View>
-  );
+  </View>
+);
 
   return (
     <View style={styles.container}>
@@ -98,12 +106,16 @@ export default function SocialScreen() {
           <Text style={styles.newPostButtonText}>Publier</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={posts}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.postsList}
-      />
+      {loading ? (
+        <Text style={styles.loadingText}>Chargement des publications...</Text>
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.postsList}
+        />
+      )}
     </View>
   );
 }
@@ -111,57 +123,46 @@ export default function SocialScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop:100,
     backgroundColor: '#f5f5f5',
+    paddingTop: 150,
   },
   header: {
-    padding: 20,
-    backgroundColor: '#6200ee',
-    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#3b5998',
   },
   headerTitle: {
-    fontSize: 24,
     color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
   },
   newPostContainer: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#ccc',
   },
   newPostInput: {
     flex: 1,
-    borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 30,
-    padding: 10,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 8,
     marginRight: 10,
   },
   newPostButton: {
+    backgroundColor: '#29524A',
     padding: 10,
-    backgroundColor: '#6200ee',
-    borderRadius: 30,
+    borderRadius: 5,
   },
   newPostButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
-  postsList: {
-    padding: 10,
-  },
   postContainer: {
     flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   avatar: {
     width: 50,
@@ -173,41 +174,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 5,
   },
   postText: {
-    fontSize: 14,
-    color: '#333',
-    marginVertical: 5,
+    marginBottom: 10,
   },
   timestamp: {
     fontSize: 12,
-    color: '#888',
+    color: '#777',
   },
   postActions: {
     flexDirection: 'row',
-    marginTop: 10,
+    justifyContent: 'space-between',
   },
   likeButton: {
-    marginRight: 20,
-    color: '#6200ee',
+    color: '#29524A',
+    fontWeight: 'bold',
   },
   commentButton: {
-    color: '#6200ee',
+    color: '#777',
   },
   commentsSection: {
     marginTop: 10,
   },
   commentContainer: {
-    flexDirection: 'row',
-    marginTop: 5,
+    marginBottom: 5,
   },
   commentUser: {
     fontWeight: 'bold',
-    marginRight: 5,
   },
   commentText: {
-    color: '#333',
+    marginLeft: 5,
   },
+  loadingText: {
+    textAlign: 'center',
+    marginVertical: 20,
+    fontSize: 16,
+  },
+  postsList:{
+    flexGrow: 1,
+  }
 });

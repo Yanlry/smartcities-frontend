@@ -314,17 +314,20 @@ const styles = StyleSheet.create({
     marginTop: 15, // Centrer le texte
   },
   badge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "red",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
   },
   badgeText: {
-    color: "#fff",
+    color: "white",
+    fontSize: 12,
     fontWeight: "bold",
-    fontSize: 26,
   },
   userImage: {
     width: 50,
