@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
 // @ts-ignore
 import { API_URL } from '@env';
+import { useToken } from "../hooks/useToken";
 
 export default function SocialScreen() {
   const [posts, setPosts] = useState([]);
   const [newPostContent, setNewPostContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const { getUserId } = useToken();
 
   // Charger les publications depuis le backend
   useEffect(() => {
@@ -31,8 +33,19 @@ export default function SocialScreen() {
 
   const handleLike = async (postId) => {
     try {
+      const userId = await getUserId();
+        if (!userId) {
+          console.error("Impossible de récupérer l'ID utilisateur.");
+          return;
+        }
       const response = await fetch(`${API_URL}/posts/${postId}/like`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userId, // Remplacez par l'ID de l'utilisateur connecté
+        }),
       });
       if (!response.ok) {
         throw new Error('Erreur lors du like de la publication');
@@ -67,28 +80,31 @@ export default function SocialScreen() {
     }
   };
 
-const renderItem = ({ item }) => (
-  <View style={styles.postContainer}>
-    <Image
-      source={{ uri: item.profilePhoto || 'https://via.placeholder.com/150' }}
-      style={styles.avatar}
-    />
-    <View style={styles.postContent}>
-      <Text style={styles.userName}>{item.authorName}</Text>
-      <Text style={styles.postTitle}>{item.title}</Text> {/* Affiche le titre */}
-      <Text style={styles.postText}>{item.content}</Text>
-      <Text style={styles.timestamp}>{item.timestamp}</Text>
-      <View style={styles.postActions}>
-        <TouchableOpacity onPress={() => handleLike(item.id)}>
-          <Text style={styles.likeButton}>Like ({item.likesCount || 0})</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={styles.commentButton}>Comment ({item.comments?.length || 0})</Text>
-        </TouchableOpacity>
+  const renderItem = ({ item }) => (
+    <View style={styles.postContainer}>
+      <Image
+        source={{ uri: item.profilePhoto || 'https://via.placeholder.com/150' }}
+        style={styles.avatar}
+      />
+      <View style={styles.postContent}>
+        <Text style={styles.userName}>{item.authorName || "Utilisateur inconnu"}</Text>
+        <Text style={styles.postText}>{item.content || "Contenu indisponible"}</Text>
+        <Text style={styles.timestamp}>{item.timestamp || "Date inconnue"}</Text>
+        <View style={styles.postActions}>
+          <TouchableOpacity onPress={() => handleLike(item.id)}>
+            <Text style={styles.likeButton}>
+              Like ({item.likesCount != null ? item.likesCount : 0})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.commentButton}>
+              Comment ({item.comments?.length || 0})
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
 
   return (
     <View style={styles.container}>
