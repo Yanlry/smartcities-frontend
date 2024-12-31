@@ -1,16 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  Alert,
+} from "react-native";
 // @ts-ignore
-import { API_URL } from '@env';
+import { API_URL } from "@env";
 import { useToken } from "../hooks/useToken";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 export default function SocialScreen() {
   const [posts, setPosts] = useState([]);
-  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostContent, setNewPostContent] = useState("");
   const [loading, setLoading] = useState(false);
   const { getUserId } = useToken();
+  const [commentInputs, setCommentInputs] = useState({});
+  const [visibleComments, setVisibleComments] = useState({}); // Pour gérer les commentaires visibles
 
-  // Charger les publications depuis le backend
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -18,14 +29,24 @@ export default function SocialScreen() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/posts`); // Endpoint pour lister les publications
+      const response = await fetch(`${API_URL}/posts`);
       if (!response.ok) {
-        throw new Error('Erreur lors du chargement des publications');
+        throw new Error("Erreur lors du chargement des publications");
       }
-      const data = await response.json();
+      let data = await response.json();
+
+      // Trier les posts du plus récent au plus ancien
+      data = data.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
       setPosts(data);
     } catch (error) {
-      Alert.alert('Erreur', error.message || 'Impossible de charger les publications.');
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible de charger les publications."
+      );
     } finally {
       setLoading(false);
     }
@@ -34,201 +55,355 @@ export default function SocialScreen() {
   const handleLike = async (postId) => {
     try {
       const userId = await getUserId();
-        if (!userId) {
-          console.error("Impossible de récupérer l'ID utilisateur.");
-          return;
-        }
+      if (!userId) {
+        console.error("Impossible de récupérer l'ID utilisateur.");
+        return;
+      }
       const response = await fetch(`${API_URL}/posts/${postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (!response.ok) {
+        throw new Error("Erreur lors du like de la publication");
+      }
+      fetchPosts();
+    } catch (error) {
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible d'aimer la publication."
+      );
+    }
+  };
+
+  const handleAddComment = async (postId) => {
+    const userId = await getUserId();
+    if (!userId || !commentInputs[postId]?.trim()) {
+      Alert.alert(
+        "Erreur",
+        "Le texte du commentaire est vide ou l'ID utilisateur est introuvable."
+      );
+      return;
+    }
+    try {
+      const response = await fetch(`${API_URL}/posts/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userId, // Remplacez par l'ID de l'utilisateur connecté
+          postId,
+          userId,
+          text: commentInputs[postId],
         }),
       });
       if (!response.ok) {
-        throw new Error('Erreur lors du like de la publication');
+        throw new Error("Erreur lors de l'ajout du commentaire");
       }
-      fetchPosts(); // Recharge les publications pour mettre à jour les likes
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+      fetchPosts();
     } catch (error) {
-      Alert.alert('Erreur', error.message || 'Impossible d\'aimer la publication.');
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible d'ajouter le commentaire."
+      );
     }
+  };
+
+  const toggleComments = (postId) => {
+    setVisibleComments((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
+  };
+
+  const renderItem = ({ item }) => {
+    const isExpanded = visibleComments[item.id];
+    const displayedComments = isExpanded
+      ? item.comments
+      : item.comments.slice(0, 1); // Affiche un seul commentaire par défaut
+
+    return (
+      <View style={styles.postContainer}>
+        {/* En-tête du post */}
+        <View style={styles.postHeader}>
+          <Image
+            source={{
+              uri: item.profilePhoto || "https://via.placeholder.com/150",
+            }}
+            style={styles.avatar}
+          />
+          <View>
+            <Text style={styles.userName}>
+              {item.authorName || "Utilisateur inconnu"}
+            </Text>
+            <Text style={styles.timestamp}>
+              {item.createdAt
+                ? new Intl.DateTimeFormat("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(item.createdAt))
+                : "Date inconnue"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Contenu du post */}
+        <Text style={styles.postText}>
+          {item.content || "Contenu indisponible"}
+        </Text>
+
+        {/* Actions du post */}
+        <View style={styles.postActions}>
+          <TouchableOpacity
+            onPress={() => handleLike(item.id)}
+            style={styles.likeButton}
+          >
+            <View style={styles.likeButtonContent}>
+              <Icon
+                name="thumbs-up"
+                size={16}
+                color="#fff"
+                style={styles.likeIcon}
+              />
+              <Text style={styles.likeButtonText}>{item.likesCount || 0}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Ajouter un commentaire */}
+        <View style={styles.addCommentContainer}>
+          <TextInput
+            style={styles.addCommentInput}
+            placeholder="Écrivez un commentaire..."
+            value={commentInputs[item.id] || ""}
+            onChangeText={(text) =>
+              setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
+            }
+          />
+          <TouchableOpacity
+            onPress={() => handleAddComment(item.id)}
+            style={styles.addCommentButton}
+          >
+            <Text style={styles.addCommentButtonText}>Publier</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Section des commentaires */}
+        {item.comments?.length > 0 && (
+          <View style={styles.commentsSection}>
+            {displayedComments.map((comment) => (
+              <View key={comment.id} style={styles.commentContainer}>
+                <Image
+                  source={{
+                    uri:
+                      comment.userProfilePhoto ||
+                      "https://via.placeholder.com/150",
+                  }}
+                  style={styles.commentAvatar}
+                />
+                <View style={styles.commentContent}>
+                  <Text style={styles.userNameComment}>
+                    {comment.userName || "Utilisateur inconnu"}
+                  </Text>
+                  <Text style={styles.timestampComment}>
+                    {item.createdAt
+                      ? `${new Intl.DateTimeFormat("fr-FR", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }).format(new Date(item.createdAt))}`
+                      : "Date inconnue"}
+                  </Text>
+                  <Text style={styles.commentText}>{comment.text}</Text>
+                </View>
+              </View>
+            ))}
+            {item.comments.length > 1 && (
+              <TouchableOpacity
+                onPress={() => toggleComments(item.id)}
+                style={styles.showMoreButton}
+              >
+                <Text style={styles.showMoreText}>
+                  {isExpanded
+                    ? "Cacher les commentaires"
+                    : `Afficher ${item.comments.length - 1} commentaires`}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
+    );
   };
 
   const handleAddPost = async () => {
     if (newPostContent.trim()) {
       try {
-        const response = await fetch(`${API_URL}/posts`, { // Correction ici
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const userId = await getUserId();
+        const response = await fetch(`${API_URL}/posts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             content: newPostContent,
-            authorId: 1, // Remplacez par l'ID de l'utilisateur connecté
+            authorId: userId,
           }),
         });
         if (!response.ok) {
-          throw new Error('Erreur lors de la création de la publication');
+          throw new Error("Erreur lors de la création de la publication");
         }
-        setNewPostContent('');
-        fetchPosts(); // Recharge les publications après ajout
+        setNewPostContent("");
+        fetchPosts();
       } catch (error) {
-        Alert.alert('Erreur', error.message || 'Impossible de créer la publication.');
+        Alert.alert(
+          "Erreur",
+          error.message || "Impossible de créer la publication."
+        );
       }
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.postContainer}>
-      <Image
-        source={{ uri: item.profilePhoto || 'https://via.placeholder.com/150' }}
-        style={styles.avatar}
-      />
-      <View style={styles.postContent}>
-        <Text style={styles.userName}>{item.authorName || "Utilisateur inconnu"}</Text>
-        <Text style={styles.postText}>{item.content || "Contenu indisponible"}</Text>
-        <Text style={styles.timestamp}>{item.timestamp || "Date inconnue"}</Text>
-        <View style={styles.postActions}>
-          <TouchableOpacity onPress={() => handleLike(item.id)}>
-            <Text style={styles.likeButton}>
-              Like ({item.likesCount != null ? item.likesCount : 0})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.commentButton}>
-              Comment ({item.comments?.length || 0})
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Réseau Social de Ville</Text>
-      </View>
-      <View style={styles.newPostContainer}>
-        <TextInput
-          style={styles.newPostInput}
-          placeholder="Quoi de neuf ?"
-          value={newPostContent}
-          onChangeText={setNewPostContent}
-        />
-        <TouchableOpacity style={styles.newPostButton} onPress={handleAddPost}>
-          <Text style={styles.newPostButtonText}>Publier</Text>
-        </TouchableOpacity>
-      </View>
-      {loading ? (
-        <Text style={styles.loadingText}>Chargement des publications...</Text>
-      ) : (
-        <FlatList
-          data={posts}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.postsList}
-        />
-      )}
+      <FlatList
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <View style={styles.newPostContainer}>
+            <TextInput
+              style={styles.newPostInput}
+              placeholder="Quoi de neuf ?"
+              value={newPostContent}
+              onChangeText={setNewPostContent}
+            />
+            <TouchableOpacity
+              style={styles.newPostButton}
+              onPress={handleAddPost}
+            >
+              <Text style={styles.newPostButtonText}>Publier</Text>
+            </TouchableOpacity>
+          </View>
+        }
+        contentContainerStyle={styles.postsList}
+      />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 150,
+    backgroundColor: "#f0f2f5",
+    paddingTop: 110,
+    paddingBottom: 90,
   },
-  header: {
-    padding: 15,
-    backgroundColor: '#3b5998',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  newPostContainer: {
-    flexDirection: 'row',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  newPostInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 8,
-    marginRight: 10,
-  },
-  newPostButton: {
-    backgroundColor: '#29524A',
-    padding: 10,
-    borderRadius: 5,
-  },
-  newPostButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+
+  postHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
+  userName: { fontWeight: "bold", fontSize: 14 },
+  timestamp: { fontSize: 12, color: "#666" },
+  userNameComment: { fontWeight: "bold", fontSize: 14 },
+  timestampComment: { fontSize: 12, color: "#666", marginBottom: 5 },
   postContainer: {
-    flexDirection: 'row',
+    backgroundColor: "#fff",
+    marginBottom: 10,
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    marginHorizontal: 10,
+    borderRadius: 30,
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
+  postText: { fontSize: 14, marginBottom: 10 },
+  postActions: { flexDirection: "row", justifyContent: "space-between" },
+  likeButton: {
+    backgroundColor: "#4267B2",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
   },
-  postContent: {
-    flex: 1,
+  likeButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  userName: {
-    fontWeight: 'bold',
-    marginBottom: 5,
+  likeIcon: {
+    marginRight: 5, // Espace entre l'icône et le texte
   },
-  postText: {
+  likeButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  commentsSection: { marginTop: 10 },
+  commentContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 10,
   },
-  timestamp: {
-    fontSize: 12,
-    color: '#777',
+  commentAvatar: { width: 30, height: 30, borderRadius: 15, marginRight: 10 },
+  commentContent: {
+    backgroundColor: "#f0f2f5",
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
   },
-  postActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  commentUser: { fontWeight: "bold", marginBottom: 5 },
+  commentText: { fontSize: 14 },
+  addCommentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 15,
+    marginBottom: 10,
   },
-  likeButton: {
-    color: '#29524A',
-    fontWeight: 'bold',
+  addCommentInput: {
+    flex: 1,
+    backgroundColor: "#f7f7f7",
+    padding: 10,
+    paddingLeft: 15,
+    borderRadius: 38,
+    marginRight: 10,
+    fontSize: 14,
   },
-  commentButton: {
-    color: '#777',
+  addCommentButton: {
+    backgroundColor: "#4267B2",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  commentsSection: {
-    marginTop: 10,
+  addCommentButtonText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  newPostContainer: {
+    padding: 15,
+    backgroundColor: "#fff",
+    marginBottom: 10,
+    marginHorizontal: 10,
+    borderRadius: 30,
   },
-  commentContainer: {
-    marginBottom: 5,
+  newPostInput: {
+    backgroundColor: "#f7f7f7",
+    padding: 10,
+    borderRadius: 38,
+    marginBottom: 10,
   },
-  commentUser: {
-    fontWeight: 'bold',
+  newPostButton: {
+    backgroundColor: "#4267B2",
+    paddingVertical: 10,
+    borderRadius: 30,
+    alignItems: "center",
   },
-  commentText: {
-    marginLeft: 5,
+  newPostButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  postsList: { paddingBottom: 10 }, // Conteneur pour les posts
+  showMoreText: {
+    color: "#4267B2",
+    fontWeight: "bold",
+    fontSize: 14,
+    marginTop: 5,
   },
-  loadingText: {
-    textAlign: 'center',
-    marginVertical: 20,
-    fontSize: 16,
+  showMoreButton: {
+    alignSelf: "flex-start",
+    padding: 5,
+    marginTop: 5,
+    borderRadius: 5,
   },
-  postsList:{
-    flexGrow: 1,
-  }
 });

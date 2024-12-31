@@ -185,8 +185,8 @@ const RankingScreen = ({ navigation }) => {
               }
             >
               {isTopThree && (
-                <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-                  <Text style={styles.badgeText}>
+                <View style={[styles.badgeMedal, { backgroundColor: badgeColor }]}>
+                  <Text style={styles.badgeTextMedal}>
                     {item.ranking === 1
                       ? "🥇"
                       : item.ranking === 2
@@ -312,6 +312,23 @@ const styles = StyleSheet.create({
   },
   topThreeUserInfo: {
     marginTop: 15, // Centrer le texte
+  },
+  badgeMedal: {
+    position: "absolute",
+
+    bottom: 27,
+    right: 15,
+    backgroundColor: "red",
+    borderRadius: 50,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeTextMedal: {
+    color: "white",
+    fontSize:30,
+    fontWeight: "bold",
   },
   badge: {
     position: "absolute",

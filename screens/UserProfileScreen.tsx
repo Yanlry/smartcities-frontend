@@ -277,6 +277,8 @@ export default function UserProfileScreen({ route, navigation }) {
     ? `${user.firstName} ${user.lastName}`
     : user?.username;
 
+    
+
   return (
     <View>
       <View style={styles.header}>
