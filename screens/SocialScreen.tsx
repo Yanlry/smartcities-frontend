@@ -21,6 +21,16 @@ export default function SocialScreen() {
   const { getUserId } = useToken();
   const [commentInputs, setCommentInputs] = useState({});
   const [visibleComments, setVisibleComments] = useState({}); // Pour gérer les commentaires visibles
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setUserId(id); // Stockez l'ID utilisateur
+    };
+    fetchUserId();
+    fetchPosts();
+  }, []);
 
   useEffect(() => {
     fetchPosts();
@@ -78,6 +88,12 @@ export default function SocialScreen() {
 
   const handleAddComment = async (postId) => {
     const userId = await getUserId();
+    console.log("Données envoyées au backend :", {
+      postId,
+      userId,
+      text: commentInputs[postId],
+    });
+  
     if (!userId || !commentInputs[postId]?.trim()) {
       Alert.alert(
         "Erreur",
@@ -85,6 +101,7 @@ export default function SocialScreen() {
       );
       return;
     }
+  
     try {
       const response = await fetch(`${API_URL}/posts/comment`, {
         method: "POST",
@@ -95,9 +112,11 @@ export default function SocialScreen() {
           text: commentInputs[postId],
         }),
       });
+  
       if (!response.ok) {
         throw new Error("Erreur lors de l'ajout du commentaire");
       }
+  
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
       fetchPosts();
     } catch (error) {
@@ -115,130 +134,219 @@ export default function SocialScreen() {
     }));
   };
 
-  const renderItem = ({ item }) => {
-    const isExpanded = visibleComments[item.id];
-    const displayedComments = isExpanded
-      ? item.comments
-      : item.comments.slice(0, 1); // Affiche un seul commentaire par défaut
+const renderItem = ({ item }) => {
+  const isExpanded = visibleComments[item.id];
+  const displayedComments = isExpanded
+    ? item.comments
+    : item.comments.slice(0, 1); // Affiche un seul commentaire par défaut
 
-    return (
-      <View style={styles.postContainer}>
-        {/* En-tête du post */}
-        <View style={styles.postHeader}>
-          <Image
-            source={{
-              uri: item.profilePhoto || "https://via.placeholder.com/150",
-            }}
-            style={styles.avatar}
-          />
-          <View>
-            <Text style={styles.userName}>
-              {item.authorName || "Utilisateur inconnu"}
-            </Text>
-            <Text style={styles.timestamp}>
-              {item.createdAt
-                ? new Intl.DateTimeFormat("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }).format(new Date(item.createdAt))
-                : "Date inconnue"}
-            </Text>
-          </View>
+    const handleDeletePost = async (postId) => {
+      Alert.alert(
+        "Confirmation",
+        "Êtes-vous sûr de vouloir supprimer cette publication ?",
+        [
+          {
+            text: "Annuler",
+            style: "cancel",
+          },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const response = await fetch(`${API_URL}/posts/${postId}`, {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                });
+                if (!response.ok) {
+                  throw new Error("Erreur lors de la suppression de la publication");
+                }
+                fetchPosts(); // Recharger les publications après suppression
+              } catch (error) {
+                Alert.alert(
+                  "Erreur",
+                  error.message || "Impossible de supprimer la publication."
+                );
+              }
+            },
+          },
+        ]
+      );
+    };
+    
+    const handleDeleteComment = async (commentId) => {
+      Alert.alert(
+        "Confirmation",
+        "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
+        [
+          {
+            text: "Annuler",
+            style: "cancel",
+          },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const response = await fetch(
+                  `${API_URL}/posts/comments/${commentId}`,
+                  {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                  }
+                );
+                if (!response.ok) {
+                  throw new Error("Erreur lors de la suppression du commentaire");
+                }
+                fetchPosts(); // Recharger les publications après suppression
+              } catch (error) {
+                Alert.alert(
+                  "Erreur",
+                  error.message || "Impossible de supprimer le commentaire."
+                );
+              }
+            },
+          },
+        ]
+      );
+    };
+
+  return (
+    <View style={styles.postContainer}>
+      {/* En-tête du post */}
+      <View style={styles.postHeader}>
+        <Image
+          source={{
+            uri: item.profilePhoto || "https://via.placeholder.com/150",
+          }}
+          style={styles.avatar}
+        />
+        <View>
+          <Text style={styles.userName}>
+            {item.authorName || "Utilisateur inconnu"}
+          </Text>
+          <Text style={styles.timestamp}>
+            {item.createdAt
+              ? new Intl.DateTimeFormat("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(item.createdAt))
+              : "Date inconnue"}
+          </Text>
         </View>
-
-        {/* Contenu du post */}
-        <Text style={styles.postText}>
-          {item.content || "Contenu indisponible"}
-        </Text>
-
-        {/* Actions du post */}
-        <View style={styles.postActions}>
+        {/* Bouton de suppression */}
+        {item.authorId === userId && ( // Vérifiez si l'utilisateur est l'auteur
           <TouchableOpacity
-            onPress={() => handleLike(item.id)}
-            style={styles.likeButton}
+            style={styles.deleteIcon}
+            onPress={() => handleDeletePost(item.id)}
           >
-            <View style={styles.likeButtonContent}>
-              <Icon
-                name="thumbs-up"
-                size={16}
-                color="#fff"
-                style={styles.likeIcon}
-              />
-              <Text style={styles.likeButtonText}>{item.likesCount || 0}</Text>
-            </View>
+            <Icon name="trash" size={20} color="red" />
           </TouchableOpacity>
-        </View>
-
-        {/* Ajouter un commentaire */}
-        <View style={styles.addCommentContainer}>
-          <TextInput
-            style={styles.addCommentInput}
-            placeholder="Écrivez un commentaire..."
-            value={commentInputs[item.id] || ""}
-            onChangeText={(text) =>
-              setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
-            }
-          />
-          <TouchableOpacity
-            onPress={() => handleAddComment(item.id)}
-            style={styles.addCommentButton}
-          >
-            <Text style={styles.addCommentButtonText}>Publier</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Section des commentaires */}
-        {item.comments?.length > 0 && (
-          <View style={styles.commentsSection}>
-            {displayedComments.map((comment) => (
-              <View key={comment.id} style={styles.commentContainer}>
-                <Image
-                  source={{
-                    uri:
-                      comment.userProfilePhoto ||
-                      "https://via.placeholder.com/150",
-                  }}
-                  style={styles.commentAvatar}
-                />
-                <View style={styles.commentContent}>
-                  <Text style={styles.userNameComment}>
-                    {comment.userName || "Utilisateur inconnu"}
-                  </Text>
-                  <Text style={styles.timestampComment}>
-                    {item.createdAt
-                      ? `${new Intl.DateTimeFormat("fr-FR", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(item.createdAt))}`
-                      : "Date inconnue"}
-                  </Text>
-                  <Text style={styles.commentText}>{comment.text}</Text>
-                </View>
-              </View>
-            ))}
-            {item.comments.length > 1 && (
-              <TouchableOpacity
-                onPress={() => toggleComments(item.id)}
-                style={styles.showMoreButton}
-              >
-                <Text style={styles.showMoreText}>
-                  {isExpanded
-                    ? "Cacher les commentaires"
-                    : `Afficher ${item.comments.length - 1} commentaires`}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
         )}
       </View>
-    );
-  };
+
+      {/* Contenu du post */}
+      <Text style={styles.postText}>
+        {item.content || "Contenu indisponible"}
+      </Text>
+
+      {/* Actions du post */}
+      <View style={styles.postActions}>
+        <TouchableOpacity
+          onPress={() => handleLike(item.id)}
+          style={styles.likeButton}
+        >
+          <View style={styles.likeButtonContent}>
+            <Icon
+              name="thumbs-up"
+              size={16}
+              color="#fff"
+              style={styles.likeIcon}
+            />
+            <Text style={styles.likeButtonText}>{item.likesCount || 0}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Ajouter un commentaire */}
+      <View style={styles.addCommentContainer}>
+        <TextInput
+          style={styles.addCommentInput}
+          placeholder="Écrivez un commentaire..."
+          value={commentInputs[item.id] || ""}
+          onChangeText={(text) =>
+            setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
+          }
+        />
+        <TouchableOpacity
+          onPress={() => handleAddComment(item.id)}
+          style={styles.addCommentButton}
+        >
+          <Text style={styles.addCommentButtonText}>Publier</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Section des commentaires */}
+      {item.comments?.length > 0 && (
+        <View style={styles.commentsSection}>
+          {displayedComments.map((comment) => (
+            <View key={comment.id} style={styles.commentContainer}>
+              <Image
+                source={{
+                  uri:
+                    comment.userProfilePhoto ||
+                    "https://via.placeholder.com/150",
+                }}
+                style={styles.commentAvatar}
+              />
+              <View style={styles.commentContent}>
+                <Text style={styles.userNameComment}>
+                  {comment.userName || "Utilisateur inconnu"}
+                </Text>
+                <Text style={styles.timestampComment}>
+                  {item.createdAt
+                    ? `${new Intl.DateTimeFormat("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }).format(new Date(item.createdAt))}`
+                    : "Date inconnue"}
+                </Text>
+                <Text style={styles.commentText}>{comment.text}</Text>
+              </View>
+              {/* Bouton de suppression pour les commentaires appartenant à l'utilisateur */}
+              {comment.userId === userId && (
+                <TouchableOpacity
+                  style={styles.deleteIconComment}
+                  onPress={() => handleDeleteComment(comment.id)}
+                >
+                  <Icon name="trash" size={16} color="red" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
+          {item.comments.length > 1 && (
+            <TouchableOpacity
+              onPress={() => toggleComments(item.id)}
+              style={styles.showMoreButton}
+            >
+              <Text style={styles.showMoreText}>
+                {isExpanded
+                  ? "Cacher les commentaires"
+                  : `Afficher ${item.comments.length - 1} commentaires`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
 
   const handleAddPost = async () => {
     if (newPostContent.trim()) {
@@ -263,6 +371,26 @@ export default function SocialScreen() {
           error.message || "Impossible de créer la publication."
         );
       }
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const response = await fetch(`${API_URL}/posts/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression du commentaire");
+      }
+
+      // Recharger les publications après suppression du commentaire
+      fetchPosts();
+    } catch (error) {
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible de supprimer le commentaire."
+      );
     }
   };
 
@@ -293,6 +421,7 @@ export default function SocialScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -405,5 +534,17 @@ const styles = StyleSheet.create({
     padding: 5,
     marginTop: 5,
     borderRadius: 5,
+  },
+  deleteIcon: {
+    marginLeft: "auto",
+    padding: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 10,
+  },
+  deleteIconComment: {
+    position: "absolute",
+    right: 10,
+    top: 10,
+
   },
 });
