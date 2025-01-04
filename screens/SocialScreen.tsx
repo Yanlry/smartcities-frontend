@@ -374,25 +374,6 @@ const renderItem = ({ item }) => {
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
-    try {
-      const response = await fetch(`${API_URL}/posts/comments/${commentId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) {
-        throw new Error("Erreur lors de la suppression du commentaire");
-      }
-
-      // Recharger les publications après suppression du commentaire
-      fetchPosts();
-    } catch (error) {
-      Alert.alert(
-        "Erreur",
-        error.message || "Impossible de supprimer le commentaire."
-      );
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -446,7 +427,7 @@ const styles = StyleSheet.create({
   postText: { fontSize: 14, marginBottom: 10 },
   postActions: { flexDirection: "row", justifyContent: "space-between" },
   likeButton: {
-    backgroundColor: "#4267B2",
+    backgroundColor: "#29524A",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -494,7 +475,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#4267B2",
+    backgroundColor: "#29524A",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -516,7 +497,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   newPostButton: {
-    backgroundColor: "#4267B2",
+    backgroundColor: "#29524A",
     paddingVertical: 10,
     borderRadius: 30,
     alignItems: "center",
@@ -524,7 +505,7 @@ const styles = StyleSheet.create({
   newPostButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   postsList: { paddingBottom: 10 }, // Conteneur pour les posts
   showMoreText: {
-    color: "#4267B2",
+    color: "#29524A",
     fontWeight: "bold",
     fontSize: 14,
     marginTop: 5,

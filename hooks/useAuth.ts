@@ -27,9 +27,8 @@ export function useAuth() {
     { label: "Téléchargement en cours", progress: 0.7 },
     { label: "Finalisation, veuillez patientez", progress: 1.0 },
   ];
-
   const handleLogin = async (onLogin: () => void) => {
-    const { setToken, setUserId, clearAll, getToken, getUserId } = useToken(); // Utilise les fonctions de `useToken`
+    const { setToken, setRefreshToken, setUserId, clearAll } = useToken(); // Ajout de `setRefreshToken`
   
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
@@ -42,23 +41,24 @@ export function useAuth() {
       const response = await login(lowerCaseEmail, password);
   
       if (response.status === 200 || response.status === 201) {
-        const { accessToken, userId } = response.data; // Assure-toi que le backend renvoie `userId`
+        const { accessToken, refreshToken, userId } = response.data; // Assure-toi que le backend renvoie `refreshToken`
   
         // Suppression des données existantes
         await clearAll();
   
         // Stockage des nouvelles données
         await setToken(accessToken);
+        await setRefreshToken(refreshToken); // Stocke le refresh token
         await setUserId(userId);
-          
+  
         setIsAuthenticated(true);
         onLogin();
       }
     } catch (error: any) {
-        Alert.alert(
-          'Erreur',
-          "Email ou mot de passe incorrect."
-        );
+      Alert.alert(
+        'Erreur',
+        "Email ou mot de passe incorrect."
+      );
     } finally {
       setIsLoginClicked(false);
     }
