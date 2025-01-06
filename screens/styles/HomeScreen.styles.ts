@@ -14,7 +14,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 15,
-    color: "#29524A",
+    color: "#535353",
   },
   //  ------------------------------------------------ LOADING
 
@@ -27,7 +27,7 @@ export default StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#29524A",  
+    color: "#535353",  
   },
 
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
@@ -94,7 +94,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#29524A",  
+    backgroundColor: "#535353",  
     borderRadius: 30,
   },
   backButtonText: {
@@ -155,7 +155,7 @@ export default StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#29524A",
+    color: "#535353",
   },
   dropdownButton: {
     marginLeft: 8,
@@ -189,7 +189,7 @@ export default StyleSheet.create({
     width: "100%",
     paddingVertical: 15,
     paddingHorizontal: 20,
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     borderRadius: 30,
     marginTop: 10,
     marginBottom: 10,
@@ -219,7 +219,7 @@ export default StyleSheet.create({
     marginTop: 4,
   },
   cityNameUser: {
-    color: "#29524A", // Texte de la ville en bleu
+    color: "#535353", // Texte de la ville en bleu
     fontWeight: "bold", // Optionnel pour mettre en valeur la ville
   },
   userDetails: {
@@ -268,7 +268,7 @@ export default StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#408476",
+    color: "#535353",
   },
   statLabel: {
     fontSize: 12,
@@ -303,7 +303,7 @@ export default StyleSheet.create({
   voteCount: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#29524A",
+    color: "#535353",
     marginLeft: 8,
   },
   noVotesText: {
@@ -380,7 +380,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     marginTop: 20,
     marginBottom: 10,
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     paddingVertical: 15,
     paddingHorizontal: 50,
     borderRadius: 30,
@@ -434,7 +434,7 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#29524A",
+    color: "#535353",
   },
   smarterItem: {
     alignItems: "center",
@@ -465,7 +465,7 @@ export default StyleSheet.create({
     zIndex: 1, // Assure que la médaille est au-dessus de l'image
   },
   seeAllButton: {
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,
@@ -626,7 +626,7 @@ export default StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#52A393",
+    color: "#CBCBCB",
   },
   eventDetails: {
     fontSize: 14,
@@ -678,7 +678,7 @@ export default StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#52A393",
+    color: "#CBCBCB",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -721,7 +721,7 @@ export default StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#52A393",
+    color: "#CBCBCB",
     marginBottom: 5,
   },
   mayorName: {
@@ -777,7 +777,7 @@ export default StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#52A393",
+    color: "#CBCBCB",
   },
   officeContact: {
     fontSize: 14,

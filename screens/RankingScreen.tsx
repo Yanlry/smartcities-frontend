@@ -110,7 +110,7 @@ const RankingScreen = ({ navigation }) => {
           <Icon
             name="menu"
             size={28}
-            color="#BEE5BF" // Couleur dorée
+            color="#CBCBCB" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -128,7 +128,7 @@ const RankingScreen = ({ navigation }) => {
             <Icon
               name="notifications"
               size={28}
-              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,

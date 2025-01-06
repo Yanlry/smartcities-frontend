@@ -6,7 +6,7 @@ export default StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 20,
     padding: 10,
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     borderRadius: 30,
     alignItems: "center",
   },
@@ -41,7 +41,7 @@ export default StyleSheet.create({
   saveButton: {
     padding: 10,
     width: "40%",
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     borderRadius: 30,
   },
   saveButtonText: {
@@ -121,7 +121,7 @@ searchButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,
@@ -173,8 +173,8 @@ searchButton: {
     marginBottom: 20, // Espacement avec la section suivante
   },
   profileImage: {
-    width: 250, // Largeur de l'image
-    height: 250, // Hauteur de l'image
+    width: 200, // Largeur de l'image
+    height: 200, // Hauteur de l'image
     borderRadius: 60, // Forme ronde (50% de width/height)
   },
   noProfileImageText: {
@@ -190,8 +190,8 @@ searchButton: {
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#29524A",
-    shadowColor: "#29524A",
+    backgroundColor: "#535353",
+    shadowColor: "#535353",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -318,8 +318,8 @@ searchButton: {
     alignItems: "center",
     marginTop: 20,
     marginBottom: 20,
-    backgroundColor: "#29524A",
-    shadowColor: "#29524A",
+    backgroundColor: "#535353",
+    shadowColor: "#535353",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -368,7 +368,7 @@ searchButton: {
     fontWeight: "bold",
     textAlign: "center", // Centre le nombre horizontalement
     marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#376D62", // Couleur sombre pour le nombre
+    color: "#535353", // Couleur sombre pour le nombre
   },
   statLabel: {
     textAlign: "center", // Centre le texte horizontalement
@@ -376,5 +376,51 @@ searchButton: {
     color: "#555", // Couleur du texte
     fontWeight: "bold", // Texte en gras
     lineHeight: 20, // Espacement entre les lignes
+  },
+
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContentFollower: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    height: "50%",
+    padding: 16,
+  },
+  modalHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userName: {
+    flex: 1,
+    fontSize: 16,
+  },
+  unfollowButton: {
+    backgroundColor: "#ff6666",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 30,
+  },
+  unfollowButtonText: {
+    color: "#fff",
+    fontSize: 14,
   },
 });

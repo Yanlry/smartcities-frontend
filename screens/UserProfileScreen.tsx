@@ -277,8 +277,6 @@ export default function UserProfileScreen({ route, navigation }) {
     ? `${user.firstName} ${user.lastName}`
     : user?.username;
 
-    
-
   return (
     <View>
       <View style={styles.header}>
@@ -287,7 +285,7 @@ export default function UserProfileScreen({ route, navigation }) {
           <Icon
             name="menu"
             size={28}
-            color="#BEE5BF" // Couleur dorée
+            color="#CBCBCB" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -302,7 +300,7 @@ export default function UserProfileScreen({ route, navigation }) {
           <Icon
             name="error"
             size={28}
-            color="#BEE5BF"
+            color="#CBCBCB"
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
@@ -429,20 +427,20 @@ export default function UserProfileScreen({ route, navigation }) {
           </View>
           {/* Nom d'utilisateur */}
           {currentUserId && userId && (
-  <View style={styles.sendChatContainer}>
-    <TouchableOpacity
-      style={styles.sendChat}
-      onPress={() =>
-        navigation.navigate("ChatScreen", {
-          receiverId: userId,
-          senderId: currentUserId,
-        })
-      }
-    >
-      <Text style={styles.sendChatText}>Envoyer un message</Text>
-    </TouchableOpacity>
-  </View>
-)}
+            <View style={styles.sendChatContainer}>
+              <TouchableOpacity
+                style={styles.sendChat}
+                onPress={() =>
+                  navigation.navigate("ChatScreen", {
+                    receiverId: userId,
+                    senderId: currentUserId,
+                  })
+                }
+              >
+                <Text style={styles.sendChatText}>Envoyer un message</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         <View style={styles.cardContainer}>
@@ -535,13 +533,13 @@ export default function UserProfileScreen({ route, navigation }) {
           <View style={styles.cardContent}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-               {user?.isSubscribed ? "Oui" : "Non"}
+                {user?.isSubscribed ? "Oui" : "Non"}
               </Text>
-              <Text style={styles.statLabel}>  SMART+</Text>
+              <Text style={styles.statLabel}> SMART+</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-              {user?.isSubscribed ? "Oui" : "Non"}
+                {user?.isSubscribed ? "Oui" : "Non"}
               </Text>
               <Text style={styles.statLabel}>Affiliation mairie</Text>
             </View>
@@ -574,7 +572,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,
@@ -594,7 +592,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  
   modalBackdrop: {
     position: "absolute",
     top: 0, // Occupe toute la hauteur

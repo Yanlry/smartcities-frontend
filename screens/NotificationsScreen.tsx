@@ -8,7 +8,7 @@ import {
   FlatList,
   Alert,
   Image,
-  RefreshControl
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
@@ -34,7 +34,7 @@ export default function NotificationsScreen({ navigation }) {
   const { getToken } = useToken(); // Récupération du token avec le hook
   const { unreadCount } = useNotification(); // Récupération du compteur
   const [refreshing, setRefreshing] = useState(false);
-  
+
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -94,7 +94,8 @@ export default function NotificationsScreen({ navigation }) {
       if (!response.ok) {
         const errorDetails = await response.json();
         throw new Error(
-          errorDetails.message || "Erreur lors de la récupération des notifications."
+          errorDetails.message ||
+            "Erreur lors de la récupération des notifications."
         );
       }
 
@@ -131,7 +132,6 @@ export default function NotificationsScreen({ navigation }) {
     fetchNotifications();
   }, []);
 
-  
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   const markNotificationAsRead = async (notificationId: number) => {
@@ -178,19 +178,21 @@ export default function NotificationsScreen({ navigation }) {
       if (!token) {
         throw new Error("Token non trouvé.");
       }
-  
+
       const response = await fetch(`${API_URL}/notifications/mark-all-read`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       if (!response.ok) {
         const errorDetails = await response.json();
-        throw new Error(errorDetails.message || "Erreur lors de la mise à jour.");
+        throw new Error(
+          errorDetails.message || "Erreur lors de la mise à jour."
+        );
       }
-  
+
       // Mettre à jour l'état des notifications localement
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) => ({
@@ -198,11 +200,20 @@ export default function NotificationsScreen({ navigation }) {
           isRead: true,
         }))
       );
-  
-      Alert.alert("Succès", "Toutes les notifications ont été marquées comme lues.");
+
+      Alert.alert(
+        "Succès",
+        "Toutes les notifications ont été marquées comme lues."
+      );
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des notifications :", error.message);
-      Alert.alert("Erreur", "Impossible de marquer toutes les notifications comme lues.");
+      console.error(
+        "Erreur lors de la mise à jour des notifications :",
+        error.message
+      );
+      Alert.alert(
+        "Erreur",
+        "Impossible de marquer toutes les notifications comme lues."
+      );
     }
   };
 
@@ -253,42 +264,69 @@ export default function NotificationsScreen({ navigation }) {
 
     // Marquer la notification comme lue
     try {
-        await markNotificationAsRead(notification.id);
+      await markNotificationAsRead(notification.id);
     } catch (error) {
-        console.error("Erreur lors de la mise à jour de la notification comme lue :", error);
+      console.error(
+        "Erreur lors de la mise à jour de la notification comme lue :",
+        error
+      );
     }
 
     // Redirection basée sur le type de notification
     switch (notification.type) {
-        case "COMMENT":
-            navigation.navigate("ReportDetailsScreen", {
-                reportId: notification.relatedId, // Passez l'ID du signalement
-            });
-            break;
+      case "COMMENT":
+        navigation.navigate("ReportDetailsScreen", {
+          reportId: notification.relatedId, // Passez l'ID du signalement
+        });
+        break;
 
-        case "FOLLOW":
-            navigation.navigate("UserProfileScreen", {
-                userId: notification.relatedId, // Passez l'ID de l'utilisateur qui suit
-            });
-            break;
+      case "FOLLOW":
+        navigation.navigate("UserProfileScreen", {
+          userId: notification.relatedId, // Passez l'ID de l'utilisateur qui suit
+        });
+        break;
 
-        case "VOTE":
-            navigation.navigate("ReportDetailsScreen", {
-                reportId: notification.relatedId, // Passez l'ID du signalement
-            });
-            break;
+      case "VOTE":
+        navigation.navigate("ReportDetailsScreen", {
+          reportId: notification.relatedId, // Passez l'ID du signalement
+        });
+        break;
 
-        case "new_message":
-            navigation.navigate("ChatScreen", {
-                senderId: notification.userId, // Passez l'ID de l'expéditeur
-                receiverId: notification.initiatorId,   // Passez l'ID du destinataire
-            });
-            break;
+      case "new_message":
+        navigation.navigate("ChatScreen", {
+          senderId: notification.userId, // Passez l'ID de l'expéditeur
+          receiverId: notification.initiatorId, // Passez l'ID du destinataire
+        });
+        break;
 
-        default:
-            console.warn("Type de notification inconnu :", notification.type);
+      case "comment":
+        navigation.navigate("PostDetailsScreen", {
+          postId: notification.relatedId, // Passez l'ID du signalement
+        });
+        break;
+
+      case "post":
+        navigation.navigate("PostDetailsScreen", {
+          postId: notification.relatedId, // Passez l'ID du signalement
+        });
+        break;
+
+        case "comment_reply":
+        navigation.navigate("PostDetailsScreen", {
+          postId: notification.relatedId, // Passez l'ID du signalement
+        });
+        break;
+
+        case "LIKE":
+          navigation.navigate("PostDetailsScreen", {
+            postId: notification.relatedId, // Passez l'ID du signalement
+          });
+          break;
+
+      default:
+        console.warn("Type de notification inconnu :", notification.type);
     }
-};
+  };
 
   const renderNotification = ({ item }) => {
     // Action à gauche : Marquer comme lu
@@ -301,7 +339,7 @@ export default function NotificationsScreen({ navigation }) {
         <Text style={styles.markAsReadText}>Marquer comme lu</Text>
       </TouchableOpacity>
     );
-  
+
     // Action à droite : Supprimer
     const renderRightActions = () => (
       <TouchableOpacity
@@ -312,62 +350,62 @@ export default function NotificationsScreen({ navigation }) {
         <Text style={styles.deleteButtonText}>Supprimer</Text>
       </TouchableOpacity>
     );
-  
+
     return (
       <Swipeable
-      renderLeftActions={renderLeftActions}
-      renderRightActions={renderRightActions}
-      onSwipeableOpen={(direction) => {
-        if (direction === "left") {
-          markNotificationAsRead(item.id); // Marque comme lu
-        } else if (direction === "right") {
-          // Demander confirmation avant suppression
-          Alert.alert(
-            "Confirmer la suppression",
-            "Voulez-vous vraiment supprimer cette notification ?",
-            [
-              {
-                text: "Annuler",
-                style: "cancel", // Ferme l'alerte sans supprimer
-              },
-              {
-                text: "Supprimer",
-                style: "destructive",
-                onPress: () => deleteNotification(item.id), // Supprime la notification
-              },
-            ]
-          );
-        }
-      }}
-    >
-      <TouchableOpacity
-        style={[
-          styles.notificationItem,
-          !item.isRead && styles.unreadNotification,
-        ]}
-        onPress={() => handleNotificationClick(item)}
+        renderLeftActions={renderLeftActions}
+        renderRightActions={renderRightActions}
+        onSwipeableOpen={(direction) => {
+          if (direction === "left") {
+            markNotificationAsRead(item.id); // Marque comme lu
+          } else if (direction === "right") {
+            // Demander confirmation avant suppression
+            Alert.alert(
+              "Confirmer la suppression",
+              "Voulez-vous vraiment supprimer cette notification ?",
+              [
+                {
+                  text: "Annuler",
+                  style: "cancel", // Ferme l'alerte sans supprimer
+                },
+                {
+                  text: "Supprimer",
+                  style: "destructive",
+                  onPress: () => deleteNotification(item.id), // Supprime la notification
+                },
+              ]
+            );
+          }
+        }}
       >
-        <View style={styles.notificationContent}>
-          {/* Afficher la photo de profil */}
-          <Image
-            source={{
-              uri:
-                item.initiator?.profilePhoto ||
-                item.initiatorDetails?.profilePhoto?.url ||
-                "https://via.placeholder.com/150",
-            }}
-            style={styles.profilePhoto}
-          />
-          {/* Texte de la notification */}
-          <View style={styles.notificationTextContainer}>
-            <Text style={styles.notificationMessage}>{item.message}</Text>
-            <Text style={styles.notificationDate}>
-              {new Date(item.createdAt).toLocaleString()}
-            </Text>
+        <TouchableOpacity
+          style={[
+            styles.notificationItem,
+            !item.isRead && styles.unreadNotification,
+          ]}
+          onPress={() => handleNotificationClick(item)}
+        >
+          <View style={styles.notificationContent}>
+            {/* Afficher la photo de profil */}
+            <Image
+              source={{
+                uri:
+                  item.initiator?.profilePhoto ||
+                  item.initiatorDetails?.profilePhoto?.url ||
+                  "https://via.placeholder.com/150",
+              }}
+              style={styles.profilePhoto}
+            />
+            {/* Texte de la notification */}
+            <View style={styles.notificationTextContainer}>
+              <Text style={styles.notificationMessage}>{item.message}</Text>
+              <Text style={styles.notificationDate}>
+                {new Date(item.createdAt).toLocaleString()}
+              </Text>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    </Swipeable>
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
   if (loading) {
@@ -386,7 +424,7 @@ export default function NotificationsScreen({ navigation }) {
           <Icon
             name="menu"
             size={28}
-            color="#BEE5BF" // Couleur dorée
+            color="#CBCBCB" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -404,7 +442,7 @@ export default function NotificationsScreen({ navigation }) {
             <Icon
               name="notifications"
               size={28}
-              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -419,32 +457,34 @@ export default function NotificationsScreen({ navigation }) {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       <FlatList
-  data={notifications}
-  renderItem={renderNotification}
-  keyExtractor={(item) => item.id.toString()}
-  refreshControl={
-    <RefreshControl
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      colors={["#4caf50"]}
-    />
-  }
-  ListEmptyComponent={
-    <View style={styles.emptyContainer}>
-      <Icon name="notifications-off" size={50} color="#ccc" />
-      <Text style={styles.emptyText}>Aucune notification disponible.</Text>
-    </View>
-  }
-  contentContainerStyle={styles.flatListContent}
-/>
-{/* Bouton de notifications avec compteur */}
-<View style={styles.markAllButtonContainer}>
-  <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
-    <Text style={styles.markAllButtonText}>
-      Tout marquer comme lu ({unreadCount})
-    </Text>
-  </TouchableOpacity>
-</View>
+        data={notifications}
+        renderItem={renderNotification}
+        keyExtractor={(item) => item.id.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#4caf50"]}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Icon name="notifications-off" size={50} color="#ccc" />
+            <Text style={styles.emptyText}>
+              Aucune notification disponible.
+            </Text>
+          </View>
+        }
+        contentContainerStyle={styles.flatListContent}
+      />
+      {/* Bouton de notifications avec compteur */}
+      <View style={styles.markAllButtonContainer}>
+        <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
+          <Text style={styles.markAllButtonText}>
+            Tout marquer comme lu ({unreadCount})
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -458,7 +498,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,
@@ -503,13 +543,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 50,
   },
-  
+
   markAsReadText: {
     color: "black",
     textTransform: "uppercase",
     fontSize: 14,
   },
-  
+
   deleteButton: {
     width: 150,
     marginTop: 10,
@@ -541,7 +581,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   markAllButton: {
-    backgroundColor: "#FFE347", // Vert agréable
+    backgroundColor: "#535353", // Vert agréable
     marginTop: 10,
     marginBottom: 20,
     paddingVertical: 10,
@@ -553,9 +593,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5, // Pour un effet de surbrillance sur Android
   },
-  
+
   markAllButtonText: {
-    color: "black", // Texte blanc
+    color: "white", // Texte blanc
     fontSize: 12,
     textTransform: "uppercase",
   },

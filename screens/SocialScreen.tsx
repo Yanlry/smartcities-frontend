@@ -14,7 +14,7 @@ import { API_URL } from "@env";
 import { useToken } from "../hooks/useToken";
 import Icon from "react-native-vector-icons/FontAwesome";
 
-export default function SocialScreen() {
+export default function SocialScreen({handleScroll}) {
   const [posts, setPosts] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -574,6 +574,8 @@ export default function SocialScreen() {
   return (
     <View style={styles.container}>
       <FlatList
+      onScroll={handleScroll}
+      scrollEventThrottle={16} 
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
@@ -603,8 +605,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f0f2f5",
-    paddingTop: 110,
-    paddingBottom: 90,
+  },
+  newPostContainer: {
+    padding: 15,
+    paddingTop: 120,
+    backgroundColor: "#fff",
+    marginBottom: 10,
+    marginHorizontal: 10,
+    borderRadius: 30,
   },
   postHeader: {
     flexDirection: "row",
@@ -646,7 +654,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   likeButton: {
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -683,7 +691,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -695,13 +703,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
-  newPostContainer: {
-    padding: 15,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-    marginHorizontal: 10,
-    borderRadius: 30,
-  },
   newPostInput: {
     backgroundColor: "#f7f7f7",
     padding: 10,
@@ -709,7 +710,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   newPostButton: {
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     paddingVertical: 10,
     borderRadius: 30,
     alignItems: "center",
@@ -723,7 +724,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10, // Conteneur pour les posts
   },
   showMoreText: {
-    color: "#29524A",
+    color: "#535353",
     fontWeight: "bold",
     fontSize: 14,
     marginTop: 5,

@@ -15,6 +15,7 @@ export type RootStackParamList = {
   RankingScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
   ConversationsScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
   CityScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
+  PostDetailsScreen: { postId: number };
 };
 
 export type TabParamList = {

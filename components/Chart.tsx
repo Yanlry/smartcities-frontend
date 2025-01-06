@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "#29524A",
+    color: "#535353",
 
   },
   chart: {

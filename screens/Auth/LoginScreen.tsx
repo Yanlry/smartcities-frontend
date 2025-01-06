@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#29524A",
+    color: "#535353",
     marginBottom: 10,
     textAlign: "center",
   },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   // Sous-titre
   subtitle: {
     fontSize: 18,
-    color: "#29524A",
+    color: "#535353",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -443,8 +443,8 @@ const styles = StyleSheet.create({
   loginButton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#29524A", // Bleu moderne
-    shadowColor: "#29524A",
+    backgroundColor: "#535353", // Bleu moderne
+    shadowColor: "#535353",
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   registerText: {
     marginTop: 15,
     fontSize: 16,
-    color: "#29524A",
+    color: "#535353",
   },
 
   // Bouton "S'inscrire"
@@ -478,10 +478,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 2,
-    borderColor: "#29524A",
+    borderColor: "#535353",
   },
   passwordText: {
-    color: "#29524A",
+    color: "#535353",
     fontSize: 16,
     textAlign: "center",
     width: "100%",
@@ -489,11 +489,11 @@ const styles = StyleSheet.create({
   },
 
   buttonClicked: {
-    backgroundColor: "#BEE5BF", // Vert agréable pour indiquer que le bouton a été cliqué
+    backgroundColor: "#CBCBCB", // Vert agréable pour indiquer que le bouton a été cliqué
   },
 
   registerButtonText: {
-    color: "#29524A",
+    color: "#535353",
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -515,15 +515,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#29524A",
+    color: "#535353",
   },
   modalText: {
-    color: "#29524A",
+    color: "#535353",
     marginBottom: 20,
   },
   modalButton: {
     padding: 15,
-    backgroundColor: "#29524A",
+    backgroundColor: "#535353",
     borderRadius: 30,
     marginTop: 10,
     width: "100%",

@@ -55,7 +55,7 @@ export default function EventsScreen({ navigation }) {
           <Text style={styles.eventDate}>
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
-          <Icon name="chevron-right" size={24} color="#BEE5BF" />
+          <Icon name="chevron-right" size={24} color="#CBCBCB" />
         </View>
       </TouchableOpacity>
       {/* Bouton de suppression */}
@@ -114,7 +114,7 @@ export default function EventsScreen({ navigation }) {
           <Icon
             name="menu"
             size={28}
-            color="#BEE5BF" // Couleur dorée
+            color="#CBCBCB" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -132,7 +132,7 @@ export default function EventsScreen({ navigation }) {
             <Icon
               name="notifications"
               size={28}
-              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#BEE5BF",
+    color: "#CBCBCB",
     marginBottom: 5,
   },
   eventDescription: {

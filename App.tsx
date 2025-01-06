@@ -5,6 +5,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Dimensions
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -37,6 +38,8 @@ import ConversationsScreen from "./screens/ConversationsScreen";
 import SocialScreen from "./screens/SocialScreen";
 import CityScreen from "./screens/CityScreen";
 import { useToken } from "./hooks/useToken";
+import PostDetailsScreen from "./screens/PostDetailsScreen";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -46,6 +49,24 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { getToken } = useToken();
+  const previousOffset = useRef(0); // Dernier offset du scroll
+  const threshold = 10; 
+  const headerTranslateY = useSharedValue(0);
+
+const handleScroll = (event) => {
+  const currentOffset = event.nativeEvent.contentOffset.y;
+
+  if (currentOffset - previousOffset.current > threshold) {
+    // Scroll vers le bas (cacher le header)
+    headerTranslateY.value = withTiming(-100, { duration: 200 });
+  } else if (previousOffset.current - currentOffset > threshold) {
+    // Scroll vers le haut (afficher le header)
+    headerTranslateY.value = withTiming(0, { duration: 200 });
+  }
+
+  // Met à jour l'offset précédent
+  previousOffset.current = currentOffset;
+};
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prevState) => {
@@ -89,17 +110,22 @@ export default function App() {
     }
   };
 
-  const CustomHeader = ({ navigation }) => {
-    const { unreadCount } = useNotification(); // Récupère le compteur du contexte
-
+  const CustomHeader = ({ navigation, headerTranslateY }) => {
+    const { unreadCount } = useNotification(); // Compteur des notifications non lues
+  
     return (
-      <View style={{ backgroundColor: "#fff" }}>
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          { transform: [{ translateY: headerTranslateY }] }, // Appliquez l'animation
+        ]}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={toggleSidebar}>
             <Icon
               name="menu"
               size={28}
-              color="#BEE5BF"
+              color="#CBCBCB"
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
@@ -108,12 +134,7 @@ export default function App() {
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
             <View>
-              <Icon
-                name="notifications"
-                size={28}
-                color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
-                style={{ marginRight: 10 }}
-              />
+              <Icon name="notifications" size={28} color="#CBCBCB" />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -122,19 +143,19 @@ export default function App() {
             </View>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     );
   };
-
   const EmptyScreen = () => {
     return null; // Écran vide intentionnellement
   };
-
+  const { width } = Dimensions.get("window");
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
     const actionSheetRef = useRef<ActionSheet | null>(null); // Référence pour l'ActionSheet
-  
+    const tabWidth = width / 5; // Nombre d'onglets (ici 5)
+    const activeTabPosition = useSharedValue(0);
     // Fonction pour récupérer l'ID utilisateur
     const fetchUserId = async () => {
       try {
@@ -193,7 +214,10 @@ export default function App() {
       <>
         <Tab.Navigator
           screenOptions={({ route }) => ({
-            header: ({ navigation }) => <CustomHeader navigation={navigation} />,
+            header: ({ navigation }) => (
+              <CustomHeader navigation={navigation} headerTranslateY={headerTranslateY} />
+            ),
+            
             tabBarIcon: ({ color, size, focused }) => {
               let iconName = "";
   
@@ -214,7 +238,7 @@ export default function App() {
                   style={{
                     width: 40,
                     height: 40,
-                    backgroundColor: focused ? "#BEE5BF" : "transparent",
+                    backgroundColor: focused ? "#CBCBCB" : "transparent",
                     borderRadius: 25,
                     justifyContent: "center",
                     alignItems: "center",
@@ -223,7 +247,7 @@ export default function App() {
                   <Icon
                     name={iconName}
                     size={focused ? size + 5 : size}
-                    color={focused ? "#29524A" : "#fff"}
+                    color={focused ? "#535353" : "#fff"}
                   />
                 </View>
               );
@@ -233,17 +257,20 @@ export default function App() {
               height: 70,
               paddingTop: 10,
               paddingHorizontal: 10,
-              backgroundColor: "#29524A",
+              backgroundColor: "#535353",
               position: "absolute",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -5 },
               shadowOpacity: 0.1,
               shadowRadius: 10,
               elevation: 10,
+              borderRadius: 20,
             },
           })}
         >
-          <Tab.Screen name="Accueil" component={HomeScreen} />
+        <Tab.Screen name="Accueil">
+  {(props) => <HomeScreen {...props} handleScroll={handleScroll} />}
+</Tab.Screen>
           <Tab.Screen
             name="Conversations"
             component={ConversationsScreen}
@@ -259,7 +286,9 @@ export default function App() {
               },
             }}
           />
-          <Tab.Screen name="Social" component={SocialScreen} />
+          <Tab.Screen name="Social">
+  {(props) => <SocialScreen {...props} handleScroll={handleScroll} />}
+</Tab.Screen>
           <Tab.Screen name="Carte" component={MapScreen} />
         </Tab.Navigator>
   
@@ -378,6 +407,10 @@ export default function App() {
                      name="CityScreen" 
                      component={CityScreen}
                   />
+                  <Stack.Screen
+                     name="PostDetailsScreen" 
+                     component={PostDetailsScreen}
+                  />
                 </>
               )}
             </Stack.Navigator>
@@ -399,6 +432,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: "#fff",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
   header: {
     position: "absolute", // Position absolue pour superposer au contenu
     top: 0,
@@ -408,7 +454,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingTop: 50, // Marge en haut

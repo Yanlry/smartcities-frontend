@@ -9,7 +9,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,
@@ -99,7 +99,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   upVoteButton: {
-    backgroundColor: "#BEE5BF",
+    backgroundColor: "#CBCBCB",
   },
   downVoteButton: {
     backgroundColor: "#F29A91",

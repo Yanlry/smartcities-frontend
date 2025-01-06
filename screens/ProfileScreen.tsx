@@ -9,7 +9,8 @@ import {
   TextInput,
   Alert,
   Switch,
-  Modal
+  Modal,
+  FlatList,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -83,7 +84,11 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  // Gestion des changements dans les inputs
+  const [selectedList, setSelectedList] = useState<
+    "followers" | "following" | null
+  >(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
   interface FormData {
     firstName: string;
     lastName: string;
@@ -105,6 +110,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     async function fetchUser() {
       try {
         const userId = await getUserIdFromToken();
+        setCurrentUserId(userId);
         if (!userId) throw new Error("ID utilisateur non trouvé");
 
         const response = await fetch(`${API_URL}/users/${userId}`);
@@ -169,8 +175,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#29524A" />
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#29524A" }}>
+        <ActivityIndicator size="large" color="#535353" />
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#535353" }}>
           Chargement des informations..
         </Text>
       </View>
@@ -325,31 +331,37 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
 
   const handleSearchCity = () => {
     const trimmedQuery = query.trim(); // Supprime les espaces inutiles
-  
+
     if (!trimmedQuery) {
-      Alert.alert("Erreur", "Veuillez entrer un code postal ou un nom de ville.");
+      Alert.alert(
+        "Erreur",
+        "Veuillez entrer un code postal ou un nom de ville."
+      );
       return;
     }
-  
+
     // Détecter si la recherche est un code postal (entier)
     const isCodePostal = /^[0-9]{5}$/.test(trimmedQuery);
-  
+
     // Filtrer les villes par code postal ou nom de ville
     const filteredCities = franceCities.filter((city) => {
       const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
       const codePostal = city.Code_postal.toString().trim();
-  
+
       return isCodePostal
         ? codePostal === trimmedQuery // Recherche par code postal
         : cityName.includes(trimmedQuery.toLowerCase()); // Recherche par nom de ville
     });
-  
+
     if (filteredCities.length > 0) {
       setSuggestions(filteredCities);
       setModalVisible(true);
     } else {
       setSuggestions([]);
-      Alert.alert("Erreur", "Aucune ville ou code postal correspondant trouvé.");
+      Alert.alert(
+        "Erreur",
+        "Aucune ville ou code postal correspondant trouvé."
+      );
     }
   };
 
@@ -361,7 +373,10 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
 
   const handleSaveCity = async () => {
     if (!selectedCity) {
-      Alert.alert("Erreur", "Veuillez sélectionner une ville avant d'enregistrer.");
+      Alert.alert(
+        "Erreur",
+        "Veuillez sélectionner une ville avant d'enregistrer."
+      );
       return;
     }
 
@@ -378,13 +393,57 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           nomCommune: selectedCity.Nom_commune,
           codePostal: selectedCity.Code_postal,
         }));
-        setIsEditingCity(false)
+        setIsEditingCity(false);
       } else {
         throw new Error("Erreur serveur");
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error);
       Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
+    }
+  };
+
+  const handleShowList = (listType: "followers" | "following") => {
+    setSelectedList((prev) => (prev === listType ? null : listType));
+  };
+
+  const handleCloseModal = () => {
+    setSelectedList(null);
+  };
+
+  const handleUnfollow = async (followingUserId) => {
+    if (!currentUserId) return;
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(
+        `${API_URL}/users/${followingUserId}/unfollow`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ followerId: currentUserId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du désuivi de cet utilisateur.");
+      }
+
+      // Mettre à jour localement la liste des abonnements
+      setUser((prevUser) =>
+        prevUser
+          ? {
+              ...prevUser,
+              following: (prevUser.following || []).filter(
+                (following) => following.id !== followingUserId
+              ),
+            }
+          : null
+      );
+    } catch (error) {
+      console.error(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -396,7 +455,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           <Icon
             name="menu"
             size={28}
-            color="#BEE5BF" // Couleur dorée
+            color="#CBCBCB" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -414,7 +473,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
             <Icon
               name="notifications"
               size={28}
-              color={unreadCount > 0 ? "#BEE5BF" : "#BEE5BF"}
+              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -644,86 +703,185 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
         </View>
 
         <View style={styles.cardContainer}>
-  <Text style={styles.infoCardHeader}>Ville de référence</Text>
+          <Text style={styles.infoCardHeader}>Ville de référence</Text>
 
-  {/* Affichage de la ville actuelle */}
-  <View style={styles.cardContent}>
-    <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{user?.nomCommune || "Non disponible"}</Text>
-      <Text style={styles.statLabel}>Ville</Text>
-    </View>
-    <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{user?.codePostal || "Non disponible"}</Text>
-      <Text style={styles.statLabel}>Code postal</Text>
-    </View>
-  </View>
+          {/* Affichage de la ville actuelle */}
+          <View style={styles.cardContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.nomCommune || "Non disponible"}
+              </Text>
+              <Text style={styles.statLabel}>Ville</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {user?.codePostal || "Non disponible"}
+              </Text>
+              <Text style={styles.statLabel}>Code postal</Text>
+            </View>
+          </View>
 
-  {/* Bouton pour activer la modification */}
-  <TouchableOpacity style={styles.editButton} onPress={() => setIsEditingCity(true)}>
-    <Text style={styles.editButtonText}>Modifier ma ville</Text>
-  </TouchableOpacity>
+          {/* Bouton pour activer la modification */}
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => setIsEditingCity(true)}
+          >
+            <Text style={styles.editButtonText}>Modifier ma ville</Text>
+          </TouchableOpacity>
 
-  {/* Mode édition */}
-  {isEditingCity && (
-    <View style={styles.editContainer}>
-      {/* Champ de recherche */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.inputCity}
-          placeholder="Rechercher par code postal"
-          value={query}
-          onChangeText={setQuery}
-          placeholderTextColor="#c7c7c7"
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearchCity}>
-          <Ionicons name="search-sharp" size={20} color="black" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Modal pour afficher les suggestions */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ScrollView>
-              {suggestions.map((item, index) => (
+          {/* Mode édition */}
+          {isEditingCity && (
+            <View style={styles.editContainer}>
+              {/* Champ de recherche */}
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={styles.inputCity}
+                  placeholder="Rechercher par code postal"
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholderTextColor="#c7c7c7"
+                />
                 <TouchableOpacity
-                  key={`${item.Code_commune_INSEE}-${index}`}
-                  style={styles.suggestionItem}
-                  onPress={() => handleCitySelection(item)}
+                  style={styles.searchButton}
+                  onPress={handleSearchCity}
                 >
-                  <Text style={styles.suggestionText}>
-                    {item.Nom_commune} ({item.Code_postal})
-                  </Text>
+                  <Ionicons name="search-sharp" size={20} color="black" />
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              </View>
+
+              {/* Modal pour afficher les suggestions */}
+              <Modal
+                visible={modalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <ScrollView>
+                      {suggestions.map((item, index) => (
+                        <TouchableOpacity
+                          key={`${item.Code_commune_INSEE}-${index}`}
+                          style={styles.suggestionItem}
+                          onPress={() => handleCitySelection(item)}
+                        >
+                          <Text style={styles.suggestionText}>
+                            {item.Nom_commune} ({item.Code_postal})
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Text style={styles.closeButtonText}>Fermer</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+
+              {/* Boutons Sauvegarder et Annuler */}
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={handleSaveCity}
+                >
+                  <Text style={styles.saveButtonText}>Enregistrer</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setIsEditingCity(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Annuler</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.cardContainer}>
+          <Text style={styles.infoCardHeader}>Relations</Text>
+          <View style={styles.cardContent}>
             <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
+              style={styles.statItem}
+              onPress={() => handleShowList("followers")}
             >
-              <Text style={styles.closeButtonText}>Fermer</Text>
+              <Text style={styles.statNumber}>
+                {user?.followers?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnées</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statItem}
+              onPress={() => handleShowList("following")}
+            >
+              <Text style={styles.statNumber}>
+                {user?.following?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnements</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
 
-      {/* Boutons Sauvegarder et Annuler */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveCity}>
-          <Text style={styles.saveButtonText}>Enregistrer</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditingCity(false)}>
-          <Text style={styles.cancelButtonText}>Annuler</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  )}
-</View>
+          {/* Modal pour afficher la liste */}
+          {selectedList && (
+            <Modal
+              visible={true}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={handleCloseModal}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContentFollower}>
+                  <Text style={styles.modalHeader}>
+                    {selectedList === "followers"
+                      ? "Smarters abonnés à votre profil"
+                      : "Smarters auxquels vous êtes abonné"}
+                  </Text>
+                  <FlatList
+                    data={
+                      selectedList === "followers"
+                        ? user?.followers
+                        : user?.following
+                    }
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                      <View style={styles.listItem}>
+                        <Image
+                          source={{
+                            uri:
+                              item.profilePhoto ||
+                              "https://via.placeholder.com/150",
+                          }}
+                          style={styles.avatar}
+                        />
+                        <Text style={styles.userName}>{item.username}</Text>
+
+                        {selectedList === "following" && ( // Bouton désabonnement uniquement pour les abonnements
+                          <TouchableOpacity
+                            style={styles.unfollowButton}
+                            onPress={() => handleUnfollow(item.id)}
+                          >
+                            <Text style={styles.unfollowButtonText}>
+                              Se désabonner
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  />
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={handleCloseModal}
+                  >
+                    <Text style={styles.closeButtonText}>Fermer</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+          )}
+        </View>
 
         <View style={styles.cardContainer}>
           <Text style={styles.infoCardHeader}>
@@ -745,24 +903,6 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                 {stats?.numberOfReports || 0}
               </Text>
               <Text style={styles.statLabel}>Signalements</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Relations</Text>
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.followers?.length || 0}
-              </Text>
-              <Text style={styles.statLabel}>Abonnées</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.following?.length || 0}
-              </Text>
-              <Text style={styles.statLabel}>Abonnements</Text>
             </View>
           </View>
         </View>
@@ -791,25 +931,23 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           </View>
         </View>
 
-
         <View style={styles.cardContainer}>
           <Text style={styles.infoCardHeader}>Options</Text>
           <View style={styles.cardContent}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-               {user?.isSubscribed ? "Oui" : "Non"}
+                {user?.isSubscribed ? "Oui" : "Non"}
               </Text>
-              <Text style={styles.statLabel}>  SMART+</Text>
+              <Text style={styles.statLabel}> SMART+</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-              {user?.isSubscribed ? "Oui" : "Non"}
+                {user?.isSubscribed ? "Oui" : "Non"}
               </Text>
               <Text style={styles.statLabel}>Affiliation mairie</Text>
             </View>
           </View>
         </View>
-        
       </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>

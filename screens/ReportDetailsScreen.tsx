@@ -181,7 +181,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           onPress={() => navigation.goBack()}
           style={{ marginLeft: 10 }} // Alignement gauche
         >
-          <Icon name="arrow-back-outline" size={28} color="#BEE5BF" />
+          <Icon name="arrow-back-outline" size={28} color="#CBCBCB" />
         </TouchableOpacity>
         <View style={styles.typeBadge}>
           <Image source={getTypeIcon(report.type)} style={styles.icon} />
@@ -192,7 +192,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         <Icon
           name="notifications-outline"
           size={28}
-          color="#BEE5BF" // Couleur dorée
+          color="#CBCBCB" // Couleur dorée
           style={{ marginRight: 10 }}
         />
       </TouchableOpacity>
@@ -255,7 +255,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
             {routeCoords.length > 0 && (
               <Polyline
                 coordinates={routeCoords}
-                strokeColor="#29524A" // Couleur du tracé
+                strokeColor="#535353" // Couleur du tracé
                 strokeWidth={5} // Épaisseur du tracé
               />
             )}

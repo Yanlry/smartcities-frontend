@@ -450,7 +450,7 @@ const ChatScreen = ({ route, navigation }: any) => {
           <Icon
             name="arrow-back"
             size={28}
-            color="#BEE5BF"
+            color="#CBCBCB"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -469,7 +469,7 @@ const ChatScreen = ({ route, navigation }: any) => {
           <Icon
             name="error"
             size={28}
-            color="#BEE5BF"
+            color="#CBCBCB"
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#29524A", // Couleur sombre
+    backgroundColor: "#535353", // Couleur sombre
     borderBottomLeftRadius: 50, // Arrondi en bas à gauche
     borderBottomRightRadius: 50, // Arrondi en bas à droite
     paddingVertical: 20,

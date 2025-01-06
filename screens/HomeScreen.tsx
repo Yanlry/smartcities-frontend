@@ -70,7 +70,7 @@ interface Event {
   location: string;
 }
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, handleScroll }) {
   const { location, loading: locationLoading } = useLocation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -316,8 +316,8 @@ export default function HomeScreen({ navigation }) {
   if (loadingReports) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#29524A" />
-        <Text style={{ color: "#29524A" }}>Chargement en cours...</Text>
+        <ActivityIndicator size="large" color="#535353" />
+        <Text style={{ color: "#535353" }}>Chargement en cours...</Text>
       </View>
     );
   }
@@ -325,7 +325,7 @@ export default function HomeScreen({ navigation }) {
   if (!reports || reports.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#29524A" />
+        <ActivityIndicator size="large" color="#535353" />
         <Text style={styles.loadingText}>Chargement des signalements...</Text>
       </View>
     );
@@ -537,6 +537,8 @@ export default function HomeScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
+      onScroll={handleScroll}
+      scrollEventThrottle={16} 
     >
       <View style={styles.cardContainer}>
         <View style={styles.header}>
@@ -563,7 +565,7 @@ export default function HomeScreen({ navigation }) {
                 <Ionicons
                   name="chevron-down-outline"
                   size={24}
-                  color="#29524A"
+                  color="#535353"
                 />
               </TouchableOpacity>
             </View>
@@ -697,7 +699,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.separator} />
           <TouchableOpacity
             style={styles.statItem}
-            onPress={() => setIsModalVisible(true)}
+            onPress={() => navigation.navigate("RankingScreen")}
           >
             <Text style={styles.statNumber}>
               {ranking && totalUsers
@@ -713,7 +715,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      <Modal
+      {/* <Modal
         visible={isModalVisible}
         animationType="slide"
         onRequestClose={() => setIsModalVisible(false)}
@@ -809,7 +811,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.closeButtonTextModal}>Fermer</Text>
           </TouchableOpacity>
         </View>
-      </Modal>
+      </Modal> */}
 
       <Text style={styles.sectionTitleTop10}>🏆 Top 10 des Smarter</Text>
       <View>
@@ -863,7 +865,8 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             key="seeAll"
             style={[styles.smarterItem, styles.seeAllButton]}
-            onPress={() => setIsModalVisible(true)}
+            // onPress={() => setIsModalVisible(true)}
+            onPress={() => navigation.navigate("RankingScreen")}
           >
             <Text style={styles.seeAllText}>Voir tout</Text>
           </TouchableOpacity>
