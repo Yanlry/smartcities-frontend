@@ -400,7 +400,7 @@ export default function AddNewReportScreen({navigation}) {
                 </TouchableOpacity>
               </View>
               {loading ? (
-                <ActivityIndicator size="large" color="#007BFF" />
+                <ActivityIndicator size="large" color="#535353" />
               ) : (
                 <View style={{  height: 450, marginVertical: 20 }}>
                   <MapView
@@ -457,7 +457,7 @@ export default function AddNewReportScreen({navigation}) {
               {/* Bouton de soumission */}
               <View style={styles.submitButtonContainer}>
           {isSubmitting ? (
-            <ActivityIndicator size="large" color="#007BFF" />
+            <ActivityIndicator size="large" color="#535353" />
           ) : (
             <View style={styles.submitButton}>
               <TouchableOpacity

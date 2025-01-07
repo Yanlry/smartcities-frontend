@@ -111,9 +111,9 @@ const styles = StyleSheet.create({
 
   button: {
     width: "75%",
-    height: 50,
-    backgroundColor: "#11998e",
-    shadowColor: "#11998e",
+    height: 40,
+    backgroundColor: "#535353",
+    shadowColor: "#535353",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -128,36 +128,12 @@ const styles = StyleSheet.create({
   // Texte du bouton
   buttonText: {
     color: "#FFFFFF", // Texte blanc
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "bold",
     textTransform: "uppercase", // Texte en majuscules
     letterSpacing: 1, // Espacement pour un style élégant
   },
   
-  // Bouton "Ajouter des photos"
-  photoButton: {
-    width: "90%",
-    height: 50,
-    backgroundColor: "#4CAF50", // Couleur principale (vert moderne)
-    borderRadius: 25, // Coins arrondis pour un bouton élégant
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-    shadowColor: "#000", // Ombre douce
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3, // Ombre sur Android
-  },
-
-  // Texte du bouton
-  photoButtonText: {
-    color: "#ffffff", // Texte blanc
-    fontSize: 16,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-
   // Conteneur des photos
   photoContainer: {
     width: "100%",

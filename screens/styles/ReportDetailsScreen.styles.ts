@@ -17,11 +17,13 @@ export default StyleSheet.create({
     paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#fff", // Couleur blanche
     letterSpacing: 2, // Espacement pour un effet moderne
     textAlign: "center",
+    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
+
   },
   typeBadge: {
     flexDirection: "row",
@@ -341,15 +343,24 @@ export default StyleSheet.create({
     borderRadius: 10,
   },
   closeButton: {
-    position: 'absolute',
-    top: 30,
-    right: 20,
-    backgroundColor: '#ccc',
-    borderRadius: 15,
-    padding: 20,
+    position: 'absolute',   // Pour positionner le bouton au-dessus du contenu
+    top: 50,                // Décalage par rapport au haut du conteneur
+    right: 20,              // Décalage par rapport à la droite du conteneur
+    backgroundColor: '#FF3B30', // Couleur de fond (rouge pour "fermer")
+    width: 40,              // Largeur du bouton
+    height: 40,             // Hauteur du bouton
+    borderRadius: 20,       // Rendre le bouton circulaire
+    justifyContent: 'center', // Centrer le contenu verticalement
+    alignItems: 'center',     // Centrer le contenu horizontalement
+    shadowColor: '#000',     // Ombre pour donner de la profondeur
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,            // Ombre pour Android
   },
   closeButtonText: {
-    fontSize: 18,
-    color: '#000',
+    color: '#FFFFFF',        // Couleur du texte
+    fontSize: 18,            // Taille de la croix
+    fontWeight: 'bold',      // Texte en gras
   },
 });

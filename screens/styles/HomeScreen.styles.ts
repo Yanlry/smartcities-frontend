@@ -6,8 +6,9 @@ export default StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 100,
     paddingHorizontal: 20,
+    paddingTop: 100,
+
   },
   sectionTitle: {
     fontSize: 20,

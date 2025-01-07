@@ -148,12 +148,12 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color="#535353" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
   }
-
+  535353
   if (!report) {
     return (
       <View style={styles.loadingContainer}>
@@ -188,14 +188,16 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <Text style={styles.headerTitle}>{report.type.toUpperCase()}</Text>
           <Image source={getTypeIcon(report.type)} style={styles.icon} />
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
-        <Icon
-          name="notifications-outline"
-          size={28}
-          color="#CBCBCB" // Couleur dorée
-          style={{ marginRight: 10 }}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("NotificationsScreen")}
+        >
+          <Icon
+            name="notifications-outline"
+            size={28}
+            color="#CBCBCB" // Couleur dorée
+            style={{ marginRight: 10 }}
+          />
+        </TouchableOpacity>
       </View>
       <ScrollView style={styles.container}>
         <View style={styles.mapContainer}>
@@ -368,7 +370,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
                   style={styles.closeButton}
                   onPress={closeModal}
                 >
-                  <Text style={styles.closeButtonText}>X</Text>
+                  <Icon name="close" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
                 <Image
                   source={{ uri: selectedPhoto }}

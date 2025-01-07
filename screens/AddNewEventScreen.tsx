@@ -446,7 +446,7 @@ export default function CreateEvent({ navigation }) {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#2c3e50" />
+          <ActivityIndicator size="large" color="#535353" />
         ) : (
           <TouchableOpacity
             onPress={() => setIsMapExpanded(true)} // Agrandit la carte au clic
@@ -534,7 +534,7 @@ export default function CreateEvent({ navigation }) {
 
         <View style={styles.submitButtonContainer}>
           {isSubmitting ? (
-            <ActivityIndicator size="large" color="#2c3e50" />
+            <ActivityIndicator size="large" color="#535353" />
           ) : (
             <View style={styles.submitButton}>
               <TouchableOpacity

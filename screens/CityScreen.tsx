@@ -27,7 +27,7 @@ export default function CityScreen({ navigation }) {
 
         {/* Titre de la page */}
         <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
+          <Text style={styles.headerTitleNav}>MA ville</Text>
         </View>
 
         {/* Bouton de notifications avec compteur */}
@@ -77,11 +77,13 @@ const styles = StyleSheet.create({
     paddingTop: 45,
   },
   headerTitleNav: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#fff", // Couleur blanche
     letterSpacing: 2, // Espacement pour un effet moderne
     textAlign: "center",
+    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
+
   },
   typeBadgeNav: {
     flexDirection: "row",

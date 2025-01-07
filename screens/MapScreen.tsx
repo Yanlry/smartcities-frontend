@@ -35,20 +35,19 @@ export default function MapScreen() {
   const [filter, setFilter] = useState<"all" | "reports" | "events">("all");
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation<MapScreenNavigationProp>();
-
+  const DEFAULT_RADIUS_KM = 5;
+  
   const fetchReportsInRegion = async () => {
     if (!mapRegion) return;
-
+  
     setLoadingReports(true);
     try {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
-      const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111;
-
-      const result = await fetchAllReportsInRegion(
-        latitude,
-        longitude,
-        radiusKm
-      );
+      
+      // Fixer un rayon minimal (5 km) pour éviter une zone trop grande/petite
+      const radiusKm = Math.max(latitudeDelta * 111, longitudeDelta * 111, 5);
+  
+      const result = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
       setReports(result);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements :", error);
@@ -60,20 +59,18 @@ export default function MapScreen() {
       setLoadingReports(false);
     }
   };
-
+  
   const fetchEventsInRegion = async () => {
     if (!mapRegion) return;
-
+  
     setLoadingReports(true);
     try {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
-      const radiusKm = Math.max(latitudeDelta, longitudeDelta) * 111;
-
-      const result = await fetchAllEventsInRegion(
-        latitude,
-        longitude,
-        radiusKm
-      );
+  
+      // Fixer un rayon minimal (5 km) pour éviter une zone trop grande/petite
+      const radiusKm = Math.max(latitudeDelta * 111, longitudeDelta * 111, 5);
+  
+      const result = await fetchAllEventsInRegion(latitude, longitude, radiusKm);
       setEvents(result);
     } catch (error) {
       console.error("Erreur lors du chargement des événements :", error);
@@ -85,10 +82,10 @@ export default function MapScreen() {
       setLoadingReports(false);
     }
   };
-
+  
   const fetchDataInRegion = async () => {
     if (!mapRegion) return;
-
+  
     setLoadingReports(true);
     try {
       // Appel simultané des deux fonctions
@@ -112,15 +109,18 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (location) {
-      setMapRegion({
+      const initialRegion = {
         latitude: location.latitude,
         longitude: location.longitude,
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
-      });
-
+      };
+  
+      setMapRegion(initialRegion);
+  
+      // Appelez fetchDataInRegion après avoir défini la région
       fetchDataInRegion();
-
+  
       if (mapRef.current) {
         const camera: Camera = {
           center: {
@@ -129,7 +129,7 @@ export default function MapScreen() {
           },
           pitch: 60,
           heading: 0,
-          zoom: 17,
+          zoom: 19,
           altitude: 1000,
         };
         mapRef.current.animateCamera(camera, { duration: 2000 });
@@ -159,7 +159,7 @@ export default function MapScreen() {
   if (loading || loadingReports) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#535353" />
       </View>
     );
   }
@@ -179,16 +179,16 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <MapView
-        ref={mapRef}
-        style={styles.map}
-        region={mapRegion || undefined}
-        onRegionChangeComplete={handleRegionChangeComplete}
-        mapType={mapType}
-        showsBuildings
-        pitchEnabled
-        rotateEnabled
-        showsCompass
-      >
+  ref={mapRef}
+  style={styles.map}
+  region={mapRegion || undefined}
+  onRegionChangeComplete={handleRegionChangeComplete}
+  mapType={mapType}
+  showsBuildings={false} // Désactive les bâtiments 3D
+  pitchEnabled={false} // Désactive l'inclinaison
+  rotateEnabled={false} // Désactive la rotation
+  showsCompass={true} // (Optionnel) Affiche la boussole si rotation désactivée
+>
         {filteredMarkers().map((item) => {
   // Vérifie si l'élément est un rapport
   const isReport = (item: Report | ReportEvent): item is Report =>
@@ -212,7 +212,7 @@ export default function MapScreen() {
     >
       <View style={{ alignItems: "center" }}>
         {/* Affiche le titre au-dessus de l'image */}
-        <Text style={{ backgroundColor: "white", padding: 4, borderRadius: 5 }}>
+        <Text style={{ backgroundColor: "white", padding: 4, borderRadius: 5,fontSize:10 }}>
           {isReport(item) ? item.title : item.name}
         </Text>
         {/* Image du marqueur */}
@@ -339,10 +339,11 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: 10,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#A3A3A3",
     borderRadius: 30,
-    backgroundColor: "#f9f9f9",
+    marginBottom: 2,
+    backgroundColor: "#A3A3A3",
   },
-  activeFilter: { backgroundColor: "#007BFF", borderColor: "#007BFF"},
-  filterText: { color: "#000", fontSize : 10, textAlign : "center" },
+  activeFilter: { backgroundColor: "#CA483F", borderColor: "#CA483F", fontWeight: "bold"},
+  filterText: { color: "#fff", fontSize : 10, textAlign : "center" },
 });

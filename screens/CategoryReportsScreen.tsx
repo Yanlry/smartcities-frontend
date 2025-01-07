@@ -60,7 +60,7 @@ export default function CategoryReportsScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000000" />
+        <ActivityIndicator size="large" color="#535353" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );

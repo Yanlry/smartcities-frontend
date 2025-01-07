@@ -102,7 +102,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const { data } = useFetchStatistics(`${API_URL}/reports/statistics`, nomCommune);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [helpModal, setHelpModal] = useState(false);
+  
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -289,7 +289,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#408476" />
+        <ActivityIndicator size="large" color="#535353" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
@@ -334,7 +334,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (!stats || !stats.votes) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#ff4500" />
+        <ActivityIndicator size="large" color="#535353" />
         <Text style={styles.loadingText}>Chargement des votes...</Text>
       </View>
     );

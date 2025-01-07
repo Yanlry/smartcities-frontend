@@ -663,11 +663,13 @@ const styles = StyleSheet.create({
     paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#fff", // Couleur blanche
     letterSpacing: 2, // Espacement pour un effet moderne
     textAlign: "center",
+    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
+
   },
   typeBadge: {
     flexDirection: "row",

@@ -40,6 +40,7 @@ import CityScreen from "./screens/CityScreen";
 import { useToken } from "./hooks/useToken";
 import PostDetailsScreen from "./screens/PostDetailsScreen";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
+import { useFonts } from 'expo-font';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -129,7 +130,7 @@ const handleScroll = (event) => {
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>SMARTCITIES</Text>
+          <Text style={styles.headerTitle}>SMARTCities</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
@@ -149,13 +150,21 @@ const handleScroll = (event) => {
   const EmptyScreen = () => {
     return null; // Écran vide intentionnellement
   };
-  const { width } = Dimensions.get("window");
+
+  const [fontsLoaded] = useFonts({
+    'Starborn': require('../frontend/assets/fonts/Starborn.ttf'), // Assurez-vous que le chemin est correct
+  });
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" color="#0000ff" />; // Afficher un loader tant que la police n'est pas chargée
+  }
+
+
+  
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const actionSheetRef = useRef<ActionSheet | null>(null); // Référence pour l'ActionSheet
-    const tabWidth = width / 5; // Nombre d'onglets (ici 5)
-    const activeTabPosition = useSharedValue(0);
+    const actionSheetRef = useRef<typeof ActionSheet | null>(null); // Référence pour l'ActionSheet
     // Fonction pour récupérer l'ID utilisateur
     const fetchUserId = async () => {
       try {
@@ -193,7 +202,7 @@ const handleScroll = (event) => {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#535353" />
         </View>
       );
     }
@@ -212,85 +221,122 @@ const handleScroll = (event) => {
   
     return (
       <>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            header: ({ navigation }) => (
-              <CustomHeader navigation={navigation} headerTranslateY={headerTranslateY} />
-            ),
-            
-            tabBarIcon: ({ color, size, focused }) => {
-              let iconName = "";
-  
-              if (route.name === "Accueil") {
-                iconName = "home-outline";
-              } else if (route.name === "Conversations") {
-                iconName = "chatbubble-ellipses-outline";
-              } else if (route.name === "Social") {
-                iconName = "people-outline";
-              } else if (route.name === "Carte") {
-                iconName = "map-outline";
-              } else if (route.name === "Ajouter") {
-                iconName = "add-circle-outline";
-              }
-  
-              return (
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    backgroundColor: focused ? "#CBCBCB" : "transparent",
-                    borderRadius: 25,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Icon
-                    name={iconName}
-                    size={focused ? size + 5 : size}
-                    color={focused ? "#535353" : "#fff"}
-                  />
-                </View>
-              );
-            },
-            tabBarShowLabel: false,
-            tabBarStyle: {
-              height: 70,
-              paddingTop: 10,
-              paddingHorizontal: 10,
-              backgroundColor: "#535353",
-              position: "absolute",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: -5 },
-              shadowOpacity: 0.1,
-              shadowRadius: 10,
-              elevation: 10,
-              borderRadius: 20,
-            },
-          })}
+      <Tab.Navigator
+  screenOptions={({ route }) => ({
+    header: ({ navigation }) => (
+      <CustomHeader navigation={navigation} headerTranslateY={headerTranslateY} />
+    ),
+    tabBarIcon: ({ color, size, focused }) => {
+      let iconName = "";
+
+      if (route.name === "Accueil") {
+        iconName = "home-outline";
+      } else if (route.name === "Conversations") {
+        iconName = "chatbubble-ellipses-outline";
+      } else if (route.name === "Social") {
+        iconName = "people-outline";
+      } else if (route.name === "Carte") {
+        iconName = "map-outline";
+      } else if (route.name === "Ajouter") {
+        iconName = "add-circle-outline";
+      }
+
+      return (
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            backgroundColor: focused ? "#CBCBCB" : "transparent",
+            borderRadius: 25,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
         >
-        <Tab.Screen name="Accueil">
-  {(props) => <HomeScreen {...props} handleScroll={handleScroll} />}
-</Tab.Screen>
-          <Tab.Screen
-            name="Conversations"
-            component={ConversationsScreen}
-            initialParams={{ userId }} // Passer userId ici
+          <Icon
+            name={iconName}
+            size={focused ? size + 5 : size}
+            color={focused ? "#535353" : "#fff"}
           />
-          <Tab.Screen
-            name="Ajouter"
-            component={EmptyScreen} // Utilisation d'un écran vide comme placeholder
-            listeners={{
-              tabPress: (e) => {
-                e.preventDefault(); // Empêche la navigation
-                actionSheetRef.current?.show(); // Affiche l'ActionSheet
-              },
-            }}
-          />
-          <Tab.Screen name="Social">
-  {(props) => <SocialScreen {...props} handleScroll={handleScroll} />}
-</Tab.Screen>
-          <Tab.Screen name="Carte" component={MapScreen} />
-        </Tab.Navigator>
+        </View>
+      );
+    },
+    tabBarShowLabel: false,
+    tabBarStyle: {
+      height: 70,
+      paddingTop: 10,
+      paddingHorizontal: 10,
+      backgroundColor: "#535353",
+      position: "absolute",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -5 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 10,
+      borderRadius: 20,
+    },
+  })}
+>
+  <Tab.Screen name="Accueil">
+    {({ navigation }) => {
+      useEffect(() => {
+        const unsubscribe = navigation.addListener("focus", () => {
+          headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+        });
+        return unsubscribe;
+      }, [navigation]);
+
+      return <HomeScreen navigation={navigation} handleScroll={handleScroll} />;
+    }}
+  </Tab.Screen>
+
+  <Tab.Screen
+    name="Conversations"
+    component={ConversationsScreen}
+    initialParams={{ userId }}
+    listeners={{
+      focus: () => {
+        headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+      },
+    }}
+  />
+
+  <Tab.Screen
+    name="Ajouter"
+    component={EmptyScreen}
+    listeners={{
+      tabPress: (e) => {
+        e.preventDefault(); // Empêche la navigation
+        actionSheetRef.current?.show(); // Affiche l'ActionSheet
+      },
+      focus: () => {
+        headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+      },
+    }}
+  />
+
+  <Tab.Screen name="Social">
+    {({ navigation }) => {
+      useEffect(() => {
+        const unsubscribe = navigation.addListener("focus", () => {
+          headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+        });
+        return unsubscribe;
+      }, [navigation]);
+
+      return <SocialScreen handleScroll={handleScroll} />;
+    }}
+  </Tab.Screen>
+
+  <Tab.Screen
+    name="Carte"
+    component={MapScreen}
+    listeners={{
+      focus: () => {
+        headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+      },
+    }}
+  />
+</Tab.Navigator>
   
         {/* ActionSheet pour ajouter un signalement ou un événement */}
         <ActionSheet
@@ -463,10 +509,10 @@ const styles = StyleSheet.create({
     height: 100, // Hauteur ajustée
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff", // Couleur dorée
-    letterSpacing: 2, // Espacement pour un effet moderne
+    fontSize: 25,
+    color: '#fff', // Couleur dorée ou autre
+    letterSpacing:0,
+    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
   },
   badge: {
     position: "absolute",

@@ -259,7 +259,7 @@ export default function UserProfileScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#333" />
+        <ActivityIndicator size="large" color="#535353" />
         <Text>Chargement du profil utilisateur...</Text>
       </View>
     );
@@ -580,11 +580,13 @@ const styles = StyleSheet.create({
     paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#fff", // Couleur blanche
     letterSpacing: 2, // Espacement pour un effet moderne
     textAlign: "center",
+    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
+
   },
   typeBadge: {
     flexDirection: "row",
@@ -833,7 +835,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center", // Centre le nombre horizontalement
     marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#376D62", // Couleur sombre pour le nombre
+    color: "#57A773", // Couleur sombre pour le nombre
   },
   statLabel: {
     textAlign: "center", // Centre le texte horizontalement
