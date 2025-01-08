@@ -175,12 +175,12 @@ export default function AddNewReportScreen({navigation}) {
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
-
+  
       // Met à jour la localisation sélectionnée
       setSelectedLocation({ latitude: lat, longitude: lng });
       setLatitude(lat);
       setLongitude(lng);
-
+  
       // Zoom sur la nouvelle région
       mapRef.current?.animateToRegion(
         {
@@ -192,10 +192,14 @@ export default function AddNewReportScreen({navigation}) {
         1000 // Durée de l'animation en millisecondes
       );
     }
-
-    setQuery(item.formatted);
-    setModalVisible(false);
+  
+    // Remplace "Unnamed Road" par "Route inconnue" dans l'adresse formatée
+    const formattedAddress = item.formatted.replace(/unnamed road/gi, 'Route inconnue');
+  
+    setQuery(formattedAddress); // Met à jour avec l'adresse modifiée
+    setModalVisible(false); // Ferme le modal des suggestions
   };
+  
 
   const handleSubmit = async () => {
     if (isSubmitting) return;

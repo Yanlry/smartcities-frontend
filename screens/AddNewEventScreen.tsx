@@ -157,7 +157,7 @@ export default function CreateEvent({ navigation }) {
       Alert.alert("Chargement", "Position GPS en cours de récupération...");
       return;
     }
-
+  
     if (!location) {
       Alert.alert(
         "Erreur",
@@ -165,16 +165,19 @@ export default function CreateEvent({ navigation }) {
       );
       return;
     }
-
+  
     setSelectedLocation(location);
-
+  
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
-
+  
       if (data.results.length > 0) {
-        const address = data.results[0].formatted;
+        // Traite l'adresse récupérée pour remplacer "Unnamed Road"
+        let address = data.results[0].formatted;
+        address = address.replace(/unnamed road/gi, 'Route inconnue'); // Remplace "Unnamed Road"
+  
         setQuery(address);
         Alert.alert("Position actuelle sélectionnée", `${address}`);
       } else {
@@ -188,6 +191,7 @@ export default function CreateEvent({ navigation }) {
       );
     }
   };
+  
 
   const handleAddressSearch = async () => {
     if (!query.trim()) {
@@ -224,20 +228,26 @@ export default function CreateEvent({ navigation }) {
     }
   };
 
-  const handleSuggestionSelect = (item: any) => {
-    const { lat, lng } = item.geometry;
+const handleSuggestionSelect = (item: any) => {
+  const { lat, lng } = item.geometry;
 
-    setSelectedLocation({ latitude: lat, longitude: lng });
-    setQuery(item.formatted);
-    setModalVisible(false);
+  // Remplace "Unnamed Road" par "Route inconnue" dans l'adresse formatée
+  const formattedAddress = item.formatted.replace(/Unnamed Road/gi, 'Route inconnue');
 
-    mapRef.current?.animateToRegion({
-      latitude: lat,
-      longitude: lng,
-      latitudeDelta: 0.005,
-      longitudeDelta: 0.005,
-    });
-  };
+  // Met à jour la localisation sélectionnée
+  setSelectedLocation({ latitude: lat, longitude: lng });
+  setQuery(formattedAddress); // Utilise l'adresse modifiée
+  setModalVisible(false);
+
+  // Anime la carte vers la nouvelle région
+  mapRef.current?.animateToRegion({
+    latitude: lat,
+    longitude: lng,
+    latitudeDelta: 0.005,
+    longitudeDelta: 0.005,
+  });
+};
+
 
   const handleSubmit = async () => {
     if (isSubmitting) return;

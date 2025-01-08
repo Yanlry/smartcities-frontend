@@ -90,7 +90,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [rankingData, setRankingData] = useState<TopUser[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [featuredEvents, setFeaturedEvents] = useState<
@@ -100,9 +99,11 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [modalNameVisible, setModalNameVisible] = useState(false);
   const nomCommune = user?.nomCommune || ""; // Nom de la commune de l'utilisateur
   const { data } = useFetchStatistics(`${API_URL}/reports/statistics`, nomCommune);
+  const userCity = user?.nomCommune || "Commune non définie";
 
   const [refreshing, setRefreshing] = useState(false);
   
+
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -259,22 +260,29 @@ export default function HomeScreen({ navigation, handleScroll }) {
       try {
         setLoading(true);
         setError(null);
-
+  
         const response = await axios.get(`${API_URL}/events`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-
-        const events = response.data.map((event: any) => ({
-          id: event.id,
-          title: event.title,
-          image:
-            event.photos.find((photo: any) => photo.isProfile)?.url ||
-            event.photos[0]?.url ||
-            "https://via.placeholder.com/300",
-        }));
-
-        setFeaturedEvents(events);
+  
+        const userCityNormalized = normalizeCityName(userCity); // Normaliser la ville utilisateur
+  
+        const filteredEvents = response.data
+          .filter((event: any) => {
+            const eventCity = normalizeCityName(extractCityFromLocation(event.location));
+            return eventCity === userCityNormalized; // Comparaison normalisée
+          })
+          .map((event: any) => ({
+            id: event.id,
+            title: event.title,
+            image:
+              event.photos.find((photo: any) => photo.isProfile)?.url ||
+              event.photos[0]?.url ||
+              "https://via.placeholder.com/300", // Gestion des images
+          }));
+  
+        setFeaturedEvents(filteredEvents);
       } catch (error: any) {
         console.error("Erreur dans fetchEvents :", error.message || error);
         setError("Impossible de récupérer les événements.");
@@ -282,9 +290,27 @@ export default function HomeScreen({ navigation, handleScroll }) {
         setLoading(false);
       }
     };
-
-    fetchEvents();
-  }, []);
+  
+    if (userCity) {
+      fetchEvents();
+    }
+  }, [userCity]);
+  
+  // Fonction pour extraire et normaliser la ville
+  const extractCityFromLocation = (location: string) => {
+    if (!location) return "";
+    return location.split(",")[0].replace(/\d+/g, "").trim();
+  };
+  
+  // Fonction pour normaliser les noms
+  const normalizeCityName = (cityName: string) => {
+    if (!cityName) return "";
+    return cityName
+      .toLowerCase()
+      .replace(/[-_]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
 
   if (isLoading) {
     return (
@@ -413,9 +439,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.username;
+  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -715,104 +739,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </View>
       </View>
 
-      {/* <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalContentRanking}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>
-              Classement à :{" "}
-              <Text style={styles.cityName}>
-                {user?.nomCommune || "ville inconnue"}
-              </Text>
-            </Text>
-          </View>
-          <FlatList
-            data={rankingData}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => {
-              const displayName = item.useFullName
-                ? `${item.firstName} ${item.lastName}`
-                : item.username; // Choix basé sur `useFullName`
-
-              const isTopThree = item.ranking <= 3; // Vérifie si l'utilisateur est dans le top 3
-              const badgeColor =
-                item.ranking === 1
-                  ? "#FFD700"
-                  : item.ranking === 2
-                  ? "#C0C0C0"
-                  : "#CD7F32"; // Or, argent, bronze
-              const borderColor =
-                item.ranking === 1
-                  ? "#FFD700"
-                  : item.ranking === 2
-                  ? "#C0C0C0"
-                  : "#CD7F32"; // Contours correspondants
-
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.rankingItemModal,
-                    isTopThree
-                      ? {
-                          borderColor: borderColor,
-                          borderWidth: 3,
-                          borderRadius: 50,
-                        }
-                      : styles.nonTopThreeItem,
-                  ]}
-                  onPress={() => {
-                    setIsModalVisible(false); // Fermer le modal
-                    navigation.navigate("UserProfileScreen", {
-                      userId: item.id,
-                    }); // Naviguer vers le profil utilisateur
-                  }}
-                >
-                  {isTopThree && (
-                    <View
-                      style={[styles.badge, { backgroundColor: badgeColor }]}
-                    >
-                      <Text style={styles.badgeText}>
-                        {item.ranking === 1
-                          ? "🥇"
-                          : item.ranking === 2
-                          ? "🥈"
-                          : "🥉"}
-                      </Text>
-                    </View>
-                  )}
-                  <Image
-                    source={{ uri: item.photo || "default-image-url" }}
-                    style={[
-                      styles.userImage,
-                      isTopThree && styles.topThreeImage,
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.rankingTextModal,
-                      !isTopThree && styles.nonTopThreeText,
-                    ]}
-                  >
-                    {isTopThree
-                      ? displayName
-                      : `#${item.ranking} - ${displayName}`}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }}
-          />
-          <TouchableOpacity
-            onPress={() => setIsModalVisible(false)}
-            style={styles.closeButtonModal}
-          >
-            <Text style={styles.closeButtonTextModal}>Fermer</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal> */}
-
       <Text style={styles.sectionTitleTop10}>🏆 Top 10 des Smarter</Text>
       <View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -920,8 +846,12 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </ScrollView>
       )}
 
-      <Text style={styles.sectionTitle}>🎉 Événement a venir</Text>
-      {featuredEvents.length > 0 ? (
+<Text style={styles.sectionTitle}>🎉 Événements à venir</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#3498db" />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : featuredEvents.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -932,23 +862,21 @@ export default function HomeScreen({ navigation, handleScroll }) {
               key={item.id}
               style={styles.featuredItem}
               onPress={() => {
-                console.log(
-                  "Navigating to EventDetailsScreen with ID:",
-                  item.id
-                );
+                console.log("Navigating to EventDetailsScreen with ID:", item.id);
                 navigation.navigate("EventDetailsScreen", { eventId: item.id });
               }}
             >
-              <Image
-                source={{ uri: item.image }}
-                style={styles.featuredImage}
-              />
+              <Image source={{ uri: item.image }} style={styles.featuredImage} />
               <Text style={styles.featuredTitle}>{item.title}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       ) : (
-        <Text style={styles.noEventsTextOne}>Aucun événement prévue prochainement</Text>
+        <View style={styles.noEventsContainer}>
+          <Text style={styles.noEventsText}>
+            Pas d’événement prévu pour le moment dans votre ville.
+          </Text>
+      </View>
       )}
 
       <Text style={styles.sectionTitle}>📅 Tous les événements</Text>
@@ -1039,7 +967,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       </ScrollView>
 
       {/* Section Statistiques du Mois */}
-      <Chart data={data} />
+      <Chart data={data} loading={loading} nomCommune={nomCommune} />
 
       <Text style={styles.sectionTitle}>🏛️ Informations mairie</Text>
       <View style={styles.infoCard}>

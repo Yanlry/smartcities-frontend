@@ -11,7 +11,7 @@ export default StyleSheet.create({
 
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 15,
@@ -432,7 +432,7 @@ export default StyleSheet.create({
 
 
   sectionTitleTop10: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "bold",
     marginBottom: 15,
     color: "#535353",
@@ -441,7 +441,6 @@ export default StyleSheet.create({
     alignItems: "center",
     padding: 10,
     width: 120,
-    marginBottom: 10,
   },
   smarterImage: {
     width: 100,
@@ -596,6 +595,14 @@ export default StyleSheet.create({
     color: "#333",
     textAlign: "center",
   },
+  errorText: {
+    color: "red", // Couleur rouge pour attirer l'attention
+    fontSize: 16, // Taille de texte confortable
+    fontWeight: "bold", // Texte en gras pour plus de visibilité
+    textAlign: "center", // Centré pour un affichage clair
+    marginTop: 10, // Espace en haut pour le séparer des autres éléments
+    marginHorizontal: 20, // Marges horizontales pour éviter d’être collé aux bords
+  },
 
   // ------------------------------------------------  CALENDRIER
 
@@ -669,6 +676,7 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 15,
     borderRadius: 15,
+    marginTop: 10,
     marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -677,9 +685,9 @@ export default StyleSheet.create({
     elevation: 4,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#CBCBCB",
+    color: "#535353",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -722,7 +730,7 @@ export default StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#CBCBCB",
+    color: "#535353",
     marginBottom: 5,
   },
   mayorName: {
@@ -778,7 +786,7 @@ export default StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#CBCBCB",
+    color: "#535353",
   },
   officeContact: {
     fontSize: 14,

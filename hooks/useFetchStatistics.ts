@@ -16,21 +16,23 @@ export const useFetchStatistics = (apiUrl: string, nomCommune: string) => {
   useEffect(() => {
     const fetchStatistics = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`${apiUrl}?nomCommune=${nomCommune}`);
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des données");
         }
+
         const result = await response.json();
 
-        const labels = result.map((item: { label: string }) => categoryLabelsMap[item.label] || item.label);
-        const values = result.map((item: { count: number }) => item.count);
 
-        console.log("Labels :", labels);
-        console.log("Values :", values);
+        const labels = result.map((item: { label: string }) => categoryLabelsMap[item.label] || item.label);
+        const values = result.map((item: { count: number }) =>
+          typeof item.count === "number" && !isNaN(item.count) ? item.count : 0
+        );
 
         setData({
-          labels, // Les noms des catégories
-          datasets: [{ data: values }], // Les valeurs des catégories
+          labels,
+          datasets: [{ data: values }],
         });
       } catch (err: any) {
         setError(err.message);

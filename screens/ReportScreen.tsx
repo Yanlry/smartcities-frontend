@@ -281,22 +281,24 @@ export default function ReportScreen({ navigation }) {
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
-
-
+  
+      // Traite le texte de la ville pour remplacer "Unnamed Road"
+      const formattedCity = item.formatted.replace(/unnamed road/g, 'Route inconnue');
+  
       // Met à jour le rapport avec l'adresse sélectionnée
       setCurrentReport((prevReport) => {
         if (!prevReport) return prevReport;
         return {
           ...prevReport,
-          city: item.formatted,
+          city: formattedCity, // Utilise la version formatée de la ville
           latitude: lat,
           longitude: lng,
         };
       });
-
+  
       // Valide l'adresse
       setIsAddressValidated(true);
-
+  
       // Zoom sur la nouvelle région
       mapRef.current?.animateToRegion(
         {
@@ -308,8 +310,30 @@ export default function ReportScreen({ navigation }) {
         1000
       );
     }
-
+  
     setModalVisible(false);
+  };
+  
+
+  const isValidInput = () => {
+    return (
+      (currentReport?.title?.trim().length ?? 0) > 4 &&
+      (currentReport?.description?.trim().length ?? 0) > 4
+    );
+  };
+
+  const getValidationErrors = (): string[] => {
+      const errors: string[] = [];
+    if (!isAddressValidated) {
+      errors.push("Veuillez sélectionner une adresse en recherchant dans la liste.");
+    }
+    if ((currentReport?.title?.trim().length ?? 0) <= 4) {
+      errors.push("Le titre doit contenir au moins 5 caractères.");
+    }
+    if ((currentReport?.description?.trim().length ?? 0) <= 4) {
+      errors.push("La description doit contenir au moins 5 caractères.");
+    }
+    return errors;
   };
 
   return (
@@ -376,17 +400,20 @@ export default function ReportScreen({ navigation }) {
 
               {/* Champ Titre */}
               <TextInput
-                style={styles.input}
+                style={styles.inputTitle}
                 placeholder="Titre"
                 value={currentReport?.title || ""}
                 onChangeText={(text) =>
                   setCurrentReport({ ...currentReport, title: text } as Report)
                 }
+                multiline={false}
+                  maxLength={100}
+                  scrollEnabled={true}
               />
 
               {/* Champ Description */}
               <TextInput
-                style={styles.input}
+                 style={[styles.input, styles.textArea]}
                 placeholder="Description"
                 value={currentReport?.description || ""}
                 onChangeText={(text) =>
@@ -473,24 +500,24 @@ export default function ReportScreen({ navigation }) {
 
               {/* Bouton Enregistrer */}
               <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  !isAddressValidated && styles.disabledButton, // Applique un style désactivé
-                ]}
-                onPress={() => {
-                  if (isAddressValidated) {
-                    updateReportHandler(currentReport);
-                  } else {
-                    Alert.alert(
-                      "Validation requise",
-                      "Veuillez sélectionner une adresse dans la liste pour valider."
-                    );
-                  }
-                }}
-                disabled={!isAddressValidated} // Désactive le bouton
-              >
-                <Text style={styles.saveButtonText}>Enregistrer</Text>
-              </TouchableOpacity>
+  style={[
+    styles.saveButton,
+    (!isAddressValidated || !isValidInput()) && styles.disabledButton, // Désactiver si invalide
+  ]}
+  onPress={() => {
+    if (isAddressValidated && isValidInput()) {
+      updateReportHandler(currentReport);
+    } else {
+      const errors = getValidationErrors();
+      Alert.alert(
+        "Validation requise",
+        errors.join("\n") // Affiche toutes les erreurs sur des lignes séparées
+      );
+    }
+  }}
+>
+  <Text style={styles.saveButtonText}>Enregistrer</Text>
+</TouchableOpacity>
 
               {/* Bouton Annuler */}
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
@@ -633,12 +660,34 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
+  inputTitle: {
+    width: 330,
+    height: 50, // Hauteur fixe (peut être ajustée)
+    maxHeight: 50, // Empêche l'agrandissement vertical
+    backgroundColor: "#f5f5f5",
+    borderRadius: 30,
+    paddingHorizontal: 15,
+    paddingLeft: 30,
+    marginBottom: 25, // Espacement avec l'élément suivant
+    fontSize: 16,
+    color: "#333",
+    overflow: "hidden", // Empêche le débordement
+  },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
-    marginVertical: 10,
-    borderRadius: 5,
+    maxHeight: 250, // Empêche l'agrandissement vertical
+    backgroundColor: "#f5f5f5",
+    borderRadius: 30,
+    paddingVertical: 10, // Ajustez en fonction de votre design
+    paddingHorizontal: 15,
+    paddingLeft: 25,
+    paddingTop: 20,
+    fontSize: 16,
+    color: "#333",
+    overflow: "hidden", // Empêche le débordement
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
   },
   saveButton: {
     backgroundColor: "#4CAF50",

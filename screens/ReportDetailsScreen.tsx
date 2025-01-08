@@ -145,6 +145,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     }
   };
 
+  
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>

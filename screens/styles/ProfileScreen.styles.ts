@@ -2,6 +2,37 @@ import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
 
+
+  // Style Global  :
+
+  cardContent: {
+    flexDirection: "row",
+    justifyContent: "space-around", // Espace égal entre les items
+    alignItems: "center",
+    flexWrap: "wrap", // Permet de passer à la ligne si les éléments débordent
+    paddingHorizontal: 10, // Ajout d'espace sur les côtés pour éviter le débordement
+  },
+  statItem: {
+    justifyContent: "center", // Centre verticalement le contenu de statItem
+    alignItems: "center", // Centre horizontalement le contenu de statItem
+    padding: 10, // Espacement interne
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center", // Centre le nombre horizontalement
+    marginBottom: 5, // Espace entre le nombre et le texte
+    color: "#535353", // Couleur sombre pour le nombre
+  },
+  statLabel: {
+    textAlign: "center", // Centre le texte horizontalement
+    fontSize: 14,
+    color: "#555", // Couleur du texte
+    fontWeight: "bold", // Texte en gras
+    lineHeight: 20, // Espacement entre les lignes
+  },
+
+
   editButton: {
     marginTop: 10,
     marginHorizontal: 20,
@@ -59,17 +90,29 @@ export default StyleSheet.create({
     textAlign: "center",
     color: "#fff",
   },
+ 
+  modalTitle: {
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+
+
+// Modal ville
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding:30,
+    paddingVertical: 90,
+  },
   modalContent: {
     flex: 1,
     backgroundColor: "#fff",
     padding: 20,
-    borderRadius: 50,
+    borderRadius: 20,
     width: "100%",  
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
   },
   suggestionItem: {
     padding: 15,
@@ -77,7 +120,7 @@ export default StyleSheet.create({
     borderBottomColor: "#ddd",
   },
   suggestionText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#333",
   },
   closeButton: {
@@ -91,13 +134,10 @@ export default StyleSheet.create({
     color: "#fff",
     fontSize: 16,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding:50,
-  },
+
+
+
+
 searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -331,9 +371,6 @@ searchButton: {
     fontSize: 16,
     fontWeight: "bold",
   },
-
-
-
   infoCardHeader: {
     fontSize: 18,
     fontWeight: "bold",
@@ -354,32 +391,6 @@ searchButton: {
     shadowOffset: { width: 0, height: 5 },
     elevation: 2,
   },
-  cardContent: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  statItem: {
-    justifyContent: "center", // Centre verticalement le contenu de statItem
-    alignItems: "center", // Centre horizontalement le contenu de statItem
-    padding: 10, // Espacement interne
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center", // Centre le nombre horizontalement
-    marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#535353", // Couleur sombre pour le nombre
-  },
-  statLabel: {
-    textAlign: "center", // Centre le texte horizontalement
-    fontSize: 14,
-    color: "#555", // Couleur du texte
-    fontWeight: "bold", // Texte en gras
-    lineHeight: 20, // Espacement entre les lignes
-  },
-
-
   modalContainer: {
     flex: 1,
     justifyContent: "center",
