@@ -24,20 +24,20 @@ export function useToken() {
   const getToken = async () => {
     const token = await AsyncStorage.getItem('authToken');
     console.log('Token récupéré depuis AsyncStorage :', token);
-
+  
     if (token && !isTokenExpired(token)) {
       console.log("Token valide, retour de l'access token.");
       return token;
     }
-
+  
     console.log("Token expiré ou non disponible, tentative de rafraîchissement...");
     const refreshedToken = await refreshAccessToken();
     if (refreshedToken) {
       console.log("Token rafraîchi avec succès :", refreshedToken);
       return refreshedToken;
     }
-
-    console.error("Impossible de récupérer un token valide.");
+  
+    console.warn("Impossible de récupérer un token valide."); // Avertissement au lieu d'une erreur
     return null;
   };
 
@@ -54,7 +54,11 @@ export function useToken() {
 
   const getRefreshToken = async () => {
     const refreshToken = await AsyncStorage.getItem('refreshToken');
-    console.log("Refresh token récupéré :", refreshToken);
+    if (!refreshToken) {
+      console.warn("Aucun refresh token disponible pour rafraîchir le token d'accès."); // Avertissement au lieu d'une erreur
+    } else {
+      console.log("Refresh token récupéré :", refreshToken);
+    }
     return refreshToken;
   };
 
@@ -67,10 +71,10 @@ export function useToken() {
   const refreshAccessToken = async () => {
     const refreshToken = await getRefreshToken();
     if (!refreshToken) {
-      console.error('Aucun refresh token disponible pour rafraîchir le token d\'accès.');
+      console.warn('Aucun refresh token disponible pour rafraîchir le token d\'accès.'); // Avertissement
       return null;
     }
-
+  
     try {
       console.log("Envoi du refresh token au backend...");
       const response = await fetch(`${API_URL}/auth/refresh-token`, {
@@ -78,28 +82,27 @@ export function useToken() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
       });
-
+  
       if (!response.ok) {
-        console.error('Échec du rafraîchissement du token d\'accès, réponse non OK.');
+        console.warn('Échec du rafraîchissement du token d\'accès, réponse non OK.'); // Avertissement
         return null;
       }
-
+  
       const { accessToken, refreshToken: newRefreshToken } = await response.json();
       console.log("Nouveau token reçu :", accessToken);
-
+  
       // Stocker les nouveaux tokens
       await setToken(accessToken);
       if (newRefreshToken) {
         await setRefreshToken(newRefreshToken);
       }
-
+  
       return accessToken;
     } catch (error) {
-      console.error('Erreur lors du rafraîchissement du token d\'accès :', error);
+      console.warn('Erreur lors du rafraîchissement du token d\'accès :', error); // Avertissement
       return null;
     }
   };
-
   // Gestion de l'userId
   const setUserId = async (userId: number) => {
     console.log('Stockage du userId dans AsyncStorage :', userId);

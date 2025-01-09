@@ -338,10 +338,10 @@ const CommentsSection = ({ report }) => {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
       return;
     }
-
+  
     try {
       const userId = await getUserId(); // Récupération de l'ID de l'utilisateur
-
+  
       const response = await fetch(`${API_URL}/mails/send`, {
         method: "POST",
         headers: {
@@ -351,20 +351,16 @@ const CommentsSection = ({ report }) => {
         body: JSON.stringify({
           to: "yannleroy23@gmail.com", // Adresse mail du destinataire
           subject: "Signalement d'un commentaire",
-          text: `Un commentaire a été signalé avec l'ID: ${selectedCommentId}. 
-                 Signalé par l'utilisateur avec l'ID: ${userId}. 
-                 Raison: ${reportReason}`,
-          html: `<p><strong>Un commentaire a été signalé.</strong></p>
-                 <p>ID du commentaire: ${selectedCommentId}</p>
-                 <p>Signalé par l'utilisateur avec l'ID: ${userId}</p>
-                 <p>Raison: ${reportReason}</p>`,
+          reportReason,
+          reporterId: userId,
+          commentId: selectedCommentId, // Ajouter le champ commentId
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error("Erreur lors du signalement du commentaire.");
       }
-
+  
       const result = await response.json();
       console.log("Signalement envoyé :", result);
       Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
@@ -542,8 +538,8 @@ const styles = StyleSheet.create({
   },
   noCommentsText: {
     textAlign: "center",
-    marginTop: 30,
-    marginBottom: 50,
+    marginTop: 15,
+    marginBottom: 30,
     fontSize: 16,
     color: "gray",
   },
@@ -667,6 +663,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     paddingHorizontal: 10,
+    textAlignVertical: "center", // Centre le texte verticalement
+    minHeight: 20, // Hauteur minimale pour assurer un alignement correct
   },
   submitReplyButton: {
     backgroundColor: "#4CAF50",
@@ -716,8 +714,6 @@ const styles = StyleSheet.create({
   commentInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#fff",
     borderRadius: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -728,16 +724,19 @@ const styles = StyleSheet.create({
   commentInput: {
     flex: 1,
     fontSize: 14,
+    marginVertical: 15,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 35,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#ffffff",
   },
   submitCommentButton: {
     backgroundColor: "#4CAF50",
     paddingVertical: 10,
+    marginVertical: 15,
+
     paddingHorizontal: 15,
     borderRadius: 35,
     marginLeft: 10,
@@ -751,7 +750,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 10,
     padding: 10,
     borderRadius: 10,
     shadowColor: "#000",

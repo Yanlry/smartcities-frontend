@@ -77,9 +77,13 @@ const handleScroll = (event) => {
   };
 
   const clearAllTokens = async () => {
-    await AsyncStorage.removeItem("authToken");
+    console.log("Suppression de toutes les données stockées.");
+    const keys = await AsyncStorage.getAllKeys();
+    console.log("Clés avant suppression :", keys); // Ajoute un log pour vérifier les clés restantes
+    await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userId', 'userToken']);
+    const remainingKeys = await AsyncStorage.getAllKeys();
+    console.log("Clés après suppression :", remainingKeys); // Validez que tout est supprimé
   };
-
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -99,6 +103,34 @@ const handleScroll = (event) => {
 
     initializeApp();
   }, []);
+
+  // useEffect(() => {
+  //   const initializeApp = async () => {
+  //     try {
+  //       const token = await getToken();
+  //       const userId = await getUserId();
+  
+  //       console.log('Token récupéré depuis AsyncStorage :', token);
+  //       console.log('ID utilisateur récupéré depuis AsyncStorage :', userId);
+  
+  //       if (token && userId && !isTokenExpired(token)) {
+  //         console.log('Session restaurée, utilisateur connecté.');
+  //         setIsLoggedIn(true);
+  //       } else {
+  //         console.log('Token ou ID utilisateur manquant/expiré.');
+  //         await clearAll(); // Nettoyer si la session est invalide
+  //         setIsLoggedIn(false);
+  //       }
+  //     } catch (error) {
+  //       console.error('Erreur lors de l\'initialisation de l\'application :', error);
+  //       setIsLoggedIn(false);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  
+  //   initializeApp();
+  // }, []);
   
   const handleLogout = async () => {
     try {

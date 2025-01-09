@@ -255,7 +255,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#408476" />
+        <ActivityIndicator size="large" color="#535353" />
       ) : conversations.length > 0 ? (
         <FlatList
           data={conversations}

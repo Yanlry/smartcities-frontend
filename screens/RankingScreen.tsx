@@ -103,128 +103,130 @@ const RankingScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerNav}>
-        {/* Bouton pour ouvrir le menu */}
-        <TouchableOpacity onPress={toggleSidebar}>
-          <Icon
-            name="menu"
-            size={28}
-            color="#CBCBCB" // Couleur dorée
-            style={{ marginLeft: 10 }}
-          />
-        </TouchableOpacity>
+<View style={styles.container}>
+  <View style={styles.headerNav}>
+    {/* Bouton pour ouvrir le menu */}
+    <TouchableOpacity onPress={toggleSidebar}>
+      <Icon
+        name="menu"
+        size={28}
+        color="#CBCBCB"
+        style={{ marginLeft: 10 }}
+      />
+    </TouchableOpacity>
 
-        {/* Titre de la page */}
-        <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
-        </View>
+    {/* Titre de la page */}
+    <View style={styles.typeBadgeNav}>
+      <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
+    </View>
 
-        {/* Bouton de notifications avec compteur */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("NotificationsScreen")}
-        >
-          <View>
-            <Icon
-              name="notifications"
-              size={28}
-              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
-              style={{ marginRight: 10 }}
-            />
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
+    {/* Bouton de notifications avec compteur */}
+    <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
+      <View>
+        <Icon
+          name="notifications"
+          size={28}
+          color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
+          style={{ marginRight: 10 }}
+        />
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount}</Text>
           </View>
-        </TouchableOpacity>
+        )}
       </View>
-      <View style={styles.header}>
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            Bienvenue à
-            <Text style={styles.highlight}>
-              {" "}
-              {cityName || "Ville inconnue"}
-            </Text>
-          </Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Vous êtes classé numéro{" "}
-          <Text style={styles.highlight}>{userRanking || "N/A"}</Text> parmi{" "}
-          {totalUsers || "N/A"} utilisateurs.
+    </TouchableOpacity>
+  </View>
+
+  {/* FlatList avec le message de bienvenue inclus */}
+  <FlatList
+  data={rankingData}
+  keyExtractor={(item) => item.id.toString()}
+  ListHeaderComponent={(
+    <View style={styles.header}>
+      <Text style={styles.welcomeText}>Bienvenue à</Text>
+      <View style={styles.cityContainer}>
+        <Text style={styles.cityName}>{cityName || "Ville inconnue"}</Text>
+      </View>
+      <View style={styles.rankingContainer}>
+        <Text style={styles.rankingText}>
+          Vous êtes classé <Text style={styles.rankingNumber}>numéro {userRanking || "N/A"}</Text>
+        <Text style={styles.rankingText}>
+          {" "}parmi <Text style={styles.totalUsers}>{totalUsers || "N/A"}</Text> utilisateurs
+        </Text>
         </Text>
       </View>
-
-      <FlatList
-        data={rankingData}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => {
-          const isTopThree = item.ranking <= 3;
-          const badgeColor =
-            item.ranking === 1
-              ? "#FFD700"
-              : item.ranking === 2
-              ? "#C0C0C0"
-              : "#CD7F32"; // Or, argent, bronze
-          const borderColor =
-            item.ranking === 1
-              ? "#FFD700"
-              : item.ranking === 2
-              ? "#C0C0C0"
-              : "#CD7F32"; // Contours correspondants
-
-          return (
-            <TouchableOpacity
-              style={[
-                styles.rankingItem,
-                isTopThree && { borderColor: borderColor, borderWidth: 2 },
-              ]}
-              onPress={() =>
-                navigation.navigate("UserProfileScreen", { userId: item.id })
-              }
-            >
-              {isTopThree && (
-                <View style={[styles.badgeMedal, { backgroundColor: badgeColor }]}>
-                  <Text style={styles.badgeTextMedal}>
-                    {item.ranking === 1
-                      ? "🥇"
-                      : item.ranking === 2
-                      ? "🥈"
-                      : "🥉"}
-                  </Text>
-                </View>
-              )}
-              <Image
-                source={{
-                  uri: item.photo || "https://via.placeholder.com/150",
-                }}
-                style={[
-                  styles.userImage,
-                  isTopThree && styles.topThreeImage, // Style conditionnel pour agrandir l'image
-                ]}
-              />
-              <View
-                style={[
-                  styles.userInfo,
-                  isTopThree && styles.topThreeUserInfo, // Style conditionnel pour centrer le texte
-                ]}
-              >
-                <Text style={styles.userName}>
-                  {item.useFullName
-                    ? `${item.firstName} ${item.lastName}`
-                    : item.username || "Utilisateur inconnu"}
-                </Text>
-                <Text style={styles.userRanking}>
-                  {isTopThree ? "" : `Classement : ${item.ranking}`}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-      />
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
+  )}
+  renderItem={({ item, index }) => {
+    const isTopThree = item.ranking <= 3;
+    const badgeColor =
+      item.ranking === 1
+        ? "#FFD700"
+        : item.ranking === 2
+        ? "#C0C0C0"
+        : "#CD7F32";
+    const borderColor =
+      item.ranking === 1
+        ? "#FFD700"
+        : item.ranking === 2
+        ? "#C0C0C0"
+        : "#CD7F32";
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.rankingItem,
+          isTopThree && { borderColor: borderColor, borderWidth: 2 },
+          index === rankingData.length - 1 && { marginBottom: 50 }, // Ajout d'une marge au dernier élément
+        ]}
+        onPress={() =>
+          navigation.navigate("UserProfileScreen", { userId: item.id })
+        }
+      >
+        {isTopThree && (
+          <View style={[styles.badgeMedal, { backgroundColor: badgeColor }]}>
+            <Text style={styles.badgeTextMedal}>
+              {item.ranking === 1
+                ? "🥇"
+                : item.ranking === 2
+                ? "🥈"
+                : "🥉"}
+            </Text>
+          </View>
+        )}
+        <Image
+          source={{
+            uri: item.photo || "https://via.placeholder.com/150",
+          }}
+          style={[
+            styles.userImage,
+            isTopThree && styles.topThreeImage,
+          ]}
+        />
+        <View
+          style={[
+            styles.userInfo,
+            isTopThree && styles.topThreeUserInfo,
+          ]}
+        >
+          <Text style={styles.userName}>
+            {item.useFullName
+              ? `${item.firstName} ${item.lastName}`
+              : item.username || "Utilisateur inconnu"}
+          </Text>
+          <Text style={styles.userRanking}>
+            {isTopThree ? "" : `Classement : ${item.ranking}`}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }}
+/>
+
+  {/* Sidebar */}
+  <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+</View>
   );
 };
 
@@ -277,21 +279,59 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   header: {
-    paddingVertical: 10,
+    width: "100%",
+    padding: 20,
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+    elevation: 4, // Ombre pour Android
     alignItems: "center",
   },
-  title: {
-    fontSize: 22,
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: "500",
+    color: "#333", // Couleur neutre
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  cityContainer: {
+    backgroundColor: "#E6F7FF", // Bleu doux
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
+  cityName: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#007BFF", // Bleu accent
+    textAlign: "center",
+  },
+  rankingContainer: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  rankingText: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#555", // Couleur grise subtile
+    textAlign: "center",
+  },
+  rankingNumber: {
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "#007BFF", // Or pour le classement
+  },
+  totalUsers: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#555", // Bleu accent
   },
   subtitle: {
     fontSize: 16,
     color: "#333",
-  },
-  highlight: {
-    color: "#007BFF",
-    fontWeight: "bold",
   },
   rankingItem: {
     flexDirection: "row",

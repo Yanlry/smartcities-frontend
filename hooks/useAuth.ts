@@ -69,27 +69,27 @@ export function useAuth() {
     cityData: { nom_commune: string; code_postal: string; latitude: number; longitude: number }
   ) => {
     try {
-      console.log("Inscription en cours...");
-      console.log("Données de localisation reçues :", cityData);
+      console.log("Début de l'inscription...");
+      console.log("Données de localisation :", cityData);
   
       setIsRegisterClicked(true);
       setIsLoading(true);
   
-      // Validation locale des champs obligatoires
       if (!email || !password || !lastName || !firstName || !username) {
-        Alert.alert("Champs erroné ou vide", "Tous les champs sont obligatoires.");
+        Alert.alert("Erreur", "Tous les champs sont obligatoires.");
         return;
       }
   
-      // Validation des photos
-      for (const photo of photos) {
-        if (!photo.uri || !photo.type) {
-          Alert.alert("Erreur", "Une ou plusieurs photos ne sont pas valides.");
-          return;
-        }
+      if (!cityData.nom_commune || !cityData.code_postal || !cityData.latitude || !cityData.longitude) {
+        Alert.alert("Erreur", "Veuillez sélectionner une ville valide.");
+        return;
       }
   
-      // Préparation des données du formulaire
+      if (photos.length === 0) {
+        Alert.alert("Erreur", "Veuillez ajouter au moins une photo.");
+        return;
+      }
+  
       const formData = new FormData();
       formData.append("email", email.toLowerCase());
       formData.append("password", password);
@@ -112,24 +112,20 @@ export function useAuth() {
         } as any);
       });
   
-      console.log("FormData prêt à être envoyé :", formData);
+      console.log("Données prêtes à être envoyées :", formData);
   
-      // Requête d'inscription
       const response = await fetch(`${API_URL}/auth/signup`, {
         method: "POST",
         body: formData,
       });
   
-      console.log("Réponse brute du backend :", response);
-  
       if (response.ok) {
         const data = await response.json();
-        console.log("Données renvoyées par le backend :", data);
+        console.log("Inscription réussie :", data);
   
         const { id, token } = data;
-  
         if (!id || !token) {
-          Alert.alert("Erreur", "Impossible de récupérer l'ID utilisateur ou le token.");
+          Alert.alert("Erreur", "Problème lors de la récupération des données utilisateur.");
           return;
         }
   
@@ -140,18 +136,17 @@ export function useAuth() {
         onSuccess();
       } else {
         const errorData = await response.json();
-        console.error("Erreur renvoyée par le backend :", errorData);
-        Alert.alert("Erreur", errorData.message || "Erreur lors de l'inscription.");
+        console.error("Erreur lors de l'inscription :", errorData);
+        Alert.alert("Erreur", errorData.message || "Une erreur s'est produite.");
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Erreur pendant l'inscription :", error);
       Alert.alert("Erreur", "Impossible de se connecter au serveur.");
-      console.error("Erreur lors de l'inscription :", error);
     } finally {
       setIsRegisterClicked(false);
       setIsLoading(false);
     }
   };
-  
   
   
   const logout = async () => {

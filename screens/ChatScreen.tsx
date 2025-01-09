@@ -22,6 +22,8 @@ import {
   serverTimestamp,
   doc,
   updateDoc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
@@ -239,98 +241,80 @@ const ChatScreen = ({ route, navigation }: any) => {
       console.warn("Message vide, envoi annulé.");
       return;
     }
-
+  
     try {
       const messagesRef = collection(db, "messages");
       const conversationsRef = collection(db, "conversations");
       const conversationId = [senderId, receiverId].sort().join("_");
-
-      let docRef;
-
+  
       // Ajouter le message à Firestore
-      docRef = await addDoc(messagesRef, {
+      const docRef = await addDoc(messagesRef, {
         senderId,
         receiverId,
         message: newMessage.trim(),
         timestamp: serverTimestamp(),
         isRead: false,
       });
-
+  
       console.log("Message ajouté avec succès :", docRef.id);
-
-      // Mettre à jour le dernier message envoyé
-      const sentMessage = {
-        id: docRef.id,
-        senderId,
-        receiverId,
-        message: newMessage.trim(),
-        timestamp: { seconds: Date.now() / 1000 }, // Simulez un timestamp
-        isRead: false,
-      };
-      setLastSentMessage(sentMessage);
-
-      // Mettre à jour la conversation
+  
+      // Vérifiez si la conversation existe
       const conversationDocRef = doc(conversationsRef, conversationId);
-      await updateDoc(conversationDocRef, {
-        lastMessage: newMessage.trim(),
-        lastMessageTimestamp: serverTimestamp(),
-      });
-
+      const conversationSnapshot = await getDoc(conversationDocRef);
+  
+      if (!conversationSnapshot.exists()) {
+        // Créez un document pour une nouvelle conversation
+        await setDoc(conversationDocRef, {
+          participants: [senderId, receiverId],
+          lastMessage: newMessage.trim(),
+          lastMessageTimestamp: serverTimestamp(),
+        });
+        console.log("Nouvelle conversation créée :", conversationId);
+      } else {
+        // Mettre à jour la conversation existante
+        await updateDoc(conversationDocRef, {
+          lastMessage: newMessage.trim(),
+          lastMessageTimestamp: serverTimestamp(),
+        });
+        console.log("Conversation mise à jour :", conversationId);
+      }
+  
       setNewMessage("");
-
+  
       // Scroller vers le bas après l'envoi du message
       if (flatListRef.current) {
         flatListRef.current.scrollToEnd({ animated: true });
       }
-
+  
       // Récupérer les informations de l'utilisateur expéditeur via l'API REST
       let senderName = "Un utilisateur"; // Valeur par défaut
       try {
-        console.log(
-          `Récupération des informations de l'utilisateur avec l'ID : ${senderId}`
-        );
         const userResponse = await fetch(`${API_URL}/users/${senderId}`);
-        if (!userResponse.ok) {
-          throw new Error(
-            `Erreur API utilisateur : ${userResponse.statusText}`
-          );
-        }
-
+        if (!userResponse.ok) throw new Error(`Erreur API utilisateur : ${userResponse.statusText}`);
         const userData = await userResponse.json();
-        console.log("Données utilisateur récupérées :", userData);
-
-        // Construire le nom à utiliser dans la notification
         senderName = userData.useFullName
           ? `${userData.firstName} ${userData.lastName}`
           : userData.username;
       } catch (error) {
-        console.error(
-          "Erreur lors de la récupération des informations utilisateur :",
-          error
-        );
+        console.error("Erreur lors de la récupération des informations utilisateur :", error);
       }
-
-      // Envoyer une requête vers votre route createNotification
+  
+      // Envoyer une notification
       try {
-        console.log("Envoi de la notification via l'API...");
         const bodyData = {
           userId: receiverId,
           message: `Nouveau message de ${senderName}`,
           type: "new_message",
-          relatedId: String(docRef.id), // Assurez-vous que relatedId est une chaîne
+          relatedId: String(docRef.id),
           initiatorId: senderId,
         };
-
-        console.log("Données envoyées à l'API createNotification :", bodyData);
-
+  
         const response = await fetch(`${API_URL}/notifications/create`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(bodyData),
         });
-
+  
         if (!response.ok) {
           const errorDetails = await response.text();
           console.error("Erreur API lors de la création de la notification :", {
@@ -342,7 +326,7 @@ const ChatScreen = ({ route, navigation }: any) => {
             `Échec de la requête API : ${response.statusText} (Status: ${response.status})`
           );
         }
-
+  
         const responseData = await response.json();
         console.log("Notification créée avec succès :", responseData);
       } catch (error) {
@@ -384,54 +368,49 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   };
 
-  // Fonction pour signaler une conversation
   const reportConversation = async () => {
     if (!reportReason.trim()) {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
       return;
     }
-
+  
     try {
       const reporterId = senderId; // L'utilisateur actuel
       const conversationId = [senderId, receiverId].sort().join("_");
-
+  
+      const payload = {
+        to: "yannleroy23@gmail.com",
+        subject: "Signalement d'une conversation",
+        conversationId, // Assurez-vous que la clé est correcte
+        reporterId,
+        reportReason,
+      };
+  
+      console.log("Payload envoyé au backend :", payload);
+  
       const response = await fetch(`${API_URL}/mails/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${await getToken()}`, // Assurez-vous que getToken est défini
+          Authorization: `Bearer ${await getToken()}`,
         },
-        body: JSON.stringify({
-          to: "yannleroy23@gmail.com", // Adresse email du support
-          subject: "Signalement d'une conversation",
-          text: `Une conversation a été signalée avec l'ID: ${conversationId}. 
-                 Signalée par l'utilisateur avec l'ID: ${reporterId}. 
-                 Raison: ${reportReason}`,
-          html: `<p><strong>Une conversation a été signalée.</strong></p>
-                 <p>ID de la conversation: ${conversationId}</p>
-                 <p>Signalée par l'utilisateur avec l'ID: ${reporterId}</p>
-                 <p>Raison: ${reportReason}</p>`,
-        }),
+        body: JSON.stringify(payload),
       });
-
+  
       if (!response.ok) {
-        throw new Error("Erreur lors du signalement de la conversation.");
+        const errorData = await response.json();
+        console.error("Erreur renvoyée par l'API :", errorData);
+        throw new Error(errorData.message || "Erreur lors du signalement.");
       }
-
+  
       const result = await response.json();
-      console.log("Signalement de conversation envoyé :", result);
-      Alert.alert("Succès", "Le signalement de la conversation a été envoyé.");
-      setReportReason(""); // Réinitialiser le champ de raison
+      console.log("Signalement envoyé :", result);
+      Alert.alert("Succès", "Le signalement a été envoyé.");
+      setReportReason("");
       setReportModalVisible(false);
     } catch (error) {
-      console.error(
-        "Erreur lors de l'envoi du signalement de la conversation :",
-        error
-      );
-      Alert.alert(
-        "Erreur",
-        "Une erreur s'est produite lors de l'envoi du signalement."
-      );
+      console.error("Erreur lors de l'envoi du signalement :", error.message);
+      Alert.alert("Erreur", "Une erreur s'est produite lors du signalement.");
     }
   };
 
@@ -489,6 +468,7 @@ const ChatScreen = ({ route, navigation }: any) => {
                 style={styles.textInput}
                 placeholder="Indiquez la raison ainsi que le maximum d'informations (ex: heures, dates, etc...)"
                 value={reportReason}
+                placeholderTextColor="#777777" 
                 onChangeText={setReportReason}
                 multiline={true}
               />
@@ -710,6 +690,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: "#f9f9f9", // Subtle off-white background
     marginBottom: 20,
+    color: "#333", // Dark gray text
   },
   modalTitle: {
     fontSize: 20,

@@ -7,7 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator, 
-  Alert
+  Alert,
+  Dimensions,
+  FlatList
 } from "react-native";
 import axios from "axios";
 import { Share } from "react-native";
@@ -30,6 +32,7 @@ export default function EventDetails({ route }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { unreadCount } = useNotification(); // Récupération du compteur
   const [isLoading, setIsLoading] = useState(true); 
+  const [currentIndex, setCurrentIndex] = useState(0); // Ajoute l'état pour gérer l'index courant des images
 
   interface Event {
     photos: { url: string }[];
@@ -310,13 +313,39 @@ export default function EventDetails({ route }) {
           style={styles.loader}
         />
       )}
-      <Image
-        source={{
-          uri: event.photos?.[0]?.url || "https://via.placeholder.com/600",
+      {/* Carrousel d'images */}
+      <FlatList
+        data={event.photos} // Tableau des photos
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <Image
+            source={{
+              uri: item.url || "https://via.placeholder.com/600",
+            }}
+            style={styles.image}
+            onLoad={() => setIsLoading(false)} // Une fois l'image chargée
+          />
+        )}
+        onScroll={(e) => {
+          const scrollPosition = e.nativeEvent.contentOffset.x;
+          setCurrentIndex(Math.round(scrollPosition / Dimensions.get("window").width));
         }}
-        style={styles.image}
-        onLoad={() => setIsLoading(false)} // Une fois l'image chargée
       />
+      {/* Indicateurs (dots) */}
+      <View style={styles.indicatorContainer}>
+        {event.photos?.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.indicator,
+              currentIndex === index ? styles.activeIndicator : null,
+            ]}
+          />
+        ))}
+      </View>
     </View>
 
         {/* Titre et Actions */}
@@ -427,12 +456,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
   },
-  image: {
-    width: "100%",
-    height: 250,
-    borderRadius: 12,
+  imageContainer: {
+    position: "relative",
+    width: 350,
+    height: 300,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 25,
+  },
+  image: {
+    width: 350,
+
+    height: "100%",
+    resizeMode: "cover",
+    borderRadius: 20,
+  },
+  loader: {
+    position: "absolute",
+    alignSelf: "center",
+  },
+  indicatorContainer: {
+    position: "absolute",
+    bottom: -20,
+    flexDirection: "row",
+    justifyContent: "center",
+    width: "100%",
+  },
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#C4C4C4",
+    marginHorizontal: 4,
+  },
+  activeIndicator: {
+    backgroundColor: "#535353",
   },
   headerNav: {
     flexDirection: "row",
@@ -456,19 +515,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-  },
-  imageContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    height: 200, // Ajustez selon vos besoins
-    backgroundColor: "#f5f5f5", // Couleur de fond pendant le chargement
-    position: "relative",
-    marginTop: 40,
-    marginBottom: 40,
-  },
-  loader: {
-    position: "absolute", // Place le loader au-dessus de l'image
   },
   badge: {
     position: "absolute",

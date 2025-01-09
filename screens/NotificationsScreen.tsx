@@ -39,42 +39,53 @@ export default function NotificationsScreen({ navigation }) {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
+    
+        // Récupérer le token
         const token = await getToken();
         if (!token) {
-          throw new Error("Token non trouvé.");
+          console.log("Aucun token disponible. L'utilisateur doit se reconnecter.");
+          return; // Arrête l'exécution si le token est manquant
         }
-
+    
+        // Appeler l'API pour récupérer les notifications
         const response = await fetch(`${API_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+    
+        // Vérifier la réponse
         if (!response.ok) {
           const errorDetails = await response.json();
-          throw new Error(
-            errorDetails.message ||
-              "Erreur lors de la récupération des notifications."
+          console.warn(
+            "Erreur de l'API notifications :",
+            errorDetails.message || "Erreur inconnue"
           );
+          return; // Ignore les erreurs non critiques
         }
-
+    
+        // Traiter les données reçues
         const data: Notification[] = await response.json();
-
-        // Vérifie les données reçues
         console.log("Notifications reçues :", data);
-
+    
+        // Trier les notifications par date
         setNotifications(
           data.sort(
             (a, b) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
         );
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération des notifications :",
-          error.message
-        );
-        Alert.alert("Erreur", "Impossible de récupérer les notifications.");
+      } catch (error: any) {
+        // Gestion des erreurs
+        if (error.message.includes("Token non trouvé")) {
+          console.log("Token non valide ou expiré. Aucune action entreprise.");
+        } else {
+          console.error("Erreur critique lors de la récupération des notifications :", error.message);
+          Alert.alert(
+            "Erreur",
+            "Une erreur inattendue est survenue lors de la récupération des notifications."
+          );
+        }
       } finally {
-        setLoading(false);
+        setLoading(false); // Arrêter le spinner de chargement
       }
     };
 

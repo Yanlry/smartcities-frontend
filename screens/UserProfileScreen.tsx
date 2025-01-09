@@ -180,10 +180,18 @@ export default function UserProfileScreen({ route, navigation }) {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
       return;
     }
-
+  
     try {
       const reporterId = await getUserId(); // Récupération de l'ID de l'utilisateur actuel
-
+  
+      console.log({
+        to: "yannleroy23@gmail.com",
+        subject: "Signalement d'un profil utilisateur",
+        userId, // Vérifiez que cette valeur est définie
+        reporterId, // Vérifiez que cette valeur est définie
+        reportReason, // Vérifiez que cette valeur est définie
+      });
+  
       const response = await fetch(`${API_URL}/mails/send`, {
         method: "POST",
         headers: {
@@ -191,26 +199,22 @@ export default function UserProfileScreen({ route, navigation }) {
           Authorization: `Bearer ${await getToken()}`,
         },
         body: JSON.stringify({
-          to: "yannleroy23@gmail.com", // Adresse mail du destinataire
+          to: "yannleroy23@gmail.com",
           subject: "Signalement d'un profil utilisateur",
-          text: `Un profil utilisateur a été signalé avec l'ID: ${userId}. 
-                 Signalé par l'utilisateur avec l'ID: ${reporterId}. 
-                 Raison: ${reportReason}`,
-          html: `<p><strong>Un profil utilisateur a été signalé.</strong></p>
-                 <p>ID du profil: ${userId}</p>
-                 <p>Signalé par l'utilisateur avec l'ID: ${reporterId}</p>
-                 <p>Raison: ${reportReason}</p>`,
+          userId,
+          reporterId,
+          reportReason,
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error("Erreur lors du signalement du profil.");
       }
-
+  
       const result = await response.json();
       console.log("Signalement envoyé :", result);
       Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
-      closeReportModal();
+      closeReportModal(); // Ferme le modal après succès
     } catch (error) {
       console.error("Erreur lors de l'envoi du signalement :", error.message);
       Alert.alert(
@@ -219,7 +223,6 @@ export default function UserProfileScreen({ route, navigation }) {
       );
     }
   };
-
   // Gestion du désuivi (Unfollow)
   const handleUnfollow = async () => {
     if (!currentUserId) return;
@@ -318,8 +321,9 @@ export default function UserProfileScreen({ route, navigation }) {
               <Text style={styles.modalTitle}>Signaler ce profil</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="Quelle est la raison de votre signalement ?"
+                placeholder="Indiquez la raison ainsi que le maximum d'informations (ex: profil douteux, dates, etc...)"
                 value={reportReason}
+                placeholderTextColor="#777777" 
                 onChangeText={setReportReason}
                 multiline={true}
               />

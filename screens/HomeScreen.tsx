@@ -90,7 +90,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [rankingData, setRankingData] = useState<TopUser[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [featuredEvents, setFeaturedEvents] = useState<
     { id: string; title: string; image: string }[]
@@ -137,7 +136,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
         }
 
         const rankingData = await rankingResponse.json();
-        setRankingData(rankingData.users); // Met à jour les données de classement
         setRanking(rankingData.ranking); // Classement de l'utilisateur
         setTotalUsers(rankingData.totalUsers); // Nombre total d'utilisateurs
       } catch (error) {
@@ -270,8 +268,11 @@ export default function HomeScreen({ navigation, handleScroll }) {
   
         const filteredEvents = response.data
           .filter((event: any) => {
-            const eventCity = normalizeCityName(extractCityFromLocation(event.location));
-            return eventCity === userCityNormalized; // Comparaison normalisée
+            const eventCity = extractCityAfterPostalCode(event.location);
+            const eventCityNormalized = normalizeCityName(eventCity);
+  
+            // Comparaison des villes normalisées
+            return eventCityNormalized === userCityNormalized;
           })
           .map((event: any) => ({
             id: event.id,
@@ -296,13 +297,14 @@ export default function HomeScreen({ navigation, handleScroll }) {
     }
   }, [userCity]);
   
-  // Fonction pour extraire et normaliser la ville
-  const extractCityFromLocation = (location: string) => {
+  // Fonction pour extraire la ville juste après le code postal
+  const extractCityAfterPostalCode = (location: string) => {
     if (!location) return "";
-    return location.split(",")[0].replace(/\d+/g, "").trim();
+    const match = location.match(/\d{5}\s+([^,]+)/); // Capture ce qui suit les 5 chiffres
+    return match ? match[1].trim() : "";
   };
   
-  // Fonction pour normaliser les noms
+  // Fonction pour normaliser les noms de ville
   const normalizeCityName = (cityName: string) => {
     if (!cityName) return "";
     return cityName
@@ -311,7 +313,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
       .replace(/\s+/g, " ")
       .trim();
   };
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -554,6 +555,13 @@ export default function HomeScreen({ navigation, handleScroll }) {
     // Naviguer vers une autre page après le rafraîchissement
     navigation.replace("Main");
   };
+
+  const capitalize = (text: string) => {
+    if (!text) return ""; // Gérer les cas où le texte est vide
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
+  // Formatage du nom de la commune
+  const formattedCommune = capitalize(nomCommune);
 
   return (
     <ScrollView
@@ -846,7 +854,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </ScrollView>
       )}
 
-<Text style={styles.sectionTitle}>🎉 Événements à venir</Text>
+<Text style={styles.sectionTitle}>🎉 Événements à venir à {formattedCommune}</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#3498db" />
       ) : error ? (

@@ -103,15 +103,19 @@ export default function ReportScreen({ navigation }) {
             onPress={() => openModal(item)}
             style={styles.changeReport}
           >
-            <Text>Modifier</Text>
+            <Text style={styles.changeReportText}>Modifier</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => confirmDelete(item.id)}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => confirmDelete(item.id)}
+          >
             <Icon name="delete" size={24} color="#FF3B30" />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
     </View>
   );
+  
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
@@ -211,7 +215,6 @@ export default function ReportScreen({ navigation }) {
       return;
     }
 
-
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
       console.log("Requête API pour reverse geocoding :", url);
@@ -281,10 +284,13 @@ export default function ReportScreen({ navigation }) {
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
-  
+
       // Traite le texte de la ville pour remplacer "Unnamed Road"
-      const formattedCity = item.formatted.replace(/unnamed road/g, 'Route inconnue');
-  
+      const formattedCity = item.formatted.replace(
+        /unnamed road/g,
+        "Route inconnue"
+      );
+
       // Met à jour le rapport avec l'adresse sélectionnée
       setCurrentReport((prevReport) => {
         if (!prevReport) return prevReport;
@@ -295,10 +301,10 @@ export default function ReportScreen({ navigation }) {
           longitude: lng,
         };
       });
-  
+
       // Valide l'adresse
       setIsAddressValidated(true);
-  
+
       // Zoom sur la nouvelle région
       mapRef.current?.animateToRegion(
         {
@@ -310,10 +316,9 @@ export default function ReportScreen({ navigation }) {
         1000
       );
     }
-  
+
     setModalVisible(false);
   };
-  
 
   const isValidInput = () => {
     return (
@@ -323,9 +328,11 @@ export default function ReportScreen({ navigation }) {
   };
 
   const getValidationErrors = (): string[] => {
-      const errors: string[] = [];
+    const errors: string[] = [];
     if (!isAddressValidated) {
-      errors.push("Veuillez sélectionner une adresse en recherchant dans la liste.");
+      errors.push(
+        "Veuillez sélectionner une adresse en recherchant dans la liste."
+      );
     }
     if ((currentReport?.title?.trim().length ?? 0) <= 4) {
       errors.push("Le titre doit contenir au moins 5 caractères.");
@@ -407,13 +414,13 @@ export default function ReportScreen({ navigation }) {
                   setCurrentReport({ ...currentReport, title: text } as Report)
                 }
                 multiline={false}
-                  maxLength={100}
-                  scrollEnabled={true}
+                maxLength={100}
+                scrollEnabled={true}
               />
 
               {/* Champ Description */}
               <TextInput
-                 style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea]}
                 placeholder="Description"
                 value={currentReport?.description || ""}
                 onChangeText={(text) =>
@@ -500,24 +507,25 @@ export default function ReportScreen({ navigation }) {
 
               {/* Bouton Enregistrer */}
               <TouchableOpacity
-  style={[
-    styles.saveButton,
-    (!isAddressValidated || !isValidInput()) && styles.disabledButton, // Désactiver si invalide
-  ]}
-  onPress={() => {
-    if (isAddressValidated && isValidInput()) {
-      updateReportHandler(currentReport);
-    } else {
-      const errors = getValidationErrors();
-      Alert.alert(
-        "Validation requise",
-        errors.join("\n") // Affiche toutes les erreurs sur des lignes séparées
-      );
-    }
-  }}
->
-  <Text style={styles.saveButtonText}>Enregistrer</Text>
-</TouchableOpacity>
+                style={[
+                  styles.saveButton,
+                  (!isAddressValidated || !isValidInput()) &&
+                    styles.disabledButton, // Désactiver si invalide
+                ]}
+                onPress={() => {
+                  if (isAddressValidated && isValidInput()) {
+                    updateReportHandler(currentReport);
+                  } else {
+                    const errors = getValidationErrors();
+                    Alert.alert(
+                      "Validation requise",
+                      errors.join("\n") // Affiche toutes les erreurs sur des lignes séparées
+                    );
+                  }
+                }}
+              >
+                <Text style={styles.saveButtonText}>Enregistrer</Text>
+              </TouchableOpacity>
 
               {/* Bouton Annuler */}
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
@@ -628,10 +636,21 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   changeReport: {
-    backgroundColor: "#FFCC00",
-    padding: 5,
-    paddingHorizontal: 15,
-    borderRadius: 20,
+    backgroundColor: "#FF9800", // Vert moderne pour un bouton positif
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3, // Ombre pour Android
+  },
+  changeReportText: {
+    color: "#FFFFFF", // Texte blanc pour le contraste
+    fontSize: 14,
     fontWeight: "bold",
   },
   noReportsContainer: {
@@ -643,7 +662,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#000",
   },
-
+  deleteButton: {
+    backgroundColor: "#FFF5F5",
+    padding: 8,
+    borderRadius: 20,
+    shadowColor: "#FF5252",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -658,10 +686,10 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   inputTitle: {
-    width: 330,
+    width: "100%",
     height: 50, // Hauteur fixe (peut être ajustée)
     maxHeight: 50, // Empêche l'agrandissement vertical
     backgroundColor: "#f5f5f5",
@@ -674,7 +702,7 @@ const styles = StyleSheet.create({
     overflow: "hidden", // Empêche le débordement
   },
   input: {
-    maxHeight: 250, // Empêche l'agrandissement vertical
+    width: "100%",
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingVertical: 10, // Ajustez en fonction de votre design
@@ -693,7 +721,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
     padding: 10,
     alignItems: "center",
-    borderRadius: 5,
+    borderRadius: 20,
     marginVertical: 10,
   },
   saveButtonText: {
@@ -704,7 +732,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f44336",
     padding: 10,
     alignItems: "center",
-    borderRadius: 5,
+    borderRadius: 20,
     marginVertical: 10,
   },
   closeButtonText: {

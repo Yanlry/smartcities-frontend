@@ -145,7 +145,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     }
   };
 
-  
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>
@@ -154,7 +153,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       </View>
     );
   }
-  535353
+  535353;
   if (!report) {
     return (
       <View style={styles.loadingContainer}>
@@ -289,7 +288,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           {/* Système de vote */}
           <View style={styles.voteSection}>
             <Text style={styles.votePrompt}>
-              Avez-vous constaté le report ?
+              Avez-vous constaté ce signalement ?
             </Text>
             <View style={styles.voteContainer}>
               <TouchableOpacity
@@ -308,7 +307,8 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
                 }}
                 style={[styles.voteButton, styles.upVoteButton]}
               >
-                <Text style={styles.voteText}>👍 {votes.upVotes}</Text>
+                <Ionicons name="thumbs-up" size={28} color="#57A773" />
+                <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -327,18 +327,20 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
                 }}
                 style={[styles.voteButton, styles.downVoteButton]}
               >
-                <Text style={styles.voteText}>👎 {votes.downVotes}</Text>
+                <Ionicons name="thumbs-down" size={28} color="#ff4d4f" />
+                <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.description}>{report.description}</Text>
+          <Text style={styles.detailLabel}>✏️ Description :</Text>
+          <Text style={styles.descriptionText}>{report.description}</Text>
         </View>
 
         <View style={styles.detailCardPhoto}>
-          <View style={styles.detailContainer}>
+          <View>
             <Text style={styles.detailLabel}>📸 Photos :</Text>
             {report.photos && report.photos.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -384,6 +386,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         </View>
 
         <View style={[styles.card, styles.detailCard]}>
+          <Text style={styles.detailLabelInfo}>ℹ️ Informations :</Text>
           <View style={styles.detailContainer}>
             <Text style={styles.detailLabel}>📏 Distance en voiture : </Text>
             <Text style={styles.detailValue}>
@@ -426,7 +429,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        <View>
+        <View style={styles.cardComment}>
           {/* Autres sections de votre écran */}
           <CommentsSection report={report} />
         </View>

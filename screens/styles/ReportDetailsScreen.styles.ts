@@ -101,14 +101,23 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   upVoteButton: {
-    backgroundColor: "#CBCBCB",
+    backgroundColor: "#f9f9f9",
   },
   downVoteButton: {
-    backgroundColor: "#F29A91",
+    backgroundColor: "#f9f9f9",
   },
-  voteText: {
+  voteTextUp: {
+    marginTop: 5,
     fontSize: 16,
     fontWeight: "bold",
+    color: "#57A773",
+
+  },
+  voteTextDown: {
+    marginTop: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#ff4d4f",
   },
   commentContainer: {
     marginTop: 5,
@@ -210,19 +219,18 @@ export default StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 15,
     marginHorizontal: 15,
-    padding: 15,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
-    marginBottom: 10,
+    marginBottom: 50,
   },
-  
-  description: {
+  descriptionText: {
     fontSize: 16,
     color: "#555",
     lineHeight: 22,
+    marginTop: 10,
   },
   detailCardPhoto: {
     backgroundColor: "#fff",
@@ -251,7 +259,6 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     color: "#333",
-    marginBottom: 10,
   },
   
   detailCard: {
@@ -280,6 +287,12 @@ export default StyleSheet.create({
     fontWeight: "bold",
     color: "#555",
     marginBottom: 4,
+  }, 
+  detailLabelInfo: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#555",
+    marginBottom: 14,
   },
   detailValue: {
     fontSize: 16,

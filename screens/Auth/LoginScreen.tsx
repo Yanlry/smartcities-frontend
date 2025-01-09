@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   blurContainer: {
     width: "90%",
     backgroundColor: "rgba(255, 255, 255, 0.1)", // Plus translucide avec 5 % d'opacité
-    borderRadius: 20,
+    borderRadius: 50,
     padding: 20,
     alignItems: "center",
     shadowColor: "#000",
