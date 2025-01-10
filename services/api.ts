@@ -10,71 +10,71 @@ export const api = axios.create({
 });
 
 // Fonction pour récupérer la distance de conduite
-export const fetchDrivingDistance = async (
-  startLat: number,
-  startLon: number,
-  endLat: number,
-  endLon: number
-): Promise<number | null> => {
-  try {
+// export const fetchDrivingDistance = async (
+//   startLat: number,
+//   startLon: number,
+//   endLat: number,
+//   endLon: number
+// ): Promise<number | null> => {
+//   try {
 
-    const response = await axios.post(
-      "https://api.openrouteservice.org/v2/directions/driving-car",
-      {
-        coordinates: [
-          [startLon, startLat],
-          [endLon, endLat],
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${ORS_API_KEY}`, // Ajout de "Bearer" pour l'en-tête
-        },
-      }
-    );
+//     const response = await axios.post(
+//       "https://api.openrouteservice.org/v2/directions/driving-car",
+//       {
+//         coordinates: [
+//           [startLon, startLat],
+//           [endLon, endLat],
+//         ],
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${ORS_API_KEY}`, // Ajout de "Bearer" pour l'en-tête
+//         },
+//       }
+//     );
 
-    const distanceInMeters = response.data.routes[0].summary.distance;
-    return distanceInMeters / 1000; // Convertir en kilomètres
-  } catch (error: any) {
-    console.error("Erreur dans fetchDrivingDistance :", error.response?.data || error.message);
-    return null;
-  }
-};
+//     const distanceInMeters = response.data.routes[0].summary.distance;
+//     return distanceInMeters / 1000; // Convertir en kilomètres
+//   } catch (error: any) {
+//     console.error("Erreur dans fetchDrivingDistance :", error.response?.data || error.message);
+//     return null;
+//   }
+// };
 
 // Fonction pour récupérer les coordonnées du trajet
-export const fetchRoute = async (
-  startLat: number,
-  startLon: number,
-  endLat: number,
-  endLon: number
-): Promise<Array<{ latitude: number; longitude: number }>> => {
-  try {
+// export const fetchRoute = async (
+//   startLat: number,
+//   startLon: number,
+//   endLat: number,
+//   endLon: number
+// ): Promise<Array<{ latitude: number; longitude: number }>> => {
+//   try {
 
-    const response = await axios.post(
-      "https://api.openrouteservice.org/v2/directions/driving-car",
-      {
-        coordinates: [
-          [startLon, startLat],
-          [endLon, endLat],
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${ORS_API_KEY}`, // Ajout de "Bearer" pour l'en-tête
-        },
-      }
-    );
+//     const response = await axios.post(
+//       "https://api.openrouteservice.org/v2/directions/driving-car",
+//       {
+//         coordinates: [
+//           [startLon, startLat],
+//           [endLon, endLat],
+//         ],
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${ORS_API_KEY}`, // Ajout de "Bearer" pour l'en-tête
+//         },
+//       }
+//     );
 
-    const decodedCoordinates = polyline
-      .decode(response.data.routes[0].geometry, 5)
-      .map(([latitude, longitude]) => ({ latitude, longitude }));
+//     const decodedCoordinates = polyline
+//       .decode(response.data.routes[0].geometry, 5)
+//       .map(([latitude, longitude]) => ({ latitude, longitude }));
 
-    return decodedCoordinates;
-  } catch (error: any) {
-    console.error("Erreur dans fetchRoute :", error.response?.data || error.message);
-    throw new Error("Impossible de récupérer le tracé de trajet.");
-  }
-};
+//     return decodedCoordinates;
+//   } catch (error: any) {
+//     console.error("Erreur dans fetchRoute :", error.response?.data || error.message);
+//     throw new Error("Impossible de récupérer le tracé de trajet.");
+//   }
+// };
 
 // Fonction pour récupérer les détails d'un signalement
 export const fetchReportDetails = async (
@@ -124,5 +124,70 @@ export const voteOnReport = async (
   } catch (error: any) {
     console.error("Erreur dans voteOnReport :", error.response?.data || error.message);
     throw new Error("Impossible d'envoyer le vote.");
+  }
+};
+
+
+// FONCTION DE REMPLACEMENT
+export const fetchDrivingDistance = async (
+  startLat: number,
+  startLon: number,
+  endLat: number,
+  endLon: number
+): Promise<number | null> => {
+  try {
+    const response = await axios.post(
+      "https://api.openrouteservice.org/v2/directions/driving-car",
+      {
+        coordinates: [
+          [startLon, startLat],
+          [endLon, endLat],
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${ORS_API_KEY}`,
+        },
+      }
+    );
+
+    const distanceInMeters = response.data.routes[0].summary.distance;
+    return distanceInMeters / 1000; // Convertir en kilomètres
+  } catch (error: any) {
+    console.warn("Erreur dans fetchDrivingDistance :", error.message || "Erreur inconnue.");
+    return null; // Retourner `null` si la distance n'est pas disponible
+  }
+};
+
+export const fetchRoute = async (
+  startLat: number,
+  startLon: number,
+  endLat: number,
+  endLon: number
+): Promise<Array<{ latitude: number; longitude: number }>> => {
+  try {
+    const response = await axios.post(
+      "https://api.openrouteservice.org/v2/directions/driving-car",
+      {
+        coordinates: [
+          [startLon, startLat],
+          [endLon, endLat],
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${ORS_API_KEY}`,
+        },
+      }
+    );
+
+    const decodedCoordinates = polyline
+      .decode(response.data.routes[0].geometry, 5)
+      .map(([latitude, longitude]) => ({ latitude, longitude }));
+
+    return decodedCoordinates;
+  } catch (error: any) {
+    console.warn("Erreur dans fetchRoute :", error.message || "Erreur inconnue.");
+    return []; // Retourner un tableau vide si le tracé n'est pas disponible
   }
 };

@@ -6,10 +6,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator, 
+  ActivityIndicator,
   Alert,
   Dimensions,
-  FlatList
+  FlatList,
 } from "react-native";
 import axios from "axios";
 import { Share } from "react-native";
@@ -31,7 +31,7 @@ export default function EventDetails({ route }) {
   const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { unreadCount } = useNotification(); // Récupération du compteur
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0); // Ajoute l'état pour gérer l'index courant des images
 
   interface Event {
@@ -176,18 +176,18 @@ export default function EventDetails({ route }) {
         userId: currentUserId,
       });
 
-     // Afficher une alerte personnalisée
-    Alert.alert(
-      "Inscription réussie", // Titre de l'alerte
-      "Votre inscription est confirmée, profitez bien de l’événement !", // Message de l'alerte
-      [
-        {
-          text: "OK", // Bouton de confirmation
-          onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
-        },
-      ],
-      { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
-    );
+      // Afficher une alerte personnalisée
+      Alert.alert(
+        "Inscription réussie", // Titre de l'alerte
+        "Votre inscription est confirmée, profitez bien de l’événement !", // Message de l'alerte
+        [
+          {
+            text: "OK", // Bouton de confirmation
+            onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
+          },
+        ],
+        { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
+      );
 
       setIsRegistered(true); // Met à jour l'état pour refléter l'inscription
 
@@ -224,18 +224,18 @@ export default function EventDetails({ route }) {
         }
       );
 
-       // Afficher une alerte personnalisée
-    Alert.alert(
-      "Désinscription enregistrée", // Titre de l'alerte
-      "N’hésitez pas à vous réinscrire si vous changez d’avis !", // Message de l'alerte
-      [
-        {
-          text: "OK", // Bouton de confirmation
-          onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
-        },
-      ],
-      { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
-    );
+      // Afficher une alerte personnalisée
+      Alert.alert(
+        "Désinscription enregistrée", // Titre de l'alerte
+        "N’hésitez pas à vous réinscrire si vous changez d’avis !", // Message de l'alerte
+        [
+          {
+            text: "OK", // Bouton de confirmation
+            onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
+          },
+        ],
+        { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
+      );
       setIsRegistered(false);
 
       // Supprimer l'utilisateur de la liste des participants
@@ -306,47 +306,49 @@ export default function EventDetails({ route }) {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Image en-tête */}
         <View style={styles.imageContainer}>
-      {isLoading && (
-        <ActivityIndicator
-          size="large"
-          color="#535353"
-          style={styles.loader}
-        />
-      )}
-      {/* Carrousel d'images */}
-      <FlatList
-        data={event.photos} // Tableau des photos
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <Image
-            source={{
-              uri: item.url || "https://via.placeholder.com/600",
+          {isLoading && (
+            <ActivityIndicator
+              size="large"
+              color="#535353"
+              style={styles.loader}
+            />
+          )}
+          {/* Carrousel d'images */}
+          <FlatList
+            data={event.photos} // Tableau des photos
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <Image
+                source={{
+                  uri: item.url || "https://via.placeholder.com/600",
+                }}
+                style={styles.image}
+                onLoad={() => setIsLoading(false)} // Une fois l'image chargée
+              />
+            )}
+            onScroll={(e) => {
+              const scrollPosition = e.nativeEvent.contentOffset.x;
+              setCurrentIndex(
+                Math.round(scrollPosition / Dimensions.get("window").width)
+              );
             }}
-            style={styles.image}
-            onLoad={() => setIsLoading(false)} // Une fois l'image chargée
           />
-        )}
-        onScroll={(e) => {
-          const scrollPosition = e.nativeEvent.contentOffset.x;
-          setCurrentIndex(Math.round(scrollPosition / Dimensions.get("window").width));
-        }}
-      />
-      {/* Indicateurs (dots) */}
-      <View style={styles.indicatorContainer}>
-        {event.photos?.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.indicator,
-              currentIndex === index ? styles.activeIndicator : null,
-            ]}
-          />
-        ))}
-      </View>
-    </View>
+          {/* Indicateurs (dots) */}
+          <View style={styles.indicatorContainer}>
+            {event.photos?.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.indicator,
+                  currentIndex === index ? styles.activeIndicator : null,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
 
         {/* Titre et Actions */}
         <View style={styles.header}>
@@ -405,38 +407,38 @@ export default function EventDetails({ route }) {
         </View>
 
         {/* Description */}
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>
-          {event.description || "Description indisponible"}
-        </Text>
-
-        {/* Liste des participants */}
-        <Text style={styles.sectionMember}>Liste des participants</Text>
-        {event.attendees.length > 0 ? (
-          event.attendees.map((attendee, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.participant}
-              onPress={() => navigateToUserProfile(attendee.user.id.toString())} // Navigation au clic
-            >
-              <Image
-                source={{
-                  uri:
-                    attendee.user.photos?.[0]?.url ||
-                    "https://via.placeholder.com/150",
-                }}
-                style={styles.participantPhoto}
-              />
-              <Text style={styles.participantName}>
-                {getDisplayName(attendee.user)}
-              </Text>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text style={styles.noParticipants}>
-            Aucun participant inscrit pour le moment.
+        <View style={styles.participantListContainer}>
+  <Text style={styles.sectionMember}>Liste des participants</Text>
+  {event.attendees.length > 0 ? (
+    <ScrollView contentContainerStyle={styles.participantList}>
+      {event.attendees.map((attendee, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.participant}
+          onPress={() =>
+            navigateToUserProfile(attendee.user.id.toString())
+          }
+        >
+          <Image
+            source={{
+              uri:
+                attendee.user.photos?.[0]?.url ||
+                "https://via.placeholder.com/150",
+            }}
+            style={styles.participantPhoto}
+          />
+          <Text style={styles.participantName}>
+            {getDisplayName(attendee.user)}
           </Text>
-        )}
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  ) : (
+    <Text style={styles.noParticipants}>
+      Aucun participant inscrit pour le moment.
+    </Text>
+  )}
+</View>
       </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
@@ -446,7 +448,6 @@ export default function EventDetails({ route }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    height: "100%",
     backgroundColor: "#f9f9f9",
     paddingHorizontal: 15,
   },
@@ -540,6 +541,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 10,
+  },
+  participantListContainer: {
+    flex: 1, // Le conteneur utilise tout l'espace disponible
+    marginBottom: 120, // Pour espacer les derniers participants
   },
   participantList: {
     marginTop: 10,

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/Sidebar";
+import { Linking } from "react-native";
+import MairieInfoCard from "../components/MairieInfoCard";
 
 export default function CityScreen({ navigation }) {
   const { unreadCount } = useNotification(); // Récupération du compteur
@@ -10,6 +12,10 @@ export default function CityScreen({ navigation }) {
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
+  };
+
+  const handlePressPhoneNumber = () => {
+    Linking.openURL("tel:0320440251");
   };
 
   return (
@@ -50,11 +56,10 @@ export default function CityScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View>
-        <Text style={styles.title}>
-            Bienvenue sur la page de ville !
-        </Text>
-      </View>
+      <ScrollView style={styles.containerInfo}>
+      <MairieInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
+       
+      </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
   );
@@ -77,13 +82,12 @@ const styles = StyleSheet.create({
     paddingTop: 45,
   },
   headerTitleNav: {
-    fontSize: 16,
+    fontSize: 35,
     fontWeight: "bold",
     color: "#fff", // Couleur blanche
     letterSpacing: 2, // Espacement pour un effet moderne
     textAlign: "center",
-    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
-
+    fontFamily: 'BebasNeue', // Utilisez le nom de la police que vous avez défini
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -112,5 +116,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     justifyContent: "center",
     marginTop: 20,
-  }
+  },
+  containerInfo: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+
 });

@@ -158,7 +158,7 @@ const handleScroll = (event) => {
             <Icon
               name="menu"
               size={28}
-              color="#CBCBCB"
+              color="#fff"
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
@@ -167,7 +167,7 @@ const handleScroll = (event) => {
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
             <View>
-              <Icon name="notifications" size={28} color="#CBCBCB" />
+              <Icon name="notifications" size={28} color="#fff" />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -184,7 +184,7 @@ const handleScroll = (event) => {
   };
 
   const [fontsLoaded] = useFonts({
-    'Starborn': require('../frontend/assets/fonts/Starborn.ttf'), // Assurez-vous que le chemin est correct
+    'BebasNeue': require('../frontend/assets/fonts/BebasNeue.ttf'), // Assurez-vous que le chemin est correct
   });
 
   if (!fontsLoaded) {
@@ -278,7 +278,7 @@ const handleScroll = (event) => {
           style={{
             width: 40,
             height: 40,
-            backgroundColor: focused ? "#CBCBCB" : "transparent",
+            backgroundColor: focused ? "#fff" : "transparent",
             borderRadius: 25,
             justifyContent: "center",
             alignItems: "center",
@@ -541,10 +541,10 @@ const styles = StyleSheet.create({
     height: 100, // Hauteur ajustée
   },
   headerTitle: {
-    fontSize: 25,
+    fontSize: 35,
     color: '#fff', // Couleur dorée ou autre
-    letterSpacing:0,
-    fontFamily: 'Starborn', // Utilisez le nom de la police que vous avez défini
+    letterSpacing:2,
+    fontFamily: 'BebasNeue', // Utilisez le nom de la police que vous avez défini
   },
   badge: {
     position: "absolute",

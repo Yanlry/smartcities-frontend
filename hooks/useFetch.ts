@@ -11,7 +11,7 @@ export const useFetch = (url: string) => {
         const response = await api.get(url);
         setData(response.data);
       } catch (error) {
-        console.error('Erreur lors de la récupération des données', error);
+        console.error('Erreur lors de la récupération des données ', error);
       } finally {
         setLoading(false);
       }

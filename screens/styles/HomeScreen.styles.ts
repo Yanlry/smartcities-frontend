@@ -634,7 +634,7 @@ export default StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#CBCBCB",
+    color: "#535353",
   },
   eventDetails: {
     fontSize: 14,

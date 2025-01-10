@@ -854,7 +854,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </ScrollView>
       )}
 
-<Text style={styles.sectionTitle}>🎉 Événements à venir à {formattedCommune}</Text>
+<Text style={styles.sectionTitle}>🎉 Événements à venir</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#3498db" />
       ) : error ? (

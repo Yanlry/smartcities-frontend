@@ -598,12 +598,12 @@ const styles = StyleSheet.create({
     paddingTop: 45,
   },
   headerTitleNav: {
-    fontSize: 16,
+    fontSize: 35,
     fontWeight: "bold",
     color: "#fff", // Couleur blanche
     letterSpacing: 2, // Espacement pour un effet moderne
     textAlign: "center",
-    fontFamily: "Starborn", // Utilisez le nom de la police que vous avez défini
+    fontFamily: "BebasNeue", // Utilisez le nom de la police que vous avez défini
   },
   typeBadgeNav: {
     flexDirection: "row",
