@@ -84,6 +84,7 @@ const handleScroll = (event) => {
     const remainingKeys = await AsyncStorage.getAllKeys();
     console.log("Clés après suppression :", remainingKeys); // Validez que tout est supprimé
   };
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -104,34 +105,6 @@ const handleScroll = (event) => {
     initializeApp();
   }, []);
 
-  // useEffect(() => {
-  //   const initializeApp = async () => {
-  //     try {
-  //       const token = await getToken();
-  //       const userId = await getUserId();
-  
-  //       console.log('Token récupéré depuis AsyncStorage :', token);
-  //       console.log('ID utilisateur récupéré depuis AsyncStorage :', userId);
-  
-  //       if (token && userId && !isTokenExpired(token)) {
-  //         console.log('Session restaurée, utilisateur connecté.');
-  //         setIsLoggedIn(true);
-  //       } else {
-  //         console.log('Token ou ID utilisateur manquant/expiré.');
-  //         await clearAll(); // Nettoyer si la session est invalide
-  //         setIsLoggedIn(false);
-  //       }
-  //     } catch (error) {
-  //       console.error('Erreur lors de l\'initialisation de l\'application :', error);
-  //       setIsLoggedIn(false);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  
-  //   initializeApp();
-  // }, []);
-  
   const handleLogout = async () => {
     try {
       await clearAllTokens();
@@ -157,8 +130,8 @@ const handleScroll = (event) => {
           <TouchableOpacity onPress={toggleSidebar}>
             <Icon
               name="menu"
-              size={28}
-              color="#fff"
+              size={24}
+              color="#F7F2DE"
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
@@ -167,7 +140,7 @@ const handleScroll = (event) => {
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
             <View>
-              <Icon name="notifications" size={28} color="#fff" />
+              <Icon name="notifications" size={24} color="#F7F2DE" />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -179,12 +152,13 @@ const handleScroll = (event) => {
       </Animated.View>
     );
   };
+
   const EmptyScreen = () => {
     return null; // Écran vide intentionnellement
   };
 
   const [fontsLoaded] = useFonts({
-    'BebasNeue': require('../frontend/assets/fonts/BebasNeue.ttf'), // Assurez-vous que le chemin est correct
+    'Insanibc': require('../frontend/assets/fonts/Insanibc.ttf'), // Assurez-vous que le chemin est correct
   });
 
   if (!fontsLoaded) {
@@ -192,7 +166,6 @@ const handleScroll = (event) => {
   }
 
 
-  
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -217,6 +190,8 @@ const handleScroll = (event) => {
         return null;
       }
     };
+
+    
   
     // Récupérer l'ID utilisateur lors du chargement
     useEffect(() => {
@@ -234,7 +209,7 @@ const handleScroll = (event) => {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#535353" />
+          <ActivityIndicator size="large" color="#2A2B2A" />
         </View>
       );
     }
@@ -278,7 +253,7 @@ const handleScroll = (event) => {
           style={{
             width: 40,
             height: 40,
-            backgroundColor: focused ? "#fff" : "transparent",
+            backgroundColor: focused ? "#F7F2DE" : "transparent",
             borderRadius: 25,
             justifyContent: "center",
             alignItems: "center",
@@ -287,7 +262,7 @@ const handleScroll = (event) => {
           <Icon
             name={iconName}
             size={focused ? size + 5 : size}
-            color={focused ? "#535353" : "#fff"}
+            color={focused ? "#2A2B2A" : "#F7F2DE"}
           />
         </View>
       );
@@ -297,14 +272,13 @@ const handleScroll = (event) => {
       height: 70,
       paddingTop: 10,
       paddingHorizontal: 10,
-      backgroundColor: "#535353",
+      backgroundColor: "#2A2B2A",
       position: "absolute",
       shadowColor: "#000",
       shadowOffset: { width: 0, height: -5 },
       shadowOpacity: 0.1,
       shadowRadius: 10,
       elevation: 10,
-      borderRadius: 20,
     },
   })}
 >
@@ -532,34 +506,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#535353", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingTop: 50, // Marge en haut
-    paddingVertical: 20,
+    backgroundColor: "#2A2B2A", // Couleur sombre
+  paddingTop: 40,
     paddingHorizontal: 20,
-    height: 100, // Hauteur ajustée
+    height: 90, // Hauteur ajustée
   },
   headerTitle: {
-    fontSize: 35,
-    color: '#fff', // Couleur dorée ou autre
+    fontSize: 30,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: '#2A2B2A', // Couleur dorée ou autre
+    backgroundColor: '#F7F2DE',
     letterSpacing:2,
-    fontFamily: 'BebasNeue', // Utilisez le nom de la police que vous avez défini
+    fontWeight: 'bold',
+    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
+    top: -8,
+    right: -8,
     backgroundColor: "red",
     borderRadius: 10,
-    width: 20,
-    height: 20,
+    width: 15,
+    height: 15,
     justifyContent: "center",
     alignItems: "center",
   },
   badgeText: {
     color: "white",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "bold",
   },
 });

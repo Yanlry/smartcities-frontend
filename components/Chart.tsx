@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "#535353",
+    color: "#2A2B2A",
   },
   chart: {
     borderRadius: 16,

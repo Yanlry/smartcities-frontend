@@ -175,8 +175,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#535353" />
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#535353" }}>
+        <ActivityIndicator size="large" color="#2A2B2A" />
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#2A2B2A" }}>
           Chargement des informations..
         </Text>
       </View>
@@ -454,8 +454,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
             name="menu"
-            size={28}
-            color="#CBCBCB" // Couleur dorée
+            size={24}
+            color="#F7F2DE" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -472,8 +472,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           <View>
             <Icon
               name="notifications"
-              size={28}
-              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
+              size={24}
+              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (

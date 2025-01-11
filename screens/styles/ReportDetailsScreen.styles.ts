@@ -9,21 +9,21 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#535353", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingVertical: 20,
+    backgroundColor: "#2A2B2A", // Couleur sombre
+    paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 35,
-    fontWeight: "bold",
-    color: "#fff", // Couleur blanche
-    letterSpacing: 2, // Espacement pour un effet moderne
-    textAlign: "center",
-    fontFamily: 'BebasNeue', // Utilisez le nom de la police que vous avez défini
-
+    fontSize: 20,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: '#2A2B2A', // Couleur dorée ou autre
+    backgroundColor: '#F7F2DE',
+    letterSpacing:2,
+    fontWeight: 'bold',
+    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
@@ -54,10 +54,7 @@ export default StyleSheet.create({
   mapContainer: {
     height: 350,
     backgroundColor: "#f4f4f4", // Ajout d'un fond clair autour de la carte
-    borderRadius: 10,
     overflow: "hidden", // Assurez-vous que la carte reste à l'intérieur des bordures
-
-    marginTop: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -101,10 +98,10 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   upVoteButton: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
   },
   downVoteButton: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
   },
   voteTextUp: {
     marginTop: 5,
@@ -122,7 +119,7 @@ export default StyleSheet.create({
   commentContainer: {
     marginTop: 5,
     padding: 10,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     borderRadius: 5,
   },
   commentText: {

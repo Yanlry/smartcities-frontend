@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 15,
-    color: "#535353",
+    color: "#2A2B2A",
   },
 
   // ------------------------------------------------ SIGNALEMENT RESOLUS
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
     marginBottom: 5,
   },
   mayorName: {
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
   },
   officeContact: {
     fontSize: 14,
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#535353",
+    color: "#2A2B2A",
   },
   smarterItem: {
     alignItems: "center",
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     zIndex: 1, // Assure que la médaille est au-dessus de l'image
   },
   seeAllButton: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,

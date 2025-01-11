@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
-    backgroundColor: "#f9f9f9", // Subtle off-white background
+    backgroundColor: "#F2F4F7", // Subtle off-white background
     marginBottom: 20,
   },
   modalTitle: {

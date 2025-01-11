@@ -9,7 +9,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  Animated,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CalendarPicker from "react-native-calendar-picker";
@@ -316,7 +316,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#535353" />
+        <ActivityIndicator size="large" color="#102542" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
@@ -343,8 +343,8 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (loadingReports) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#535353" />
-        <Text style={{ color: "#535353" }}>Chargement en cours...</Text>
+        <ActivityIndicator size="large" color="#102542" />
+        <Text style={{ color: "#102542" }}>Chargement en cours...</Text>
       </View>
     );
   }
@@ -352,7 +352,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (!reports || reports.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#535353" />
+        <ActivityIndicator size="large" color="#102542" />
         <Text style={styles.loadingText}>Chargement des signalements...</Text>
       </View>
     );
@@ -361,7 +361,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (!stats || !stats.votes) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#535353" />
+        <ActivityIndicator size="large" color="#102542" />
         <Text style={styles.loadingText}>Chargement des votes...</Text>
       </View>
     );
@@ -597,7 +597,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 <Ionicons
                   name="chevron-down-outline"
                   size={24}
-                  color="#535353"
+                  color="#102542"
                 />
               </TouchableOpacity>
             </View>
@@ -609,43 +609,40 @@ export default function HomeScreen({ navigation, handleScroll }) {
               onRequestClose={() => setModalNameVisible(false)}
             >
               <View style={styles.modalOverlay}>
-                <View style={styles.modalContainerName}>
-                  <Text style={styles.modalTitleName}>
-                    Préférence d'affichage
-                  </Text>
-                  <FlatList
-                    data={[
-                      {
-                        label: "Utiliser mon nom et prénom",
-                        value: "fullName",
-                      },
-                      {
-                        label: "Utiliser mon nom d'utilisateur",
-                        value: "username",
-                      },
-                    ]}
-                    keyExtractor={(item) => item.value}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.optionItem}
-                        onPress={() =>
-                          handleOptionChange(
-                            item.value as "fullName" | "username"
-                          )
-                        }
-                      >
-                        <Text style={styles.optionText}>{item.label}</Text>
-                      </TouchableOpacity>
-                    )}
-                  />
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setModalNameVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>Fermer</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+      <View style={styles.modalContainerName}>
+        <Text style={styles.modalTitleName}>Indiquez votre préférence pour votre identité visible</Text>
+        <FlatList
+          data={[
+            {
+              label: "Mon nom et prénom",
+              value: true,
+            },
+            {
+              label: "Mon nom d'utilisateur",
+              value: false,
+            },
+          ]}
+          keyExtractor={(item) => item.value.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.optionItem}>
+              <Text style={styles.optionText}>{item.label}</Text>
+              <Switch
+                value={user?.useFullName === item.value} // Active si l'option correspond
+                onValueChange={() => handleOptionChange(item.value ? "fullName" : "username")}
+                trackColor={{ false: "#CCCCCC", true: "#4CAF50" }}
+                thumbColor="#FFF"
+              />
+            </View>
+          )}
+        />
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => setModalNameVisible(false)}
+        >
+          <Text style={styles.closeButtonText}>Fermer</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
             </Modal>
 
             <Text style={styles.userCity}>
@@ -808,51 +805,51 @@ export default function HomeScreen({ navigation, handleScroll }) {
       </View>
 
       <Text style={styles.sectionTitle}>🚨 Signalements à proximité</Text>
-      {reports.length === 0 ? (
-        <View style={styles.emptyStateContainer}>
-          <Text style={styles.noReportsText}>
-            Aucun signalement pour l'instant.
+{reports.length === 0 ? (
+  <View style={styles.emptyStateContainer}>
+    <Text style={styles.noReportsText}>Aucun signalement pour l'instant.</Text>
+  </View>
+) : (
+  <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+    {reports.map((report, index) => (
+      <TouchableOpacity
+        key={report.id}
+        style={[
+          styles.reportCard,
+          {
+            borderLeftColor: typeColors[report.type] || "#CCCCCC",
+            borderRightColor: typeColors[report.type] || "#CCCCCC",
+            backgroundColor: hexToRgba(
+              typeColors[report.type] || "#F5F5F5",
+              calculateOpacity(report.createdAt, 0.15)
+            ),
+          },
+          index === reports.length - 1 && { marginBottom: 25 },
+        ]}
+        onPress={() => handlePressReport(report.id)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.cardHeader}>
+          <Text numberOfLines={1} style={styles.reportType}>
+            {report.title}
+          </Text>
+          <Text style={styles.reportDistance}>
+            {report.distance.toFixed(2)} km
           </Text>
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-          {reports.map((report, index) => (
-            <TouchableOpacity
-              key={report.id}
-              style={[
-                styles.reportCard,
-                {
-                  borderLeftColor: typeColors[report.type] || "#CCCCCC",
-                  borderRightColor: typeColors[report.type] || "#CCCCCC",
-                  backgroundColor: hexToRgba(
-                    typeColors[report.type] || "#F5F5F5",
-                    calculateOpacity(report.createdAt, 0.15)
-                  ),
-                },
-                index === reports.length - 1 && { marginBottom: 25 },
-              ]}
-              onPress={() => handlePressReport(report.id)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.reportType}>{report.title}</Text>
-                <Text style={styles.reportDistance}>
-                  {report.distance.toFixed(2)} km
-                </Text>
-              </View>
-              <Text style={styles.reportDetails}>
-                {getTypeLabel(report.type)}
-              </Text>
-              <View style={styles.cardFooter}>
-                <Text style={styles.reportCity}>{formatCity(report.city)}</Text>
-                <Text style={styles.reportTime}>
-                  {formatTime(report.createdAt)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+        <Text style={styles.reportDetails}>{getTypeLabel(report.type)}</Text>
+        <View style={styles.cardFooter}>
+          <Text numberOfLines={1} style={styles.reportCity}>
+            {formatCity(report.city)}
+          </Text>
+          <Text style={styles.reportTime}>
+            {formatTime(report.createdAt)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+)}
 
 <Text style={styles.sectionTitle}>🎉 Événements à venir</Text>
       {loading ? (

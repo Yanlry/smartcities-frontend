@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  ScrollView
+  ScrollView,
+  Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
@@ -30,6 +31,7 @@ interface Post {
   content?: string;
   likesCount?: number;
   comments?: Comment[];
+  photos?: string[]; // Ajoutez les photos ici
 }
 
 interface Comment {
@@ -63,7 +65,8 @@ export default function PostDetailsScreen({ navigation }) {
   const { unreadCount } = useNotification(); // Récupération du compteur
   const [userId, setUserId] = useState<number | null>(null);
   const scaleValue = useRef(new Animated.Value(1)).current;
-
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   // Animation infinie
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -86,26 +89,38 @@ export default function PostDetailsScreen({ navigation }) {
   }, [scaleValue]);
 
   const fetchPostDetails = async () => {
+    setLoading(true); // Démarre le loader
+
     try {
       const response = await fetch(`${API_URL}/posts/${postId}`);
       if (!response.ok) {
-        // Si le post n'est pas trouvé (par exemple, 404)
-        setPost(null);
+        console.error(`Erreur HTTP: ${response.status}`);
+        setPost(null); // Définit le post à null si le post n'est pas trouvé
         return;
       }
+
       const data = await response.json();
-  
-      // Si le post est vide ou invalide
+      console.log("Données récupérées :", data);
+
+      // Vérifie si le post est vide ou invalide
       if (!data || Object.keys(data).length === 0) {
-        setPost(null);
+        setPost(null); // Définit le post à null en cas de données invalides
       } else {
-        setPost(data);
+        // Ajoute des valeurs par défaut pour éviter des erreurs d'affichage
+        const formattedPost = {
+          ...data,
+          photos: data.photos || [], // Définit un tableau vide si les photos sont absentes
+          authorName: data.authorName || "Utilisateur inconnu", // Définit un nom par défaut si absent
+          profilePhoto: data.profilePhoto || "https://via.placeholder.com/150", // URL par défaut pour la photo de profil
+        };
+
+        setPost(formattedPost); // Met à jour le post avec les données formatées
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du post :", error);
-      setPost(null); // Si une erreur survient, considérer que le post est inexistant
+      setPost(null); // Définit le post à null en cas d'erreur
     } finally {
-      setLoading(false);
+      setLoading(false); // Arrête le loader
     }
   };
 
@@ -515,24 +530,31 @@ export default function PostDetailsScreen({ navigation }) {
           style={styles.image}
         />
         <Text style={styles.text}>
-        Oups ! Ce que vous cherchez semble s’être envolé 😢
+          Oups ! Ce que vous cherchez semble s’être envolé 😢
         </Text>
         <Text style={styles.subtext}>
           Revenez bientôt ou explorez d'autres contenus intéressants !
         </Text>
-  
+
         {/* Bouton pour revenir en arrière */}
-        <Animated.View style={[styles.buttonWrapper, { transform: [{ scale: scaleValue }] }]}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.goBack()} // Revenir à l'écran précédent
+        <Animated.View
+          style={[styles.buttonWrapper, { transform: [{ scale: scaleValue }] }]}
         >
-          <Text style={styles.buttonText}>Retour</Text>
-        </TouchableOpacity>
-      </Animated.View>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.goBack()} // Revenir à l'écran précédent
+          >
+            <Text style={styles.buttonText}>Retour</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     );
   }
+
+  const handlePhotoPress = (photo) => {
+    setSelectedPhoto(photo); // Stocke l'URI de la photo sélectionnée
+    setIsModalVisible(true); // Affiche le modal
+  };
 
   return (
     <View>
@@ -542,7 +564,7 @@ export default function PostDetailsScreen({ navigation }) {
           <Icon
             name="menu"
             size={28}
-            color="#CBCBCB" // Couleur dorée
+            color="#F7F2DE" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -560,7 +582,7 @@ export default function PostDetailsScreen({ navigation }) {
             <Icon
               name="notifications"
               size={28}
-              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
+              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -574,98 +596,136 @@ export default function PostDetailsScreen({ navigation }) {
 
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <ScrollView>
-      <View style={styles.postContainer}>
-        {/* En-tête du post */}
-        <View style={styles.postHeader}>
-          {/* Avatar de l'auteur */}
-          <Image
-            source={{
-              uri: post.profilePhoto || "https://via.placeholder.com/150",
-            }}
-            style={styles.avatar}
-          />
+        <View style={styles.postContainer}>
+          {/* En-tête du post */}
+          <View style={styles.postHeader}>
+            {/* Avatar de l'auteur */}
+            <Image
+              source={{
+                uri: post.profilePhoto || "https://via.placeholder.com/150",
+              }}
+              style={styles.avatar}
+            />
 
-          {/* Informations sur l'auteur et la date */}
-          <View style={styles.postInfo}>
-            <Text style={styles.userName}>
-              {post.authorName || "Utilisateur inconnu"}
-            </Text>
-            <Text style={styles.timestamp}>
-              {post.createdAt
-                ? new Intl.DateTimeFormat("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }).format(new Date(post.createdAt))
-                : "Date inconnue"}
-            </Text>
+            {/* Informations sur l'auteur et la date */}
+            <View style={styles.postInfo}>
+              <Text style={styles.userName}>
+                {post.authorName || "Utilisateur inconnu"}
+              </Text>
+              <Text style={styles.timestamp}>
+                {post.createdAt
+                  ? new Intl.DateTimeFormat("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(post.createdAt))
+                  : "Date inconnue"}
+              </Text>
+            </View>
+
+            {/* Bouton de suppression visible uniquement si l'utilisateur est l'auteur */}
+            {post.authorId && userId && `${post.authorId}` === `${userId}` && (
+              <TouchableOpacity
+                style={styles.deleteIconPost}
+                onPress={() => handleDeletePost(post.id)}
+              >
+                <Icon name="delete" size={20} color="red" />
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Bouton de suppression visible uniquement si l'utilisateur est l'auteur */}
-          {post.authorId && userId && `${post.authorId}` === `${userId}` && (
+          {/* Contenu du post */}
+          <Text style={styles.postText}>
+            {post.content || "Contenu indisponible"}
+          </Text>
+
+          {/* Affichage des photos */}
+          {post.photos && post.photos.length > 0 && (
+            <View style={styles.photosContainer}>
+              {post.photos.map((photo, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handlePhotoPress(photo)} // Ajouter un agrandissement de l'image
+                >
+                  <Image source={{ uri: photo }} style={styles.postPhoto} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          <Modal
+            visible={isModalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsModalVisible(false)} // Ferme le modal avec "Retour"
+          >
+            <View style={styles.modalBackground}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsModalVisible(false)} // Ferme le modal
+              >
+                <Text style={styles.closeText}>X</Text>
+              </TouchableOpacity>
+              {selectedPhoto && (
+                <Image
+                  source={{ uri: selectedPhoto }}
+                  style={styles.fullscreenPhoto}
+                />
+              )}
+            </View>
+          </Modal>
+
+          {/* Actions du post */}
+          <View style={styles.postActions}>
             <TouchableOpacity
-              style={styles.deleteIconPost}
-              onPress={() => handleDeletePost(post.id)}
+              onPress={() => handleLike(post.id)}
+              style={styles.likeButton}
             >
-              <Icon name="delete" size={20} color="red" />
+              <View style={styles.likeButtonContent}>
+                <Icon
+                  name="thumb-up"
+                  size={16}
+                  color="#fff"
+                  style={styles.likeIcon}
+                />
+                <Text style={styles.likeButtonText}>
+                  {post.likesCount || 0}
+                </Text>
+              </View>
             </TouchableOpacity>
+          </View>
+
+          {/* Ajouter un commentaire */}
+          <View style={styles.addCommentContainer}>
+            <TextInput
+              style={styles.addCommentInput}
+              placeholder="Écrivez un commentaire..."
+              value={commentInputs[post.id] || ""}
+              onChangeText={(text) =>
+                setCommentInputs((prev) => ({ ...prev, [post.id]: text }))
+              }
+            />
+            <TouchableOpacity
+              onPress={() => handleAddComment(post.id)}
+              style={styles.addCommentButton}
+            >
+              <Text style={styles.addCommentButtonText}>Publier</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Section des commentaires */}
+          {post.comments && post.comments.length > 0 ? (
+            <View style={styles.commentsSection}>
+              {post.comments
+                .filter((comment) => comment.parentId === null)
+                .map((comment) => renderComment(comment))}
+            </View>
+          ) : (
+            <Text style={styles.noPost}>Aucun commentaire pour le moment</Text>
           )}
         </View>
-
-        {/* Contenu du post */}
-        <Text style={styles.postText}>
-          {post.content || "Contenu indisponible"}
-        </Text>
-
-        {/* Actions du post */}
-        <View style={styles.postActions}>
-          <TouchableOpacity
-            onPress={() => handleLike(post.id)}
-            style={styles.likeButton}
-          >
-            <View style={styles.likeButtonContent}>
-              <Icon
-                name="thumb-up"
-                size={16}
-                color="#fff"
-                style={styles.likeIcon}
-              />
-              <Text style={styles.likeButtonText}>{post.likesCount || 0}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Ajouter un commentaire */}
-        <View style={styles.addCommentContainer}>
-          <TextInput
-            style={styles.addCommentInput}
-            placeholder="Écrivez un commentaire..."
-            value={commentInputs[post.id] || ""}
-            onChangeText={(text) =>
-              setCommentInputs((prev) => ({ ...prev, [post.id]: text }))
-            }
-          />
-          <TouchableOpacity
-            onPress={() => handleAddComment(post.id)}
-            style={styles.addCommentButton}
-          >
-            <Text style={styles.addCommentButtonText}>Publier</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Section des commentaires */}
-        {post.comments && post.comments.length > 0 ? (
-          <View style={styles.commentsSection}>
-            {post.comments
-              .filter((comment) => comment.parentId === null)
-              .map((comment) => renderComment(comment))}
-          </View>
-        ) : (
-          <Text style={styles.noPost}>Aucun commentaire pour le moment</Text>
-        )}
-      </View>
       </ScrollView>
     </View>
   );
@@ -683,26 +743,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
+  },
+  photosContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
+  postPhoto: {
+    width: 315,
+    height: 300,
+    margin: 5,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#535353", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingVertical: 20,
+    backgroundColor: "#2A2B2A", // Couleur sombre
+    paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: "#2A2B2A", // Couleur dorée ou autre
+    backgroundColor: "#F7F2DE",
+    letterSpacing: 2,
     fontWeight: "bold",
-    color: "#fff", // Couleur blanche
-    letterSpacing: 2, // Espacement pour un effet moderne
-    textAlign: "center",
+    fontFamily: "Insanibc", // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
@@ -711,12 +785,12 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
+    top: -7,
+    right: 2,
     backgroundColor: "red",
     borderRadius: 10,
-    width: 20,
-    height: 20,
+    width: 15,
+    height: 15,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -774,7 +848,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   likeButton: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -814,7 +888,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -827,7 +901,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   showMoreText: {
-    color: "#535353",
+    color: "#2A2B2A",
     fontWeight: "bold",
     fontSize: 14,
     marginTop: 5,
@@ -903,8 +977,9 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   timestampComment: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#888",
+    marginTop:2,
     marginBottom: 5,
   },
   commentText: {
@@ -948,11 +1023,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   button: {
-    backgroundColor: "#535353", // Couleur vive et chaude
+    backgroundColor: "#2A2B2A", // Couleur vive et chaude
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 50,
-    shadowColor: "#535353",
+    shadowColor: "#2A2B2A",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.8,
     shadowRadius: 10,
@@ -968,5 +1043,37 @@ const styles = StyleSheet.create({
     color: "#777",
     textAlign: "center",
     marginTop: 20,
+  },
+
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond semi-transparent
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullscreenPhoto: {
+    width: "90%",
+    height: "70%",
+    resizeMode: "contain", // S'assure que l'image ne déborde pas
+    borderRadius: 10,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 20,
+    padding: 10,
+  },
+  closeText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "black",
+  },
+  photoInGrid: {
+    width: "48%", // Adaptez selon votre style
+    aspectRatio: 1,
+    borderRadius: 8,
+    marginBottom: 10,
   },
 });

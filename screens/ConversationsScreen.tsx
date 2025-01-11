@@ -255,7 +255,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#535353" />
+        <ActivityIndicator size="large" color="#2A2B2A" />
       ) : conversations.length > 0 ? (
         <FlatList
           data={conversations}
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     paddingTop: 120,
   },
   title: {

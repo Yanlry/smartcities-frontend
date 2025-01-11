@@ -262,7 +262,7 @@ export default function UserProfileScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#535353" />
+        <ActivityIndicator size="large" color="#2A2B2A" />
         <Text>Chargement du profil utilisateur...</Text>
       </View>
     );
@@ -287,8 +287,8 @@ export default function UserProfileScreen({ route, navigation }) {
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
             name="menu"
-            size={28}
-            color="#CBCBCB" // Couleur dorée
+            size={24}
+            color="#F7F2DE" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -302,8 +302,8 @@ export default function UserProfileScreen({ route, navigation }) {
         <TouchableOpacity onPress={openReportModal}>
           <Icon
             name="error"
-            size={28}
-            color="#CBCBCB"
+            size={24}
+            color="#F7F2DE"
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
@@ -576,28 +576,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#535353", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingVertical: 20,
+    backgroundColor: "#2A2B2A", // Couleur sombre
+    paddingVertical: 10,
     paddingHorizontal: 20,
-    paddingTop: 45,
+    paddingTop: 40,
   },
   headerTitle: {
-    fontSize: 35,
-    fontWeight: "bold",
-    color: "#fff", // Couleur blanche
-    letterSpacing: 2, // Espacement pour un effet moderne
-    textAlign: "center",
-    fontFamily: 'BebasNeue', // Utilisez le nom de la police que vous avez défini
-
+    fontSize: 20,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: '#2A2B2A', // Couleur dorée ou autre
+    backgroundColor: '#F7F2DE',
+    letterSpacing:2,
+    fontWeight: 'bold',
+    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-
   modalBackdrop: {
     position: "absolute",
     top: 0, // Occupe toute la hauteur
@@ -630,7 +629,7 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     marginTop: 10,
-    backgroundColor: "#f9f9f9", // Subtle off-white background
+    backgroundColor: "#F2F4F7", // Subtle off-white background
     marginBottom: 20,
   },
   modalTitle: {

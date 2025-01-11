@@ -22,7 +22,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center", // Centre le nombre horizontalement
     marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#535353", // Couleur sombre pour le nombre
+    color: "#2A2B2A", // Couleur sombre pour le nombre
   },
   statLabel: {
     textAlign: "center", // Centre le texte horizontalement
@@ -37,7 +37,7 @@ export default StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 20,
     padding: 10,
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     borderRadius: 30,
     alignItems: "center",
   },
@@ -49,7 +49,7 @@ export default StyleSheet.create({
     marginTop: 20,
     padding: 20,
     borderRadius: 35,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
   },
   inputCity: {
     height: 40,
@@ -72,7 +72,7 @@ export default StyleSheet.create({
   saveButton: {
     padding: 10,
     width: "40%",
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     borderRadius: 30,
   },
   saveButtonText: {
@@ -161,20 +161,21 @@ searchButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#535353", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingVertical: 20,
+    backgroundColor: "#2A2B2A", // Couleur sombre
+    paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
   },
   headerTitle: {
-    fontSize: 35,
-    fontWeight: "bold",
-    color: "#fff", // Couleur blanche
-    letterSpacing: 2, // Espacement pour un effet moderne
-    textAlign: "center",
-    fontFamily: 'BebasNeue', // Utilisez le nom de la police que vous avez défini
+    fontSize: 20,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: '#2A2B2A', // Couleur dorée ou autre
+    backgroundColor: '#F7F2DE',
+    letterSpacing:2,
+    fontWeight: 'bold',
+    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
@@ -183,12 +184,12 @@ searchButton: {
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
+    top: -7,
+    right: 2,
     backgroundColor: "red",
     borderRadius: 10,
-    width: 20,
-    height: 20,
+    width: 15,
+    height: 15,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -204,7 +205,7 @@ searchButton: {
     alignItems: "center", // Centrer le contenu horizontalement
     justifyContent: "center", // Centrer le contenu verticalement
     padding: 20, // Espacement interne pour respirer
-    backgroundColor: "#F9F9F9", // Fond clair pour contraster
+    backgroundColor: "#F2F4F7", // Fond clair pour contraster
     borderRadius: 15, // Coins arrondis
     shadowColor: "#000", // Ombre douce
     shadowOffset: { width: 0, height: 2 },
@@ -231,8 +232,8 @@ searchButton: {
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#535353",
-    shadowColor: "#535353",
+    backgroundColor: "#2A2B2A",
+    shadowColor: "#2A2B2A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -308,7 +309,7 @@ searchButton: {
     marginVertical: 10,
   },
   showEmail: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     justifyContent: "space-between",
     flexDirection: "row", // Place le texte et le switch côte à côte
     alignItems: "center", // Centre verticalement le texte et le switch
@@ -335,7 +336,7 @@ searchButton: {
   inputContainer: {
     flexDirection: "row", // Pour aligner l’icône à droite
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     borderRadius: 30,
     marginTop: 5,
   },
@@ -350,7 +351,7 @@ searchButton: {
     marginRight: 15,
   },
   inputDisabled: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     color: "#888",
   },
   buttonProfil: {
@@ -359,8 +360,8 @@ searchButton: {
     alignItems: "center",
     marginTop: 20,
     marginBottom: 20,
-    backgroundColor: "#535353",
-    shadowColor: "#535353",
+    backgroundColor: "#2A2B2A",
+    shadowColor: "#2A2B2A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,

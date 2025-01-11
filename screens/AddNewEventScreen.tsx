@@ -456,7 +456,7 @@ const handleSuggestionSelect = (item: any) => {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#535353" />
+          <ActivityIndicator size="large" color="#2A2B2A" />
         ) : (
           <TouchableOpacity
             onPress={() => setIsMapExpanded(true)} // Agrandit la carte au clic
@@ -544,7 +544,7 @@ const handleSuggestionSelect = (item: any) => {
 
         <View style={styles.submitButtonContainer}>
           {isSubmitting ? (
-            <ActivityIndicator size="large" color="#535353" />
+            <ActivityIndicator size="large" color="#2A2B2A" />
           ) : (
             <View style={styles.submitButton}>
               <TouchableOpacity

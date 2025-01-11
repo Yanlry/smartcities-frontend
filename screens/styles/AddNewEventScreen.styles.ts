@@ -4,7 +4,7 @@ export default StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     borderRadius: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },

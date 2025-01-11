@@ -148,12 +148,12 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#535353" />
+        <ActivityIndicator size="large" color="#2A2B2A" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
   }
-  535353;
+  
   if (!report) {
     return (
       <View style={styles.loadingContainer}>
@@ -181,7 +181,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           onPress={() => navigation.goBack()}
           style={{ marginLeft: 10 }} // Alignement gauche
         >
-          <Icon name="arrow-back-outline" size={28} color="#CBCBCB" />
+          <Icon name="arrow-back-outline" size={28} color="#F7F2DE" />
         </TouchableOpacity>
         <View style={styles.typeBadge}>
           <Image source={getTypeIcon(report.type)} style={styles.icon} />
@@ -194,74 +194,75 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <Icon
             name="notifications-outline"
             size={28}
-            color="#CBCBCB" // Couleur dorée
+            color="#F7F2DE" // Couleur dorée
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.container}>
         <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            onMapReady={() => {
-              if (mapRef.current) {
-                const camera = {
-                  center: {
-                    latitude: report.latitude,
-                    longitude: report.longitude,
-                  },
-                  pitch: 65,
-                  heading: 0,
-                  zoom: 15,
-                  altitude: 100,
-                };
-                mapRef.current.setCamera(camera); // Définit la caméra initiale
-              }
-            }}
-          >
-            {/* Marqueur pour la position actuelle */}
-            <Marker
-              coordinate={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-              }}
-              title="Votre position"
-              pinColor="red"
-            />
+        <MapView
+  ref={mapRef}
+  style={styles.map}
+  mapType="hybrid" // Choisissez "hybrid", "satellite" ou autre
+  onMapReady={() => {
+    if (mapRef.current) {
+      const camera = {
+        center: {
+          latitude: report.latitude,
+          longitude: report.longitude,
+        },
+        pitch: 65,
+        heading: 0,
+        zoom: 15,
+        altitude: 100,
+      };
+      mapRef.current.setCamera(camera); // Définit la caméra initiale
+    }
+  }}
+>
+  {/* Marqueur pour la position actuelle */}
+  <Marker
+    coordinate={{
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }}
+    title="Votre position"
+    pinColor="red"
+  />
 
-            {/* Marqueur pour le signalement avec style */}
-            <Marker
-              coordinate={{
-                latitude: report.latitude,
-                longitude: report.longitude,
-              }}
-              title={report.title}
-            >
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Image
-                  source={getTypeIcon(report.type)} // Dynamique selon le type de signalement
-                  style={{ width: 40, height: 40, resizeMode: "contain" }}
-                />
-              </View>
-            </Marker>
+  {/* Marqueur pour le signalement avec style */}
+  <Marker
+    coordinate={{
+      latitude: report.latitude,
+      longitude: report.longitude,
+    }}
+    title={report.title}
+  >
+    <View
+      style={{
+        width: 40,
+        height: 40,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Image
+        source={getTypeIcon(report.type)} // Dynamique selon le type de signalement
+        style={{ width: 40, height: 40, resizeMode: "contain" }}
+      />
+    </View>
+  </Marker>
 
-            {/* Ligne de tracé */}
-            {routeCoords.length > 0 && (
-              <Polyline
-                coordinates={routeCoords}
-                strokeColor="#535353" // Couleur du tracé
-                strokeWidth={5} // Épaisseur du tracé
-              />
-            )}
-          </MapView>
+  {/* Ligne de tracé */}
+  {routeCoords.length > 0 && (
+    <Polyline
+      coordinates={routeCoords}
+      strokeColor="#357DED" // Couleur du tracé
+      strokeWidth={5} // Épaisseur du tracé
+    />
+  )}
+</MapView>
 
           {/* Boutons de zoom */}
           <TouchableOpacity

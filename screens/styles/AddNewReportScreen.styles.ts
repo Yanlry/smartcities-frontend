@@ -53,7 +53,7 @@ export default StyleSheet.create({
     gap: 20,
   },
   card: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     borderRadius: 190,
     width: 300,
     padding: 40,

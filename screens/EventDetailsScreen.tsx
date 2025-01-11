@@ -273,15 +273,15 @@ export default function EventDetails({ route }) {
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
             name="menu"
-            size={28}
-            color="#CBCBCB" // Couleur dorée
+            size={24}
+            color="#F7F2DE" // Couleur dorée
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
 
         {/* Titre de la page */}
         <View style={styles.typeBadge}>
-          <Text style={styles.headerTitleNav}>MON PROFIL</Text>
+          <Text style={styles.headerTitleNav}>Événement</Text>
         </View>
 
         {/* Bouton de notifications avec compteur */}
@@ -291,8 +291,8 @@ export default function EventDetails({ route }) {
           <View>
             <Icon
               name="notifications"
-              size={28}
-              color={unreadCount > 0 ? "#CBCBCB" : "#CBCBCB"}
+              size={24}
+              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -309,7 +309,7 @@ export default function EventDetails({ route }) {
           {isLoading && (
             <ActivityIndicator
               size="large"
-              color="#535353"
+              color="#2A2B2A"
               style={styles.loader}
             />
           )}
@@ -448,7 +448,7 @@ export default function EventDetails({ route }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     paddingHorizontal: 15,
   },
   loading: {
@@ -492,25 +492,27 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeIndicator: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
   },
   headerNav: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#535353", // Couleur sombre
-    borderBottomLeftRadius: 50, // Arrondi en bas à gauche
-    borderBottomRightRadius: 50, // Arrondi en bas à droite
-    paddingVertical: 20,
+    backgroundColor: "#2A2B2A", // Couleur sombre
+    paddingVertical: 10,
     paddingHorizontal: 20,
-    paddingTop: 45,
+    paddingTop: 40,
   },
   headerTitleNav: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff", // Couleur blanche
-    letterSpacing: 2, // Espacement pour un effet moderne
-    textAlign: "center",
+    fontSize: 20,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: '#2A2B2A', // Couleur dorée ou autre
+    backgroundColor: '#F7F2DE',
+    letterSpacing:2,
+    fontWeight: 'bold',
+    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
@@ -519,12 +521,12 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
+    top: -7,
+    right: 2,
     backgroundColor: "red",
     borderRadius: 10,
-    width: 20,
-    height: 20,
+    width: 15,
+    height: 15,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -586,8 +588,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   button: {
-    backgroundColor: "#535353",
-    shadowColor: "#535353",
+    backgroundColor: "#2A2B2A",
+    shadowColor: "#2A2B2A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,

@@ -8,16 +8,18 @@ import {
   Image,
   TextInput,
   Alert,
+  ActivityIndicator
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import { useToken } from "../hooks/useToken";
-import Icon from "react-native-vector-icons/FontAwesome";
+import * as ImagePicker from "expo-image-picker";
+import Icon from "react-native-vector-icons/Ionicons";
 
 export default function SocialScreen({handleScroll}) {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { getUserId } = useToken();
   const [commentInputs, setCommentInputs] = useState({});
   const [visibleComments, setVisibleComments] = useState({}); // Pour gérer les commentaires visibles
@@ -25,7 +27,9 @@ export default function SocialScreen({handleScroll}) {
   const [replyInputs, setReplyInputs] = useState({});
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyVisibility, setReplyVisibility] = useState({});
-
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState(false); 
+ 
   useEffect(() => {
     const fetchUserId = async () => {
       const id = await getUserId();
@@ -36,11 +40,11 @@ export default function SocialScreen({handleScroll}) {
   }, []);
 
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(); // Appelle fetchPosts chaque fois que `refresh` change
   }, []);
 
   const fetchPosts = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/posts`);
       if (!response.ok) {
@@ -61,7 +65,7 @@ export default function SocialScreen({handleScroll}) {
         error.message || "Impossible de charger les publications."
       );
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -346,6 +350,24 @@ export default function SocialScreen({handleScroll}) {
           {item.content || "Contenu indisponible"}
         </Text>
 
+        {item.photos && item.photos.length > 0 && (
+  <View style={styles.photosRowContainer}>
+    {item.photos.slice(0, 3).map((photo, index) => ( // Affiche un maximum de 3 photos
+      <Image
+        key={index}
+        source={{ uri: photo }}
+        style={styles.photoRowItem}
+      />
+    ))}
+    {item.photos.length > 3 && (
+      <View style={styles.morePhotosOverlay}>
+        <Text style={styles.morePhotosText}>
+          +{item.photos.length - 3}
+        </Text>
+      </View>
+    )}
+  </View>
+)}
         {/* Actions du post */}
         <View style={styles.postActions}>
           <TouchableOpacity
@@ -545,29 +567,79 @@ export default function SocialScreen({handleScroll}) {
     );
   };
 
-  const handleAddPost = async () => {
-    if (newPostContent.trim()) {
-      try {
-        const userId = await getUserId();
-        const response = await fetch(`${API_URL}/posts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: newPostContent,
-            authorId: userId,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error("Erreur lors de la création de la publication");
-        }
-        setNewPostContent("");
-        fetchPosts();
-      } catch (error) {
-        Alert.alert(
-          "Erreur",
-          error.message || "Impossible de créer la publication."
-        );
+ const handleAddPost = async () => {
+    if (!newPostContent.trim()) {
+      Alert.alert("Erreur", "Le contenu de la publication est vide.");
+      return;
+    }
+
+    setIsLoading(true); // Active le loader
+
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        Alert.alert("Erreur", "Impossible de récupérer l'ID utilisateur.");
+        setIsLoading(false);
+        return;
       }
+
+      const formData = new FormData();
+      formData.append("content", newPostContent);
+      formData.append("authorId", userId.toString());
+
+      if (selectedImage) {
+        const filename = selectedImage.split("/").pop();
+        const fileType = filename ? filename.split(".").pop() : "jpg"; // Par défaut : JPG
+        formData.append("photos", {
+          uri: selectedImage,
+          name: filename,
+          type: `image/${fileType}`,
+        } as any);
+      }
+
+      const response = await fetch(`${API_URL}/posts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erreur lors de la création de la publication");
+      }
+
+      const newPost = await response.json();
+      console.log("Publication créée :", newPost);
+
+      // Réinitialiser les champs
+      setNewPostContent("");
+      setSelectedImage(null);
+
+      // Actualiser les posts après création
+      fetchPosts();
+
+      Alert.alert("Succès", "Votre publication a été créée avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de la création de la publication :", error);
+      Alert.alert("Erreur", error.message || "Impossible de créer la publication.");
+    } finally {
+      setIsLoading(false); // Désactive le loader
+    }
+  };
+
+   // Fonction pour ouvrir le sélecteur d'image
+   const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri); // Stocke l'URI de l'image sélectionnée
     }
   };
 
@@ -581,19 +653,35 @@ export default function SocialScreen({handleScroll}) {
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <View style={styles.newPostContainer}>
+          <View style={styles.inputRow}>
             <TextInput
               style={styles.newPostInput}
               placeholder="Quoi de neuf ?"
               value={newPostContent}
               onChangeText={setNewPostContent}
             />
-            <TouchableOpacity
-              style={styles.newPostButton}
-              onPress={handleAddPost}
-            >
-              <Text style={styles.newPostButtonText}>Publier</Text>
+            <TouchableOpacity style={styles.iconButton} onPress={handlePickImage}>
+              <Icon name="image-outline" size={24} color="#2A2B2A" />
             </TouchableOpacity>
           </View>
+    
+          {/* Afficher l'image sélectionnée */}
+          {selectedImage && (
+            <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+          )}
+    
+          <TouchableOpacity
+        style={styles.publishButton}
+        onPress={handleAddPost}
+        disabled={isLoading} // Désactiver le bouton si le loader est actif
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#FFF" /> // Loader
+        ) : (
+          <Text style={styles.publishButtonText}>Publier</Text>
+        )}
+      </TouchableOpacity>
+        </View>
         }
         contentContainerStyle={styles.postsList}
       />
@@ -608,7 +696,7 @@ const styles = StyleSheet.create({
   },
   newPostContainer: {
     padding: 15,
-    paddingTop: 120,
+    marginTop: 100,
     backgroundColor: "#fff",
     marginBottom: 10,
     marginHorizontal: 10,
@@ -633,6 +721,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
+
   postContainer: {
     backgroundColor: "#fff",
     marginBottom: 10,
@@ -654,7 +743,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   likeButton: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -681,6 +770,34 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 10,
   },
+  photosRowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  photoRowItem: {
+    width: "100%",
+    aspectRatio: 1, // Carré
+    borderRadius: 8,
+    resizeMode: "cover",
+    marginBottom: 10,
+  },
+  morePhotosOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    width: "30%",
+    aspectRatio: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  morePhotosText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
   addCommentInput: {
     flex: 1,
     backgroundColor: "#f7f7f7",
@@ -691,7 +808,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -703,28 +820,45 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
-  newPostInput: {
-    backgroundColor: "#f7f7f7",
-    padding: 10,
-    borderRadius: 38,
-    marginBottom: 10,
-  },
-  newPostButton: {
-    backgroundColor: "#535353",
-    paddingVertical: 10,
-    borderRadius: 30,
+  inputRow: {
+    flexDirection: "row",
     alignItems: "center",
   },
-  newPostButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  newPostInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 10,
+    padding: 10,
     fontSize: 16,
+    marginRight: 10,
+  },
+  iconButton: {
+    padding: 5,
+  },
+  previewImage: {
+    width: "100%",
+    height: 150,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  publishButton: {
+    backgroundColor: "#2A2B2A",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  publishButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   postsList: {
     paddingBottom: 10, // Conteneur pour les posts
   },
   showMoreText: {
-    color: "#535353",
+    color: "#c",
     fontWeight: "bold",
     fontSize: 14,
     marginTop: 5,

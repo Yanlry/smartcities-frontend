@@ -7,7 +7,7 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 20,
-    paddingTop: 100,
+    paddingTop: 90,
 
   },
   sectionTitle: {
@@ -15,7 +15,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 15,
-    color: "#535353",
+    color: "#2A2B2A",
   },
   //  ------------------------------------------------ LOADING
 
@@ -28,7 +28,7 @@ export default StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#535353",  
+    color: "#2A2B2A",  
   },
 
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
@@ -78,7 +78,7 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: "#f7f8fa",  
     padding: 20,
-    paddingTop: 120,
+    paddingTop: 110,
   },
   title: {
     fontSize: 24,
@@ -95,7 +95,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#535353",  
+    backgroundColor: "#2A2B2A",  
     borderRadius: 30,
   },
   backButtonText: {
@@ -156,7 +156,7 @@ export default StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
   },
   dropdownButton: {
     marginLeft: 8,
@@ -179,6 +179,12 @@ export default StyleSheet.create({
     shadowRadius: 4,
     alignItems: "center",
   },
+  optionContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
   modalTitleName: {
     fontSize: 18,
     fontWeight: "bold",
@@ -188,22 +194,22 @@ export default StyleSheet.create({
   },
   optionItem: {
     width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 15,
     paddingHorizontal: 20,
-    backgroundColor: "#535353",
-    borderRadius: 30,
-    marginTop: 10,
+    backgroundColor: "#F2F4F7",
+    borderRadius: 10,
     marginBottom: 10,
     alignItems: "center",
   },
   optionText: {
-    fontSize: 16,
-    color: "#f9f9f9",
-    fontWeight: "bold",
+    fontSize: 14,
+    color: "#111",
   },
   closeButton: {
-    marginTop: 20,
-    backgroundColor: "#d81b60",  
+    marginTop: 10,
+    backgroundColor: "#D91A20",  
     borderRadius: 30,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -214,13 +220,15 @@ export default StyleSheet.create({
     color: "#fff",
     textAlign: "center",
   },
+
+  
   userCity: {
     fontSize: 12,
     color: "#777", // Couleur par défaut pour le texte
     marginTop: 4,
   },
   cityNameUser: {
-    color: "#535353", // Texte de la ville en bleu
+    color: "#2A2B2A", // Texte de la ville en bleu
     fontWeight: "bold", // Optionnel pour mettre en valeur la ville
   },
   userDetails: {
@@ -259,7 +267,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F2F4F7",
     borderRadius: 15,
     padding: 12,
   },
@@ -269,7 +277,7 @@ export default StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
   },
   statLabel: {
     fontSize: 12,
@@ -304,7 +312,7 @@ export default StyleSheet.create({
   voteCount: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
     marginLeft: 8,
   },
   noVotesText: {
@@ -381,7 +389,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     marginTop: 20,
     marginBottom: 10,
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     paddingVertical: 15,
     paddingHorizontal: 50,
     borderRadius: 30,
@@ -435,7 +443,7 @@ export default StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#535353",
+    color: "#2A2B2A",
   },
   smarterItem: {
     alignItems: "center",
@@ -465,7 +473,7 @@ export default StyleSheet.create({
     zIndex: 1, // Assure que la médaille est au-dessus de l'image
   },
   seeAllButton: {
-    backgroundColor: "#535353",
+    backgroundColor: "#2A2B2A",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,
@@ -495,22 +503,17 @@ export default StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
-  emptyStateImage: {
-    width: 150,
-    height: 150,
-    resizeMode: "contain",
-    opacity: 0.8,
-  },
   scrollViewContainer: {
+    paddingBottom: 20,
   },
   reportCard: {
     backgroundColor: "#FFF",
-    borderRadius: 50,
+    borderRadius: 15, // Ajustement pour un design plus moderne
+    borderBottomEndRadius: 50, // Coin inférieur droit plat
     padding: 15,
-    paddingHorizontal: 30,
-    marginVertical: 3,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
+    marginVertical: 5, // Meilleur espacement entre les cartes
+    borderLeftWidth: 5,
+    borderRightWidth:5,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
@@ -521,12 +524,14 @@ export default StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   reportType: {
-    fontSize: 16,
+    fontSize: 18, // Augmentation pour plus de lisibilité
     fontWeight: "bold",
     color: "#333",
+    flex: 1, // S'assure que le texte utilise tout l'espace disponible
+    marginRight: 10, // Ajout d'un espace pour séparer du kilométrage
   },
   reportDistance: {
     fontSize: 14,
@@ -536,22 +541,24 @@ export default StyleSheet.create({
   reportDetails: {
     fontSize: 14,
     color: "#555",
-    fontWeight: "bold",
+    fontWeight: "500",
     marginBottom: 10,
   },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 10,
   },
   reportCity: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#666",
     fontStyle: "italic",
-
+    flex: 1, // Évite les débordements
+    marginRight: 10, // Ajoute un espace entre les éléments
   },
   reportTime: {
-    fontSize: 10,
+    fontSize: 12,
     color: "#999",
   },
   //  ------------------------------------------------ SELECTION DE CATEGORIE
@@ -634,7 +641,7 @@ export default StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#535353",
+    color: "#2A2B2A",
   },
   eventDetails: {
     fontSize: 14,
@@ -687,7 +694,7 @@ export default StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -730,7 +737,7 @@ export default StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
     marginBottom: 5,
   },
   mayorName: {
@@ -786,7 +793,7 @@ export default StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#535353",
+    color: "#2A2B2A",
   },
   officeContact: {
     fontSize: 14,
