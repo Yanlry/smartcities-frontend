@@ -556,11 +556,14 @@ const styles = StyleSheet.create({
     paddingTop: 45,
   },
   headerTitleNav: {
-    fontSize: 35,
-    fontWeight: "bold",
-    color: "#F7F2DE", // Couleur blanche
-    letterSpacing: 1, // Espacement pour un effet moderne
-    textAlign: "center",
+    fontSize: 20,
+    padding: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    color: '#2A2B2A', // Couleur dorée ou autre
+    backgroundColor: '#F7F2DE',
+    letterSpacing:2,
+    fontWeight: 'bold',
     fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
   typeBadgeNav: {

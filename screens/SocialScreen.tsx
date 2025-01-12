@@ -8,7 +8,9 @@ import {
   Image,
   TextInput,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -16,7 +18,7 @@ import { useToken } from "../hooks/useToken";
 import * as ImagePicker from "expo-image-picker";
 import Icon from "react-native-vector-icons/Ionicons";
 
-export default function SocialScreen({handleScroll}) {
+export default function SocialScreen({ handleScroll }) {
   const [posts, setPosts] = useState<any[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,9 +29,9 @@ export default function SocialScreen({handleScroll}) {
   const [replyInputs, setReplyInputs] = useState({});
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyVisibility, setReplyVisibility] = useState({});
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [refresh, setRefresh] = useState(false); 
- 
+  const [selectedImage, setSelectedImage] = useState<string[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0); // Index de l'image active
+
   useEffect(() => {
     const fetchUserId = async () => {
       const id = await getUserId();
@@ -350,24 +352,42 @@ export default function SocialScreen({handleScroll}) {
           {item.content || "Contenu indisponible"}
         </Text>
 
+        {/* Carrousel d'images du post */}
         {item.photos && item.photos.length > 0 && (
-  <View style={styles.photosRowContainer}>
-    {item.photos.slice(0, 3).map((photo, index) => ( // Affiche un maximum de 3 photos
-      <Image
-        key={index}
-        source={{ uri: photo }}
-        style={styles.photoRowItem}
-      />
-    ))}
-    {item.photos.length > 3 && (
-      <View style={styles.morePhotosOverlay}>
-        <Text style={styles.morePhotosText}>
-          +{item.photos.length - 3}
-        </Text>
-      </View>
-    )}
-  </View>
-)}
+          <View>
+            <View>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScrollImage}
+                scrollEventThrottle={16}
+                contentContainerStyle={{ margin: 0, padding: 0 }}
+              >
+                {item.photos.map((photo, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: photo }}
+                    style={styles.photoCarouselItem}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Indicateurs dynamiques */}
+            <View style={styles.indicatorsContainer}>
+              {item.photos.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.indicator,
+                    activeIndex === index && styles.activeIndicator,
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+        )}
         {/* Actions du post */}
         <View style={styles.postActions}>
           <TouchableOpacity
@@ -499,7 +519,6 @@ export default function SocialScreen({handleScroll}) {
                 )}
 
                 {/* Afficher/Masquer les réponses */}
-                {/* Afficher/Masquer les réponses */}
                 {replyVisibility[comment.id] &&
                   comment.replies &&
                   comment.replies.length > 0 && (
@@ -567,7 +586,13 @@ export default function SocialScreen({handleScroll}) {
     );
   };
 
- const handleAddPost = async () => {
+  const handleRemovePhoto = (index) => {
+    const updatedImages = [...selectedImage];
+    updatedImages.splice(index, 1); // Supprime l'image à l'index donné
+    setSelectedImage(updatedImages); // Met à jour la liste des images
+  };
+
+  const handleAddPost = async () => {
     if (!newPostContent.trim()) {
       Alert.alert("Erreur", "Le contenu de la publication est vide.");
       return;
@@ -588,13 +613,15 @@ export default function SocialScreen({handleScroll}) {
       formData.append("authorId", userId.toString());
 
       if (selectedImage) {
-        const filename = selectedImage.split("/").pop();
-        const fileType = filename ? filename.split(".").pop() : "jpg"; // Par défaut : JPG
-        formData.append("photos", {
-          uri: selectedImage,
-          name: filename,
-          type: `image/${fileType}`,
-        } as any);
+        selectedImage.forEach((image) => {
+          const filename = image.split("/").pop();
+          const fileType = filename ? filename.split(".").pop() : "jpg"; // Par défaut : JPG
+          formData.append("photos", {
+            uri: image,
+            name: filename,
+            type: `image/${fileType}`,
+          } as any);
+        });
       }
 
       const response = await fetch(`${API_URL}/posts`, {
@@ -607,7 +634,9 @@ export default function SocialScreen({handleScroll}) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Erreur lors de la création de la publication");
+        throw new Error(
+          error.message || "Erreur lors de la création de la publication"
+        );
       }
 
       const newPost = await response.json();
@@ -615,7 +644,7 @@ export default function SocialScreen({handleScroll}) {
 
       // Réinitialiser les champs
       setNewPostContent("");
-      setSelectedImage(null);
+      setSelectedImage([]);
 
       // Actualiser les posts après création
       fetchPosts();
@@ -623,65 +652,130 @@ export default function SocialScreen({handleScroll}) {
       Alert.alert("Succès", "Votre publication a été créée avec succès !");
     } catch (error) {
       console.error("Erreur lors de la création de la publication :", error);
-      Alert.alert("Erreur", error.message || "Impossible de créer la publication.");
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible de créer la publication."
+      );
     } finally {
       setIsLoading(false); // Désactive le loader
     }
   };
 
-   // Fonction pour ouvrir le sélecteur d'image
-   const handlePickImage = async () => {
+  const handlePickImage = async () => {
+    // Vérifie si la limite de 5 images est atteinte
+    if (selectedImage.length >= 5) {
+      Alert.alert("Limite atteinte", "Vous ne pouvez pas sélectionner plus de 5 images.");
+      return;
+    }
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
+  
     if (!result.canceled) {
-      setSelectedImage(result.assets[0].uri); // Stocke l'URI de l'image sélectionnée
+      // Ajoute l'image seulement si la limite n'est pas atteinte
+      setSelectedImage((prevImages) => [...prevImages, result.assets[0].uri]);
     }
   };
+
+  const handleScrollImage = (event) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const screenWidth = Dimensions.get("window").width;
+    console.log("Offset X :", contentOffsetX);
+    console.log("Screen Width :", screenWidth);
+    const index = Math.round(contentOffsetX / screenWidth);
+    setActiveIndex(index);
+  };
+
 
   return (
     <View style={styles.container}>
       <FlatList
-      onScroll={handleScroll}
-      scrollEventThrottle={16} 
+        onScroll={handleScrollImage}
+        scrollEventThrottle={16}
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <View style={styles.newPostContainer}>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.newPostInput}
-              placeholder="Quoi de neuf ?"
-              value={newPostContent}
-              onChangeText={setNewPostContent}
-            />
-            <TouchableOpacity style={styles.iconButton} onPress={handlePickImage}>
-              <Icon name="image-outline" size={24} color="#2A2B2A" />
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.newPostInput}
+                placeholder="Quoi de neuf ?"
+                value={newPostContent}
+                onChangeText={setNewPostContent}
+              />
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={handlePickImage}
+              >
+                <Icon name="image-outline" size={24} color="#2A2B2A" />
+              </TouchableOpacity>
+            </View>
+
+            <View>
+              {/* Affichage de la première photo en grand */}
+              <View>
+                {selectedImage.length > 0 ? (
+                  <>
+                    {/* Affichage de l'image active en grand */}
+                    <View style={styles.largeImageContainer}>
+                      <Image
+                        source={{ uri: selectedImage[0] }} // Affiche la première image en grand
+                        style={styles.largeImage}
+                      />
+                      {/* Icône de suppression pour la grande image */}
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleRemovePhoto(0)} // Supprime la grande image
+                      >
+                        <Icon name="trash-outline" size={24} color="#FFF" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Affichage des autres images en petit */}
+                    <View style={styles.smallImagesContainer}>
+                      {selectedImage.slice(1).map((uri, index) => (
+                        <View key={index} style={styles.smallImageWrapper}>
+                          <Image source={{ uri }} style={styles.smallImage} />
+                          {/* Icône de suppression pour chaque petite image */}
+                          <TouchableOpacity
+                            style={styles.deleteButtonSmall}
+                            onPress={() => handleRemovePhoto(index + 1)} // Supprime la photo correspondante
+                          >
+                            <Icon
+                              name="close-circle-outline"
+                              size={20}
+                              color="#FFF"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                ) : (
+                  <Text style={styles.noImageText}>
+                    Enrichisser votre post en selectionnant jusqu'à 5 photos
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.publishButton}
+              onPress={handleAddPost}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.publishButtonText}>Publier</Text>
+              )}
             </TouchableOpacity>
           </View>
-    
-          {/* Afficher l'image sélectionnée */}
-          {selectedImage && (
-            <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-          )}
-    
-          <TouchableOpacity
-        style={styles.publishButton}
-        onPress={handleAddPost}
-        disabled={isLoading} // Désactiver le bouton si le loader est actif
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#FFF" /> // Loader
-        ) : (
-          <Text style={styles.publishButtonText}>Publier</Text>
-        )}
-      </TouchableOpacity>
-        </View>
         }
         contentContainerStyle={styles.postsList}
       />
@@ -694,13 +788,59 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f0f2f5",
   },
+  largeImageContainer: {
+    position: "relative", // Permet de positionner l'icône par rapport à l'image
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 10,
+    marginTop: 10,
+  },
+  largeImage: {
+    width: "100%",
+    height: 300,
+    resizeMode: "cover",
+    borderRadius: 10,
+  },
+  deleteButton: {
+    position: "absolute", // Positionne l'icône sur l'image
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond semi-transparent pour l'icône
+    padding: 5,
+    borderRadius: 20,
+  },
+  smallImagesContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+  },
+  smallImageWrapper: {
+    position: "relative", // Permet de positionner l'icône sur l'image
+  },
+  smallImage: {
+    width: 75,
+    height: 75,
+    resizeMode: "cover",
+    borderRadius: 10,
+  },
+  deleteButtonSmall: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    padding: 2,
+    borderRadius: 15,
+  },
+  photoCarouselItem: {
+    width: Dimensions.get("window").width, // Largeur exacte de l'écran
+    aspectRatio: 1, // Carré
+    resizeMode: "contain",
+  },
   newPostContainer: {
-    padding: 15,
+    padding: 20,
     marginTop: 100,
     backgroundColor: "#fff",
     marginBottom: 10,
-    marginHorizontal: 10,
-    borderRadius: 30,
   },
   postHeader: {
     flexDirection: "row",
@@ -708,6 +848,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   avatar: {
+    marginLeft: 15,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -721,24 +862,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-
+  indicatorsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  indicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#D3D3D3",
+    marginHorizontal: 5,
+  },
+  activeIndicator: {
+    backgroundColor: "#333",
+  },
   postContainer: {
     backgroundColor: "#fff",
     marginBottom: 10,
-    padding: 15,
-    marginHorizontal: 10,
-    borderRadius: 30,
+    paddingVertical: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   postText: {
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 10,
+    marginLeft: 18,
+    fontWeight: "500",
     color: "#444",
   },
   postActions: {
+    padding: 10,
     flexDirection: "row",
     justifyContent: "space-between",
   },
@@ -752,6 +908,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  imagePreviewContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
+
   likeIcon: {
     marginRight: 5, // Espace entre l'icône et le texte
   },
@@ -764,11 +926,17 @@ const styles = StyleSheet.create({
     marginTop: 15,
     paddingHorizontal: 10,
   },
+  noImageText: {
+    textAlign: "center",
+    fontSize: 12,
+    color: "#999",
+    marginTop: 10,
+  },
   addCommentContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 15,
-    marginBottom: 10,
+    paddingHorizontal: 10,
   },
   photosRowContainer: {
     flexDirection: "row",
@@ -782,6 +950,7 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
     marginBottom: 10,
   },
+
   morePhotosOverlay: {
     position: "absolute",
     top: 0,
@@ -836,12 +1005,6 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 5,
   },
-  previewImage: {
-    width: "100%",
-    height: 150,
-    borderRadius: 10,
-    marginTop: 10,
-  },
   publishButton: {
     backgroundColor: "#2A2B2A",
     padding: 10,
@@ -871,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   deleteIcon: {
     marginLeft: "auto",
-    padding: 5,
+    marginRight: 15,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
   },
