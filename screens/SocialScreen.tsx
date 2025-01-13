@@ -11,12 +11,14 @@ import {
   ActivityIndicator,
   Dimensions,
   ScrollView,
+  Modal,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import { useToken } from "../hooks/useToken";
 import * as ImagePicker from "expo-image-picker";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Share } from "react-native";
 
 export default function SocialScreen({ handleScroll }) {
   const [posts, setPosts] = useState<any[]>([]);
@@ -31,6 +33,9 @@ export default function SocialScreen({ handleScroll }) {
   const [replyVisibility, setReplyVisibility] = useState({});
   const [selectedImage, setSelectedImage] = useState<string[]>([]);
   const [activeIndex, setActiveIndex] = useState(0); // Index de l'image active
+  const [likedPosts, setLikedPosts] = useState<number[]>([]); // Définit le type comme un tableau de nombres
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -48,20 +53,45 @@ export default function SocialScreen({ handleScroll }) {
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/posts`);
-      if (!response.ok) {
-        throw new Error("Erreur lors du chargement des publications");
+      const { getToken } = useToken();
+      const token = await getToken();
+
+      if (!token) {
+        throw new Error(
+          "Impossible de récupérer un token valide. Veuillez vous reconnecter."
+        );
       }
-      let data = await response.json();
+
+      const response = await fetch(`${API_URL}/posts`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du chargement des publications.");
+      }
+
+      const data = await response.json();
 
       // Trier les posts du plus récent au plus ancien
-      data = data.sort(
+      const sortedData = data.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
-      setPosts(data);
+      setPosts(sortedData);
+
+      // Mettre à jour les likedPosts en fonction de `likedByUser`
+      const userLikedPosts = sortedData
+        .filter((post) => post.likedByUser) // Filtrer les posts likés par l'utilisateur
+        .map((post) => post.id); // Extraire leurs IDs
+
+      setLikedPosts(userLikedPosts); // Initialiser l'état des likes
     } catch (error) {
+      console.error("Erreur :", error.message);
       Alert.alert(
         "Erreur",
         error.message || "Impossible de charger les publications."
@@ -78,14 +108,25 @@ export default function SocialScreen({ handleScroll }) {
         console.error("Impossible de récupérer l'ID utilisateur.");
         return;
       }
+
       const response = await fetch(`${API_URL}/posts/${postId}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
+
       if (!response.ok) {
         throw new Error("Erreur lors du like de la publication");
       }
+
+      // Met à jour l'état pour refléter que ce post est liké
+      setLikedPosts(
+        (prevLikedPosts) =>
+          prevLikedPosts.includes(postId)
+            ? prevLikedPosts.filter((id) => id !== postId) // Unliker
+            : [...prevLikedPosts, postId] // Liker
+      );
+
       fetchPosts();
     } catch (error) {
       Alert.alert(
@@ -310,6 +351,34 @@ export default function SocialScreen({ handleScroll }) {
       );
     };
 
+    const handlePhotoPress = (photo) => {
+      console.log("Photo pressée :", photo); // Vérifie que cette fonction est appelée avec la bonne valeur
+      setSelectedPhoto(photo); // Stocke l'URI de la photo
+      setIsModalVisible(true); // Ouvre le modal
+    };
+
+    const handleShare = async () => {
+      try {
+        const result = await Share.share({
+          message: "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
+          title: "Partager ce post", // Titre (optionnel)
+        });
+
+        // Vérifiez si l'utilisateur a partagé ou annulé
+        if (result.action === Share.sharedAction) {
+          if (result.activityType) {
+            console.log("Partagé via :", result.activityType);
+          } else {
+            console.log("Partage réussi !");
+          }
+        } else if (result.action === Share.dismissedAction) {
+          console.log("Partage annulé");
+        }
+      } catch (error) {
+        console.error("Erreur lors du partage :", error.message);
+      }
+    };
+
     return (
       <View style={styles.postContainer}>
         {/* En-tête du post */}
@@ -342,7 +411,7 @@ export default function SocialScreen({ handleScroll }) {
               style={styles.deleteIcon}
               onPress={() => handleDeletePost(item.id)}
             >
-              <Icon name="trash" size={20} color="red" />
+              <Icon name="trash" size={20} color="#2A2B2A" />
             </TouchableOpacity>
           )}
         </View>
@@ -355,24 +424,27 @@ export default function SocialScreen({ handleScroll }) {
         {/* Carrousel d'images du post */}
         {item.photos && item.photos.length > 0 && (
           <View>
-            <View>
-              <ScrollView
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={handleScrollImage}
-                scrollEventThrottle={16}
-                contentContainerStyle={{ margin: 0, padding: 0 }}
-              >
-                {item.photos.map((photo, index) => (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScrollImage}
+              scrollEventThrottle={16}
+              contentContainerStyle={{ margin: 0, padding: 0 }}
+            >
+              {item.photos.map((photo, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handlePhotoPress(photo)} // Ouvre l'image en plein écran
+                  activeOpacity={1} // Désactive l'effet d'opacité
+                >
                   <Image
-                    key={index}
                     source={{ uri: photo }}
                     style={styles.photoCarouselItem}
                   />
-                ))}
-              </ScrollView>
-            </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
             {/* Indicateurs dynamiques */}
             <View style={styles.indicatorsContainer}>
@@ -388,21 +460,56 @@ export default function SocialScreen({ handleScroll }) {
             </View>
           </View>
         )}
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsModalVisible(false)} // Gestion du bouton "Retour"
+        >
+          <View style={styles.modalBackground}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsModalVisible(false)} // Ferme le modal
+            >
+              <Text style={styles.closeText}>X</Text>
+            </TouchableOpacity>
+            {selectedPhoto && (
+              <Image
+                source={{ uri: selectedPhoto }}
+                style={styles.fullscreenPhoto} // Affiche l'image en plein écran
+              />
+            )}
+          </View>
+        </Modal>
         {/* Actions du post */}
         <View style={styles.postActions}>
           <TouchableOpacity
             onPress={() => handleLike(item.id)}
-            style={styles.likeButton}
+            style={[
+              styles.likeButton,
+              likedPosts.includes(item.id) && styles.likedButton, // Change de style si liké
+            ]}
           >
             <View style={styles.likeButtonContent}>
               <Icon
                 name="thumbs-up"
                 size={16}
-                color="#fff"
+                color={likedPosts.includes(item.id) ? "#00ff00" : "#fff"} // Change de couleur si liké
                 style={styles.likeIcon}
               />
-              <Text style={styles.likeButtonText}>{item.likesCount || 0}</Text>
+              <Text style={styles.likeButtonText}>
+                {likedPosts.includes(item.id)
+                  ? item.likesCount > 1
+                    ? `Vous et ${item.likesCount - 1} autres personnes ont liké`
+                    : "Vous avez liké ce post"
+                  : item.likesCount > 0
+                  ? `${item.likesCount}`
+                  : "0"}
+              </Text>
             </View>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleShare}>
+            <Icon name="share-outline" size={26} style={styles.shareIcon} />
           </TouchableOpacity>
         </View>
 
@@ -428,33 +535,46 @@ export default function SocialScreen({ handleScroll }) {
         {item.comments?.length > 0 && (
           <View style={styles.commentsSection}>
             {displayedComments.map((comment) => (
-              <View key={comment.id} style={styles.commentContainer}>
-                {/* Avatar et contenu du commentaire principal */}
-                <Image
-                  source={{
-                    uri:
-                      comment.userProfilePhoto ||
-                      "https://via.placeholder.com/150",
-                  }}
-                  style={styles.commentAvatar}
-                />
-                <View style={styles.commentContent}>
-                  <Text style={styles.userNameComment}>
-                    {comment.userName || "Utilisateur inconnu"}
-                  </Text>
-                  <Text style={styles.timestampComment}>
-                    {comment.createdAt
-                      ? `${new Intl.DateTimeFormat("fr-FR", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(comment.createdAt))}`
-                      : "Date inconnue"}
-                  </Text>
-                  <Text style={styles.commentText}>{comment.text}</Text>
+              <View key={comment.id}>
+                <View style={styles.commentBloc}>
+                  {/* Avatar et contenu du commentaire principal */}
+                  <Image
+                    source={{
+                      uri:
+                        comment.userProfilePhoto ||
+                        "https://via.placeholder.com/150",
+                    }}
+                    style={styles.commentAvatar}
+                  />
 
+                  <View style={styles.commentContainer}>
+                    <Text style={styles.userNameComment}>
+                      {comment.userName || "Utilisateur inconnu"}
+                    </Text>
+                    <Text style={styles.timestampComment}>
+                      {comment.createdAt
+                        ? `${new Intl.DateTimeFormat("fr-FR", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(comment.createdAt))}`
+                        : "Date inconnue"}
+                    </Text>
+                    <Text style={styles.commentText}>{comment.text}</Text>
+                  </View>
+                </View>
+                <View style={styles.actionButton}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setReplyToCommentId((prev) =>
+                        prev === comment.id ? null : comment.id
+                      )
+                    }
+                  >
+                    <Text style={styles.replyButtonText}>J'aime</Text>
+                  </TouchableOpacity>
                   {/* Bouton Répondre */}
                   <TouchableOpacity
                     onPress={() =>
@@ -465,48 +585,53 @@ export default function SocialScreen({ handleScroll }) {
                   >
                     <Text style={styles.replyButtonText}>Répondre</Text>
                   </TouchableOpacity>
-
-                  {/* Champ de réponse conditionnel */}
-                  {replyToCommentId === comment.id && (
-                    <View style={styles.replyContainer}>
-                      <TextInput
-                        style={styles.replyInput}
-                        placeholder="Écrivez une réponse..."
-                        value={replyInputs[comment.id] || ""}
-                        onChangeText={(text) =>
-                          setReplyInputs((prev) => ({
-                            ...prev,
-                            [comment.id]: text,
-                          }))
-                        }
-                      />
-                      <TouchableOpacity
-                        onPress={() => handleAddReply(comment.id)}
-                        style={styles.addReplyButton}
-                      >
-                        <Text style={styles.addReplyButtonText}>Publier</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  {/* Bouton pour afficher/masquer les réponses */}
-                  {comment.replies && comment.replies.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() =>
-                        setReplyVisibility((prev) => ({
+                </View>
+                {/* Champ de réponse conditionnel */}
+                {replyToCommentId === comment.id && (
+                  <View style={styles.replyContainer}>
+                    <TextInput
+                      style={styles.replyInput}
+                      placeholder="Écrivez une réponse..."
+                      value={replyInputs[comment.id] || ""}
+                      onChangeText={(text) =>
+                        setReplyInputs((prev) => ({
                           ...prev,
-                          [comment.id]: !prev[comment.id],
+                          [comment.id]: text,
                         }))
                       }
+                    />
+                    <TouchableOpacity
+                      onPress={() => handleAddReply(comment.id)}
+                      style={styles.addReplyButton}
                     >
-                      <Text style={styles.showMoreText}>
-                        {replyVisibility[comment.id]
-                          ? "Masquer les réponses"
-                          : "Afficher les réponses"}
-                      </Text>
+                      <Text style={styles.addReplyButtonText}>Publier</Text>
                     </TouchableOpacity>
-                  )}
-                </View>
+                  </View>
+                )}
+
+                {/* Bouton pour afficher/masquer les réponses */}
+                {comment.replies && comment.replies.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setReplyVisibility((prev) => ({
+                        ...prev,
+                        [comment.id]: !prev[comment.id], // Alterne la visibilité des réponses
+                      }))
+                    }
+                    style={[
+                      !replyVisibility[comment.id] &&
+                        styles.marginBottomWhenHidden, // Applique marginBottom uniquement si masqué
+                    ]}
+                  >
+                    <Text style={styles.showMoreTextReply}>
+                      {replyVisibility[comment.id]
+                        ? `Masquer les réponses`
+                        : `Afficher ${comment.replies.length} réponse${
+                            comment.replies.length > 1 ? "s" : ""
+                          }`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Bouton de suppression pour les commentaires appartenant à l'utilisateur */}
                 {comment.userId === userId && (
@@ -514,7 +639,7 @@ export default function SocialScreen({ handleScroll }) {
                     style={styles.deleteIconComment}
                     onPress={() => handleDeleteComment(comment.id)}
                   >
-                    <Icon name="trash" size={16} color="red" />
+                    <Icon name="trash" size={16} color="#2A2B2A" />
                   </TouchableOpacity>
                 )}
 
@@ -553,10 +678,10 @@ export default function SocialScreen({ handleScroll }) {
                             {/* Bouton de suppression pour les réponses */}
                             {reply.userId === userId && (
                               <TouchableOpacity
-                                style={styles.deleteIconComment}
+                                style={styles.deleteIconReply}
                                 onPress={() => handleDeleteReply(reply.id)}
                               >
-                                <Icon name="trash" size={16} color="red" />
+                                <Icon name="trash" size={16} color="#2A2B2A" />
                               </TouchableOpacity>
                             )}
                           </View>
@@ -573,7 +698,7 @@ export default function SocialScreen({ handleScroll }) {
                 onPress={() => toggleComments(item.id)}
                 style={styles.showMoreButton}
               >
-                <Text style={styles.showMoreText}>
+                <Text style={styles.showMoreTextComment}>
                   {isExpanded
                     ? "Cacher les commentaires"
                     : `Afficher ${item.comments.length} commentaires`}
@@ -664,17 +789,20 @@ export default function SocialScreen({ handleScroll }) {
   const handlePickImage = async () => {
     // Vérifie si la limite de 5 images est atteinte
     if (selectedImage.length >= 5) {
-      Alert.alert("Limite atteinte", "Vous ne pouvez pas sélectionner plus de 5 images.");
+      Alert.alert(
+        "Limite atteinte",
+        "Vous ne pouvez pas sélectionner plus de 5 images."
+      );
       return;
     }
-  
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (!result.canceled) {
       // Ajoute l'image seulement si la limite n'est pas atteinte
       setSelectedImage((prevImages) => [...prevImages, result.assets[0].uri]);
@@ -684,17 +812,14 @@ export default function SocialScreen({ handleScroll }) {
   const handleScrollImage = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const screenWidth = Dimensions.get("window").width;
-    console.log("Offset X :", contentOffsetX);
-    console.log("Screen Width :", screenWidth);
     const index = Math.round(contentOffsetX / screenWidth);
     setActiveIndex(index);
   };
 
-
   return (
     <View style={styles.container}>
       <FlatList
-        onScroll={handleScrollImage}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         data={posts}
         renderItem={renderItem}
@@ -767,7 +892,7 @@ export default function SocialScreen({ handleScroll }) {
             <TouchableOpacity
               style={styles.publishButton}
               onPress={handleAddPost}
-              disabled={isLoading}
+              disabled={isLoading} // Désactiver le bouton si en chargement
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color="#FFF" />
@@ -775,6 +900,13 @@ export default function SocialScreen({ handleScroll }) {
                 <Text style={styles.publishButtonText}>Publier</Text>
               )}
             </TouchableOpacity>
+
+            {/* Voile opaque */}
+            {isLoading && (
+              <View style={styles.overlay}>
+                <ActivityIndicator size="large" color="#FFF" />
+              </View>
+            )}
           </View>
         }
         contentContainerStyle={styles.postsList}
@@ -788,12 +920,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f0f2f5",
   },
+  marginBottomWhenHidden: {
+    marginBottom: 20, // Valeur de marginBottom lorsque masqué
+  },
   largeImageContainer: {
     position: "relative", // Permet de positionner l'icône par rapport à l'image
     width: "100%",
     alignItems: "center",
     marginBottom: 10,
     marginTop: 10,
+  },
+  likedButton: {
+    backgroundColor: "#008000", // Vert quand liké
   },
   largeImage: {
     width: "100%",
@@ -835,6 +973,7 @@ const styles = StyleSheet.create({
     width: Dimensions.get("window").width, // Largeur exacte de l'écran
     aspectRatio: 1, // Carré
     resizeMode: "contain",
+    marginTop: 15,
   },
   newPostContainer: {
     padding: 20,
@@ -860,6 +999,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 12,
+    marginTop: 3,
     color: "#666",
   },
   indicatorsContainer: {
@@ -877,6 +1017,16 @@ const styles = StyleSheet.create({
   activeIndicator: {
     backgroundColor: "#333",
   },
+  overlay: {
+    position: "absolute", // Permet de superposer la vue
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Couleur semi-transparente
+    justifyContent: "center",
+    alignItems: "center",
+  },
   postContainer: {
     backgroundColor: "#fff",
     marginBottom: 10,
@@ -888,7 +1038,7 @@ const styles = StyleSheet.create({
   },
   postText: {
     fontSize: 16,
-    marginBottom: 10,
+    marginTop: 5,
     marginLeft: 18,
     fontWeight: "500",
     color: "#444",
@@ -898,11 +1048,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  shareIcon: {
+    marginTop: 10,
+    marginRight: 5,
+  },
+  actionButton: {
+    flexDirection: "row",
+    gap: 10,
+    marginLeft: 55,
+    marginBottom: 15,
+  },
+  commentBloc: {
+    flexDirection: "row",
+  },
   likeButton: {
     backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
+    marginTop: 10,
   },
   likeButtonContent: {
     flexDirection: "row",
@@ -912,6 +1076,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     marginTop: 10,
+  },
+  fullscreenPhoto: {
+    width: "90%",
+    height: "70%",
+    resizeMode: "contain", // S'assure que l'image ne déborde pas
+    borderRadius: 10,
+  },
+
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond semi-transparent
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 20,
+    padding: 10,
+  },
+  closeText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "black",
   },
 
   likeIcon: {
@@ -935,7 +1125,7 @@ const styles = StyleSheet.create({
   addCommentContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 10,
     paddingHorizontal: 10,
   },
   photosRowContainer: {
@@ -1020,11 +1210,11 @@ const styles = StyleSheet.create({
   postsList: {
     paddingBottom: 10, // Conteneur pour les posts
   },
-  showMoreText: {
-    color: "#c",
+  showMoreTextComment: {
+    color: "#555",
     fontWeight: "bold",
     fontSize: 14,
-    marginTop: 5,
+    marginLeft: 5,
   },
   showMoreButton: {
     alignSelf: "flex-start",
@@ -1032,16 +1222,27 @@ const styles = StyleSheet.create({
     marginTop: 5,
     borderRadius: 5,
   },
+  showMoreTextReply: {
+    color: "#007bff",
+    fontWeight: "bold",
+    fontSize: 14,
+    marginLeft: 55,
+  },
   deleteIcon: {
-    marginLeft: "auto",
-    marginRight: 15,
+    position: "absolute",
+    right: 17,
+    top: 1,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
   },
   deleteIconComment: {
     position: "absolute",
-    right: 10,
+    right: 15,
     top: 10,
+  },
+  deleteIconReply: {
+    position: "absolute",
+    right: 8,
   },
   replyInput: {
     borderWidth: 1,
@@ -1053,40 +1254,43 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginBottom: 5,
   },
+
+  commentContainer: {
+    flexDirection: "column", // Permet d'empiler les réponses sous le commentaire principal
+    alignItems: "flex-start",
+    width: "85%",
+    padding: 10,
+    backgroundColor: "#f7f7f7",
+    borderRadius: 20,
+  },
+  repliesSection: {
+    marginTop: 10,
+  },
+  replyContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 10,
+    marginLeft: 55,
+    paddingVertical: 15,
+    width: "85%",
+    padding: 10,
+    backgroundColor: "#eef6ff",
+    borderRadius: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: "#007bff",
+  },
   addReplyButton: {
     backgroundColor: "#007bff",
     borderRadius: 5,
     padding: 8,
-    marginLeft: 10,
+    marginTop: 1,
+    marginLeft: 20,
     alignItems: "center",
   },
   addReplyButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
-  },
-  commentContainer: {
-    flexDirection: "column", // Permet d'empiler les réponses sous le commentaire principal
-    alignItems: "flex-start",
-    marginBottom: 10,
-    padding: 10,
-    backgroundColor: "#f7f7f7",
-    borderRadius: 8,
-  },
-  repliesSection: {
-    marginTop: 10,
-    marginLeft: 20, // Décalage des réponses pour indiquer la hiérarchie
-  },
-  replyContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    width: "100%",
-    padding: 10,
-    backgroundColor: "#eef6ff",
-    borderRadius: 8,
-    borderLeftWidth: 2,
-    borderLeftColor: "#007bff",
   },
   commentAvatar: {
     width: 40,
@@ -1104,8 +1308,9 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   timestampComment: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#888",
+    marginTop: 3,
     marginBottom: 5,
   },
   commentText: {
@@ -1114,17 +1319,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   replyButtonText: {
-    color: "#007bff",
+    color: "#555",
     fontSize: 14,
+    fontWeight: "bold",
     marginTop: 5,
-    marginBottom: 10,
-  },
-  deleteIconReply: {
-    position: "absolute",
-    right: 10,
-    top: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 10,
-    padding: 5,
   },
 });

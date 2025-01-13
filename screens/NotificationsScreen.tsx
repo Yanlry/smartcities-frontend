@@ -492,7 +492,7 @@ export default function NotificationsScreen({ navigation }) {
       <View style={styles.markAllButtonContainer}>
         <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
           <Text style={styles.markAllButtonText}>
-            Tout marquer comme lu <Text style={styles.markAllButtonTextBold}>({unreadCount})</Text>
+            Tout marquer comme lu ({unreadCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -609,12 +609,6 @@ const styles = StyleSheet.create({
 
   markAllButtonText: {
     color: "#2A2B2A", // Texte blanc
-    fontSize: 12,
-    textTransform: "uppercase",
-  },
-  markAllButtonTextBold: {
-    color: "#2A2B2A", // Texte blanc
-    fontWeight: "bold",
     fontSize: 12,
     textTransform: "uppercase",
   },

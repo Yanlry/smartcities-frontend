@@ -10,9 +10,11 @@ import {
   Alert,
   Animated,
   ScrollView,
+  Dimensions,
   Modal,
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import Icon from "react-native-vector-icons/Ionicons";
+
 
 import { useRoute } from "@react-navigation/native";
 // @ts-ignore
@@ -21,8 +23,10 @@ import { RouteProp } from "@react-navigation/native";
 import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/Sidebar";
 import { useToken } from "../hooks/useToken";
+import { Share } from "react-native";
 
 interface Post {
+  likedByUser: any;
   id: string;
   profilePhoto?: string;
   authorId?: string;
@@ -67,6 +71,8 @@ export default function PostDetailsScreen({ navigation }) {
   const scaleValue = useRef(new Animated.Value(1)).current;
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0); // Index de l'image active
+
   // Animation infinie
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -92,7 +98,21 @@ export default function PostDetailsScreen({ navigation }) {
     setLoading(true); // Démarre le loader
 
     try {
-      const response = await fetch(`${API_URL}/posts/${postId}`);
+      const { getToken } = useToken(); // Utilisez useToken pour récupérer le token
+      const token = await getToken(); // Récupère un token valide
+
+      if (!token) {
+        throw new Error("Token JWT introuvable. Veuillez vous reconnecter.");
+      }
+
+      const response = await fetch(`${API_URL}/posts/${postId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Ajoute le token JWT
+          "Content-Type": "application/json",
+        },
+      });
+
       if (!response.ok) {
         console.error(`Erreur HTTP: ${response.status}`);
         setPost(null); // Définit le post à null si le post n'est pas trouvé
@@ -117,7 +137,7 @@ export default function PostDetailsScreen({ navigation }) {
         setPost(formattedPost); // Met à jour le post avec les données formatées
       }
     } catch (error) {
-      console.error("Erreur lors de la récupération du post :", error);
+      console.error("Erreur lors de la récupération du post :", error.message);
       setPost(null); // Définit le post à null en cas d'erreur
     } finally {
       setLoading(false); // Arrête le loader
@@ -384,6 +404,7 @@ export default function PostDetailsScreen({ navigation }) {
   const renderComment = (comment) => (
     <View key={comment.id} style={styles.commentContainer}>
       {/* Avatar et contenu du commentaire principal */}
+      <View style={styles.commentBloc}>
       <Image
         source={{
           uri: comment.userProfilePhoto || "https://via.placeholder.com/150",
@@ -396,10 +417,11 @@ export default function PostDetailsScreen({ navigation }) {
           style={styles.deleteIconComment}
           onPress={() => handleDeleteComment(comment.id)}
         >
-          <Icon name="delete" size={16} color="red" />
+          <Icon name="trash" size={16} color="#2A2B2A" />
         </TouchableOpacity>
       )}
       <View style={styles.commentContent}>
+        <View style={styles.commentVisible}>
         <Text style={styles.userNameComment}>
           {comment.userName || "Utilisateur inconnu"}
         </Text>
@@ -415,17 +437,29 @@ export default function PostDetailsScreen({ navigation }) {
             : "Date inconnue"}
         </Text>
         <Text style={styles.commentText}>{comment.text}</Text>
-
+        </View>
         {/* Bouton Répondre */}
-        <TouchableOpacity
-          onPress={() =>
-            setReplyToCommentId((prev) =>
-              prev === comment.id ? null : comment.id
-            )
-          }
-        >
-          <Text style={styles.replyButtonText}>Répondre</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButton}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setReplyToCommentId((prev) =>
+                        prev === comment.id ? null : comment.id
+                      )
+                    }
+                  >
+                    <Text style={styles.replyButtonText}>J'aime</Text>
+                  </TouchableOpacity>
+                  {/* Bouton Répondre */}
+                  <TouchableOpacity
+                    onPress={() =>
+                      setReplyToCommentId((prev) =>
+                        prev === comment.id ? null : comment.id
+                      )
+                    }
+                  >
+                    <Text style={styles.replyButtonText}>Répondre</Text>
+                  </TouchableOpacity>
+                </View>
 
         {/* Champ de réponse conditionnel */}
         {replyToCommentId === comment.id && (
@@ -452,27 +486,30 @@ export default function PostDetailsScreen({ navigation }) {
 
         {/* Bouton pour afficher/masquer les réponses */}
         {comment.replies && comment.replies.length > 0 && (
-          <TouchableOpacity
-            onPress={() =>
-              setReplyVisibility((prev) => ({
-                ...prev,
-                [comment.id]: !prev[comment.id], // Inverser l'état pour afficher/masquer
-              }))
-            }
-          >
-            <Text style={styles.showMoreText}>
-              {replyVisibility[comment.id]
-                ? "Masquer les réponses"
-                : "Afficher les réponses"}
-            </Text>
-          </TouchableOpacity>
-        )}
+  <TouchableOpacity
+    onPress={() =>
+      setReplyVisibility((prev) => ({
+        ...prev,
+        [comment.id]: !prev[comment.id], // Inverser l'état pour afficher/masquer
+      }))
+    }
+    style={styles.showMoreButton} // Applique le même style
+  >
+    <Text style={styles.showMoreText}>
+      {replyVisibility[comment.id]
+        ? "Masquer les réponses"
+        : `Afficher ${comment.replies.length} réponse${
+            comment.replies.length > 1 ? "s" : ""
+          }`}
+    </Text>
+  </TouchableOpacity>
+)}
 
         {/* Affichage des réponses imbriquées si visible */}
         {replyVisibility[comment.id] &&
           comment.replies &&
           comment.replies.length > 0 && (
-            <View style={styles.repliesSection}>
+            <View>
               {comment.replies.map((reply) => (
                 <View key={reply.id} style={styles.replyContainer}>
                   <Image
@@ -506,7 +543,7 @@ export default function PostDetailsScreen({ navigation }) {
                         style={styles.deleteIconReply}
                         onPress={() => handleDeleteReply(reply.id)}
                       >
-                        <Icon name="delete" size={16} color="red" />
+                        <Icon name="trash" size={16} color="#2A2B2A" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -514,6 +551,7 @@ export default function PostDetailsScreen({ navigation }) {
               ))}
             </View>
           )}
+      </View>
       </View>
     </View>
   );
@@ -552,8 +590,38 @@ export default function PostDetailsScreen({ navigation }) {
   }
 
   const handlePhotoPress = (photo) => {
-    setSelectedPhoto(photo); // Stocke l'URI de la photo sélectionnée
-    setIsModalVisible(true); // Affiche le modal
+    console.log("Photo pressée :", photo); // Vérifie que cette fonction est appelée avec la bonne valeur
+    setSelectedPhoto(photo); // Stocke l'URI de la photo
+    setIsModalVisible(true); // Ouvre le modal
+  };
+
+  const handleScrollImage = (event) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const screenWidth = Dimensions.get("window").width;
+    const index = Math.round(contentOffsetX / screenWidth);
+    setActiveIndex(index);
+  };
+
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message: "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
+        title: "Partager ce post", // Titre (optionnel)
+      });
+
+      // Vérifiez si l'utilisateur a partagé ou annulé
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("Partagé via :", result.activityType);
+        } else {
+          console.log("Partage réussi !");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("Partage annulé");
+      }
+    } catch (error) {
+      console.error("Erreur lors du partage :", error.message);
+    }
   };
 
   return (
@@ -599,15 +667,12 @@ export default function PostDetailsScreen({ navigation }) {
         <View style={styles.postContainer}>
           {/* En-tête du post */}
           <View style={styles.postHeader}>
-            {/* Avatar de l'auteur */}
             <Image
               source={{
                 uri: post.profilePhoto || "https://via.placeholder.com/150",
               }}
               style={styles.avatar}
             />
-
-            {/* Informations sur l'auteur et la date */}
             <View style={styles.postInfo}>
               <Text style={styles.userName}>
                 {post.authorName || "Utilisateur inconnu"}
@@ -624,14 +689,12 @@ export default function PostDetailsScreen({ navigation }) {
                   : "Date inconnue"}
               </Text>
             </View>
-
-            {/* Bouton de suppression visible uniquement si l'utilisateur est l'auteur */}
             {post.authorId && userId && `${post.authorId}` === `${userId}` && (
               <TouchableOpacity
                 style={styles.deleteIconPost}
                 onPress={() => handleDeletePost(post.id)}
               >
-                <Icon name="delete" size={20} color="red" />
+                <Icon name="trash" size={20} color="#2A2B2A" />
               </TouchableOpacity>
             )}
           </View>
@@ -641,60 +704,91 @@ export default function PostDetailsScreen({ navigation }) {
             {post.content || "Contenu indisponible"}
           </Text>
 
-          {/* Affichage des photos */}
+          {/* Carrousel d'images */}
           {post.photos && post.photos.length > 0 && (
-            <View style={styles.photosContainer}>
-              {post.photos.map((photo, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handlePhotoPress(photo)} // Ajouter un agrandissement de l'image
-                >
-                  <Image source={{ uri: photo }} style={styles.postPhoto} />
-                </TouchableOpacity>
-              ))}
+            <View>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScrollImage} // Gère l'état des indicateurs
+                scrollEventThrottle={16}
+                contentContainerStyle={{ margin: 0, padding: 0 }}
+              >
+                {post.photos.map((photo, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handlePhotoPress(photo)} // Appelle handlePhotoPress avec la photo sélectionnée
+                  >
+                    <Image
+                      source={{ uri: photo }}
+                      style={styles.photoCarouselItem}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <Modal
+                visible={isModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setIsModalVisible(false)} // Gestion du bouton "Retour"
+              >
+                <View style={styles.modalBackground}>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setIsModalVisible(false)} // Ferme le modal
+                  >
+                    <Text style={styles.closeText}>X</Text>
+                  </TouchableOpacity>
+                  {selectedPhoto && (
+                    <Image
+                      source={{ uri: selectedPhoto }}
+                      style={styles.fullscreenPhoto} // Affiche l'image en plein écran
+                    />
+                  )}
+                </View>
+              </Modal>
+              {/* Indicateurs dynamiques */}
+              <View style={styles.indicatorsContainer}>
+                {post.photos.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.indicator,
+                      activeIndex === index && styles.activeIndicator,
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
           )}
-
-          <Modal
-            visible={isModalVisible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setIsModalVisible(false)} // Ferme le modal avec "Retour"
-          >
-            <View style={styles.modalBackground}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsModalVisible(false)} // Ferme le modal
-              >
-                <Text style={styles.closeText}>X</Text>
-              </TouchableOpacity>
-              {selectedPhoto && (
-                <Image
-                  source={{ uri: selectedPhoto }}
-                  style={styles.fullscreenPhoto}
-                />
-              )}
-            </View>
-          </Modal>
 
           {/* Actions du post */}
           <View style={styles.postActions}>
             <TouchableOpacity
               onPress={() => handleLike(post.id)}
-              style={styles.likeButton}
+              style={[
+                styles.likeButton,
+                post.likedByUser && styles.likedButton,
+              ]}
             >
               <View style={styles.likeButtonContent}>
                 <Icon
-                  name="thumb-up"
+                  name="thumbs-up"
                   size={16}
-                  color="#fff"
+                  color={post.likedByUser ? "#00ff00" : "#fff"}
                   style={styles.likeIcon}
                 />
                 <Text style={styles.likeButtonText}>
-                  {post.likesCount || 0}
+                  {post.likedByUser ? "Vous avez liké" : post.likesCount || 0}
                 </Text>
               </View>
             </TouchableOpacity>
+            <TouchableOpacity onPress={handleShare}>
+            <Icon name="share-outline" size={26} style={styles.shareIcon} />
+          </TouchableOpacity><TouchableOpacity onPress={handleShare}>
+            <Icon name="share-outline" size={26} style={styles.shareIcon} />
+          </TouchableOpacity>
           </View>
 
           {/* Ajouter un commentaire */}
@@ -739,6 +833,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
+  photoCarouselItem: {
+    width: Dimensions.get("window").width, // Largeur de l'image = largeur de l'écran
+    height: 200, // Hauteur du carrousel
+    resizeMode: "cover",
+  },
+  indicatorsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 10,
+  },
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ccc",
+    marginHorizontal: 4,
+    marginVertical: 5,
+  },
+  activeIndicator: {
+    backgroundColor: "#000", // Couleur différente pour l'indicateur actif
+  },
   loader: {
     flex: 1,
     justifyContent: "center",
@@ -766,6 +881,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 45,
     marginBottom: 10,
+  },
+  actionButton: {
+    flexDirection: "row",
+    gap: 10,
+    marginLeft: 5,
+  },
+  replyButtonText: {
+    color: "#555",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginTop: 5,
   },
   headerTitle: {
     fontSize: 20,
@@ -801,8 +927,8 @@ const styles = StyleSheet.create({
   },
   deleteIconPost: {
     position: "absolute",
-    right: 10,
-    top: 10,
+    right: 15,
+    top: 20,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
     padding: 5,
@@ -814,36 +940,44 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   avatar: {
+    marginLeft: 15,
     width: 40,
     height: 40,
     borderRadius: 20,
     marginRight: 10,
+    marginTop: 15,
   },
   userName: {
     fontWeight: "bold",
     fontSize: 14,
+    marginTop: 15,
   },
   timestamp: {
     fontSize: 12,
     color: "#666",
+    marginTop:3,
   },
   postContainer: {
     backgroundColor: "#fff",
     marginBottom: 150,
-    padding: 15,
-    marginHorizontal: 10,
-    borderRadius: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   postText: {
-    fontSize: 14,
-    marginBottom: 10,
+    fontSize: 16,
+    marginBottom: 20,
+    marginTop: 10,
+    marginLeft: 18,
+    fontWeight: "500",
     color: "#444",
   },
+  shareIcon: {
+    marginRight: 15,
+  },
   postActions: {
+    marginLeft: 15,
     flexDirection: "row",
     justifyContent: "space-between",
   },
@@ -853,8 +987,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 20,
   },
+   commentBloc: {
+    flexDirection: "row",
+  },
   postInfo: {
     flex: 1, // S'étend pour utiliser l'espace restant
+  },
+  likedButton: {
+    backgroundColor: "#008000", // Couleur verte quand liké
   },
   likeButtonContent: {
     flexDirection: "row",
@@ -869,14 +1009,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   commentsSection: {
-    marginTop: 15,
+    marginTop: 5,
     paddingHorizontal: 10,
   },
   addCommentContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 15,
-    marginBottom: 10,
+    paddingHorizontal: 15,
   },
   addCommentInput: {
     flex: 1,
@@ -901,10 +1041,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   showMoreText: {
-    color: "#2A2B2A",
+    color: "#007bff",
     fontWeight: "bold",
     fontSize: 14,
-    marginTop: 5,
+  },
+  showMoreButton: {
+    alignSelf: "flex-start",
+    padding: 5,
+    marginTop: 10,
+    borderRadius: 5,
   },
   deleteIconComment: {
     position: "absolute",
@@ -921,11 +1066,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginBottom: 5,
   },
+
   addReplyButton: {
     backgroundColor: "#007bff",
     borderRadius: 5,
     padding: 8,
-    marginLeft: 10,
+    marginLeft: 15,
+    marginTop:1,
     alignItems: "center",
   },
   addReplyButtonText: {
@@ -936,22 +1083,17 @@ const styles = StyleSheet.create({
   commentContainer: {
     flexDirection: "column", // Permet d'empiler les réponses sous le commentaire principal
     alignItems: "flex-start",
-    marginBottom: 10,
     padding: 10,
-    backgroundColor: "#f7f7f7",
     borderRadius: 8,
-  },
-  repliesSection: {
-    marginTop: 10,
-    marginLeft: 20, // Décalage des réponses pour indiquer la hiérarchie
   },
   replyContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 10,
+    marginTop:10,
     width: "100%", // Utiliser la largeur maximale du parent
     maxWidth: "100%", // Empêcher le dépassement
     padding: 10,
+    paddingVertical:15,
     backgroundColor: "#eef6ff",
     borderRadius: 8,
     paddingRight: 10,
@@ -971,6 +1113,11 @@ const styles = StyleSheet.create({
     flexShrink: 1, // Permet de réduire le conteneur si le texte est long
     overflow: "hidden", // Empêche tout débordement visible
   },
+  commentVisible:{
+    backgroundColor: "#f7f7f7",
+    padding:10,
+    borderRadius: 20
+  },
   userNameComment: {
     fontWeight: "bold",
     fontSize: 14,
@@ -979,7 +1126,7 @@ const styles = StyleSheet.create({
   timestampComment: {
     fontSize: 10,
     color: "#888",
-    marginTop:2,
+    marginTop: 2,
     marginBottom: 5,
   },
   commentText: {
@@ -991,12 +1138,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 1,
-  },
-  replyButtonText: {
-    color: "#007bff",
-    fontSize: 14,
-    marginTop: 5,
-    marginBottom: 10,
   },
   image: {
     width: 320,
@@ -1042,7 +1183,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#777",
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  fullscreenPhoto: {
+    width: "90%",
+    height: "70%",
+    resizeMode: "contain", // S'assure que l'image ne déborde pas
+    borderRadius: 10,
   },
 
   modalBackground: {
@@ -1050,12 +1198,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond semi-transparent
     justifyContent: "center",
     alignItems: "center",
-  },
-  fullscreenPhoto: {
-    width: "90%",
-    height: "70%",
-    resizeMode: "contain", // S'assure que l'image ne déborde pas
-    borderRadius: 10,
   },
   closeButton: {
     position: "absolute",

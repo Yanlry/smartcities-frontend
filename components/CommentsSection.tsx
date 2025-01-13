@@ -430,6 +430,7 @@ const CommentsSection = ({ report }) => {
                 <TextInput
                   style={styles.textInput}
                   placeholder="Quelle est la raison de votre signalement ?"
+                  placeholderTextColor="#A9A9A9"
                   value={reportReason}
                   onChangeText={setReportReason}
                 />
