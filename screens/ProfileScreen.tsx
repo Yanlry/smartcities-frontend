@@ -175,8 +175,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2A2B2A" />
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#2A2B2A" }}>
+        <ActivityIndicator size="large" color="#093A3E" />
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#093A3E" }}>
           Chargement des informations..
         </Text>
       </View>
@@ -446,6 +446,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       setIsSubmitting(false);
     }
   };
+
+
 
   return (
     <View style={styles.container}>

@@ -148,7 +148,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2A2B2A" />
+        <ActivityIndicator size="large" color="#093A3E" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );

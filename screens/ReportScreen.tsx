@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#2A2B2A", // Couleur sombre
+    backgroundColor: "#093A3E", // Couleur sombre
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#2A2B2A', // Couleur dorée ou autre
+    color: '#093A3E', // Couleur dorée ou autre
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',

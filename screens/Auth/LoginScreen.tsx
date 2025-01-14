@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
     marginBottom: 10,
     textAlign: "center",
   },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   // Sous-titre
   subtitle: {
     fontSize: 18,
-    color: "#2A2B2A",
+    color: "#093A3E",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -443,8 +443,8 @@ const styles = StyleSheet.create({
   loginButton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#2A2B2A", // Bleu moderne
-    shadowColor: "#2A2B2A",
+    backgroundColor: "#093A3E", // Bleu moderne
+    shadowColor: "#093A3E",
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   registerText: {
     marginTop: 15,
     fontSize: 16,
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
 
   // Bouton "S'inscrire"
@@ -478,10 +478,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 2,
-    borderColor: "#2A2B2A",
+    borderColor: "#093A3E",
   },
   passwordText: {
-    color: "#2A2B2A",
+    color: "#093A3E",
     fontSize: 16,
     textAlign: "center",
     width: "100%",
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   },
 
   registerButtonText: {
-    color: "#2A2B2A",
+    color: "#093A3E",
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -515,15 +515,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   modalText: {
-    color: "#2A2B2A",
+    color: "#093A3E",
     marginBottom: 20,
   },
   modalButton: {
     padding: 15,
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
     borderRadius: 30,
     marginTop: 10,
     width: "100%",

@@ -262,7 +262,7 @@ export default function UserProfileScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2A2B2A" />
+        <ActivityIndicator size="large" color="#093A3E" />
         <Text>Chargement du profil utilisateur...</Text>
       </View>
     );
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#2A2B2A", // Couleur sombre
+    backgroundColor: "#093A3E", // Couleur sombre
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#2A2B2A', // Couleur dorée ou autre
+    color: '#093A3E', // Couleur dorée ou autre
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   sendChat: {
-    backgroundColor: "#57A773",
+    backgroundColor: "#093A3E",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   followButton: {
-    backgroundColor: "#57A773",
+    backgroundColor: "#093A3E",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 10,
-    color: "#57A773",
+    color: "#093A3E",
   },
   cardHeader: {
     fontSize: 18,
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center", // Centre le nombre horizontalement
     marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#57A773", // Couleur sombre pour le nombre
+    color: "#093A3E", // Couleur sombre pour le nombre
   },
   statLabel: {
     textAlign: "center", // Centre le texte horizontalement

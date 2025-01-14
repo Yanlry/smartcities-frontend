@@ -159,7 +159,7 @@ export default function MapScreen() {
   if (loading || loadingReports) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2A2B2A" />
+        <ActivityIndicator size="large" color="#093A3E" />
       </View>
     );
   }

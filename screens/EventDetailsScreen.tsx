@@ -309,7 +309,7 @@ export default function EventDetails({ route }) {
           {isLoading && (
             <ActivityIndicator
               size="large"
-              color="#2A2B2A"
+              color="#093A3E"
               style={styles.loader}
             />
           )}
@@ -492,13 +492,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeIndicator: {
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
   },
   headerNav: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#2A2B2A", // Couleur sombre
+    backgroundColor: "#093A3E", // Couleur sombre
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#2A2B2A', // Couleur dorée ou autre
+    color: '#093A3E', // Couleur dorée ou autre
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
@@ -588,8 +588,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   button: {
-    backgroundColor: "#2A2B2A",
-    shadowColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
+    shadowColor: "#093A3E",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,

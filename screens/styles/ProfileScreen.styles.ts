@@ -22,7 +22,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center", // Centre le nombre horizontalement
     marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#2A2B2A", // Couleur sombre pour le nombre
+    color: "#093A3E", // Couleur sombre pour le nombre
   },
   statLabel: {
     textAlign: "center", // Centre le texte horizontalement
@@ -37,7 +37,7 @@ export default StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 20,
     padding: 10,
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
     borderRadius: 30,
     alignItems: "center",
   },
@@ -72,7 +72,7 @@ export default StyleSheet.create({
   saveButton: {
     padding: 10,
     width: "40%",
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
     borderRadius: 30,
   },
   saveButtonText: {
@@ -161,7 +161,7 @@ searchButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#2A2B2A", // Couleur sombre
+    backgroundColor: "#093A3E", // Couleur sombre
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -171,7 +171,7 @@ searchButton: {
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#2A2B2A', // Couleur dorée ou autre
+    color: '#093A3E', // Couleur dorée ou autre
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
@@ -232,8 +232,8 @@ searchButton: {
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2A2B2A",
-    shadowColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
+    shadowColor: "#093A3E",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -360,8 +360,8 @@ searchButton: {
     alignItems: "center",
     marginTop: 20,
     marginBottom: 20,
-    backgroundColor: "#2A2B2A",
-    shadowColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
+    shadowColor: "#093A3E",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,

@@ -201,7 +201,7 @@ export const processReports = async (
   latitude: number,
   longitude: number,
   radiusKm: number = 2000,
-  limit: number = 4
+  limit: number = 10
 ): Promise<Report[]> => {
   try {
     const enrichedReports = await fetchAllReportsInRegion(latitude, longitude, radiusKm);

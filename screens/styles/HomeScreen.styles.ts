@@ -15,7 +15,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 15,
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   //  ------------------------------------------------ LOADING
 
@@ -28,7 +28,7 @@ export default StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2A2B2A",  
+    color: "#093A3E",  
   },
 
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
@@ -95,7 +95,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#2A2B2A",  
+    backgroundColor: "#093A3E",  
     borderRadius: 30,
   },
   backButtonText: {
@@ -156,10 +156,11 @@ export default StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   dropdownButton: {
-    marginLeft: 8,
+    position:"absolute",
+    right:0,
   },
   modalOverlay: {
     flex: 1,
@@ -228,7 +229,7 @@ export default StyleSheet.create({
     marginTop: 4,
   },
   cityNameUser: {
-    color: "#2A2B2A", // Texte de la ville en bleu
+    color: "#093A3E", // Texte de la ville en bleu
     fontWeight: "bold", // Optionnel pour mettre en valeur la ville
   },
   userDetails: {
@@ -277,7 +278,7 @@ export default StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   statLabel: {
     fontSize: 12,
@@ -312,7 +313,7 @@ export default StyleSheet.create({
   voteCount: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
     marginLeft: 8,
   },
   noVotesText: {
@@ -389,7 +390,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     marginTop: 20,
     marginBottom: 10,
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
     paddingVertical: 15,
     paddingHorizontal: 50,
     borderRadius: 30,
@@ -424,6 +425,13 @@ export default StyleSheet.create({
     marginBottom: 25, // Espace avec la liste
     alignItems: 'center',
   },
+  titleContainer1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    marginVertical: 10,
+  },
   titleText: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -443,7 +451,7 @@ export default StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   smarterItem: {
     alignItems: "center",
@@ -473,7 +481,7 @@ export default StyleSheet.create({
     zIndex: 1, // Assure que la médaille est au-dessus de l'image
   },
   seeAllButton: {
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,
@@ -495,71 +503,74 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 30,
   },
   noReportsText: {
     fontSize: 18,
-    color: "#999",
+    color: "#A0A0A0",
     textAlign: "center",
-    marginBottom: 20,
+    fontStyle: "italic",
   },
-  scrollViewContainer: {
-    paddingBottom: 20,
+  timelineContainer: {
+    flexDirection: "row", // Permet un défilement horizontal
+    alignItems: "center",
   },
-  reportCard: {
+  timelinePointContainer: {
+    alignItems: "center",
+    marginHorizontal: 10, // Espacement entre chaque signalement
+  },
+  timelineLabel: {
+    width: 180,
+    marginTop:5,
+
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: 10, // Distance entre l'étiquette et le bloc signalement
+  },
+  labelText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFF", // Couleur blanche pour contraster avec le fond dynamique
+    textAlign: "center",
+  },
+  timelineBlock: {
+    width: 230,
     backgroundColor: "#FFF",
-    borderRadius: 15, // Ajustement pour un design plus moderne
-    borderBottomEndRadius: 50, // Coin inférieur droit plat
+    borderRadius: 15,
     padding: 15,
-    marginVertical: 5, // Meilleur espacement entre les cartes
-    borderLeftWidth: 5,
-    borderRightWidth:5,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
     elevation: 3,
+    marginBottom:10,
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  reportType: {
-    fontSize: 18, // Augmentation pour plus de lisibilité
-    fontWeight: "bold",
+  reportTitle: {
+    fontSize: 14,
+    fontWeight: "600",
     color: "#333",
-    flex: 1, // S'assure que le texte utilise tout l'espace disponible
-    marginRight: 10, // Ajout d'un espace pour séparer du kilométrage
-  },
-  reportDistance: {
-    fontSize: 14,
-    color: "#666",
-    fontStyle: "italic",
-  },
-  reportDetails: {
-    fontSize: 14,
-    color: "#555",
-    fontWeight: "500",
     marginBottom: 10,
   },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
+  reportType: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#555",
+    marginBottom: 10,
   },
-  reportCity: {
-    fontSize: 13,
+  reportDetails: {
+    fontSize: 12,
     color: "#666",
-    fontStyle: "italic",
-    flex: 1, // Évite les débordements
-    marginRight: 10, // Ajoute un espace entre les éléments
+    marginBottom: 5,
   },
   reportTime: {
-    fontSize: 12,
-    color: "#999",
+    fontSize: 11,
+    color: "#666",
   },
   //  ------------------------------------------------ SELECTION DE CATEGORIE
 
@@ -641,7 +652,7 @@ export default StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   eventDetails: {
     fontSize: 14,
@@ -694,7 +705,7 @@ export default StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -737,7 +748,7 @@ export default StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
     marginBottom: 5,
   },
   mayorName: {
@@ -793,7 +804,7 @@ export default StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2A2B2A",
+    color: "#093A3E",
   },
   officeContact: {
     fontSize: 14,

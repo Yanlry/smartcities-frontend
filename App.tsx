@@ -5,7 +5,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -30,7 +30,10 @@ import UserProfileScreen from "./screens/UserProfileScreen";
 import Sidebar from "./components/Sidebar";
 import { StatusBar } from "react-native";
 import NotificationsScreen from "./screens/NotificationsScreen";
-import { NotificationProvider,useNotification} from "./context/NotificationContext";
+import {
+  NotificationProvider,
+  useNotification,
+} from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import ChatScreen from "./screens/ChatScreen";
 import RankingScreen from "./screens/RankingScreen";
@@ -39,8 +42,12 @@ import SocialScreen from "./screens/SocialScreen";
 import CityScreen from "./screens/CityScreen";
 import { useToken } from "./hooks/useToken";
 import PostDetailsScreen from "./screens/PostDetailsScreen";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
-import { useFonts } from 'expo-font';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
+import { useFonts } from "expo-font";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -51,23 +58,23 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { getToken } = useToken();
   const previousOffset = useRef(0); // Dernier offset du scroll
-  const threshold = 10; 
+  const threshold = 10;
   const headerTranslateY = useSharedValue(0);
 
-const handleScroll = (event) => {
-  const currentOffset = event.nativeEvent.contentOffset.y;
+  const handleScroll = (event) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
 
-  if (currentOffset - previousOffset.current > threshold) {
-    // Scroll vers le bas (cacher le header)
-    headerTranslateY.value = withTiming(-100, { duration: 200 });
-  } else if (previousOffset.current - currentOffset > threshold) {
-    // Scroll vers le haut (afficher le header)
-    headerTranslateY.value = withTiming(0, { duration: 200 });
-  }
+    if (currentOffset - previousOffset.current > threshold) {
+      // Scroll vers le bas (cacher le header)
+      headerTranslateY.value = withTiming(-100, { duration: 200 });
+    } else if (previousOffset.current - currentOffset > threshold) {
+      // Scroll vers le haut (afficher le header)
+      headerTranslateY.value = withTiming(0, { duration: 200 });
+    }
 
-  // Met à jour l'offset précédent
-  previousOffset.current = currentOffset;
-};
+    // Met à jour l'offset précédent
+    previousOffset.current = currentOffset;
+  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prevState) => {
@@ -80,7 +87,12 @@ const handleScroll = (event) => {
     console.log("Suppression de toutes les données stockées.");
     const keys = await AsyncStorage.getAllKeys();
     console.log("Clés avant suppression :", keys); // Ajoute un log pour vérifier les clés restantes
-    await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userId', 'userToken']);
+    await AsyncStorage.multiRemove([
+      "authToken",
+      "refreshToken",
+      "userId",
+      "userToken",
+    ]);
     const remainingKeys = await AsyncStorage.getAllKeys();
     console.log("Clés après suppression :", remainingKeys); // Validez que tout est supprimé
   };
@@ -96,7 +108,10 @@ const handleScroll = (event) => {
           console.log("Aucun token valide trouvé, utilisateur non connecté.");
         }
       } catch (error) {
-        console.error("Erreur lors de la vérification de l'état de connexion :", error);
+        console.error(
+          "Erreur lors de la vérification de l'état de connexion :",
+          error
+        );
       } finally {
         setLoading(false); // Fin de la vérification
       }
@@ -118,7 +133,7 @@ const handleScroll = (event) => {
 
   const CustomHeader = ({ navigation, headerTranslateY }) => {
     const { unreadCount } = useNotification(); // Compteur des notifications non lues
-  
+
     return (
       <Animated.View
         style={[
@@ -158,13 +173,12 @@ const handleScroll = (event) => {
   };
 
   const [fontsLoaded] = useFonts({
-    'Insanibc': require('../frontend/assets/fonts/Insanibc.ttf'), // Assurez-vous que le chemin est correct
+    Insanibc: require("../frontend/assets/fonts/Insanibc.ttf"), // Assurez-vous que le chemin est correct
   });
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" color="#0000ff" />; // Afficher un loader tant que la police n'est pas chargée
   }
-
 
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
@@ -191,8 +205,6 @@ const handleScroll = (event) => {
       }
     };
 
-    
-  
     // Récupérer l'ID utilisateur lors du chargement
     useEffect(() => {
       const initializeUserId = async () => {
@@ -200,20 +212,20 @@ const handleScroll = (event) => {
         setUserId(id);
         setLoading(false);
       };
-  
+
       initializeUserId();
     }, []);
-  
+
     if (loading) {
       return (
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#2A2B2A" />
+          <ActivityIndicator size="large" color="#093A3E" />
         </View>
       );
     }
-  
+
     if (!userId) {
       return (
         <View
@@ -223,132 +235,146 @@ const handleScroll = (event) => {
         </View>
       );
     }
-  
+
     console.log("UserId dans TabNavigator :", userId);
-  
+
     return (
       <>
-      <Tab.Navigator
-  screenOptions={({ route }) => ({
-    header: ({ navigation }) => (
-      <CustomHeader navigation={navigation} headerTranslateY={headerTranslateY} />
-    ),
-    tabBarIcon: ({ color, size, focused }) => {
-      let iconName = "";
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            header: ({ navigation }) => (
+              <CustomHeader
+                navigation={navigation}
+                headerTranslateY={headerTranslateY}
+              />
+            ),
+            tabBarIcon: ({ color, size, focused }) => {
+              let iconName = "";
 
-      if (route.name === "Accueil") {
-        iconName = "home-outline";
-      } else if (route.name === "Conversations") {
-        iconName = "chatbubble-ellipses-outline";
-      } else if (route.name === "Social") {
-        iconName = "people-outline";
-      } else if (route.name === "Carte") {
-        iconName = "map-outline";
-      } else if (route.name === "Ajouter") {
-        iconName = "add-circle-outline";
-      }
+              if (route.name === "Accueil") {
+                iconName = focused ? "home" : "home-outline";
+              } else if (route.name === "Conversations") {
+                iconName = focused ? "chatbubble-ellipses" : "chatbubble-ellipses-outline";
+              } else if (route.name === "Social") {
+                iconName = focused ? "people" : "people-outline";
+              } else if (route.name === "Carte") {
+                iconName = focused ? "map" : "map-outline";
+              } else if (route.name === "Ajouter") {
+                iconName = "add-circle-outline";
+              }
 
-      return (
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            backgroundColor: focused ? "#F7F2DE" : "transparent",
-            borderRadius: 25,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+              return (
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 25,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                 <Icon
+    name={iconName}
+    size={focused ? size + 15: size} // Augmente la taille si sélectionné
+    color={focused ? "#F7F2DE" : "#F7F2DE"} // Change la couleur en fonction de l'état
+    style={{
+      fontWeight: focused ? "bold" : "normal", // Simule un trait plus épais
+    }}
+  />
+                </View>
+              );
+            },
+            tabBarShowLabel: false,
+            tabBarStyle: {
+              height: 70,
+              paddingTop: 10,
+              paddingHorizontal: 10,
+              backgroundColor: "#093A3E",
+              position: "absolute",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -5 },
+              shadowOpacity: 0.1,
+              shadowRadius: 10,
+              elevation: 10,
+            },
+          })}
         >
-          <Icon
-            name={iconName}
-            size={focused ? size + 5 : size}
-            color={focused ? "#2A2B2A" : "#F7F2DE"}
+          <Tab.Screen name="Accueil">
+            {({ navigation }) => {
+              useEffect(() => {
+                const unsubscribe = navigation.addListener("focus", () => {
+                  headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                });
+                return unsubscribe;
+              }, [navigation]);
+
+              return (
+                <HomeScreen
+                  navigation={navigation}
+                  handleScroll={handleScroll}
+                />
+              );
+            }}
+          </Tab.Screen>
+
+          <Tab.Screen
+            name="Conversations"
+            component={ConversationsScreen}
+            initialParams={{ userId }}
+            listeners={{
+              focus: () => {
+                headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+              },
+            }}
           />
-        </View>
-      );
-    },
-    tabBarShowLabel: false,
-    tabBarStyle: {
-      height: 70,
-      paddingTop: 10,
-      paddingHorizontal: 10,
-      backgroundColor: "#2A2B2A",
-      position: "absolute",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: -5 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-      elevation: 10,
-    },
-  })}
->
-  <Tab.Screen name="Accueil">
-    {({ navigation }) => {
-      useEffect(() => {
-        const unsubscribe = navigation.addListener("focus", () => {
-          headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
-        });
-        return unsubscribe;
-      }, [navigation]);
 
-      return <HomeScreen navigation={navigation} handleScroll={handleScroll} />;
-    }}
-  </Tab.Screen>
+          <Tab.Screen
+            name="Ajouter"
+            component={EmptyScreen}
+            listeners={{
+              tabPress: (e) => {
+                e.preventDefault(); // Empêche la navigation
+                actionSheetRef.current?.show(); // Affiche l'ActionSheet
+              },
+              focus: () => {
+                headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+              },
+            }}
+          />
 
-  <Tab.Screen
-    name="Conversations"
-    component={ConversationsScreen}
-    initialParams={{ userId }}
-    listeners={{
-      focus: () => {
-        headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
-      },
-    }}
-  />
+          <Tab.Screen name="Social">
+            {({ navigation }) => {
+              useEffect(() => {
+                const unsubscribe = navigation.addListener("focus", () => {
+                  headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                });
+                return unsubscribe;
+              }, [navigation]);
 
-  <Tab.Screen
-    name="Ajouter"
-    component={EmptyScreen}
-    listeners={{
-      tabPress: (e) => {
-        e.preventDefault(); // Empêche la navigation
-        actionSheetRef.current?.show(); // Affiche l'ActionSheet
-      },
-      focus: () => {
-        headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
-      },
-    }}
-  />
+              return <SocialScreen handleScroll={handleScroll} />;
+            }}
+          </Tab.Screen>
 
-  <Tab.Screen name="Social">
-    {({ navigation }) => {
-      useEffect(() => {
-        const unsubscribe = navigation.addListener("focus", () => {
-          headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
-        });
-        return unsubscribe;
-      }, [navigation]);
+          <Tab.Screen
+            name="Carte"
+            component={MapScreen}
+            listeners={{
+              focus: () => {
+                headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+              },
+            }}
+          />
+        </Tab.Navigator>
 
-      return <SocialScreen handleScroll={handleScroll} />;
-    }}
-  </Tab.Screen>
-
-  <Tab.Screen
-    name="Carte"
-    component={MapScreen}
-    listeners={{
-      focus: () => {
-        headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
-      },
-    }}
-  />
-</Tab.Navigator>
-  
         {/* ActionSheet pour ajouter un signalement ou un événement */}
         <ActionSheet
           ref={(o) => (actionSheetRef.current = o)}
           title="Que souhaitez-vous ajouter ?"
-          options={["Ajouter un signalement", "Ajouter un événement", "Annuler"]}
+          options={[
+            "Ajouter un signalement",
+            "Ajouter un événement",
+            "Annuler",
+          ]}
           cancelButtonIndex={2}
           onPress={(index) => {
             if (index === 0) {
@@ -372,108 +398,108 @@ const handleScroll = (event) => {
 
   return (
     <AuthProvider handleLogout={handleLogout}>
-    <NotificationProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#111" />
-      <NavigationContainer>
-        <KeyboardWrapper>
-          <>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              {!isLoggedIn ? (
-                <>
-                  <Stack.Screen name="Login">
-                    {(props) => (
-                      <LoginScreen
-                        {...props}
-                        onLogin={() => {
-                          setIsLoggedIn(true);
-                        }}
-                      />
-                    )}
-                  </Stack.Screen>
-                  <Stack.Screen name="Register">
-                    {(props) => (
-                      <RegisterScreen
-                        {...props}
-                        onLogin={() => {
-                          setIsLoggedIn(true);
-                        }}
-                      />
-                    )}
-                  </Stack.Screen>
-                </>
-              ) : (
-                <>
-                  <Stack.Screen name="Main" component={TabNavigator} />
-                  <Stack.Screen name="ProfileScreen">
-                    {(props) => (
-                      <ProfileScreen
-                        {...props}
-                        onLogout={handleLogout} // Passez handleLogout ici
-                      />
-                    )}
-                  </Stack.Screen>
-                  <Stack.Screen
-                    name="UserProfileScreen"
-                    component={UserProfileScreen}
-                  />
-                  <Stack.Screen
-                    name="ReportDetailsScreen"
-                    component={ReportDetailsScreen}
-                  />
-                  <Stack.Screen name="ReportScreen" component={ReportScreen} />
-                  <Stack.Screen
-                    name="EventDetailsScreen"
-                    component={EventDetailsScreen}
-                  />
-                  <Stack.Screen name="EventsScreen" component={EventsScreen} />
-                  <Stack.Screen
-                    name="CategoryReportsScreen"
-                    component={CategoryReportsScreen}
-                  />
-                  <Stack.Screen
-                    name="AddNewEventScreen"
-                    component={AddNewEventScreen}
-                  />
-                  <Stack.Screen
-                    name="AddNewReportScreen"
-                    component={AddNewReportScreen}
-                  />
-                  <Stack.Screen
-                    name="NotificationsScreen"
-                    component={NotificationsScreen}
-                  />
-                  <Stack.Screen name="ChatScreen" component={ChatScreen} />
-                  <Stack.Screen
-                    name="RankingScreen"
-                    component={RankingScreen}
-                  />
-                  <Stack.Screen
-                    name="ConversationsScreen"
-                    component={ConversationsScreen}
-                  />
-                  <Stack.Screen
-                     name="SignalementsScreen" 
-                     component={ReportScreen}
-                  />
-                  <Stack.Screen
-                     name="CityScreen" 
-                     component={CityScreen}
-                  />
-                  <Stack.Screen
-                     name="PostDetailsScreen" 
-                     component={PostDetailsScreen}
-                  />
-                </>
-              )}
-            </Stack.Navigator>
-            <Sidebar
-              isOpen={isSidebarOpen}
-              toggleSidebar={toggleSidebar}
-            />
-          </>
-        </KeyboardWrapper>
-      </NavigationContainer>
-    </NotificationProvider>
+      <NotificationProvider>
+        <StatusBar barStyle="light-content" backgroundColor="#111" />
+        <NavigationContainer>
+          <KeyboardWrapper>
+            <>
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {!isLoggedIn ? (
+                  <>
+                    <Stack.Screen name="Login">
+                      {(props) => (
+                        <LoginScreen
+                          {...props}
+                          onLogin={() => {
+                            setIsLoggedIn(true);
+                          }}
+                        />
+                      )}
+                    </Stack.Screen>
+                    <Stack.Screen name="Register">
+                      {(props) => (
+                        <RegisterScreen
+                          {...props}
+                          onLogin={() => {
+                            setIsLoggedIn(true);
+                          }}
+                        />
+                      )}
+                    </Stack.Screen>
+                  </>
+                ) : (
+                  <>
+                    <Stack.Screen name="Main" component={TabNavigator} />
+                    <Stack.Screen name="ProfileScreen">
+                      {(props) => (
+                        <ProfileScreen
+                          {...props}
+                          onLogout={handleLogout} // Passez handleLogout ici
+                        />
+                      )}
+                    </Stack.Screen>
+                    <Stack.Screen
+                      name="UserProfileScreen"
+                      component={UserProfileScreen}
+                    />
+                    <Stack.Screen
+                      name="ReportDetailsScreen"
+                      component={ReportDetailsScreen}
+                    />
+                    <Stack.Screen
+                      name="ReportScreen"
+                      component={ReportScreen}
+                    />
+                    <Stack.Screen
+                      name="EventDetailsScreen"
+                      component={EventDetailsScreen}
+                    />
+                    <Stack.Screen
+                      name="EventsScreen"
+                      component={EventsScreen}
+                    />
+                    <Stack.Screen
+                      name="CategoryReportsScreen"
+                      component={CategoryReportsScreen}
+                    />
+                    <Stack.Screen
+                      name="AddNewEventScreen"
+                      component={AddNewEventScreen}
+                    />
+                    <Stack.Screen
+                      name="AddNewReportScreen"
+                      component={AddNewReportScreen}
+                    />
+                    <Stack.Screen
+                      name="NotificationsScreen"
+                      component={NotificationsScreen}
+                    />
+                    <Stack.Screen name="ChatScreen" component={ChatScreen} />
+                    <Stack.Screen
+                      name="RankingScreen"
+                      component={RankingScreen}
+                    />
+                    <Stack.Screen
+                      name="ConversationsScreen"
+                      component={ConversationsScreen}
+                    />
+                    <Stack.Screen
+                      name="SignalementsScreen"
+                      component={ReportScreen}
+                    />
+                    <Stack.Screen name="CityScreen" component={CityScreen} />
+                    <Stack.Screen
+                      name="PostDetailsScreen"
+                      component={PostDetailsScreen}
+                    />
+                  </>
+                )}
+              </Stack.Navigator>
+              <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+            </>
+          </KeyboardWrapper>
+        </NavigationContainer>
+      </NotificationProvider>
     </AuthProvider>
   );
 }
@@ -506,19 +532,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#2A2B2A", // Couleur sombre
-  paddingTop: 40,
+    backgroundColor: "#093A3E", // Couleur sombre
+    paddingTop: 40,
     paddingHorizontal: 20,
     height: 90, // Hauteur ajustée
   },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 24,
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#2A2B2A', // Couleur dorée ou autre
-    backgroundColor: '#F7F2DE',
-    letterSpacing:2,
+    color: '#F7F2DE', // Couleur dorée ou autre
+    letterSpacing:4,
     fontWeight: 'bold',
     fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
   },
@@ -539,4 +564,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-

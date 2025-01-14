@@ -26,6 +26,7 @@ import { useFetchStatistics } from "../hooks/useFetchStatistics";
 // @ts-ignore
 import { API_URL } from "@env";
 import { Linking } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 
 type User = {
   id: string;
@@ -97,12 +98,14 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [modalNameVisible, setModalNameVisible] = useState(false);
   const nomCommune = user?.nomCommune || ""; // Nom de la commune de l'utilisateur
-  const { data } = useFetchStatistics(`${API_URL}/reports/statistics`, nomCommune);
+  const { data } = useFetchStatistics(
+    `${API_URL}/reports/statistics`,
+    nomCommune
+  );
   const userCity = user?.nomCommune || "Commune non définie";
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
-  
-
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -258,19 +261,19 @@ export default function HomeScreen({ navigation, handleScroll }) {
       try {
         setLoading(true);
         setError(null);
-  
+
         const response = await axios.get(`${API_URL}/events`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-  
+
         const userCityNormalized = normalizeCityName(userCity); // Normaliser la ville utilisateur
-  
+
         const filteredEvents = response.data
           .filter((event: any) => {
             const eventCity = extractCityAfterPostalCode(event.location);
             const eventCityNormalized = normalizeCityName(eventCity);
-  
+
             // Comparaison des villes normalisées
             return eventCityNormalized === userCityNormalized;
           })
@@ -282,7 +285,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
               event.photos[0]?.url ||
               "https://via.placeholder.com/300", // Gestion des images
           }));
-  
+
         setFeaturedEvents(filteredEvents);
       } catch (error: any) {
         console.error("Erreur dans fetchEvents :", error.message || error);
@@ -291,19 +294,19 @@ export default function HomeScreen({ navigation, handleScroll }) {
         setLoading(false);
       }
     };
-  
+
     if (userCity) {
       fetchEvents();
     }
   }, [userCity]);
-  
+
   // Fonction pour extraire la ville juste après le code postal
   const extractCityAfterPostalCode = (location: string) => {
     if (!location) return "";
     const match = location.match(/\d{5}\s+([^,]+)/); // Capture ce qui suit les 5 chiffres
     return match ? match[1].trim() : "";
   };
-  
+
   // Fonction pour normaliser les noms de ville
   const normalizeCityName = (cityName: string) => {
     if (!cityName) return "";
@@ -440,7 +443,9 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
+  const displayName = user?.useFullName
+    ? `${user.firstName} ${user.lastName}`
+    : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -560,8 +565,68 @@ export default function HomeScreen({ navigation, handleScroll }) {
     if (!text) return ""; // Gérer les cas où le texte est vide
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
-  // Formatage du nom de la commune
-  const formattedCommune = capitalize(nomCommune);
+
+  const handleProfileImageClick = async () => {
+    try {
+      setIsSubmitting(true);
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        aspect: [1, 1],
+      });
+
+      if (result.canceled) {
+        setIsSubmitting(false);
+        return;
+      }
+
+      const photoUri = result.assets?.[0]?.uri;
+
+      if (!photoUri) {
+        throw new Error("Aucune image sélectionnée");
+      }
+
+      const formData = new FormData();
+      formData.append("profileImage", {
+        uri: photoUri,
+        type: "image/jpeg",
+        name: "profile.jpg",
+      } as any);
+
+      console.log("FormData clé et valeur:", formData);
+
+      const userId = await getUserIdFromToken();
+      if (!userId) throw new Error("ID utilisateur non trouvé");
+
+      const responsePost = await fetch(
+        `${API_URL}/users/${userId}/profile-image`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      console.log("Response status:", responsePost.status);
+
+      if (!responsePost.ok) {
+        const errorBody = await responsePost.text();
+        console.error("Response body:", errorBody);
+        throw new Error("Échec de la mise à jour de la photo de profil");
+      }
+
+      const updatedUser = await responsePost.json();
+      console.log("Response body:", updatedUser);
+
+      navigation.replace("Main");
+    } catch (err: any) {
+      console.error("Erreur lors de l'upload :", err.message);
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -570,35 +635,40 @@ export default function HomeScreen({ navigation, handleScroll }) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
       onScroll={handleScroll}
-      scrollEventThrottle={16} 
+      scrollEventThrottle={16}
     >
       <View style={styles.cardContainer}>
         <View style={styles.header}>
           {user?.profilePhoto?.url ? (
-            <Image
-              source={{ uri: user.profilePhoto.url }}
-              style={styles.profileImage}
-            />
+            <TouchableOpacity onPress={handleProfileImageClick}>
+              <Image
+                source={{ uri: user.profilePhoto.url }}
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
           ) : (
-            <View style={styles.noProfileImage}>
-              <Text style={styles.noProfileImageText}>
-                Pas de photo de profil
-              </Text>
-            </View>
+            <TouchableOpacity onPress={handleProfileImageClick}>
+              <View style={styles.noProfileImage}>
+                <Text style={styles.noProfileImageText}>
+                  Pas de photo de profil
+                </Text>
+              </View>
+            </TouchableOpacity>
           )}
 
           <View style={styles.userInfo}>
             <View style={styles.nameContainer}>
-              <Text onPress={() => setModalNameVisible(true)} style={styles.userName}>{displayName}</Text>
+              <Text
+                onPress={() => setModalNameVisible(true)}
+                style={styles.userName}
+              >
+                {displayName}
+              </Text>
               <TouchableOpacity
                 onPress={() => setModalNameVisible(true)}
                 style={styles.dropdownButton}
               >
-                <Ionicons
-                  name="chevron-down-outline"
-                  size={24}
-                  color="#102542"
-                />
+                <Ionicons name="settings-outline" size={16} color="#102542" />
               </TouchableOpacity>
             </View>
 
@@ -609,45 +679,54 @@ export default function HomeScreen({ navigation, handleScroll }) {
               onRequestClose={() => setModalNameVisible(false)}
             >
               <View style={styles.modalOverlay}>
-      <View style={styles.modalContainerName}>
-        <Text style={styles.modalTitleName}>Indiquez votre préférence pour votre identité visible</Text>
-        <FlatList
-          data={[
-            {
-              label: "Mon nom et prénom",
-              value: true,
-            },
-            {
-              label: "Mon nom d'utilisateur",
-              value: false,
-            },
-          ]}
-          keyExtractor={(item) => item.value.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.optionItem}>
-              <Text style={styles.optionText}>{item.label}</Text>
-              <Switch
-                value={user?.useFullName === item.value} // Active si l'option correspond
-                onValueChange={() => handleOptionChange(item.value ? "fullName" : "username")}
-                trackColor={{ false: "#CCCCCC", true: "#4CAF50" }}
-                thumbColor="#FFF"
-              />
-            </View>
-          )}
-        />
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => setModalNameVisible(false)}
-        >
-          <Text style={styles.closeButtonText}>Fermer</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+                <View style={styles.modalContainerName}>
+                  <Text style={styles.modalTitleName}>
+                    Indiquez votre préférence pour votre identité visible
+                  </Text>
+                  <FlatList
+                    data={[
+                      {
+                        label: "Mon nom et prénom",
+                        value: true,
+                      },
+                      {
+                        label: "Mon nom d'utilisateur",
+                        value: false,
+                      },
+                    ]}
+                    keyExtractor={(item) => item.value.toString()}
+                    renderItem={({ item }) => (
+                      <View style={styles.optionItem}>
+                        <Text style={styles.optionText}>{item.label}</Text>
+                        <Switch
+                          value={user?.useFullName === item.value} // Active si l'option correspond
+                          onValueChange={() =>
+                            handleOptionChange(
+                              item.value ? "fullName" : "username"
+                            )
+                          }
+                          trackColor={{ false: "#CCCCCC", true: "#4CAF50" }}
+                          thumbColor="#FFF"
+                        />
+                      </View>
+                    )}
+                  />
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setModalNameVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Fermer</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </Modal>
 
             <Text style={styles.userCity}>
               Engagé pour{" "}
-              <Text style={styles.cityNameUser}>
+              <Text
+                style={styles.cityNameUser}
+                onPress={() => navigation.navigate("CityScreen")}
+              >
                 {user?.nomCommune || "une commune non définie"}
               </Text>
             </Text>
@@ -805,53 +884,61 @@ export default function HomeScreen({ navigation, handleScroll }) {
       </View>
 
       <Text style={styles.sectionTitle}>🚨 Signalements à proximité</Text>
-{reports.length === 0 ? (
-  <View style={styles.emptyStateContainer}>
-    <Text style={styles.noReportsText}>Aucun signalement pour l'instant.</Text>
-  </View>
-) : (
-  <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    {reports.map((report, index) => (
-      <TouchableOpacity
-        key={report.id}
-        style={[
-          styles.reportCard,
-          {
-            borderLeftColor: typeColors[report.type] || "#CCCCCC",
-            borderRightColor: typeColors[report.type] || "#CCCCCC",
-            backgroundColor: hexToRgba(
-              typeColors[report.type] || "#F5F5F5",
-              calculateOpacity(report.createdAt, 0.15)
-            ),
-          },
-          index === reports.length - 1 && { marginBottom: 25 },
-        ]}
-        onPress={() => handlePressReport(report.id)}
-        activeOpacity={0.8}
-      >
-        <View style={styles.cardHeader}>
-          <Text numberOfLines={1} style={styles.reportType}>
-            {report.title}
-          </Text>
-          <Text style={styles.reportDistance}>
-            {report.distance.toFixed(2)} km
+      {reports.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.noReportsText}>
+            Aucun signalement pour l'instant.
           </Text>
         </View>
-        <Text style={styles.reportDetails}>{getTypeLabel(report.type)}</Text>
-        <View style={styles.cardFooter}>
-          <Text numberOfLines={1} style={styles.reportCity}>
-            {formatCity(report.city)}
-          </Text>
-          <Text style={styles.reportTime}>
-            {formatTime(report.createdAt)}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    ))}
-  </ScrollView>
-)}
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.timelineContainer}
+          horizontal={true} // Ligne de temps horizontale
+          showsHorizontalScrollIndicator={false}
+        >
+          {reports.map((report, index) => (
+            <View key={report.id} style={styles.timelinePointContainer}>
+              {/* Étiquette au-dessus de la timeline */}
+              <View
+                style={[
+                  styles.timelineLabel,
+                  { backgroundColor: typeColors[report.type] || "#F5F5F5" }, // Couleur dynamique
+                ]}
+              >
+                <Text style={styles.labelText}>
+                  {getTypeLabel(report.type)} à {report.distance.toFixed(2)} km
+                </Text>
+              </View>
+              {/* Bloc signalement */}
+              <TouchableOpacity
+                style={[
+                  styles.timelineBlock,
+                  {
+                    backgroundColor: hexToRgba(
+                      typeColors[report.type] || "#F5F5F5",
+                      calculateOpacity(report.createdAt, 0.2)
+                    ),
+                  },
+                ]}
+                onPress={() => handlePressReport(report.id)}
+                activeOpacity={0.9}
+              >
+                <Text numberOfLines={1} style={styles.reportTitle}>
+                  {report.title}
+                </Text>
+                <Text style={styles.reportDetails}>
+                  {formatCity(report.city)}
+                </Text>
+                <Text style={styles.reportTime}>
+                  {formatTime(report.createdAt)}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
-<Text style={styles.sectionTitle}>🎉 Événements à venir</Text>
+      <Text style={styles.sectionTitle}>🎉 Événements à venir</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#3498db" />
       ) : error ? (
@@ -867,11 +954,17 @@ export default function HomeScreen({ navigation, handleScroll }) {
               key={item.id}
               style={styles.featuredItem}
               onPress={() => {
-                console.log("Navigating to EventDetailsScreen with ID:", item.id);
+                console.log(
+                  "Navigating to EventDetailsScreen with ID:",
+                  item.id
+                );
                 navigation.navigate("EventDetailsScreen", { eventId: item.id });
               }}
             >
-              <Image source={{ uri: item.image }} style={styles.featuredImage} />
+              <Image
+                source={{ uri: item.image }}
+                style={styles.featuredImage}
+              />
               <Text style={styles.featuredTitle}>{item.title}</Text>
             </TouchableOpacity>
           ))}
@@ -881,7 +974,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
           <Text style={styles.noEventsText}>
             Pas d’événement prévu pour le moment dans votre ville.
           </Text>
-      </View>
+        </View>
       )}
 
       <Text style={styles.sectionTitle}>📅 Tous les événements</Text>

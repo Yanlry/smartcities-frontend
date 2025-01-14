@@ -36,6 +36,7 @@ export default function SocialScreen({ handleScroll }) {
   const [likedPosts, setLikedPosts] = useState<number[]>([]); // Définit le type comme un tableau de nombres
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [visibleCommentSection, setVisibleCommentSection] = useState({});
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -182,6 +183,18 @@ export default function SocialScreen({ handleScroll }) {
       ...prev,
       [postId]: !prev[postId],
     }));
+  };
+
+  const toggleCommentsVisibility = (postId) => {
+    setVisibleCommentSection((prev) => ({
+      ...prev,
+      [postId]: !prev[postId], // Alterne la visibilité
+    }));
+  };
+
+  const toggleBothComments = (postId) => {
+    toggleComments(postId);
+    toggleCommentsVisibility(postId);
   };
 
   const renderItem = ({ item }) => {
@@ -360,7 +373,8 @@ export default function SocialScreen({ handleScroll }) {
     const handleShare = async () => {
       try {
         const result = await Share.share({
-          message: "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
+          message:
+            "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
           title: "Partager ce post", // Titre (optionnel)
         });
 
@@ -411,7 +425,7 @@ export default function SocialScreen({ handleScroll }) {
               style={styles.deleteIcon}
               onPress={() => handleDeletePost(item.id)}
             >
-              <Icon name="trash" size={20} color="#2A2B2A" />
+              <Icon name="trash" size={20} color="#656765" />
             </TouchableOpacity>
           )}
         </View>
@@ -487,50 +501,82 @@ export default function SocialScreen({ handleScroll }) {
             onPress={() => handleLike(item.id)}
             style={[
               styles.likeButton,
-              likedPosts.includes(item.id) && styles.likedButton, // Change de style si liké
+              likedPosts.includes(item.id) && styles.likedButton,
             ]}
           >
             <View style={styles.likeButtonContent}>
               <Icon
-                name="thumbs-up"
-                size={16}
-                color={likedPosts.includes(item.id) ? "#00ff00" : "#fff"} // Change de couleur si liké
+                name={
+                  likedPosts.includes(item.id)
+                    ? "thumbs-up"
+                    : "thumbs-up-outline"
+                } // Icône dynamique
+                size={22}
+                color={likedPosts.includes(item.id) ? "#007bff" : "#656765"} // Couleur dynamique
                 style={styles.likeIcon}
               />
-              <Text style={styles.likeButtonText}>
+              <Text
+                style={[
+                  styles.likeButtonText,
+                  {
+                    color: likedPosts.includes(item.id) ? "#007bff" : "#656765",
+                  }, // Couleur dynamique
+                ]}
+              >
                 {likedPosts.includes(item.id)
                   ? item.likesCount > 1
-                    ? `Vous et ${item.likesCount - 1} autres personnes ont liké`
-                    : "Vous avez liké ce post"
+                    ? `${item.likesCount}`
+                    : "1"
                   : item.likesCount > 0
                   ? `${item.likesCount}`
                   : "0"}
               </Text>
             </View>
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => toggleBothComments(item.id)}
+            style={styles.commentButton}
+          >
+            <View style={styles.commentButtonContent}>
+              {/* Icône de commentaire */}
+              <Icon
+                name="chatbubble-outline"
+                size={22}
+                style={styles.commentIcon}
+                color={"#656765"}
+              />
+
+              {/* Nombre de commentaires */}
+              <Text style={styles.commentCountText}>
+                {item.comments?.length || 0}{" "}
+                {/* Affiche 0 si aucun commentaire */}
+              </Text>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleShare}>
-            <Icon name="share-outline" size={26} style={styles.shareIcon} />
+            <Icon name="share-outline" size={22} style={styles.shareIcon} />
           </TouchableOpacity>
         </View>
 
         {/* Ajouter un commentaire */}
-        <View style={styles.addCommentContainer}>
-          <TextInput
-            style={styles.addCommentInput}
-            placeholder="Écrivez un commentaire..."
-            value={commentInputs[item.id] || ""}
-            onChangeText={(text) =>
-              setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
-            }
-          />
-          <TouchableOpacity
-            onPress={() => handleAddComment(item.id)}
-            style={styles.addCommentButton}
-          >
-            <Text style={styles.addCommentButtonText}>Publier</Text>
-          </TouchableOpacity>
-        </View>
-
+        {visibleCommentSection[item.id] && (
+          <View style={styles.addCommentContainer}>
+            <TextInput
+              style={styles.addCommentInput}
+              placeholder="Écrivez un commentaire..."
+              value={commentInputs[item.id] || ""}
+              onChangeText={(text) =>
+                setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
+              }
+            />
+            <TouchableOpacity
+              onPress={() => handleAddComment(item.id)}
+              style={styles.addCommentButton}
+            >
+              <Text style={styles.addCommentButtonText}>Publier</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Section des commentaires */}
         {item.comments?.length > 0 && (
           <View style={styles.commentsSection}>
@@ -639,7 +685,7 @@ export default function SocialScreen({ handleScroll }) {
                     style={styles.deleteIconComment}
                     onPress={() => handleDeleteComment(comment.id)}
                   >
-                    <Icon name="trash" size={16} color="#2A2B2A" />
+                    <Icon name="trash" size={16} color="#656765" />
                   </TouchableOpacity>
                 )}
 
@@ -681,7 +727,7 @@ export default function SocialScreen({ handleScroll }) {
                                 style={styles.deleteIconReply}
                                 onPress={() => handleDeleteReply(reply.id)}
                               >
-                                <Icon name="trash" size={16} color="#2A2B2A" />
+                                <Icon name="trash" size={16} color="#656765" />
                               </TouchableOpacity>
                             )}
                           </View>
@@ -691,20 +737,6 @@ export default function SocialScreen({ handleScroll }) {
                   )}
               </View>
             ))}
-
-            {/* Afficher/Cacher les commentaires */}
-            {item.comments.length >= 1 && (
-              <TouchableOpacity
-                onPress={() => toggleComments(item.id)}
-                style={styles.showMoreButton}
-              >
-                <Text style={styles.showMoreTextComment}>
-                  {isExpanded
-                    ? "Cacher les commentaires"
-                    : `Afficher ${item.comments.length} commentaires`}
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
         )}
       </View>
@@ -837,7 +869,7 @@ export default function SocialScreen({ handleScroll }) {
                 style={styles.iconButton}
                 onPress={handlePickImage}
               >
-                <Icon name="image-outline" size={24} color="#2A2B2A" />
+                <Icon name="image" size={24} color="#007bff" />
               </TouchableOpacity>
             </View>
 
@@ -930,9 +962,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
   },
-  likedButton: {
-    backgroundColor: "#008000", // Vert quand liké
-  },
+  likedButton: {},
   largeImage: {
     width: "100%",
     height: 300,
@@ -1030,7 +1060,7 @@ const styles = StyleSheet.create({
   postContainer: {
     backgroundColor: "#fff",
     marginBottom: 10,
-    paddingVertical: 15,
+    paddingTop: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1046,11 +1076,31 @@ const styles = StyleSheet.create({
   postActions: {
     padding: 10,
     flexDirection: "row",
-    justifyContent: "space-between",
   },
   shareIcon: {
-    marginTop: 10,
-    marginRight: 5,
+    color: "#656765",
+    marginTop: 17,
+    marginLeft: 190,
+  },
+  commentButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 10,
+  },
+  commentButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  commentIcon: {
+    marginTop: 12,
+    marginLeft: 5, // Espacement entre l'icône et le texte
+  },
+  commentCountText: {
+    fontWeight: "bold",
+    color: "#656765",
+    fontSize: 14,
+    marginTop: 12,
+    marginLeft: 5,
   },
   actionButton: {
     flexDirection: "row",
@@ -1062,7 +1112,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   likeButton: {
-    backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -1103,17 +1152,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "black",
   },
-
   likeIcon: {
     marginRight: 5, // Espace entre l'icône et le texte
   },
   likeButtonText: {
-    color: "#fff",
+    color: "#656765",
     fontWeight: "bold",
     fontSize: 14,
+    marginTop: 2,
   },
   commentsSection: {
-    marginTop: 15,
     paddingHorizontal: 10,
   },
   noImageText: {
@@ -1126,6 +1174,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
+    marginBottom:15,
     paddingHorizontal: 10,
   },
   photosRowContainer: {
@@ -1167,7 +1216,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#007bff",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -1196,7 +1245,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   publishButton: {
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#007bff",
     padding: 10,
     borderRadius: 10,
     alignItems: "center",
@@ -1230,8 +1279,8 @@ const styles = StyleSheet.create({
   },
   deleteIcon: {
     position: "absolute",
-    right: 17,
-    top: 1,
+    right: 24,
+    top: 5,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
   },
@@ -1260,6 +1309,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     width: "85%",
     padding: 10,
+    paddingLeft:15,
     backgroundColor: "#f7f7f7",
     borderRadius: 20,
   },
@@ -1275,7 +1325,7 @@ const styles = StyleSheet.create({
     width: "85%",
     padding: 10,
     backgroundColor: "#eef6ff",
-    borderRadius: 8,
+    borderRadius: 20,
     borderLeftWidth: 2,
     borderLeftColor: "#007bff",
   },

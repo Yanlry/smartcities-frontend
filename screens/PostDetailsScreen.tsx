@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 
-
 import { useRoute } from "@react-navigation/native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -405,153 +404,153 @@ export default function PostDetailsScreen({ navigation }) {
     <View key={comment.id} style={styles.commentContainer}>
       {/* Avatar et contenu du commentaire principal */}
       <View style={styles.commentBloc}>
-      <Image
-        source={{
-          uri: comment.userProfilePhoto || "https://via.placeholder.com/150",
-        }}
-        style={styles.commentAvatar}
-      />
-      {/* Bouton Supprimer pour les commentaires de l'utilisateur connecté */}
-      {comment.userId === userId && (
-        <TouchableOpacity
-          style={styles.deleteIconComment}
-          onPress={() => handleDeleteComment(comment.id)}
-        >
-          <Icon name="trash" size={16} color="#2A2B2A" />
-        </TouchableOpacity>
-      )}
-      <View style={styles.commentContent}>
-        <View style={styles.commentVisible}>
-        <Text style={styles.userNameComment}>
-          {comment.userName || "Utilisateur inconnu"}
-        </Text>
-        <Text style={styles.timestampComment}>
-          {comment.createdAt
-            ? `${new Intl.DateTimeFormat("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              }).format(new Date(comment.createdAt))}`
-            : "Date inconnue"}
-        </Text>
-        <Text style={styles.commentText}>{comment.text}</Text>
-        </View>
-        {/* Bouton Répondre */}
-        <View style={styles.actionButton}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setReplyToCommentId((prev) =>
-                        prev === comment.id ? null : comment.id
-                      )
-                    }
-                  >
-                    <Text style={styles.replyButtonText}>J'aime</Text>
-                  </TouchableOpacity>
-                  {/* Bouton Répondre */}
-                  <TouchableOpacity
-                    onPress={() =>
-                      setReplyToCommentId((prev) =>
-                        prev === comment.id ? null : comment.id
-                      )
-                    }
-                  >
-                    <Text style={styles.replyButtonText}>Répondre</Text>
-                  </TouchableOpacity>
-                </View>
-
-        {/* Champ de réponse conditionnel */}
-        {replyToCommentId === comment.id && (
-          <View style={styles.replyContainer}>
-            <TextInput
-              style={styles.replyInput}
-              placeholder="Écrivez une réponse..."
-              value={replyInputs[comment.id] || ""}
-              onChangeText={(text) =>
-                setReplyInputs((prev) => ({
-                  ...prev,
-                  [comment.id]: text,
-                }))
-              }
-            />
+        <Image
+          source={{
+            uri: comment.userProfilePhoto || "https://via.placeholder.com/150",
+          }}
+          style={styles.commentAvatar}
+        />
+        {/* Bouton Supprimer pour les commentaires de l'utilisateur connecté */}
+        {comment.userId === userId && (
+          <TouchableOpacity
+            style={styles.deleteIconComment}
+            onPress={() => handleDeleteComment(comment.id)}
+          >
+            <Icon name="trash" size={16} color="#656765" />
+          </TouchableOpacity>
+        )}
+        <View style={styles.commentContent}>
+          <View style={styles.commentVisible}>
+            <Text style={styles.userNameComment}>
+              {comment.userName || "Utilisateur inconnu"}
+            </Text>
+            <Text style={styles.timestampComment}>
+              {comment.createdAt
+                ? `${new Intl.DateTimeFormat("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(comment.createdAt))}`
+                : "Date inconnue"}
+            </Text>
+            <Text style={styles.commentText}>{comment.text}</Text>
+          </View>
+          {/* Bouton Répondre */}
+          <View style={styles.actionButton}>
             <TouchableOpacity
-              onPress={() => handleAddReply(comment.id)}
-              style={styles.addReplyButton}
+              onPress={() =>
+                setReplyToCommentId((prev) =>
+                  prev === comment.id ? null : comment.id
+                )
+              }
             >
-              <Text style={styles.addReplyButtonText}>Publier</Text>
+              <Text style={styles.replyButtonText}>J'aime</Text>
+            </TouchableOpacity>
+            {/* Bouton Répondre */}
+            <TouchableOpacity
+              onPress={() =>
+                setReplyToCommentId((prev) =>
+                  prev === comment.id ? null : comment.id
+                )
+              }
+            >
+              <Text style={styles.replyButtonText}>Répondre</Text>
             </TouchableOpacity>
           </View>
-        )}
 
-        {/* Bouton pour afficher/masquer les réponses */}
-        {comment.replies && comment.replies.length > 0 && (
-  <TouchableOpacity
-    onPress={() =>
-      setReplyVisibility((prev) => ({
-        ...prev,
-        [comment.id]: !prev[comment.id], // Inverser l'état pour afficher/masquer
-      }))
-    }
-    style={styles.showMoreButton} // Applique le même style
-  >
-    <Text style={styles.showMoreText}>
-      {replyVisibility[comment.id]
-        ? "Masquer les réponses"
-        : `Afficher ${comment.replies.length} réponse${
-            comment.replies.length > 1 ? "s" : ""
-          }`}
-    </Text>
-  </TouchableOpacity>
-)}
-
-        {/* Affichage des réponses imbriquées si visible */}
-        {replyVisibility[comment.id] &&
-          comment.replies &&
-          comment.replies.length > 0 && (
-            <View>
-              {comment.replies.map((reply) => (
-                <View key={reply.id} style={styles.replyContainer}>
-                  <Image
-                    source={{
-                      uri:
-                        reply.userProfilePhoto ||
-                        "https://via.placeholder.com/150",
-                    }}
-                    style={styles.commentAvatar}
-                  />
-                  <View style={styles.commentContent}>
-                    <Text style={styles.userNameComment}>
-                      {reply.userName || "Utilisateur inconnu"}
-                    </Text>
-                    <Text style={styles.timestampComment}>
-                      {reply.createdAt
-                        ? `${new Intl.DateTimeFormat("fr-FR", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }).format(new Date(reply.createdAt))}`
-                        : "Date inconnue"}
-                    </Text>
-                    <Text style={styles.commentText}>{reply.text}</Text>
-
-                    {/* Bouton Supprimer pour les réponses de l'utilisateur connecté */}
-                    {reply.userId === userId && (
-                      <TouchableOpacity
-                        style={styles.deleteIconReply}
-                        onPress={() => handleDeleteReply(reply.id)}
-                      >
-                        <Icon name="trash" size={16} color="#2A2B2A" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              ))}
+          {/* Champ de réponse conditionnel */}
+          {replyToCommentId === comment.id && (
+            <View style={styles.replyContainer}>
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Écrivez une réponse..."
+                value={replyInputs[comment.id] || ""}
+                onChangeText={(text) =>
+                  setReplyInputs((prev) => ({
+                    ...prev,
+                    [comment.id]: text,
+                  }))
+                }
+              />
+              <TouchableOpacity
+                onPress={() => handleAddReply(comment.id)}
+                style={styles.addReplyButton}
+              >
+                <Text style={styles.addReplyButtonText}>Publier</Text>
+              </TouchableOpacity>
             </View>
           )}
-      </View>
+
+          {/* Bouton pour afficher/masquer les réponses */}
+          {comment.replies && comment.replies.length > 0 && (
+            <TouchableOpacity
+              onPress={() =>
+                setReplyVisibility((prev) => ({
+                  ...prev,
+                  [comment.id]: !prev[comment.id], // Inverser l'état pour afficher/masquer
+                }))
+              }
+              style={styles.showMoreButton} // Applique le même style
+            >
+              <Text style={styles.showMoreText}>
+                {replyVisibility[comment.id]
+                  ? "Masquer les réponses"
+                  : `Afficher ${comment.replies.length} réponse${
+                      comment.replies.length > 1 ? "s" : ""
+                    }`}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Affichage des réponses imbriquées si visible */}
+          {replyVisibility[comment.id] &&
+            comment.replies &&
+            comment.replies.length > 0 && (
+              <View>
+                {comment.replies.map((reply) => (
+                  <View key={reply.id} style={styles.replyContainer}>
+                    <Image
+                      source={{
+                        uri:
+                          reply.userProfilePhoto ||
+                          "https://via.placeholder.com/150",
+                      }}
+                      style={styles.commentAvatar}
+                    />
+                    <View style={styles.commentContent}>
+                      <Text style={styles.userNameComment}>
+                        {reply.userName || "Utilisateur inconnu"}
+                      </Text>
+                      <Text style={styles.timestampComment}>
+                        {reply.createdAt
+                          ? `${new Intl.DateTimeFormat("fr-FR", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }).format(new Date(reply.createdAt))}`
+                          : "Date inconnue"}
+                      </Text>
+                      <Text style={styles.commentText}>{reply.text}</Text>
+
+                      {/* Bouton Supprimer pour les réponses de l'utilisateur connecté */}
+                      {reply.userId === userId && (
+                        <TouchableOpacity
+                          style={styles.deleteIconReply}
+                          onPress={() => handleDeleteReply(reply.id)}
+                        >
+                          <Icon name="trash" size={16} color="#656765" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+        </View>
       </View>
     </View>
   );
@@ -605,7 +604,8 @@ export default function PostDetailsScreen({ navigation }) {
   const handleShare = async () => {
     try {
       const result = await Share.share({
-        message: "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
+        message:
+          "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
         title: "Partager ce post", // Titre (optionnel)
       });
 
@@ -694,7 +694,7 @@ export default function PostDetailsScreen({ navigation }) {
                 style={styles.deleteIconPost}
                 onPress={() => handleDeletePost(post.id)}
               >
-                <Icon name="trash" size={20} color="#2A2B2A" />
+                <Icon name="trash" size={20} color="#656765" />
               </TouchableOpacity>
             )}
           </View>
@@ -767,28 +767,28 @@ export default function PostDetailsScreen({ navigation }) {
           <View style={styles.postActions}>
             <TouchableOpacity
               onPress={() => handleLike(post.id)}
-              style={[
-                styles.likeButton,
-                post.likedByUser && styles.likedButton,
-              ]}
+              style={[styles.likeButton, post.likedByUser]}
             >
               <View style={styles.likeButtonContent}>
                 <Icon
-                  name="thumbs-up"
-                  size={16}
-                  color={post.likedByUser ? "#00ff00" : "#fff"}
+                  name={post.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
+                  size={22}
+                  color={post.likedByUser ? "#007bff" : "#656765"} // Couleur dynamique pour l'icône
                   style={styles.likeIcon}
                 />
-                <Text style={styles.likeButtonText}>
-                  {post.likedByUser ? "Vous avez liké" : post.likesCount || 0}
+                <Text
+                  style={[
+                    styles.likeButtonText,
+                    { color: post.likedByUser ? "#007bff" : "#656765" }, // Couleur dynamique pour le texte
+                  ]}
+                >
+                  {post.likesCount || 0} {/* Nombre de likes */}
                 </Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleShare}>
-            <Icon name="share-outline" size={26} style={styles.shareIcon} />
-          </TouchableOpacity><TouchableOpacity onPress={handleShare}>
-            <Icon name="share-outline" size={26} style={styles.shareIcon} />
-          </TouchableOpacity>
+              <Icon name="share-outline" size={26} style={styles.shareIcon} />
+            </TouchableOpacity>
           </View>
 
           {/* Ajouter un commentaire */}
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
   },
   photosContainer: {
     flexDirection: "row",
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#2A2B2A", // Couleur sombre
+    backgroundColor: "#093A3E", // Couleur sombre
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#2A2B2A", // Couleur dorée ou autre
+    color: "#093A3E", // Couleur dorée ou autre
     backgroundColor: "#F7F2DE",
     letterSpacing: 2,
     fontWeight: "bold",
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: "#666",
-    marginTop:3,
+    marginTop: 3,
   },
   postContainer: {
     backgroundColor: "#fff",
@@ -974,39 +974,38 @@ const styles = StyleSheet.create({
     color: "#444",
   },
   shareIcon: {
+    color: "#656765",
     marginRight: 15,
   },
   postActions: {
-    marginLeft: 15,
+    marginLeft: 5,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   likeButton: {
-    backgroundColor: "#2A2B2A",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
   },
-   commentBloc: {
+  commentBloc: {
     flexDirection: "row",
   },
   postInfo: {
     flex: 1, // S'étend pour utiliser l'espace restant
-  },
-  likedButton: {
-    backgroundColor: "#008000", // Couleur verte quand liké
   },
   likeButtonContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   likeIcon: {
-    marginRight: 5, // Espace entre l'icône et le texte
+    marginRight: 3, // Espace entre l'icône et le texte
   },
   likeButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
+    marginLeft: 3,
+    marginTop: 3,
   },
   commentsSection: {
     marginTop: 5,
@@ -1028,7 +1027,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#2A2B2A",
+    backgroundColor: "#093A3E",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -1053,8 +1052,9 @@ const styles = StyleSheet.create({
   },
   deleteIconComment: {
     position: "absolute",
-    right: 15,
-    top: 15,
+    right: 10,
+    top: 10,
+    zIndex: 99,
   },
   replyInput: {
     borderWidth: 1,
@@ -1072,7 +1072,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 8,
     marginLeft: 15,
-    marginTop:1,
+    marginTop: 1,
     alignItems: "center",
   },
   addReplyButtonText: {
@@ -1089,13 +1089,13 @@ const styles = StyleSheet.create({
   replyContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginTop:10,
+    marginTop: 10,
     width: "100%", // Utiliser la largeur maximale du parent
     maxWidth: "100%", // Empêcher le dépassement
     padding: 10,
-    paddingVertical:15,
+    paddingVertical: 15,
     backgroundColor: "#eef6ff",
-    borderRadius: 8,
+    borderRadius: 20,
     paddingRight: 10,
     borderLeftWidth: 2,
     borderLeftColor: "#007bff",
@@ -1113,14 +1113,15 @@ const styles = StyleSheet.create({
     flexShrink: 1, // Permet de réduire le conteneur si le texte est long
     overflow: "hidden", // Empêche tout débordement visible
   },
-  commentVisible:{
+  commentVisible: {
     backgroundColor: "#f7f7f7",
-    padding:10,
-    borderRadius: 20
+    padding: 10,
+    borderRadius: 20,
   },
   userNameComment: {
     fontWeight: "bold",
     fontSize: 14,
+    paddingLeft:5,
     color: "#333",
   },
   timestampComment: {
@@ -1128,11 +1129,15 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 2,
     marginBottom: 5,
+    paddingLeft:5,
+
   },
   commentText: {
     fontSize: 14,
     color: "#444",
     lineHeight: 20,
+    paddingLeft:5,
+
   },
   deleteIconReply: {
     position: "absolute",
@@ -1164,11 +1169,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   button: {
-    backgroundColor: "#2A2B2A", // Couleur vive et chaude
+    backgroundColor: "#093A3E", // Couleur vive et chaude
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 50,
-    shadowColor: "#2A2B2A",
+    shadowColor: "#093A3E",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.8,
     shadowRadius: 10,

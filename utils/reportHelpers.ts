@@ -6,11 +6,11 @@ import { API_URL } from "@env";
 
 
 export const typeLabels: { [key: string]: string } = {
-    danger: 'Danger  ⚠️',
-    travaux: 'Travaux  🚧',
-    nuisance: 'Nuisance 😡',
-    pollution: 'Pollution  🌍',
-    reparation: 'Réparation  ⚙️',
+    danger: '⚠️ Danger',
+    travaux: '🚧 Travaux',
+    nuisance: '😡 Nuisance',
+    pollution: '🌍 Pollution',
+    reparation: '⚙️ Réparation',
   };
   
   export const typeColors: { [key: string]: string } = {
