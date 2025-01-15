@@ -906,7 +906,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 ]}
               >
                 <Text style={styles.labelText}>
-                  {getTypeLabel(report.type)} à {report.distance.toFixed(2)} km
+                  {getTypeLabel(report.type)} à {report.distance ? report.distance.toFixed(2) : "N/A"} km
                 </Text>
               </View>
               {/* Bloc signalement */}

@@ -517,7 +517,7 @@ export default StyleSheet.create({
   },
   timelinePointContainer: {
     alignItems: "center",
-    marginHorizontal: 10, // Espacement entre chaque signalement
+    marginHorizontal: 5, // Espacement entre chaque signalement
   },
   timelineLabel: {
     width: 180,

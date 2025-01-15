@@ -13,13 +13,23 @@ export interface Report {
   id: number;
   type: string;
   title: string;
-  latitude: number;
-  longitude: number;
-  distance: number;
+
+  description: string;
+
   city: string;
+
+  latitude: number;
+
+  longitude: number;
+
+  category: string;
+
+  distance?: number;
   createdAt: string;
   photos: Photo[]; // Ajouter les photos
 }
+
+
 
 export interface Event {
   id: number;
