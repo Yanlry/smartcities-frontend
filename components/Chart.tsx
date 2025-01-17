@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   Dimensions,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity
 } from "react-native";
 import { BarChart } from "react-native-chart-kit";
 
@@ -17,6 +18,7 @@ interface ChartProps {
   };
   loading: boolean;
   nomCommune: string;
+  controlStatsVisibility?: boolean; 
 }
 
 const chartConfig = {
@@ -29,14 +31,22 @@ const chartConfig = {
   propsForBackgroundLines: { strokeWidth: 1, stroke: "#e3e3e3" },
 };
 
-const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune }) => {
-  const barColors = ["#3498db", "#9b59b6", "#f1c40f", "#e74c3c", "#2ecc71"];
+const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune, controlStatsVisibility, }) => {
+  const [isStatsVisible, setStatsVisible] = useState(true); 
+
+  const barColors = ["#e74c3c", "#f1c40f", "#9b59b6", "#3498db", "#2ecc71"];
   const capitalize = (text: string) => {
     if (!text) return ""; // Gérer les cas où le texte est vide
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
   // Formatage du nom de la commune
   const formattedCommune = capitalize(nomCommune);
+
+  useEffect(() => {
+    if (controlStatsVisibility !== undefined) {
+      setStatsVisible(controlStatsVisibility);
+    }
+  }, [controlStatsVisibility]);
 
   if (loading) {
     return (
@@ -66,33 +76,81 @@ const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune }) => {
 
   const maxValue = validatedData.length > 0 ? Math.max(...validatedData) : 1;
 
+  const toggleStats = () => {
+    setStatsVisible((prevState) => !prevState);
+  };
+
+  const generateSummary = () => {
+    return data.labels.map((label, index) => {
+      const count = validatedData[index] || 0;
+      const color = barColors[index % barColors.length]; // Associer la couleur
+  
+      return (
+        <View key={label} style={styles.summaryItem}>
+          <View
+            style={[
+              styles.colorIndicator,
+              { backgroundColor: color }, // Couleur dynamique pour chaque catégorie
+            ]}
+          />
+          <Text style={styles.summaryText}>
+            {label}:{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {count} signalement{count > 1 ? "s" : ""}
+            </Text>
+          </Text>
+        </View>
+      );
+    });
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📊 Statistiques de {formattedCommune}</Text>
-      <BarChart
-        data={{
-          labels: data.labels,
-          datasets: [
-            {
-              data: validatedData,
-              colors: validatedData.map(
-                (_, index) => () => barColors[index % barColors.length]
-              ),
-            },
-          ],
-        }}
-        width={screenWidth}
-        height={290}
-        chartConfig={chartConfig}
-        yAxisLabel=""
-        yAxisSuffix=""
-        fromZero={true}
-        segments={Math.max(1, maxValue)}
-        showBarTops={false}
-        withCustomBarColorFromData={true}
-        flatColor={true}
-        style={styles.chart}
-      />
+      <TouchableOpacity
+        style={styles.sectionHeader}
+        onPress={toggleStats}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.title}>📊 Statistiques de la ville</Text>
+        <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
+      </TouchableOpacity>
+
+      {/* Affichage conditionnel du graphique */}
+      {isStatsVisible && (
+         <>
+         <BarChart
+           data={{
+             labels: data.labels,
+             datasets: [
+               {
+                 data: validatedData,
+                 colors: validatedData.map(
+                   (_, index) => () => barColors[index % barColors.length]
+                 ),
+               },
+             ],
+           }}
+           width={screenWidth}
+           height={290}
+           chartConfig={chartConfig}
+           yAxisLabel=""
+           yAxisSuffix=""
+           fromZero={true}
+           segments={Math.max(1, maxValue)}
+           showBarTops={false}
+           withCustomBarColorFromData={true}
+           flatColor={true}
+           style={styles.chart}
+         />
+
+         {/* Section de résumé */}
+         <View style={styles.summaryContainer}>
+  <Text style={styles.summaryTitle}>Résumé des signalements à {formattedCommune}</Text>
+  {generateSummary()}
+</View>
+       </>
+     )}
+      
     </View>
   );
 };
@@ -100,20 +158,72 @@ const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune }) => {
 const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
-    marginVertical: 10,
   },
   title: {
     fontSize: 17,
     fontWeight: "bold",
-    marginBottom: 20,
     color: "#093A3E",
   },
   chart: {
+    marginTop:10,
     borderRadius: 16,
     marginLeft: -38,
-    backgroundColor: "red",
   },
   subtitle: { fontSize: 14, textAlign: "center", color: "#888", marginVertical: 10 },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  arrow: {
+    fontSize: 18,
+    color: "#666",
+  },
+  summaryContainer: {
+    marginBottom: 10,
+    backgroundColor: "#ffffff", // Fond blanc pour contraste
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5, // Ombre pour Android
+  },
+  summaryTitle: {
+    lineHeight: 24,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom:15,
+    color: "#2c3e50", // Bleu sombre pour titre
+    textAlign: "center", // Titre centré
+    textTransform: "uppercase", // Capitalisation pour attirer l'attention
+    letterSpacing: 1,
+  },
+  summaryText: {
+    fontSize: 15,
+    color: "#34495e", // Couleur gris-bleu
+    lineHeight: 24, // Meilleur espacement entre les lignes
+    textAlign: "justify", // Texte justifié pour une meilleure lecture
+  },
+  summaryItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 3,
+  },
+  colorIndicator: {
+    marginTop:2,
+    width: 16,
+    height: 16,
+    borderRadius: 8, // Cercle coloré
+    marginRight: 10,
+  },
 });
 
 export default Chart;

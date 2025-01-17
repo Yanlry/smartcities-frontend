@@ -8,27 +8,49 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 20,
     paddingTop: 90,
-
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 15,
     color: "#093A3E",
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  arrow: {
+    fontSize: 18,
+    color: "#666",
+  },
+  globalToggleButton: {
+    padding: 5,
+    backgroundColor: "#093A3E",
+    borderRadius: 8,
+  },
+  globalToggleButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
   //  ------------------------------------------------ LOADING
 
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",  
+    backgroundColor: "#f5f5f5",
   },
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#093A3E",  
+    color: "#093A3E",
   },
 
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
@@ -37,36 +59,36 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",  
-    paddingHorizontal: 20,   
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    paddingHorizontal: 20,
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff", 
+    color: "#fff",
     marginBottom: 10,
     textAlign: "center",
   },
   modalText: {
     fontSize: 16,
-    color: "#ddd",  
+    color: "#ddd",
     textAlign: "center",
     marginBottom: 20,
-    lineHeight: 24,  
+    lineHeight: 24,
   },
   button: {
-    backgroundColor: "#1E90FF",  
+    backgroundColor: "#1E90FF",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    elevation: 2,  
-    shadowColor: "#000",  
+    elevation: 2,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   buttonText: {
-    color: "#fff",  
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
@@ -76,7 +98,7 @@ export default StyleSheet.create({
 
   containerFollower: {
     flex: 1,
-    backgroundColor: "#f7f8fa",  
+    backgroundColor: "#f7f8fa",
     padding: 20,
     paddingTop: 110,
   },
@@ -88,21 +110,21 @@ export default StyleSheet.create({
     textAlign: "center",
   },
   followerList: {
-    paddingBottom: 20,  
+    paddingBottom: 20,
   },
   backButton: {
     marginBottom: 70,
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#093A3E",  
+    backgroundColor: "#093A3E",
     borderRadius: 30,
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#fff",  
-    textTransform: "uppercase",  
+    color: "#fff",
+    textTransform: "uppercase",
   },
 
   //  ------------------------------------------------ PROFILE CONTAINER
@@ -111,7 +133,7 @@ export default StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 10,
-    marginBottom: 20,
+    marginBottom: 5,
     marginTop: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
@@ -159,12 +181,12 @@ export default StyleSheet.create({
     color: "#093A3E",
   },
   dropdownButton: {
-    position:"absolute",
-    right:0,
+    position: "absolute",
+    right: 0,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",  
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -173,8 +195,8 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
-    elevation: 10,  
-    shadowColor: "#000", 
+    elevation: 10,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -210,7 +232,7 @@ export default StyleSheet.create({
   },
   closeButton: {
     marginTop: 10,
-    backgroundColor: "#D91A20",  
+    backgroundColor: "#D91A20",
     borderRadius: 30,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -221,8 +243,6 @@ export default StyleSheet.create({
     color: "#fff",
     textAlign: "center",
   },
-
-  
   userCity: {
     fontSize: 12,
     color: "#777", // Couleur par défaut pour le texte
@@ -238,31 +258,31 @@ export default StyleSheet.create({
     marginTop: 4,
   },
   followerItem: {
-    flexDirection: "row", 
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",  
+    backgroundColor: "#fff",
     padding: 12,
     marginBottom: 12,
     marginHorizontal: 1,
-    borderRadius: 90,  
+    borderRadius: 90,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 1,  
+    elevation: 1,
   },
   followerImage: {
     width: 50,
     height: 50,
-    borderRadius: 25,  
-    marginRight: 12,  
+    borderRadius: 25,
+    marginRight: 12,
     borderWidth: 1,
-    borderColor: "#ddd", 
+    borderColor: "#ddd",
   },
   followerName: {
     fontSize: 16,
-    fontWeight: "600",  
-    color: "#444", 
+    fontWeight: "600",
+    color: "#444",
   },
   statistics: {
     flexDirection: "row",
@@ -322,8 +342,7 @@ export default StyleSheet.create({
     color: "#999",
     textAlign: "center",
   },
-
- modalContentRanking: {
+  modalContentRanking: {
     flex: 1,
     backgroundColor: "#F5F5F5",
     padding: 20,
@@ -350,7 +369,6 @@ export default StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  
   userImage: {
     width: 50,
     height: 50,
@@ -403,7 +421,7 @@ export default StyleSheet.create({
   nonTopThreeItem: {
     backgroundColor: "#EFEFEF", // Couleur de fond pour ceux hors du top 3
     borderWidth: 0, // Pas de contour
-    borderRadius:60,
+    borderRadius: 60,
     paddingLeft: 10,
   },
   nonTopThreeText: {
@@ -411,52 +429,49 @@ export default StyleSheet.create({
     fontWeight: "normal", // Style plus léger pour différencier
   },
   titleContainer: {
-    backgroundColor: '#f8f9fa', // Couleur claire pour le fond
+    backgroundColor: "#f8f9fa", // Couleur claire pour le fond
     padding: 15,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
+    borderColor: "#ddd",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3, // Pour Android
     marginTop: 35, // Espace avec le titre
     marginBottom: 25, // Espace avec la liste
-    alignItems: 'center',
+    alignItems: "center",
   },
   titleContainer1: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 15,
     marginVertical: 10,
   },
   titleText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   cityName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007BFF', // Couleur pour le nom de la ville
+    fontWeight: "bold",
+    color: "#007BFF", // Couleur pour le nom de la ville
   },
 
-  
   //  ------------------------------------------------ TOP 10 DES SMARTERS
-
 
   sectionTitleTop10: {
     fontSize: 17,
     fontWeight: "bold",
-    marginBottom: 15,
     color: "#093A3E",
   },
   smarterItem: {
     alignItems: "center",
-    padding: 10,
     width: 120,
+    marginTop: 20,
   },
   smarterImage: {
     width: 100,
@@ -514,15 +529,41 @@ export default StyleSheet.create({
   timelineContainer: {
     flexDirection: "row", // Permet un défilement horizontal
     alignItems: "center",
+    marginTop: 20,
   },
   timelinePointContainer: {
     alignItems: "center",
     marginHorizontal: 5, // Espacement entre chaque signalement
   },
+  photoContainer: {
+    flexDirection: "row", // Aligne les photos sur une ligne
+    justifyContent: "space-between", // Espace égal entre les photos
+    marginBottom: 10, // Espace en bas pour séparer les photos du texte
+  },
+  singlePhoto: {
+    width: "100%", // Occupe toute la largeur
+    height: 200, // Hauteur fixe (ajustez selon vos besoins)
+    borderRadius: 8,
+  },
+  multiPhoto: {
+    width: "48%", // Chaque photo prend 48% de la largeur avec un petit espace entre elles
+    height: 200, // Hauteur fixe (ajustez selon vos besoins)
+    borderRadius: 8,
+  },
+  noPhotoContainer: {
+    justifyContent: "center", // Centre le texte
+    alignItems: "center",
+    height: 200, // Hauteur fixe (ajustez selon vos besoins)
+    width: "100%", // Occupe tout l'espace
+  },
+  noPhotoText: {
+    color: "#888", // Couleur grisée pour le texte
+    fontSize: 16,
+    fontStyle: "italic",
+  },
   timelineLabel: {
     width: 180,
-    marginTop:5,
-
+    marginTop: 5,
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
@@ -549,7 +590,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
     elevation: 3,
-    marginBottom:10,
+    marginBottom: 10,
   },
   reportTitle: {
     fontSize: 14,
@@ -567,6 +608,35 @@ export default StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginBottom: 5,
+    fontWeight: "bold",
+  },
+  voteSummaryReport: {
+    flexDirection: "row",
+    justifyContent: "space-between", // Répartir les éléments à gauche et à droite
+    alignItems: "center", // Aligner verticalement les éléments
+    paddingHorizontal: 10, // Ajoute un peu d'espace interne horizontal
+    marginTop: 10, // Espacement avec l'élément au-dessus
+  },
+  voteButtonsContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  voteButtonReport: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  voteCountReports: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#093A3E",
+    marginLeft: 3,
   },
   reportTime: {
     fontSize: 11,
@@ -575,43 +645,48 @@ export default StyleSheet.create({
   //  ------------------------------------------------ SELECTION DE CATEGORIE
 
   categoryButton: {
-    width: 120,  
-    height: 120,  
-    marginTop: 10,
-    justifyContent: "center",  
-    alignItems: "center",  
-    marginRight: 10,  
-    borderRadius: 90, 
+    width: 120,
+    height: 120,
+    marginTop: 20,
+
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    borderRadius: 90,
   },
   categoryIcon: {
-    marginBottom: 5,  
+    marginBottom: 5,
   },
   categoryText: {
-    color: "#fff", 
-    fontSize: 16,  
-    fontWeight: "bold", 
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 
   //  ------------------------------------------------ EVENT A LA UNE
 
   featuredItem: {
     width: 150,
-    minHeight: 150, 
+    minHeight: 150,
     marginRight: 15,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#fff",
+    marginTop: 20,
   },
   featuredImage: {
     width: "100%",
-    height: "auto", 
-    aspectRatio: 1.5,  
+    height: "auto",
+    aspectRatio: 1.5,
   },
   featuredTitle: {
     padding: 10,
     fontSize: 14,
     color: "#333",
     textAlign: "center",
+    backgroundColor: "#f7f8fa",
+    borderBottomEndRadius: 10,
+    borderBottomStartRadius: 10,
   },
   errorText: {
     color: "red", // Couleur rouge pour attirer l'attention
@@ -634,6 +709,7 @@ export default StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    marginTop: 20,
   },
   eventItem: {
     backgroundColor: "#fff",
@@ -694,7 +770,8 @@ export default StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 15,
     borderRadius: 15,
-    marginTop: 10,
+    marginTop: 20,
+
     marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -815,5 +892,17 @@ export default StyleSheet.create({
   },
   hours: {
     fontWeight: "bold",
+  },
+
+  // ------------------------------------------------  FOOTER
+
+  footerCopyrightText: {
+    textAlign: "center", // Centré horizontalement
+    marginTop: 40,
+    marginBottom: 80,
+    color: "#888", // Gris pour un style subtil
+    fontSize: 12, // Taille de police petite et discrète
+    fontStyle: "italic", // Optionnel, pour une touche élégante
+    letterSpacing: 0.5, // Un peu d'espacement entre les lettres
   },
 });

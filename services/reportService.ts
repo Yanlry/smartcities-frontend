@@ -13,20 +13,16 @@ export interface Report {
   id: number;
   type: string;
   title: string;
-
   description: string;
-
   city: string;
-
   latitude: number;
-
   longitude: number;
-
   category: string;
-
   distance?: number;
   createdAt: string;
-  photos: Photo[]; // Ajouter les photos
+  photos: Photo[]; // Liste des photos associées
+  upVotes: number; // Nombre de votes positifs
+  downVotes: number; // Nombre de votes négatifs
 }
 
 
