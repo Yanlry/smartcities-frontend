@@ -5,7 +5,7 @@ import {
   Dimensions,
   StyleSheet,
   ActivityIndicator,
-  TouchableOpacity
+  TouchableOpacity,
 } from "react-native";
 import { BarChart } from "react-native-chart-kit";
 
@@ -18,12 +18,12 @@ interface ChartProps {
   };
   loading: boolean;
   nomCommune: string;
-  controlStatsVisibility?: boolean; 
+  controlStatsVisibility?: boolean;
 }
 
 const chartConfig = {
-  backgroundGradientFrom: "#fff",
-  backgroundGradientTo: "#fff",
+  backgroundGradientFrom: "#f5f5f5",
+  backgroundGradientTo: "#f5f5f5",
   decimalPlaces: 0,
   color: (opacity = 1) => `rgba(46, 204, 110, ${opacity})`,
   labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -31,8 +31,13 @@ const chartConfig = {
   propsForBackgroundLines: { strokeWidth: 1, stroke: "#e3e3e3" },
 };
 
-const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune, controlStatsVisibility, }) => {
-  const [isStatsVisible, setStatsVisible] = useState(true); 
+const Chart: React.FC<ChartProps> = ({
+  data,
+  loading,
+  nomCommune,
+  controlStatsVisibility,
+}) => {
+  const [isStatsVisible, setStatsVisible] = useState(true);
 
   const barColors = ["#e74c3c", "#f1c40f", "#9b59b6", "#3498db", "#2ecc71"];
   const capitalize = (text: string) => {
@@ -84,7 +89,7 @@ const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune, controlStatsVi
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
       const color = barColors[index % barColors.length]; // Associer la couleur
-  
+
       return (
         <View key={label} style={styles.summaryItem}>
           <View
@@ -117,40 +122,43 @@ const Chart: React.FC<ChartProps> = ({ data, loading, nomCommune, controlStatsVi
 
       {/* Affichage conditionnel du graphique */}
       {isStatsVisible && (
-         <>
-         <BarChart
-           data={{
-             labels: data.labels,
-             datasets: [
-               {
-                 data: validatedData,
-                 colors: validatedData.map(
-                   (_, index) => () => barColors[index % barColors.length]
-                 ),
-               },
-             ],
-           }}
-           width={screenWidth}
-           height={290}
-           chartConfig={chartConfig}
-           yAxisLabel=""
-           yAxisSuffix=""
-           fromZero={true}
-           segments={Math.max(1, maxValue)}
-           showBarTops={false}
-           withCustomBarColorFromData={true}
-           flatColor={true}
-           style={styles.chart}
-         />
+        <>
+          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+            <BarChart
+              data={{
+                labels: data.labels,
+                datasets: [
+                  {
+                    data: validatedData,
+                    colors: validatedData.map(
+                      (_, index) => () => barColors[index % barColors.length]
+                    ),
+                  },
+                ],
+              }}
+              width={screenWidth}
+              height={290}
+              chartConfig={chartConfig}
+              yAxisLabel=""
+              yAxisSuffix=""
+              fromZero={true}
+              segments={Math.max(1, maxValue)}
+              showBarTops={false}
+              withCustomBarColorFromData={true}
+              flatColor={true}
+              style={styles.chart}
+            />
 
-         {/* Section de résumé */}
-         <View style={styles.summaryContainer}>
-  <Text style={styles.summaryTitle}>Résumé des signalements à {formattedCommune}</Text>
-  {generateSummary()}
-</View>
-       </>
-     )}
-      
+            {/* Section de résumé */}
+            <View style={styles.summaryContainer}>
+              <Text style={styles.summaryTitle}>
+                Résumé des signalements à {formattedCommune}
+              </Text>
+              {generateSummary()}
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
 };
@@ -165,11 +173,16 @@ const styles = StyleSheet.create({
     color: "#093A3E",
   },
   chart: {
-    marginTop:10,
+    marginTop: 10,
     borderRadius: 16,
     marginLeft: -38,
   },
-  subtitle: { fontSize: 14, textAlign: "center", color: "#888", marginVertical: 10 },
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#888",
+    marginVertical: 10,
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -179,14 +192,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 10,
   },
+  sectionHeaderVisible: {
+    backgroundColor: "#f5f5f5", // Même couleur pour le contenu ouvert
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10, // Arrondi pour joindre l'en-tête et le contenu
+  },
+  sectionContent: {
+    marginTop: -9, // Superpose légèrement pour éviter une ligne visible
+    backgroundColor: "#f5f5f5", // Même couleur que l'en-tête
+  },
   arrow: {
     fontSize: 18,
     color: "#666",
   },
   summaryContainer: {
-    marginBottom: 10,
+    margin: 10,
     backgroundColor: "#ffffff", // Fond blanc pour contraste
     padding: 20,
+
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#e0e0e0",
@@ -200,7 +223,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom:15,
+    marginBottom: 15,
     color: "#2c3e50", // Bleu sombre pour titre
     textAlign: "center", // Titre centré
     textTransform: "uppercase", // Capitalisation pour attirer l'attention
@@ -218,7 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   colorIndicator: {
-    marginTop:2,
+    marginTop: 2,
     width: 16,
     height: 16,
     borderRadius: 8, // Cercle coloré

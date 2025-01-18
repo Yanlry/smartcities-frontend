@@ -55,6 +55,7 @@ export default StyleSheet.create({
     height: 40,
     width: "100%",
     borderColor: "#ccc",
+    backgroundColor: "#fff",
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,

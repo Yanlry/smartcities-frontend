@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Switch,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CalendarPicker from "react-native-calendar-picker";
@@ -53,7 +54,6 @@ type User = {
   isMunicipality: boolean;
   votes: any[];
 };
-
 
 interface TopUser {
   id: string;
@@ -113,6 +113,8 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [isCategoryReportsVisible, setCategoryReportsVisible] = useState(true);
   const [isMayorInfoVisible, setMayorInfoVisible] = useState(true);
   const [areAllSectionsVisible, setAllSectionsVisible] = useState(true);
+  const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
+
   useEffect(() => {
     const fetchRanking = async () => {
       setLoading(true);
@@ -394,21 +396,34 @@ export default function HomeScreen({ navigation, handleScroll }) {
     const date = new Date(dateString);
     const now = new Date();
 
-    const years = now.getFullYear() - date.getFullYear();
-    const months =
-      years * 12 +
-      now.getMonth() -
-      date.getMonth() -
-      (now.getDate() < date.getDate() ? 1 : 0);
+    let years = now.getFullYear() - date.getFullYear();
+    let months = now.getMonth() - date.getMonth();
+    let days = now.getDate() - date.getDate();
+
+    // Ajuster les mois si nécessaire
+    if (days < 0) {
+      months -= 1; // Réduit d'un mois si les jours ne suffisent pas
+      const previousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      days += previousMonth.getDate(); // Ajoute les jours du mois précédent
+    }
+
+    if (months < 0) {
+      years -= 1; // Réduit d'une année si les mois ne suffisent pas
+      months += 12; // Ajoute 12 mois pour rendre le calcul correct
+    }
 
     if (years > 1) {
       return `${years} ans`;
     } else if (years === 1) {
-      return "1 an";
+      return `1 an et ${months} mois`;
     } else if (months > 1) {
       return `${months} mois`;
+    } else if (months === 1) {
+      return `1 mois et ${days} jours`;
+    } else if (days > 1) {
+      return `${days} jours`;
     } else {
-      return "moins d'un mois";
+      return "moins d'un jour";
     }
   };
 
@@ -452,6 +467,24 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const displayName = user?.useFullName
     ? `${user.firstName} ${user.lastName}`
     : user?.username;
+
+  interface Vote {
+    type: "up" | "down";
+  }
+
+  interface VoteSummary {
+    up: number;
+    down: number;
+  }
+
+  const voteSummary: VoteSummary = stats?.votes?.reduce(
+    (acc: VoteSummary, vote: Vote) => {
+      if (vote.type === "up") acc.up++;
+      else acc.down++;
+      return acc;
+    },
+    { up: 0, down: 0 }
+  ) || { up: 0, down: 0 };
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -661,8 +694,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const toggleAllSections = () => {
     const newVisibility = !areAllSectionsVisible;
     setAllSectionsVisible(newVisibility);
-
-    // Mettez à jour les états des sections individuelles
     setSectionVisible(newVisibility);
     setReportsVisible(newVisibility);
     setEventsVisible(newVisibility);
@@ -670,6 +701,80 @@ export default function HomeScreen({ navigation, handleScroll }) {
     setCategoryReportsVisible(newVisibility);
     setMayorInfoVisible(newVisibility);
   };
+
+  const getBadgeStyles = (votes: number) => {
+    if (votes >= 1000) {
+      return {
+        title: "Légende urbaine",
+        backgroundColor: "#70B3B1", // Diamant
+        textColor: "#fff",
+        borderColor: "#3E8986",
+        starsColor: "#70B3B1",
+        stars: 6,
+        icon: null,
+      };
+    } else if (votes >= 500) {
+      return {
+        title: "Icône locale",
+        backgroundColor: "#FAF3E3", // Or
+        textColor: "#856404",
+        borderColor: "#856404",
+        starsColor: "#D4AF37",
+        stars: 5,
+        icon: null,
+      };
+    } else if (votes >= 250) {
+      return {
+        title: "Pilier de la communauté",
+        backgroundColor: "#E1E1E1", // Argent
+        textColor: "#6A6A6A",
+        borderColor: "#919191",
+        starsColor: "#919191",
+        stars: 4,
+        icon: null,
+      };
+    } else if (votes >= 100) {
+      return {
+        title: "Ambassadeur citoyen",
+        backgroundColor: "#E1E1E1", // Bronze
+        textColor: "#6A6A6A",
+        starsColor: "#919191",
+        borderColor: "#919191",
+        stars: 3,
+        icon: null,
+      };
+    } else if (votes >= 50) {
+      return {
+        title: "Citoyen de confiance",
+        backgroundColor: "#CEA992", // Bronze
+        textColor: "#853104",
+        starsColor: "#853104",
+        borderColor: "#D47637",
+        stars: 2,
+        icon: null,
+      };
+    } else if (votes >= 5) {
+      return {
+        title: "Apprenti citoyen",
+        backgroundColor: "#CEA992", // Bronze
+        textColor: "#853104",
+        starsColor: "#853104",
+        borderColor: "#D47637",
+        stars: 1,
+        icon: null,
+      };
+    } else {
+      return {
+        title: "Premiers pas",
+        backgroundColor: "#093A3E", // Blanc pour début
+        textColor: "#fff",
+        borderColor: "#093A3E",
+        stars: 0,
+        icon: <Ionicons name="footsteps-outline" size={24} color="#6A6A6A" />,
+      };
+    }
+  };
+
 
   return (
     <ScrollView
@@ -711,7 +816,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 onPress={() => setModalNameVisible(true)}
                 style={styles.dropdownButton}
               >
-                <Ionicons name="settings-outline" size={16} color="#102542" />
+                <Ionicons name="settings-outline" size={18} color="#102542" />
               </TouchableOpacity>
             </View>
 
@@ -772,13 +877,155 @@ export default function HomeScreen({ navigation, handleScroll }) {
               >
                 {user?.nomCommune || "une commune non définie"}
               </Text>
+              <Text style={styles.userDetails}>
+                {" "}
+                depuis{" "}
+                {user?.createdAt
+                  ? `${calculateYearsSince(user.createdAt)}`
+                  : "depuis un certain temps"}
+              </Text>
             </Text>
-            <Text style={styles.userDetails}>
-              Inscrit{" "}
-              {user?.createdAt
-                ? `il y a ${calculateYearsSince(user.createdAt)}`
-                : "depuis un certain temps"}
+            <View style={styles.badgeWrapper}>
+              {/* Conteneur des icônes (au-dessus du badge) */}
+              <View style={styles.iconsContainer}>
+                {getBadgeStyles(stats.votes.length).stars === 0 ? (
+                  <Ionicons
+                    name="footsteps-outline"
+                    size={24}
+                    color={getBadgeStyles(stats.votes.length).starsColor}
+                  />
+                ) : (
+                  Array.from({
+                    length: getBadgeStyles(stats.votes.length).stars,
+                  }).map((_, index) => (
+                    <Ionicons
+                      key={index}
+                      name="star"
+                      size={20}
+                      color={getBadgeStyles(stats.votes.length).starsColor}
+                    />
+                  ))
+                )}
+              </View>
+
+              {/* Badge */}
+              <Pressable
+                onPress={() => setModalOrnementVisible(true)}
+                style={[
+                  styles.badgeContainer,
+                  {
+                    backgroundColor: getBadgeStyles(stats.votes.length)
+                      .backgroundColor,
+                    borderColor: getBadgeStyles(stats.votes.length).borderColor,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeOrnement,
+                    { color: getBadgeStyles(stats.votes.length).textColor },
+                  ]}
+                >
+                  {getBadgeStyles(stats.votes.length).title}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Modal */}
+            <Modal
+  animationType="slide"
+  transparent={true}
+  visible={modalOrnementVisible}
+  onRequestClose={() => setModalOrnementVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      {/* Titre principal */}
+      <Text style={styles.modalTitle}>Paliers</Text>
+
+      {/* Corps scrollable */}
+      <ScrollView contentContainerStyle={styles.modalBody}>
+        {[
+          {
+            name: "Légende urbaine",
+            description: "Plus de 1000 votes",
+            stars: 6,
+            starsColor: "#70B3B1",
+          },
+          {
+            name: "Icône locale",
+            description: "500 à 999 votes",
+            stars: 5,
+            starsColor: "#D4AF37",
+          },
+          {
+            name: "Pilier de la communauté",
+            description: "250 à 499 votes",
+            stars: 4,
+            starsColor: "#919191",
+          },
+          {
+            name: "Ambassadeur citoyen",
+            description: "100 à 249 votes",
+            stars: 3,
+            starsColor: "#919191",
+          },
+          {
+            name: "Citoyen de confiance",
+            description: "50 à 99 votes",
+            stars: 2,
+            starsColor: "#853104",
+          },
+          {
+            name: "Apprenti citoyen",
+            description: "5 à 49 votes",
+            stars: 1,
+            starsColor: "#853104",
+          },
+          {
+            name: "Premiers pas",
+            description: "Moins de 5 votes",
+            stars: 0,
+            starsColor: "#6A6A6A",
+          },
+        ].map((tier, index) => (
+          <View key={index} style={styles.tierCard}>
+             {/* Étoiles */}
+             <View style={styles.starsContainer}>
+              {Array.from({ length: tier.stars }).map((_, i) => (
+                <Ionicons
+                  key={i}
+                  name="star"
+                  size={20}
+                  color={tier.starsColor}
+                />
+              ))}
+              {tier.stars === 0 && (
+                <Ionicons
+                  name="footsteps-outline"
+                  size={24}
+                  color={tier.starsColor}
+                />
+              )}
+            </View>
+            {/* Titre */}
+            <Text style={[styles.tierTitle, { color: tier.starsColor }]}>
+              {tier.name}
             </Text>
+            {/* Description */}
+            <Text style={styles.tierDescription}>{tier.description}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Bouton de fermeture */}
+      <Pressable style={styles.closeButton} onPress={() => setModalOrnementVisible(false)}>
+        <Text style={styles.closeButtonText}>Fermer</Text>
+      </Pressable>
+    </View>
+  </View>
+</Modal>
+
             {/* Votes */}
             <View>
               {stats && stats.votes ? (
@@ -877,7 +1124,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.sectionHeader}
+        style={[
+          styles.sectionHeader,
+          isSectionVisible && styles.sectionHeaderVisible, // Ajoute un style spécifique si la section est ouverte
+        ]}
         onPress={toggleSection}
         activeOpacity={0.8}
       >
@@ -885,28 +1135,28 @@ export default function HomeScreen({ navigation, handleScroll }) {
         <Text style={styles.arrow}>{isSectionVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
-      {/* Contenu de la section (affiché seulement si isSectionVisible est true) */}
+      {/* Contenu de la section */}
       {isSectionVisible && (
-        <View>
+        <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {smarterData.slice(0, 10).map((item, index) => {
               const borderColor =
                 index + 1 === 1
-                  ? "#FFD700" // Or
+                  ? "#FFD700"
                   : index + 1 === 2
-                  ? "#C0C0C0" // Argent
+                  ? "#C0C0C0"
                   : index + 1 === 3
-                  ? "#CD7F32" // Bronze
-                  : "#fff"; // Couleur par défaut pour les autres
+                  ? "#CD7F32"
+                  : "#fff";
 
               const medal =
                 index + 1 === 1
-                  ? "🥇" // Médaille d'or
+                  ? "🥇"
                   : index + 1 === 2
-                  ? "🥈" // Médaille d'argent
+                  ? "🥈"
                   : index + 1 === 3
-                  ? "🥉" // Médaille de bronze
-                  : null; // Pas de médaille pour les autres
+                  ? "🥉"
+                  : null;
 
               return (
                 <TouchableOpacity
@@ -938,10 +1188,15 @@ export default function HomeScreen({ navigation, handleScroll }) {
             {/* Bouton Voir Tout */}
             <TouchableOpacity
               key="seeAll"
-              style={[styles.smarterItem, styles.seeAllButton]}
+              style={styles.seeAllButton}
               onPress={() => navigation.navigate("RankingScreen")}
             >
-              <Text style={styles.seeAllText}>Voir tout</Text>
+              {/* Barre horizontale */}
+              <View style={[styles.bar, styles.horizontalBar]} />
+              {/* Barre verticale */}
+              <View style={[styles.bar, styles.verticalBar]} />
+              {/* Texte "VOIR TOUT" */}
+              <Text style={styles.seeAllText}>VOIR TOUT</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -959,110 +1214,127 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Contenu de la section */}
       {isReportsVisible && (
         <>
-          {reports.length === 0 ? (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.noReportsText}>
-                Aucun signalement pour l'instant.
-              </Text>
-            </View>
-          ) : (
-            <ScrollView
-              contentContainerStyle={styles.timelineContainer}
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-            >
-              {reports.map((report, index) => (
-                <View key={report.id} style={styles.timelinePointContainer}>
-                  {/* Étiquette au-dessus de la timeline */}
-                  <View
-                    style={[
-                      styles.timelineLabel,
-                      { backgroundColor: typeColors[report.type] || "#F5F5F5" },
-                    ]}
-                  >
-                    <Text style={styles.labelText}>
-                      {getTypeLabel(report.type)} à{" "}
-                      {report.distance ? report.distance.toFixed(2) : "N/A"} km
-                    </Text>
-                  </View>
-
-                  {/* Bloc signalement */}
-                  <TouchableOpacity
-                    style={[
-                      styles.timelineBlock,
-                      {
-                        backgroundColor: hexToRgba(
-                          typeColors[report.type] || "#F5F5F5",
-                          calculateOpacity(report.createdAt, 0.2)
-                        ),
-                      },
-                    ]}
-                    onPress={() => handlePressReport(report.id)}
-                    activeOpacity={0.9}
-                  >
-                    <Text numberOfLines={1} style={styles.reportTitle}>
-                      {report.title}
-                    </Text>
-
-                    {/* Photos */}
-                    <View style={styles.photoContainer}>
-                      {report.photos && report.photos.length > 0 ? (
-                        report.photos.length === 1 ? (
-                          <Image
-                            key={report.photos[0].id}
-                            source={{ uri: report.photos[0].url }}
-                            style={styles.singlePhoto}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          report.photos
-                            .slice(0, 2)
-                            .map((photo) => (
-                              <Image
-                                key={photo.id}
-                                source={{ uri: photo.url }}
-                                style={styles.multiPhoto}
-                                resizeMode="cover"
-                              />
-                            ))
-                        )
-                      ) : (
-                        <View style={styles.noPhotoContainer}>
-                          <Text style={styles.noPhotoText}>
-                            Aucune photo disponible
-                          </Text>
-                        </View>
-                      )}
+          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+            {reports.length === 0 ? (
+              <View style={styles.emptyStateContainer}>
+                <Text style={styles.noReportsText}>
+                  Aucun signalement pour l'instant.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView
+                contentContainerStyle={styles.timelineContainer}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+              >
+                {reports.map((report, index) => (
+                  <View key={report.id} style={styles.timelinePointContainer}>
+                    {/* Étiquette au-dessus de la timeline */}
+                    <View
+                      style={[
+                        styles.timelineLabel,
+                        {
+                          backgroundColor: typeColors[report.type] || "#F5F5F5",
+                        },
+                      ]}
+                    >
+                      <Text style={styles.labelText}>
+                        {getTypeLabel(report.type)} à{" "}
+                        {report.distance ? report.distance.toFixed(2) : "N/A"}{" "}
+                        km
+                      </Text>
                     </View>
 
-                    <Text style={styles.reportDetails}>
-                      {formatCity(report.city)}
-                    </Text>
-                    <View style={styles.voteSummaryReport}>
-  <View style={styles.voteButtonsContainer}>
-    {/* Affichage des votes positifs */}
-    <View style={styles.voteButtonReport}>
-      <Ionicons name="thumbs-up-outline" size={16} color="#418074" />
-      <Text style={styles.voteCountReports}>
-        {report.upVotes || 0} {/* Affiche 0 si upVotes est indéfini */}
-      </Text>
-    </View>
-    {/* Affichage des votes négatifs */}
-    <View style={styles.voteButtonReport}>
-      <Ionicons name="thumbs-down-outline" size={16} color="#A73830" />
-      <Text style={styles.voteCountReports}>
-        {report.downVotes || 0} {/* Affiche 0 si downVotes est indéfini */}
-      </Text>
-    </View>
-  </View>
-  {/* Affichage de la date */}
-  <Text style={styles.reportTime}>{formatTime(report.createdAt)}</Text>
-</View>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
+                    {/* Bloc signalement */}
+                    <TouchableOpacity
+                      style={[
+                        styles.timelineBlock,
+                        {
+                          backgroundColor: hexToRgba(
+                            typeColors[report.type] || "#F5F5F5",
+                            calculateOpacity(report.createdAt, 0.2)
+                          ),
+                        },
+                      ]}
+                      onPress={() => handlePressReport(report.id)}
+                      activeOpacity={0.9}
+                    >
+                      <Text numberOfLines={1} style={styles.reportTitle}>
+                        {report.title}
+                      </Text>
+
+                      {/* Photos */}
+                      <View style={styles.photoContainer}>
+                        {report.photos && report.photos.length > 0 ? (
+                          report.photos.length === 1 ? (
+                            <Image
+                              key={report.photos[0].id}
+                              source={{ uri: report.photos[0].url }}
+                              style={styles.singlePhoto}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            report.photos
+                              .slice(0, 2)
+                              .map((photo) => (
+                                <Image
+                                  key={photo.id}
+                                  source={{ uri: photo.url }}
+                                  style={styles.multiPhoto}
+                                  resizeMode="cover"
+                                />
+                              ))
+                          )
+                        ) : (
+                          <View style={styles.noPhotoContainer}>
+                            <Text style={styles.noPhotoText}>
+                              Aucune photo disponible
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text style={styles.reportDetails}>
+                        {formatCity(report.city)}
+                      </Text>
+                      <View style={styles.voteSummaryReport}>
+                        <View style={styles.voteButtonsContainer}>
+                          {/* Affichage des votes positifs */}
+                          <View style={styles.voteButtonReport}>
+                            <Ionicons
+                              name="thumbs-up-outline"
+                              size={16}
+                              color="#418074"
+                            />
+                            <Text style={styles.voteCountReports}>
+                              {report.upVotes || 0}{" "}
+                              {/* Affiche 0 si upVotes est indéfini */}
+                            </Text>
+                          </View>
+                          {/* Affichage des votes négatifs */}
+                          <View style={styles.voteButtonReport}>
+                            <Ionicons
+                              name="thumbs-down-outline"
+                              size={16}
+                              color="#A73830"
+                            />
+                            <Text style={styles.voteCountReports}>
+                              {report.downVotes || 0}{" "}
+                              {/* Affiche 0 si downVotes est indéfini */}
+                            </Text>
+                          </View>
+                        </View>
+                        {/* Affichage de la date */}
+                        <Text style={styles.reportTime}>
+                          {formatTime(report.createdAt)}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         </>
       )}
 
@@ -1078,45 +1350,47 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Contenu de la section */}
       {isEventsVisible && (
         <>
-          {loading ? (
-            <ActivityIndicator size="large" color="#3498db" />
-          ) : error ? (
-            <Text style={styles.errorText}>{error}</Text>
-          ) : featuredEvents.length > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ marginBottom: 5 }}
-            >
-              {featuredEvents.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.featuredItem}
-                  onPress={() => {
-                    console.log(
-                      "Navigating to EventDetailsScreen with ID:",
-                      item.id
-                    );
-                    navigation.navigate("EventDetailsScreen", {
-                      eventId: item.id,
-                    });
-                  }}
-                >
-                  <Image
-                    source={{ uri: item.image }}
-                    style={styles.featuredImage}
-                  />
-                  <Text style={styles.featuredTitle}>{item.title}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={styles.noEventsContainer}>
-              <Text style={styles.noEventsText}>
-                Pas d’événement prévu pour le moment dans votre ville.
-              </Text>
-            </View>
-          )}
+          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#3498db" />
+            ) : error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : featuredEvents.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginBottom: 5, marginLeft: 5 }}
+              >
+                {featuredEvents.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.featuredItem}
+                    onPress={() => {
+                      console.log(
+                        "Navigating to EventDetailsScreen with ID:",
+                        item.id
+                      );
+                      navigation.navigate("EventDetailsScreen", {
+                        eventId: item.id,
+                      });
+                    }}
+                  >
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.featuredImage}
+                    />
+                    <Text style={styles.featuredTitle}>{item.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.noEventsContainer}>
+                <Text style={styles.noEventsText}>
+                  Pas d’événement prévu pour le moment dans votre ville.
+                </Text>
+              </View>
+            )}
+          </View>
         </>
       )}
 
@@ -1140,67 +1414,69 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Affichage conditionnel du calendrier et des événements */}
       {isCalendarVisible && (
         <>
-          {/* Calendrier */}
-          <View style={styles.calendarContainer}>
-            <CalendarPicker
-              onDateChange={(date) => {
-                const formattedDate = date.toISOString().split("T")[0];
-                console.log("Date sélectionnée :", formattedDate);
-                fetchEventsByDate(formattedDate);
-              }}
-              previousTitle="<"
-              nextTitle=">"
-              weekdays={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]}
-              months={[
-                "Janvier",
-                "Février",
-                "Mars",
-                "Avril",
-                "Mai",
-                "Juin",
-                "Juillet",
-                "Août",
-                "Septembre",
-                "Octobre",
-                "Novembre",
-                "Décembre",
-              ]}
-              startFromMonday={true}
-              textStyle={{
-                fontSize: 16,
-              }}
-              width={330}
-              selectedDayColor="#11998e"
-              selectedDayTextColor="#FFFFFF"
-            />
-          </View>
-
-          {/* Liste des événements */}
-          {events.length > 0 ? (
-            events.map((event) => (
-              <TouchableOpacity
-                key={event.id}
-                style={styles.eventItem}
-                onPress={() =>
-                  navigation.navigate("EventDetailsScreen", {
-                    eventId: event.id,
-                  })
-                }
-              >
-                <Text style={styles.eventTitle}>{event.title}</Text>
-                <Text style={styles.eventDetails}>
-                  {new Date(event.date).toLocaleDateString("fr-FR")}
-                </Text>
-                <Text style={styles.eventLocation}>📍 {event.location}</Text>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.noEventsContainer}>
-              <Text style={styles.noEventsText}>
-                Aucun événement prévu pour cette date.
-              </Text>
+          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+            {/* Calendrier */}
+            <View style={styles.calendarContainer}>
+              <CalendarPicker
+                onDateChange={(date) => {
+                  const formattedDate = date.toISOString().split("T")[0];
+                  console.log("Date sélectionnée :", formattedDate);
+                  fetchEventsByDate(formattedDate);
+                }}
+                previousTitle="<"
+                nextTitle=">"
+                weekdays={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]}
+                months={[
+                  "Janvier",
+                  "Février",
+                  "Mars",
+                  "Avril",
+                  "Mai",
+                  "Juin",
+                  "Juillet",
+                  "Août",
+                  "Septembre",
+                  "Octobre",
+                  "Novembre",
+                  "Décembre",
+                ]}
+                startFromMonday={true}
+                textStyle={{
+                  fontSize: 16,
+                }}
+                width={330}
+                selectedDayColor="#11998e"
+                selectedDayTextColor="#FFFFFF"
+              />
             </View>
-          )}
+
+            {/* Liste des événements */}
+            {events.length > 0 ? (
+              events.map((event) => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.eventItem}
+                  onPress={() =>
+                    navigation.navigate("EventDetailsScreen", {
+                      eventId: event.id,
+                    })
+                  }
+                >
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <Text style={styles.eventDetails}>
+                    {new Date(event.date).toLocaleDateString("fr-FR")}
+                  </Text>
+                  <Text style={styles.eventLocation}>📍 {event.location}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noEventsContainer}>
+                <Text style={styles.noEventsText}>
+                  Aucun événement prévu pour cette date.
+                </Text>
+              </View>
+            )}
+          </View>
         </>
       )}
 
@@ -1215,32 +1491,34 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
       {/* Affichage conditionnel du contenu */}
       {isCategoryReportsVisible && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginBottom: 25 }}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.name}
-              onPress={() => handleCategoryClick(category.name)}
-              style={[
-                styles.categoryButton,
-                {
-                  backgroundColor: hexToRgba(category.color, 0.5),
-                },
-              ]}
-            >
-              <Ionicons
-                name={category.icon as keyof typeof Ionicons.glyphMap}
-                size={40}
-                color="#fff"
-                style={styles.categoryIcon}
-              />
-              <Text style={styles.categoryText}>{category.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: 25 }}
+          >
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.name}
+                onPress={() => handleCategoryClick(category.name)}
+                style={[
+                  styles.categoryButton,
+                  {
+                    backgroundColor: hexToRgba(category.color, 0.5),
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={category.icon as keyof typeof Ionicons.glyphMap}
+                  size={40}
+                  color="#fff"
+                  style={styles.categoryIcon}
+                />
+                <Text style={styles.categoryText}>{category.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       )}
 
       <TouchableOpacity
@@ -1255,80 +1533,85 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Affichage conditionnel du contenu */}
       {isMayorInfoVisible && (
         <>
-          {/* Informations mairie */}
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Attention : Travaux ! </Text>
-            <Text style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Date :</Text> 15 septembre 2024
-              {"\n"}
-              <Text style={styles.infoLabel}>Lieu :</Text> Avenue de la Liberté{" "}
-              {"\n"}
-              <Text style={styles.infoLabel}>Détail :</Text> Des travaux de
-              réfection de la chaussée auront lieu du 25 au 30 septembre. La
-              circulation sera déviée. Veuillez suivre les panneaux de
-              signalisation.
-            </Text>
-
-            <Text style={styles.infoTitle}>Résolution de vos signalements</Text>
-            <Text style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Date :</Text> 20 septembre 2024
-              {"\n"}
-              <Text style={styles.infoLabel}>Lieu :</Text> Rue des Fleurs{"\n"}
-              <Text style={styles.infoLabel}>Détail :</Text> La fuite d'eau
-              signalée a été réparée. Merci de votre patience.
-            </Text>
-
-            <Text style={styles.infoTitle}>Alertes Importantes</Text>
-            <Text style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Date :</Text> 18 septembre 2024
-              {"\n"}
-              <Text style={styles.infoLabel}>Détail :</Text> En raison des
-              fortes pluies prévues cette semaine, nous vous recommandons de
-              limiter vos déplacements et de vérifier les alertes météo
-              régulièrement.
-            </Text>
-          </View>
-
-          {/* Carte du maire */}
-          <View style={styles.mayorCard}>
-            <Image
-              source={require("../assets/images/mayor.png")}
-              style={styles.profileImageMayor}
-            />
-            <View style={styles.mayorContainer}>
-              <Text style={styles.mayorInfo}>Maire actuel:</Text>
-              <Text style={styles.mayorName}>Pierre BÉHARELLE</Text>
-              <Text style={styles.mayorSubtitle}>
-                Permanence en Mairie sur rendez-vous au :
+          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+            {/* Informations mairie */}
+            <View style={styles.infoCard}>
+              <Text style={styles.infoTitle}>Attention : Travaux ! </Text>
+              <Text style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Date :</Text> 15 septembre 2024
+                {"\n"}
+                <Text style={styles.infoLabel}>Lieu :</Text> Avenue de la
+                Liberté {"\n"}
+                <Text style={styles.infoLabel}>Détail :</Text> Des travaux de
+                réfection de la chaussée auront lieu du 25 au 30 septembre. La
+                circulation sera déviée. Veuillez suivre les panneaux de
+                signalisation.
               </Text>
-              <TouchableOpacity onPress={handlePressPhoneNumber}>
-                <Text style={styles.contactBold}>03 20 44 02 51</Text>
-              </TouchableOpacity>
+
+              <Text style={styles.infoTitle}>
+                Résolution de vos signalements
+              </Text>
+              <Text style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Date :</Text> 20 septembre 2024
+                {"\n"}
+                <Text style={styles.infoLabel}>Lieu :</Text> Rue des Fleurs
+                {"\n"}
+                <Text style={styles.infoLabel}>Détail :</Text> La fuite d'eau
+                signalée a été réparée. Merci de votre patience.
+              </Text>
+
+              <Text style={styles.infoTitle}>Alertes Importantes</Text>
+              <Text style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Date :</Text> 18 septembre 2024
+                {"\n"}
+                <Text style={styles.infoLabel}>Détail :</Text> En raison des
+                fortes pluies prévues cette semaine, nous vous recommandons de
+                limiter vos déplacements et de vérifier les alertes météo
+                régulièrement.
+              </Text>
             </View>
-          </View>
 
-          {/* Carte des bureaux */}
-          <View style={styles.officeCard}>
-            <Image
-              source={require("../assets/images/mairie.png")}
-              style={styles.officeImage}
-            />
-            <View style={styles.officeInfo}>
-              <View style={styles.officeAddress}>
-                <Text style={styles.Address}>Contactez-nous :{"\n"}</Text>
-                <Text>11 rue Sadi Carnot, {"\n"}59320 Haubourdin</Text>
-              </View>
-              <Text style={styles.officeContact}>
-                <Text style={styles.phone}>Téléphone :</Text>
-                {"\n"}
+            {/* Carte du maire */}
+            <View style={styles.mayorCard}>
+              <Image
+                source={require("../assets/images/mayor.png")}
+                style={styles.profileImageMayor}
+              />
+              <View style={styles.mayorContainer}>
+                <Text style={styles.mayorInfo}>Maire actuel:</Text>
+                <Text style={styles.mayorName}>Pierre BÉHARELLE</Text>
+                <Text style={styles.mayorSubtitle}>
+                  Permanence en Mairie sur rendez-vous au :
+                </Text>
                 <TouchableOpacity onPress={handlePressPhoneNumber}>
-                  <Text style={styles.officeContact}>03 20 44 02 90</Text>
+                  <Text style={styles.contactBold}>03 20 44 02 51</Text>
                 </TouchableOpacity>
-                {"\n"}
-                <Text style={styles.hours}>Du lundi au vendredi :</Text>
-                {"\n"}
-                08:30 - 12:00, 13:30 - 17:00
-              </Text>
+              </View>
+            </View>
+
+            {/* Carte des bureaux */}
+            <View style={styles.officeCard}>
+              <Image
+                source={require("../assets/images/mairie.png")}
+                style={styles.officeImage}
+              />
+              <View style={styles.officeInfo}>
+                <View style={styles.officeAddress}>
+                  <Text style={styles.Address}>Contactez-nous :{"\n"}</Text>
+                  <Text>11 rue Sadi Carnot, {"\n"}59320 Haubourdin</Text>
+                </View>
+                <Text style={styles.officeContact}>
+                  <Text style={styles.phone}>Téléphone :</Text>
+                  {"\n"}
+                  <TouchableOpacity onPress={handlePressPhoneNumber}>
+                    <Text style={styles.officeContact}>03 20 44 02 90</Text>
+                  </TouchableOpacity>
+                  {"\n"}
+                  <Text style={styles.hours}>Du lundi au vendredi :</Text>
+                  {"\n"}
+                  08:30 - 12:00, 13:30 - 17:00
+                </Text>
+              </View>
             </View>
           </View>
         </>
