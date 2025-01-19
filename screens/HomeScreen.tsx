@@ -324,6 +324,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       .replace(/\s+/g, " ")
       .trim();
   };
+  
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -464,27 +465,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.username;
-
-  interface Vote {
-    type: "up" | "down";
-  }
-
-  interface VoteSummary {
-    up: number;
-    down: number;
-  }
-
-  const voteSummary: VoteSummary = stats?.votes?.reduce(
-    (acc: VoteSummary, vote: Vote) => {
-      if (vote.type === "up") acc.up++;
-      else acc.down++;
-      return acc;
-    },
-    { up: 0, down: 0 }
-  ) || { up: 0, down: 0 };
+  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -600,11 +581,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
     navigation.replace("Main");
   };
 
-  const capitalize = (text: string) => {
-    if (!text) return ""; // Gérer les cas où le texte est vide
-    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-  };
-
   const handleProfileImageClick = async () => {
     try {
       setIsSubmitting(true);
@@ -708,8 +684,9 @@ export default function HomeScreen({ navigation, handleScroll }) {
         title: "Légende urbaine",
         backgroundColor: "#70B3B1", // Diamant
         textColor: "#fff",
-        borderColor: "#3E8986",
-        starsColor: "#70B3B1",
+        borderColor: "#044745",
+        shadowColor: "#70B3B1",
+        starsColor: "#044745",
         stars: 6,
         icon: null,
       };
@@ -719,6 +696,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         backgroundColor: "#FAF3E3", // Or
         textColor: "#856404",
         borderColor: "#856404",
+        shadowColor: "#D4AF37",
         starsColor: "#D4AF37",
         stars: 5,
         icon: null,
@@ -729,6 +707,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         backgroundColor: "#E1E1E1", // Argent
         textColor: "#6A6A6A",
         borderColor: "#919191",
+        shadowColor: "#6A6A6A",
         starsColor: "#919191",
         stars: 4,
         icon: null,
@@ -739,6 +718,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         backgroundColor: "#E1E1E1", // Bronze
         textColor: "#6A6A6A",
         starsColor: "#919191",
+        shadowColor: "#6A6A6A",
         borderColor: "#919191",
         stars: 3,
         icon: null,
@@ -749,6 +729,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         backgroundColor: "#CEA992", // Bronze
         textColor: "#853104",
         starsColor: "#853104",
+        shadowColor: "#853104",
         borderColor: "#D47637",
         stars: 2,
         icon: null,
@@ -760,6 +741,8 @@ export default function HomeScreen({ navigation, handleScroll }) {
         textColor: "#853104",
         starsColor: "#853104",
         borderColor: "#D47637",
+        shadowColor: "#853104",
+
         stars: 1,
         icon: null,
       };
@@ -768,13 +751,14 @@ export default function HomeScreen({ navigation, handleScroll }) {
         title: "Premiers pas",
         backgroundColor: "#093A3E", // Blanc pour début
         textColor: "#fff",
-        borderColor: "#093A3E",
+        borderColor: "#fff",
+        shadowColor: "#093A3E",
+        starsColor: "#0AAEA8",
         stars: 0,
-        icon: <Ionicons name="footsteps-outline" size={24} color="#6A6A6A" />,
+        icon: <Ionicons name="school" size={24} color="#fff" />,
       };
     }
   };
-
 
   return (
     <ScrollView
@@ -885,12 +869,13 @@ export default function HomeScreen({ navigation, handleScroll }) {
                   : "depuis un certain temps"}
               </Text>
             </Text>
+            
             <View style={styles.badgeWrapper}>
               {/* Conteneur des icônes (au-dessus du badge) */}
               <View style={styles.iconsContainer}>
                 {getBadgeStyles(stats.votes.length).stars === 0 ? (
                   <Ionicons
-                    name="footsteps-outline"
+                    name="school"
                     size={24}
                     color={getBadgeStyles(stats.votes.length).starsColor}
                   />
@@ -917,6 +902,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                     backgroundColor: getBadgeStyles(stats.votes.length)
                       .backgroundColor,
                     borderColor: getBadgeStyles(stats.votes.length).borderColor,
+                    shadowColor: getBadgeStyles(stats.votes.length).shadowColor,
                   },
                 ]}
               >
@@ -933,154 +919,162 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
             {/* Modal */}
             <Modal
-  animationType="slide"
-  transparent={true}
-  visible={modalOrnementVisible}
-  onRequestClose={() => setModalOrnementVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      {/* Titre principal */}
-      <Text style={styles.modalTitle}>Paliers</Text>
+              animationType="slide"
+              transparent={true}
+              visible={modalOrnementVisible}
+              onRequestClose={() => setModalOrnementVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  {/* Titre principal */}
+                  <Text style={styles.modalTitle}>Paliers</Text>
 
-      {/* Corps scrollable */}
-      <ScrollView contentContainerStyle={styles.modalBody}>
-        {[
-          {
-            name: "Légende urbaine",
-            description: "Plus de 1000 votes",
-            stars: 6,
-            starsColor: "#70B3B1",
-          },
-          {
-            name: "Icône locale",
-            description: "500 à 999 votes",
-            stars: 5,
-            starsColor: "#D4AF37",
-          },
-          {
-            name: "Pilier de la communauté",
-            description: "250 à 499 votes",
-            stars: 4,
-            starsColor: "#919191",
-          },
-          {
-            name: "Ambassadeur citoyen",
-            description: "100 à 249 votes",
-            stars: 3,
-            starsColor: "#919191",
-          },
-          {
-            name: "Citoyen de confiance",
-            description: "50 à 99 votes",
-            stars: 2,
-            starsColor: "#853104",
-          },
-          {
-            name: "Apprenti citoyen",
-            description: "5 à 49 votes",
-            stars: 1,
-            starsColor: "#853104",
-          },
-          {
-            name: "Premiers pas",
-            description: "Moins de 5 votes",
-            stars: 0,
-            starsColor: "#6A6A6A",
-          },
-        ].map((tier, index) => (
-          <View key={index} style={styles.tierCard}>
-             {/* Étoiles */}
-             <View style={styles.starsContainer}>
-              {Array.from({ length: tier.stars }).map((_, i) => (
-                <Ionicons
-                  key={i}
-                  name="star"
-                  size={20}
-                  color={tier.starsColor}
-                />
-              ))}
-              {tier.stars === 0 && (
-                <Ionicons
-                  name="footsteps-outline"
-                  size={24}
-                  color={tier.starsColor}
-                />
-              )}
-            </View>
-            {/* Titre */}
-            <Text style={[styles.tierTitle, { color: tier.starsColor }]}>
-              {tier.name}
-            </Text>
-            {/* Description */}
-            <Text style={styles.tierDescription}>{tier.description}</Text>
-          </View>
-        ))}
-      </ScrollView>
+                  {/* Corps scrollable */}
+                  <ScrollView contentContainerStyle={styles.modalBody}>
+                    {[
+                      {
+                        name: "Légende urbaine",
+                        description: "Plus de 1000 votes",
+                        stars: 6,
+                        starsColor: "#70B3B1",
+                      },
+                      {
+                        name: "Icône locale",
+                        description: "500 à 999 votes",
+                        stars: 5,
+                        starsColor: "#D4AF37",
+                      },
+                      {
+                        name: "Pilier de la communauté",
+                        description: "250 à 499 votes",
+                        stars: 4,
+                        starsColor: "#919191",
+                      },
+                      {
+                        name: "Ambassadeur citoyen",
+                        description: "100 à 249 votes",
+                        stars: 3,
+                        starsColor: "#919191",
+                      },
+                      {
+                        name: "Citoyen de confiance",
+                        description: "50 à 99 votes",
+                        stars: 2,
+                        starsColor: "#853104",
+                      },
+                      {
+                        name: "Apprenti citoyen",
+                        description: "5 à 49 votes",
+                        stars: 1,
+                        starsColor: "#853104",
+                      },
+                      {
+                        name: "Premiers pas",
+                        description: "Moins de 5 votes",
+                        stars: 0,
+                        starsColor: "#6A6A6A",
+                      },
+                    ].map((tier, index) => (
+                      <View key={index} style={styles.tierCard}>
+                        {/* Étoiles */}
+                        <View style={styles.starsContainer}>
+                          {Array.from({ length: tier.stars }).map((_, i) => (
+                            <Ionicons
+                              key={i}
+                              name="star"
+                              size={20}
+                              color={tier.starsColor}
+                            />
+                          ))}
+                          {tier.stars === 0 && (
+                            <Ionicons
+                              name="school"
+                              size={24}
+                              color={tier.starsColor}
+                            />
+                          )}
+                        </View>
+                        {/* Titre */}
+                        <Text
+                          style={[styles.tierTitle, { color: tier.starsColor }]}
+                        >
+                          {tier.name}
+                        </Text>
+                        {/* Description */}
+                        <Text style={styles.tierDescription}>
+                          {tier.description}
+                        </Text>
+                      </View>
+                    ))}
+                  </ScrollView>
 
-      {/* Bouton de fermeture */}
-      <Pressable style={styles.closeButton} onPress={() => setModalOrnementVisible(false)}>
-        <Text style={styles.closeButtonText}>Fermer</Text>
-      </Pressable>
-    </View>
-  </View>
-</Modal>
+                  {/* Bouton de fermeture */}
+                  <Pressable
+                    style={styles.closeButton}
+                    onPress={() => setModalOrnementVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Fermer</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
 
             {/* Votes */}
             <View>
-              {stats && stats.votes ? (
-                stats.votes.length > 0 ? (
-                  (() => {
-                    interface Vote {
-                      type: "up" | "down";
-                    }
+  {stats && stats.votes ? (
+    stats.votes.length > 0 ? (
+      (() => {
+        interface Vote {
+          type: "up" | "down";
+        }
 
-                    interface VoteSummary {
-                      up: number;
-                      down: number;
-                    }
+        interface VoteSummary {
+          up: number;
+          down: number;
+        }
 
-                    const voteSummary: VoteSummary = stats.votes.reduce(
-                      (acc: VoteSummary, vote: Vote) => {
-                        if (vote.type === "up") acc.up++;
-                        else acc.down++;
-                        return acc;
-                      },
-                      { up: 0, down: 0 }
-                    );
+        const voteSummary: VoteSummary = stats.votes.reduce(
+          (acc: VoteSummary, vote: Vote) => {
+            if (vote.type === "up") acc.up++;
+            else acc.down++;
+            return acc;
+          },
+          { up: 0, down: 0 }
+        );
 
-                    return (
-                      <View style={styles.voteSummary}>
-                        <View style={styles.voteButton}>
-                          <Ionicons
-                            name="thumbs-up-outline"
-                            size={28}
-                            color="#418074"
-                          />
-                          <Text style={styles.voteCount}>{voteSummary.up}</Text>
-                        </View>
-                        <View style={styles.voteButton}>
-                          <Ionicons
-                            name="thumbs-down-outline"
-                            size={28}
-                            color="#A73830"
-                          />
-                          <Text style={styles.voteCount}>
-                            {voteSummary.down}
-                          </Text>
-                        </View>
-                      </View>
-                    );
-                  })()
-                ) : (
-                  <Text style={styles.noVotesText}>
-                    Pas encore de votes. Votez pour monter dans le classement
-                  </Text>
-                )
-              ) : (
-                <Text style={styles.loadingText}>Chargement des votes...</Text>
-              )}
+        return (
+          <View style={styles.voteSummary}>
+            {/* Bouton pour votes positifs */}
+            <View style={[styles.voteButton, styles.positiveVote]}>
+              <Ionicons
+                name="thumbs-up-outline"
+                size={28}
+                color="#418074"
+              />
+              <Text style={styles.voteCount}>{voteSummary.up}</Text>
             </View>
+
+            {/* Bouton pour votes négatifs */}
+            <View style={[styles.voteButton, styles.negativeVote]}>
+              <Ionicons
+                name="thumbs-down-outline"
+                size={28}
+                color="#A73830"
+              />
+              <Text style={styles.voteCount}>{voteSummary.down}</Text>
+            </View>
+          </View>
+        );
+      })()
+    ) : (
+      <Text style={styles.noVotesText}>
+        Pas encore de votes. Votez pour monter dans le classement
+      </Text>
+    )
+  ) : (
+    <Text style={styles.loadingText}>Chargement des votes...</Text>
+  )}
+</View>
           </View>
         </View>
 

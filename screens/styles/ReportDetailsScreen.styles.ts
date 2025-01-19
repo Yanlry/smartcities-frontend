@@ -64,6 +64,32 @@ export default StyleSheet.create({
   map: {
     flex: 1,
   },
+  titleContainer: {
+    position: "absolute", // Superposé à la carte
+    top: 20, // Positionné en haut
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond semi-transparent
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    alignItems: "center",
+  },
+  titleText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  buttonsContainer: {
+    position: "absolute", // Superposition des boutons
+    bottom: 20, // Position en bas de l'écran
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   voteSection: {
     padding: 20,
     backgroundColor: "#ffffff",
@@ -88,33 +114,38 @@ export default StyleSheet.create({
     gap: 16,
   },
   voteButton: {
-    paddingVertical: 12,
-    borderRadius: 20,
-    minWidth: 100,
+    flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 2 },
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond transparent
+  },
+  titleVotes: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond transparent
   },
   upVoteButton: {
-    backgroundColor: "#F2F4F7",
+    marginRight: 10,
   },
   downVoteButton: {
-    backgroundColor: "#F2F4F7",
+    marginLeft: 10,
   },
   voteTextUp: {
-    marginTop: 5,
-    fontSize: 16,
-    fontWeight: "bold",
     color: "#57A773",
-
+    fontSize: 16,
+    marginLeft: 8,
   },
   voteTextDown: {
-    marginTop: 5,
-    fontSize: 16,
-    fontWeight: "bold",
     color: "#ff4d4f",
+    fontSize: 16,
+    marginLeft: 8,
   },
   commentContainer: {
     marginTop: 5,
@@ -199,12 +230,16 @@ export default StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
-    padding: 15,
+    margin: 5 ,
+    marginHorizontal: 10,
+
   },
   card: {
     backgroundColor: "#ffffff",
+    marginHorizontal: 10,
+
     borderRadius: 15,
-    marginHorizontal: 15,
+    margin: 5,
     padding: 15,
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -215,7 +250,8 @@ export default StyleSheet.create({
   cardComment: {
     backgroundColor: "#ffffff",
     borderRadius: 15,
-    marginHorizontal: 15,
+    margin: 5,
+    marginHorizontal: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 5,
@@ -231,9 +267,11 @@ export default StyleSheet.create({
   },
   detailCardPhoto: {
     backgroundColor: "#fff",
+    marginHorizontal: 10,
+
     borderRadius: 15,
     padding: 16,
-    margin: 10,
+    margin: 5,
     elevation: 5,
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -243,7 +281,6 @@ export default StyleSheet.create({
   cardTitle: {
     backgroundColor: "#ffffff",
     borderRadius: 15,
-    marginBottom: 15,
     padding: 15,
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -261,8 +298,6 @@ export default StyleSheet.create({
   detailCard: {
     backgroundColor: "#fff",
     borderRadius: 15,
-    padding: 16,
-    margin: 10,
     elevation: 5,
     shadowColor: "#000",
     shadowOpacity: 0.1,

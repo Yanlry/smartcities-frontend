@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Pressable,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -19,6 +20,7 @@ import { Linking } from "react-native";
 import { useToken } from "../hooks/useToken";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
+import { Ionicons } from "@expo/vector-icons";
 
 type User = {
   id: string;
@@ -39,6 +41,7 @@ type User = {
   nomCommune?: string;
   codePostal?: string;
   isSubscribed?: boolean;
+  votes: any[];
 };
 
 export default function UserProfileScreen({ route, navigation }) {
@@ -54,6 +57,7 @@ export default function UserProfileScreen({ route, navigation }) {
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
 
   // Chargement des données utilisateur
   useEffect(() => {
@@ -180,10 +184,10 @@ export default function UserProfileScreen({ route, navigation }) {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
       return;
     }
-  
+
     try {
       const reporterId = await getUserId(); // Récupération de l'ID de l'utilisateur actuel
-  
+
       console.log({
         to: "yannleroy23@gmail.com",
         subject: "Signalement d'un profil utilisateur",
@@ -191,7 +195,7 @@ export default function UserProfileScreen({ route, navigation }) {
         reporterId, // Vérifiez que cette valeur est définie
         reportReason, // Vérifiez que cette valeur est définie
       });
-  
+
       const response = await fetch(`${API_URL}/mails/send`, {
         method: "POST",
         headers: {
@@ -206,11 +210,11 @@ export default function UserProfileScreen({ route, navigation }) {
           reportReason,
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Erreur lors du signalement du profil.");
       }
-  
+
       const result = await response.json();
       console.log("Signalement envoyé :", result);
       Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
@@ -280,6 +284,88 @@ export default function UserProfileScreen({ route, navigation }) {
     ? `${user.firstName} ${user.lastName}`
     : user?.username;
 
+  const getBadgeStyles = (votes: number) => {
+    if (votes >= 1000) {
+      return {
+        title: "Légende urbaine",
+        backgroundColor: "#70B3B1", // Diamant
+        textColor: "#fff",
+        borderColor: "#044745",
+        shadowColor: "#70B3B1",
+        starsColor: "#044745",
+        stars: 6,
+        icon: null,
+      };
+    } else if (votes >= 500) {
+      return {
+        title: "Icône locale",
+        backgroundColor: "#FAF3E3", // Or
+        textColor: "#856404",
+        borderColor: "#856404",
+        shadowColor: "#D4AF37",
+        starsColor: "#D4AF37",
+        stars: 5,
+        icon: null,
+      };
+    } else if (votes >= 250) {
+      return {
+        title: "Pilier de la communauté",
+        backgroundColor: "#E1E1E1", // Argent
+        textColor: "#6A6A6A",
+        borderColor: "#919191",
+        shadowColor: "#6A6A6A",
+        starsColor: "#919191",
+        stars: 4,
+        icon: null,
+      };
+    } else if (votes >= 100) {
+      return {
+        title: "Ambassadeur citoyen",
+        backgroundColor: "#E1E1E1", // Bronze
+        textColor: "#6A6A6A",
+        starsColor: "#919191",
+        shadowColor: "#6A6A6A",
+        borderColor: "#919191",
+        stars: 3,
+        icon: null,
+      };
+    } else if (votes >= 50) {
+      return {
+        title: "Citoyen de confiance",
+        backgroundColor: "#CEA992", // Bronze
+        textColor: "#853104",
+        starsColor: "#853104",
+        shadowColor: "#853104",
+        borderColor: "#D47637",
+        stars: 2,
+        icon: null,
+      };
+    } else if (votes >= 5) {
+      return {
+        title: "Apprenti citoyen",
+        backgroundColor: "#CEA992", // Bronze
+        textColor: "#853104",
+        starsColor: "#853104",
+        borderColor: "#D47637",
+        shadowColor: "#853104",
+
+        stars: 1,
+        icon: null,
+      };
+    } else {
+      return {
+        title: "Premiers pas",
+        backgroundColor: "#093A3E", // Blanc pour début
+        textColor: "#fff",
+        borderColor: "#fff",
+        shadowColor: "#093A3E",
+        starsColor: "#0AAEA8",
+        stars: 0,
+        icon: <Ionicons name="school" size={24} color="#fff" />,
+      };
+    }
+  };
+
   return (
     <View>
       <View style={styles.header}>
@@ -323,7 +409,7 @@ export default function UserProfileScreen({ route, navigation }) {
                 style={styles.textInput}
                 placeholder="Indiquez la raison ainsi que le maximum d'informations (ex: profil douteux, dates, etc...)"
                 value={reportReason}
-                placeholderTextColor="#777777" 
+                placeholderTextColor="#777777"
                 onChangeText={setReportReason}
                 multiline={true}
               />
@@ -380,21 +466,161 @@ export default function UserProfileScreen({ route, navigation }) {
           )}
         </View>
 
-        {/* Bouton de suivi */}
-        <View style={styles.followButtonContainer}>
-          <TouchableOpacity
+        <View style={styles.badgeWrapper}>
+          {/* Conteneur des icônes (au-dessus du badge) */}
+          <View style={styles.iconsContainer}>
+            {getBadgeStyles(stats?.votes.length).stars === 0 ? (
+              <Ionicons
+                name="school"
+                size={24}
+                color={getBadgeStyles(stats?.votes.length).starsColor}
+              />
+            ) : (
+              Array.from({
+                length: getBadgeStyles(stats?.votes.length).stars,
+              }).map((_, index) => (
+                <Ionicons
+                  key={index}
+                  name="star"
+                  size={20}
+                  color={
+                    getBadgeStyles(stats?.votes.length).starsColor
+                  }
+                />
+              ))
+            )}
+          </View>
+
+          {/* Badge */}
+          <Pressable
+            onPress={() => setModalOrnementVisible(true)}
             style={[
-              styles.followButton,
-              { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
+              styles.badgeContainer,
+              {
+                backgroundColor: getBadgeStyles(stats?.votes.length)
+                  .backgroundColor,
+                borderColor: getBadgeStyles(stats?.votes.length)
+                  .borderColor,
+                shadowColor: getBadgeStyles(stats?.votes.length)
+                  .shadowColor,
+              },
             ]}
-            onPress={isFollowing ? handleUnfollow : handleFollow}
-            disabled={isSubmitting} // Bloquer pendant la requête
           >
-            <Text style={styles.followButtonText}>
-              {isFollowing ? "Se désabonner" : "S'abonner"}
+            <Text
+              style={[
+                styles.badgeOrnement,
+                {
+                  color: getBadgeStyles(stats?.votes.length)
+                    .textColor,
+                },
+              ]}
+            >
+              {getBadgeStyles(stats?.votes.length).title}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
+
+        {/* Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalOrnementVisible}
+          onRequestClose={() => setModalOrnementVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              {/* Titre principal */}
+              <Text style={styles.modalTitle}>Paliers</Text>
+
+              {/* Corps scrollable */}
+              <ScrollView contentContainerStyle={styles.modalBody}>
+                {[
+                  {
+                    name: "Légende urbaine",
+                    description: "Plus de 1000 votes",
+                    stars: 6,
+                    starsColor: "#70B3B1",
+                  },
+                  {
+                    name: "Icône locale",
+                    description: "500 à 999 votes",
+                    stars: 5,
+                    starsColor: "#D4AF37",
+                  },
+                  {
+                    name: "Pilier de la communauté",
+                    description: "250 à 499 votes",
+                    stars: 4,
+                    starsColor: "#919191",
+                  },
+                  {
+                    name: "Ambassadeur citoyen",
+                    description: "100 à 249 votes",
+                    stars: 3,
+                    starsColor: "#919191",
+                  },
+                  {
+                    name: "Citoyen de confiance",
+                    description: "50 à 99 votes",
+                    stars: 2,
+                    starsColor: "#853104",
+                  },
+                  {
+                    name: "Apprenti citoyen",
+                    description: "5 à 49 votes",
+                    stars: 1,
+                    starsColor: "#853104",
+                  },
+                  {
+                    name: "Premiers pas",
+                    description: "Moins de 5 votes",
+                    stars: 0,
+                    starsColor: "#6A6A6A",
+                  },
+                ].map((tier, index) => (
+                  <View key={index} style={styles.tierCard}>
+                    {/* Étoiles */}
+                    <View style={styles.starsContainer}>
+                      {Array.from({ length: tier.stars }).map((_, i) => (
+                        <Ionicons
+                          key={i}
+                          name="star"
+                          size={20}
+                          color={tier.starsColor}
+                        />
+                      ))}
+                      {tier.stars === 0 && (
+                        <Ionicons
+                          name="school"
+                          size={24}
+                          color={tier.starsColor}
+                        />
+                      )}
+                    </View>
+                    {/* Titre */}
+                    <Text
+                      style={[styles.tierTitle, { color: tier.starsColor }]}
+                    >
+                      {tier.name}
+                    </Text>
+                    {/* Description */}
+                    <Text style={styles.tierDescription}>
+                      {tier.description}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+
+              {/* Bouton de fermeture */}
+              <Pressable
+                style={styles.closeButton}
+                onPress={() => setModalOrnementVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Fermer</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
         {/* Informations de base */}
         <View style={styles.infoCardContainer}>
@@ -429,6 +655,21 @@ export default function UserProfileScreen({ route, navigation }) {
               </Text>
             )}
           </View>
+          {/* Bouton de suivi */}
+        <View style={styles.followButtonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.followButton,
+              { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
+            ]}
+            onPress={isFollowing ? handleUnfollow : handleFollow}
+            disabled={isSubmitting} // Bloquer pendant la requête
+          >
+            <Text style={styles.followButtonText}>
+              {isFollowing ? "Se désabonner" : "S'abonner"}
+            </Text>
+          </TouchableOpacity>
+        </View>
           {/* Nom d'utilisateur */}
           {currentUserId && userId && (
             <View style={styles.sendChatContainer}>
@@ -443,6 +684,7 @@ export default function UserProfileScreen({ route, navigation }) {
               >
                 <Text style={styles.sendChatText}>Envoyer un message</Text>
               </TouchableOpacity>
+                 
             </View>
           )}
         </View>
@@ -586,11 +828,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
-    backgroundColor: '#F7F2DE',
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    color: "#093A3E", // Couleur dorée ou autre
+    backgroundColor: "#F7F2DE",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc", // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
@@ -632,11 +874,108 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2F4F7", // Subtle off-white background
     marginBottom: 20,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond sombre semi-transparent
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "90%",
+    height: "80%", // Hauteur limitée pour permettre le défilement
+    backgroundColor: "#FFF", // Fond blanc
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+    elevation: 5,
+  },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700", // Titre plus bold
+    fontWeight: "bold",
+    marginBottom: 20,
     color: "#333",
+    textAlign: "center",
+  },
+  modalBody: {
+    width: "100%",
+    paddingBottom: 20,
+  },
+  tierCard: {
+    width: 280,
     marginBottom: 15,
+    padding: 20,
+    borderRadius: 150,
+    backgroundColor: "#F9F9F9", // Fond légèrement gris
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    alignItems: "center",
+  },
+  tierTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 5,
+    textAlign: "center",
+  },
+  tierDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  starsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#FF4500", // Rouge intense
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#FFF",
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: "#FFF",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  badgeWrapper: {
+    alignItems: "center", // Centre les icônes et le badge horizontalement
+  },
+  iconsContainer: {
+    flexDirection: "row", // Aligne les icônes horizontalement
+    justifyContent: "center",
+    zIndex: 1, // Assure que les icônes sont au-dessus
+    marginBottom: -17, // Espace en bas pour séparer les badges du reste
+  },
+  badgeContainer: {
+    marginTop: 5,
+    marginBottom: 20,
+    width: "90%",
+    paddingHorizontal: 20,
+    height: 40,
+    borderRadius: 55,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOpacity: 0.8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  badgeOrnement: {
+    position: "absolute",
+    top: 14,
+    fontSize: 14,
+    fontWeight: "600",
     textAlign: "center",
   },
   sendChatContainer: {
@@ -644,6 +983,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   sendChat: {
+    width : "80%",
     backgroundColor: "#093A3E",
     paddingVertical: 12,
     paddingHorizontal: 40,
@@ -651,6 +991,7 @@ const styles = StyleSheet.create({
   },
   sendChatText: {
     color: "#FFF",
+    textAlign : "center",
     fontWeight: "600",
     fontSize: 16,
   },
@@ -726,20 +1067,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -20, // Médaille au-dessus de l'image
     zIndex: 2, // Priorité d'affichage
-    backgroundColor: "white", // Fond blanc pour contraste
     padding: 5,
     borderRadius: 50,
     elevation: 3, // Ombre pour l'effet de profondeur
   },
   medalText: {
-    fontSize: 40, // Taille de la médaille (emoji)
+    fontSize: 65, // Taille de la médaille (emoji)
   },
 
   followButtonContainer: {
+    width : "100%",
     alignItems: "center",
-    marginBottom: 20,
+    marginVertical: 10,
   },
   followButton: {
+    width : "80%",
     backgroundColor: "#093A3E",
     paddingVertical: 12,
     paddingHorizontal: 40,
@@ -751,6 +1093,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   followButtonText: {
+    textAlign: "center",
     color: "#FFF",
     fontWeight: "600",
     fontSize: 16,

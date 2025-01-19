@@ -20,8 +20,9 @@ import { API_URL } from "@env";
 import { useToken } from "../hooks/useToken";
 import { RootStackParamList } from "../types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Icon from "react-native-vector-icons/Ionicons";
 
-const CommentsSection = ({ report }) => {
+export default function CommentsSection({ report }) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { getToken, getUserId } = useToken();
@@ -34,50 +35,81 @@ const CommentsSection = ({ report }) => {
   const [selectedCommentId, setSelectedCommentId] = useState(null);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const commentInputRef = React.useRef<TextInput>(null);
 
   useEffect(() => {
     (async () => {
-      const userId = await getUserId();
-      setCurrentUserId(userId);
+      try {
+        const userId = await getUserId();
+        console.log("Utilisateur actuel :", userId);
+        setCurrentUserId(userId);
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération de l'ID utilisateur :",
+          error
+        );
+      }
     })();
   }, []);
 
   useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/reports/${report.id}/comments`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-        const data = await response.json();
-        console.log("Données des commentaires :", data);
-        setComments(data); // Assure-toi que la structure des données est respectée
-      } catch (error) {
-        console.error("Erreur lors du chargement des commentaires :", error);
-      }
-    };
+    fetchComments();
+  }, [comments]);
+
+  useEffect(() => {
     fetchComments();
   }, [report.id]);
 
-  const navigateToUserProfile = (userId: string) => {
-    navigation.navigate("UserProfileScreen", { userId });
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`${API_URL}/reports/${report.id}/comments`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur API : ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const formattedData = data.map((comment) => ({
+        ...comment,
+        user: {
+          ...comment.user,
+          profilePhoto:
+            comment.user?.photos?.[0]?.url || "https://via.placeholder.com/50",
+        },
+      }));
+
+      console.log("Commentaires formatés :", formattedData);
+      setComments(formattedData);
+    } catch (error) {
+      console.error(
+        "Erreur lors du chargement des commentaires :",
+        error.message
+      );
+    }
   };
 
   const submitComment = async () => {
-    const userId = await getUserId();
+    if (isSubmitting) return;
 
-    // Nettoie les espaces inutiles
+    setIsSubmitting(true);
+
+    const userId = await getUserId();
     const trimmedCommentText = commentText.trim();
 
-    // Vérifie si le texte est vide après le nettoyage
-    if (!trimmedCommentText) return;
+    if (!trimmedCommentText) {
+      Alert.alert("Erreur", "Le texte du commentaire est vide.");
+      setIsSubmitting(false);
+      return;
+    }
 
     const payload = {
       reportId: report.id,
-      userId: userId,
+      userId,
       text: trimmedCommentText,
       latitude: report.latitude,
       longitude: report.longitude,
@@ -90,29 +122,37 @@ const CommentsSection = ({ report }) => {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok)
+      if (!response.ok) {
         throw new Error("Erreur lors de l'envoi du commentaire.");
+      }
 
-      // Récupérer le commentaire créé avec les données utilisateur incluses
       const newComment = await response.json();
-      console.log("Nouveau commentaire reçu avec utilisateur :", newComment);
+      console.log("Nouveau commentaire reçu :", newComment);
 
-      // Ajoutez le commentaire en haut de la liste
-      setComments((prevComments) => [newComment, ...prevComments]);
+      // Mise à jour immédiate de l'état local
+      setComments((prev) => [newComment, ...prev]);
 
-      // Réinitialisez le champ de saisie
+      // Réinitialisation du champ de saisie
       setCommentText("");
+
     } catch (error) {
       console.error("Erreur lors de l'envoi du commentaire :", error.message);
+      Alert.alert("Erreur", "Une erreur s'est produite lors de l'envoi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const submitReply = async (parentId) => {
-    // Nettoie les espaces inutiles
-    const trimmedReplyText = replyText.trim();
+    if (isSubmitting) return; // Empêche une nouvelle soumission pendant le chargement
 
-    // Vérifie si le texte est vide après le nettoyage
-    if (!trimmedReplyText) return;
+    setIsSubmitting(true); // Active le loader
+
+    const trimmedReplyText = replyText.trim();
+    if (!trimmedReplyText) {
+      setIsSubmitting(false); // Désactive le loader si le texte est vide
+      return;
+    }
 
     const payload = {
       reportId: report.id,
@@ -134,25 +174,174 @@ const CommentsSection = ({ report }) => {
         throw new Error("Erreur lors de l'envoi de la réponse.");
 
       const newReply = await response.json();
-      console.log("Nouvelle réponse créée avec utilisateur :", newReply);
+      console.log("Nouvelle réponse créée :", newReply);
 
-      // Met à jour les réponses du commentaire parent
       setComments((prevComments) =>
         prevComments.map((comment) =>
           comment.id === parentId
-            ? {
-                ...comment,
-                replies: [...(comment.replies || []), newReply],
-              }
+            ? { ...comment, replies: [...(comment.replies || []), newReply] }
             : comment
         )
       );
 
-      setReplyText(""); // Réinitialisez le champ de saisie
+      setReplyText("");
       setReplyTo(null);
+      Keyboard.dismiss();
+
+      // Afficher une confirmation
+      Alert.alert("Succès", "Votre réponse a été publiée avec succès.", [
+        { text: "OK" },
+      ]);
     } catch (error) {
       console.error("Erreur lors de l'envoi de la réponse :", error.message);
+      Alert.alert("Erreur", "Une erreur est survenue lors de l'envoi.");
+    } finally {
+      setIsSubmitting(false); // Désactive le loader à la fin
     }
+  };
+
+  const renderComments = (comments, level = 0) => {
+    // Trier les commentaires par date décroissante
+    const sortedComments = [...comments].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return sortedComments.map((comment) => (
+      <TouchableWithoutFeedback
+        key={`${comment.id}-${level}`} // Clé unique par ID et niveau
+        onLongPress={() => openReportModal(comment.id)}
+      >
+        <View style={[styles.commentContainer, { marginLeft: level * 10 }]}>
+          {/* Informations de l'utilisateur */}
+          <View style={styles.userInfoContainer}>
+            <Image
+              source={{
+                uri:
+                  comment.user?.profilePhoto ||
+                  "https://via.placeholder.com/50",
+              }}
+              style={styles.userPhoto}
+            />
+            <TouchableOpacity
+              onPress={() => navigateToUserProfile(comment.user?.id)}
+            >
+              <Text style={styles.userName}>
+                {comment.user?.useFullName
+                  ? `${comment.user.firstName} ${comment.user.lastName}`
+                  : comment.user?.username || "Utilisateur inconnu"}
+              </Text>
+              <Text style={styles.commentDate}>
+                Le {new Date(comment.createdAt).toLocaleDateString()} à{" "}
+                {new Date(comment.createdAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
+            </TouchableOpacity>
+            {comment.user?.id === currentUserId && (
+              <TouchableOpacity
+                onPress={() =>
+                  Alert.alert(
+                    "Confirmation de suppression",
+                    "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
+                    [
+                      { text: "Annuler", style: "cancel" },
+                      {
+                        text: "Supprimer",
+                        onPress: () => deleteComment(comment.id),
+                        style: "destructive",
+                      },
+                    ]
+                  )
+                }
+                style={styles.deleteIconComment}
+              >
+                <Icon name="trash" size={16} color="#656765" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Texte du commentaire */}
+          <Text style={styles.commentText}>{comment.text}</Text>
+
+          {/* Boutons d'actions */}
+          <View style={styles.actionButtonsContainer}>
+            {!comment.parentId && (
+              <TouchableOpacity
+                onPress={() => setReplyTo(comment.id)}
+                style={styles.commentButton}
+              >
+                <View style={styles.commentButtonContent}>
+                  <Icon
+                    name="chatbubble-outline"
+                    size={22}
+                    style={styles.commentIcon}
+                    color={"#656765"}
+                  />
+                  <Text style={styles.commentCountText}>
+                    {comment.replies?.length ?? 0}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Champ de réponse */}
+          {replyTo === comment.id && (
+            <View style={styles.replyInputContainer}>
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Écrire une réponse..."
+                value={replyText}
+                onChangeText={setReplyText}
+                multiline={true}
+              />
+              <TouchableOpacity
+                onPress={() => submitReply(comment.id)}
+                style={[
+                  styles.submitReplyButton,
+                  isSubmitting && { backgroundColor: "#ccc" },
+                ]}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.submitReplyButtonText}>
+                  {isSubmitting ? "Envoi..." : "Envoyer"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Réponses imbriquées */}
+          {comment.replies && comment.replies.length > 0 && (
+            <>
+              {expandedComments[comment.id] &&
+                renderComments(comment.replies, level + 1)}
+              <TouchableOpacity
+                onPress={() =>
+                  setExpandedComments((prev) => ({
+                    ...prev,
+                    [comment.id]: !expandedComments[comment.id],
+                  }))
+                }
+                style={styles.showMoreButton}
+              >
+                <Text style={styles.showMoreText}>
+                  {expandedComments[comment.id]
+                    ? "Masquer les réponses"
+                    : `${comment.replies.length} réponse(s) - Afficher`}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
+    ));
+  };
+
+  
+  const navigateToUserProfile = (userId: string) => {
+    navigation.navigate("UserProfileScreen", { userId });
   };
 
   const deleteComment = async (commentId) => {
@@ -217,131 +406,15 @@ const CommentsSection = ({ report }) => {
     setIsReportModalVisible(false);
   };
 
-  const renderComments = (comments, level = 0) => {
-    // Trier les commentaires par date décroissante (les plus récents en premier)
-    const sortedComments = comments.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    return sortedComments.map((comment) => (
-      <TouchableWithoutFeedback
-        key={comment.id}
-        onLongPress={() => openReportModal(comment.id)} // Ouvre le modal pour signaler
-      >
-        <View style={[styles.commentContainer, { marginLeft: level * 20 }]}>
-          <View style={styles.userInfoContainer}>
-            {/* Photo de profil */}
-            <Image
-              source={{
-                uri:
-                  comment.user?.profilePhoto ||
-                  "https://via.placeholder.com/50",
-              }}
-              style={styles.userPhoto}
-            />
-            <TouchableOpacity
-              onPress={() => navigateToUserProfile(comment.user?.id)}
-            >
-              <Text style={styles.userName}>
-                {comment.user?.useFullName
-                  ? `${comment.user.firstName} ${comment.user.lastName}`
-                  : comment.user?.username || "Utilisateur inconnu"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.commentText}>{comment.text}</Text>
-          <Text style={styles.commentDate}>
-            Posté le {new Date(comment.createdAt).toLocaleDateString()} à{" "}
-            {new Date(comment.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
-
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity
-              onPress={() => setReplyTo(comment.id)}
-              style={styles.replyButton}
-            >
-              <Text style={styles.replyButtonText}>Répondre</Text>
-            </TouchableOpacity>
-
-            {comment.user?.id === currentUserId && (
-              <TouchableOpacity
-                onPress={() =>
-                  Alert.alert(
-                    "Confirmation de suppression", // Titre de l'alerte
-                    "Êtes-vous sûr de vouloir supprimer ce commentaire ?", // Message
-                    [
-                      {
-                        text: "Annuler",
-                        style: "cancel", // Style de bouton
-                      },
-                      {
-                        text: "Supprimer",
-                        onPress: () => deleteComment(comment.id), // Fonction appelée en cas de confirmation
-                        style: "destructive", // Style destructeur pour indiquer une action risquée
-                      },
-                    ]
-                  )
-                }
-                style={styles.deleteButton}
-              >
-                <Text style={styles.deleteButtonText}>Supprimer</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {replyTo === comment.id && (
-            <View style={styles.replyInputContainer}>
-              <TextInput
-                style={styles.replyInput}
-                placeholder="Écrire une réponse..."
-                value={replyText}
-                onChangeText={setReplyText}
-                multiline={true}
-              />
-              <TouchableOpacity
-                onPress={() => submitReply(comment.id)}
-                style={styles.submitReplyButton}
-              >
-                <Text style={styles.submitReplyButtonText}>Envoyer</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {comment.replies && comment.replies.length > 0 && (
-            <>
-              {expandedComments[comment.id] &&
-                renderComments(comment.replies, level + 1)}
-              <TouchableOpacity
-                onPress={() => toggleReplies(comment.id)}
-                style={styles.showMoreButton}
-              >
-                <Text style={styles.showMoreText}>
-                  {expandedComments[comment.id]
-                    ? "Masquer les réponses"
-                    : `${comment.replies.length} réponse(s) - Afficher`}
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </TouchableWithoutFeedback>
-    ));
-  };
-
   const sendReport = async () => {
     if (!reportReason.trim()) {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
       return;
     }
-  
+
     try {
       const userId = await getUserId(); // Récupération de l'ID de l'utilisateur
-  
+
       const response = await fetch(`${API_URL}/mails/send`, {
         method: "POST",
         headers: {
@@ -356,11 +429,11 @@ const CommentsSection = ({ report }) => {
           commentId: selectedCommentId, // Ajouter le champ commentId
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Erreur lors du signalement du commentaire.");
       }
-  
+
       const result = await response.json();
       console.log("Signalement envoyé :", result);
       Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
@@ -375,11 +448,6 @@ const CommentsSection = ({ report }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 50} // Ajustez en fonction de la taille de l'en-tête
-    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           {/* ScrollView principal */}
@@ -393,6 +461,7 @@ const CommentsSection = ({ report }) => {
               <Text style={styles.title}>Commentaires :</Text>
               <View style={styles.commentInputContainer}>
                 <TextInput
+                  ref={commentInputRef} // Ajout de la référence ici
                   style={styles.commentInput}
                   placeholder="Ajouter un commentaire..."
                   value={commentText}
@@ -401,19 +470,24 @@ const CommentsSection = ({ report }) => {
                 />
                 <TouchableOpacity
                   onPress={submitComment}
-                  style={styles.submitCommentButton}
+                  style={[
+                    styles.submitCommentButton,
+                    isSubmitting && { backgroundColor: "#ccc" }, // Grise le bouton
+                  ]}
+                  disabled={isSubmitting} // Désactive le bouton
                 >
-                  <Text style={styles.submitCommentText}>Envoyer</Text>
+                  <Text style={styles.submitCommentText}>
+                    {isSubmitting ? "Envoi..." : "Envoyer"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
-
             {comments.length === 0 ? (
               <Text style={styles.noCommentsText}>
                 Aucun commentaire publié
               </Text>
             ) : (
-              renderComments(comments)
+              <View key={comments.length}>{renderComments(comments)}</View>
             )}
           </ScrollView>
 
@@ -462,15 +536,12 @@ const CommentsSection = ({ report }) => {
           )}
         </View>
       </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    marginHorizontal: 5,
-    paddingHorizontal: 15,
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -497,6 +568,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   addComment: {
+    paddingTop: 10,
+    paddingHorizontal: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -504,9 +577,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   commentContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    padding: 20,
+    backgroundColor: "",
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    marginTop: 15,
+    paddingHorizontal: 15,
     marginVertical: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -516,20 +592,17 @@ const styles = StyleSheet.create({
   },
   commentText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: 5,
+    color: "#444",
+    lineHeight: 20,
   },
   commentDate: {
     fontSize: 12,
-    color: "#888",
-    marginTop: 5,
+    color: "#666",
+    marginTop: 3,
   },
   userName: {
-    color: "#007bff",
     fontWeight: "bold",
     fontSize: 14,
-    marginBottom: 5,
   },
   actionButtonsContainer: {
     flexDirection: "row", // Place les boutons en ligne
@@ -596,6 +669,21 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 15,
     textAlign: "center",
+  },
+  confirmationButton: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: "#57A773",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  confirmationText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   confirmButton: {
     backgroundColor: "#ff4d4f",
@@ -765,6 +853,30 @@ const styles = StyleSheet.create({
     color: "#f00",
     fontWeight: "bold",
   },
+  deleteIconComment: {
+    position: "absolute",
+    right: 15,
+    top: 10,
+  },
+  commentButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  commentIcon: {
+    marginTop: 12,
+    marginLeft: 5, // Espacement entre l'icône et le texte
+  },
+  commentCountText: {
+    fontWeight: "bold",
+    color: "#656765",
+    fontSize: 14,
+    marginTop: 12,
+    marginLeft: 5,
+  },
+  commentButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 10,
+  },
 });
 
-export default CommentsSection;

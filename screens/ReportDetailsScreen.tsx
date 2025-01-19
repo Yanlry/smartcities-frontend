@@ -129,22 +129,6 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     }
   };
 
-  const handleZoomAndTilt = (latitude: number, longitude: number) => {
-    if (mapRef.current) {
-      const camera = {
-        center: {
-          latitude,
-          longitude,
-        },
-        pitch: 45, // Inclinaison pour la vue 3D
-        heading: 0, // Orientation
-        zoom: 20, // Zoom plus rapproché
-        altitude: 1000,
-      };
-      mapRef.current.animateCamera(camera, { duration: 1000 });
-    }
-  };
-
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>
@@ -200,139 +184,124 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.container}>
-        <View style={styles.mapContainer}>
-        <MapView
-  ref={mapRef}
-  style={styles.map}
-  mapType="hybrid" // Choisissez "hybrid", "satellite" ou autre
-  onMapReady={() => {
-    if (mapRef.current) {
-      const camera = {
-        center: {
-          latitude: report.latitude,
-          longitude: report.longitude,
-        },
-        pitch: 65,
-        heading: 0,
-        zoom: 15,
-        altitude: 100,
-      };
-      mapRef.current.setCamera(camera); // Définit la caméra initiale
-    }
-  }}
->
-  {/* Marqueur pour la position actuelle */}
-  <Marker
-    coordinate={{
-      latitude: location.latitude,
-      longitude: location.longitude,
+      <View style={styles.mapContainer}>
+  <MapView
+    ref={mapRef}
+    style={styles.map}
+    mapType="hybrid"
+    onMapReady={() => {
+      if (mapRef.current) {
+        const camera = {
+          center: {
+            latitude: report.latitude,
+            longitude: report.longitude,
+          },
+          pitch: 5,
+          heading: 0,
+          zoom: 15,
+          altitude: 100,
+        };
+        mapRef.current.setCamera(camera);
+      }
     }}
-    title="Votre position"
-    pinColor="red"
-  />
-
-  {/* Marqueur pour le signalement avec style */}
-  <Marker
-    coordinate={{
-      latitude: report.latitude,
-      longitude: report.longitude,
-    }}
-    title={report.title}
   >
-    <View
-      style={{
-        width: 40,
-        height: 40,
-        alignItems: "center",
-        justifyContent: "center",
+    {/* Marqueur pour la position actuelle */}
+    <Marker
+      coordinate={{
+        latitude: location.latitude,
+        longitude: location.longitude,
       }}
-    >
-      <Image
-        source={getTypeIcon(report.type)} // Dynamique selon le type de signalement
-        style={{ width: 40, height: 40, resizeMode: "contain" }}
-      />
-    </View>
-  </Marker>
-
-  {/* Ligne de tracé */}
-  {routeCoords.length > 0 && (
-    <Polyline
-      coordinates={routeCoords}
-      strokeColor="#357DED" // Couleur du tracé
-      strokeWidth={5} // Épaisseur du tracé
+      title="Votre position"
+      pinColor="red"
     />
-  )}
-</MapView>
 
-          {/* Boutons de zoom */}
-          <TouchableOpacity
-            style={styles.zoomPosition}
-            onPress={() =>
-              handleZoomAndTilt(location.latitude, location.longitude)
-            }
-          >
-            <Ionicons name="location-sharp" size={18} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.zoomReport}
-            onPress={() => handleZoomAndTilt(report.latitude, report.longitude)}
-          >
-            <Text style={styles.zoomReprotText}>GO</Text>
-          </TouchableOpacity>
-        </View>
+    {/* Marqueur pour le signalement */}
+    <Marker
+      coordinate={{
+        latitude: report.latitude,
+        longitude: report.longitude,
+      }}
+      title={report.title}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Image
+          source={getTypeIcon(report.type)}
+          style={{ width: 40, height: 40, resizeMode: "contain" }}
+        />
+      </View>
+    </Marker>
+
+    {/* Ligne de tracé */}
+    {routeCoords.length > 0 && (
+      <Polyline
+        coordinates={routeCoords}
+        strokeColor="#357DED"
+        strokeWidth={5}
+      />
+    )}
+  </MapView>
+
+  {/* Titre superposé */}
+  <View style={styles.titleContainer}>
+    <Text style={styles.titleText}>Avez-vous vu cet événement ?</Text>
+  </View>
+
+  {/* Boutons superposés */}
+  <View style={styles.buttonsContainer}>
+    <TouchableOpacity
+      onPress={() => {
+        Alert.alert(
+          "Confirmer le vote",
+          "Vous vous apprêtez à voter POUR et à confirmer la présence de l'événement. Cette action est irréversible. Êtes-vous sûr ?",
+          [
+            { text: "Annuler", style: "cancel" },
+            {
+              text: "Confirmer",
+              onPress: () => handleVote("up"),
+            },
+          ]
+        );
+      }}
+      style={[styles.voteButton, styles.upVoteButton]}
+    >
+      <Ionicons name="thumbs-up" size={28} color="#57A773" />
+      <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      onPress={() => {
+        Alert.alert(
+          "Confirmer le vote",
+          "Vous vous apprêtez à voter CONTRE et à invalider cet événement. Cette action est irréversible. Êtes-vous sûr ?",
+          [
+            { text: "Annuler", style: "cancel" },
+            {
+              text: "Confirmer",
+              onPress: () => handleVote("down"),
+            },
+          ]
+        );
+      }}
+      style={[styles.voteButton, styles.downVoteButton]}
+    >
+      <Ionicons name="thumbs-down" size={28} color="#ff4d4f" />
+      <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 
         <View style={styles.content}>
           <View style={styles.cardTitle}>
             <Text style={styles.title}>{report.title}</Text>
           </View>
 
-          {/* Système de vote */}
-          <View style={styles.voteSection}>
-            <Text style={styles.votePrompt}>
-              Avez-vous constaté ce signalement ?
-            </Text>
-            <View style={styles.voteContainer}>
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert(
-                    "Confirmer le vote",
-                    "Vous vous apprêtez à voter POUR et à confirmer la présence de l'événement. Cette action est irréversible. Êtes-vous sûr ?",
-                    [
-                      { text: "Annuler", style: "cancel" },
-                      {
-                        text: "Confirmer",
-                        onPress: () => handleVote("up"),
-                      },
-                    ]
-                  );
-                }}
-                style={[styles.voteButton, styles.upVoteButton]}
-              >
-                <Ionicons name="thumbs-up" size={28} color="#57A773" />
-                <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert(
-                    "Confirmer le vote",
-                    "Vous vous apprêtez à voter CONTRE et à invalider cet événement. Cette action est irréversible. Êtes-vous sûr ?",
-                    [
-                      { text: "Annuler", style: "cancel" },
-                      {
-                        text: "Confirmer",
-                        onPress: () => handleVote("down"),
-                      },
-                    ]
-                  );
-                }}
-                style={[styles.voteButton, styles.downVoteButton]}
-              >
-                <Ionicons name="thumbs-down" size={28} color="#ff4d4f" />
-                <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
 
         <View style={styles.card}>
@@ -432,7 +401,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
 
         <View style={styles.cardComment}>
           {/* Autres sections de votre écran */}
-          <CommentsSection report={report} />
+          <CommentsSection key={report.id} report={report} />
         </View>
       </ScrollView>
     </View>

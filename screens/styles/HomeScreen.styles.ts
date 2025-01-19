@@ -152,7 +152,7 @@ export default StyleSheet.create({
   },
   profileImage: {
     width: 100,
-    height: 150,
+    height: 160,
     borderRadius: 40,
     borderWidth: 4,
     borderColor: "#ccc",
@@ -256,23 +256,27 @@ export default StyleSheet.create({
     flexDirection: "row", // Aligne les icônes horizontalement
     justifyContent: "center",
     zIndex: 1, // Assure que les icônes sont au-dessus
+    marginBottom: -17, // Espace en bas pour séparer les badges du reste
+
   },
   badgeContainer: {
+    
     marginTop:5,
-    width: "90%",
+    width: "100%",
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 15,
+    height: 40,
+    borderRadius: 55,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity:0.8,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
   },
   badgeOrnement: {
+    position: "absolute",
+    top:14,
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
@@ -330,38 +334,53 @@ export default StyleSheet.create({
     width: 1,
     backgroundColor: "#ddd",
   },
+
+
   voteSummary: {
     flexDirection: "row",
-    gap: 20,
-  },
-  votes: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  voteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: 10,
-    borderRadius: 25,
+    paddingTop: 15,
+    marginBottom: 10,
+    gap:10,
+    borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 2,
   },
+  voteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+    borderRadius: 50,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    width: "48%",
+  },
+  positiveVote: {
+    backgroundColor: "#E8F5E9", // Légère teinte verte
+  },
+  negativeVote: {
+    backgroundColor: "#FDECEA", // Légère teinte rouge
+  },
   voteCount: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "600",
     color: "#093A3E",
     marginLeft: 8,
   },
   noVotesText: {
     marginTop: 20,
-    fontSize: 14,
+    fontSize: 16,
     color: "#999",
     textAlign: "center",
   },
+
+
   modalContentRanking: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -464,7 +483,7 @@ export default StyleSheet.create({
     width: "90%",
     height: "80%", // Hauteur limitée pour permettre le défilement
     backgroundColor: "#FFF", // Fond blanc
-    borderRadius: 10,
+    borderRadius: 60,
     padding: 20,
     alignItems: "center",
     elevation: 5,
@@ -514,9 +533,9 @@ export default StyleSheet.create({
   closeButton: {
     marginTop: 20,
     backgroundColor: "#FF4500", // Rouge intense
-    paddingHorizontal: 15,
+    paddingHorizontal: 25,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 50,
     borderWidth: 2,
     borderColor: "#FFF",
   },
@@ -556,8 +575,8 @@ export default StyleSheet.create({
   medal: {
     fontSize: 40, // Taille de la médaille
     position: "absolute",
-    top: 0, // Position légèrement au-dessus de l'image
-    left: 0, // Décalage vers la gauche
+    top: -10, // Position légèrement au-dessus de l'image
+    left: 30, // Décalage vers la gauche
     zIndex: 1, // Assure que la médaille est au-dessus de l'image
   },
   seeAllButton: {
