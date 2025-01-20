@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Alert,
   Image,
   RefreshControl,
+  Modal,
+  Switch
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
@@ -17,6 +19,8 @@ import { Swipeable } from "react-native-gesture-handler";
 // @ts-ignore
 import { API_URL } from "@env";
 import { useNotification } from "../context/NotificationContext";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Notification {
   id: number;
@@ -34,24 +38,39 @@ export default function NotificationsScreen({ navigation }) {
   const { getToken } = useToken(); // Récupération du token avec le hook
   const { unreadCount } = useNotification(); // Récupération du compteur
   const [refreshing, setRefreshing] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const defaultPreferences = {
+    COMMENT: true,
+    FOLLOW: true,
+    VOTE: true,
+    new_message: true,
+    COMMENT_REPLY: true,
+    post: true,
+    LIKE: true,
+    comment: true,
+    NEW_POST: true,
+  };
+  const [preferences, setPreferences] = useState(defaultPreferences);
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-    
+
         // Récupérer le token
         const token = await getToken();
         if (!token) {
-          console.log("Aucun token disponible. L'utilisateur doit se reconnecter.");
+          console.log(
+            "Aucun token disponible. L'utilisateur doit se reconnecter."
+          );
           return; // Arrête l'exécution si le token est manquant
         }
-    
+
         // Appeler l'API pour récupérer les notifications
         const response = await fetch(`${API_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+
         // Vérifier la réponse
         if (!response.ok) {
           const errorDetails = await response.json();
@@ -61,11 +80,11 @@ export default function NotificationsScreen({ navigation }) {
           );
           return; // Ignore les erreurs non critiques
         }
-    
+
         // Traiter les données reçues
         const data: Notification[] = await response.json();
         console.log("Notifications reçues :", data);
-    
+
         // Trier les notifications par date
         setNotifications(
           data.sort(
@@ -78,7 +97,10 @@ export default function NotificationsScreen({ navigation }) {
         if (error.message.includes("Token non trouvé")) {
           console.log("Token non valide ou expiré. Aucune action entreprise.");
         } else {
-          console.error("Erreur critique lors de la récupération des notifications :", error.message);
+          console.error(
+            "Erreur critique lors de la récupération des notifications :",
+            error.message
+          );
           Alert.alert(
             "Erreur",
             "Une erreur inattendue est survenue lors de la récupération des notifications."
@@ -90,6 +112,21 @@ export default function NotificationsScreen({ navigation }) {
     };
 
     fetchNotifications();
+  }, []);
+
+  
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const savedPreferences = await AsyncStorage.getItem('notificationPreferences');
+        if (savedPreferences) {
+          setPreferences(JSON.parse(savedPreferences));
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des préférences :', error);
+      }
+    };
+    loadPreferences();
   }, []);
 
   const fetchNotifications = async () => {
@@ -322,17 +359,23 @@ export default function NotificationsScreen({ navigation }) {
         });
         break;
 
-        case "comment_reply":
+        case "NEW_POST":
+  navigation.navigate("PostDetailsScreen", {
+    postId: notification.relatedId, // Passez l'ID du post
+  });
+  break;
+
+      case "comment_reply":
         navigation.navigate("PostDetailsScreen", {
           postId: notification.relatedId, // Passez l'ID du signalement
         });
         break;
 
-        case "LIKE":
-          navigation.navigate("PostDetailsScreen", {
-            postId: notification.relatedId, // Passez l'ID du signalement
-          });
-          break;
+      case "LIKE":
+        navigation.navigate("PostDetailsScreen", {
+          postId: notification.relatedId, // Passez l'ID du signalement
+        });
+        break;
 
       default:
         console.warn("Type de notification inconnu :", notification.type);
@@ -419,6 +462,133 @@ export default function NotificationsScreen({ navigation }) {
       </Swipeable>
     );
   };
+  
+  const filteredNotifications = notifications.filter(
+    (notification) => preferences[notification.type]
+  );
+
+  const NotificationPreferencesModal = () => {
+    const [tempPreferences, setTempPreferences] = useState(preferences);
+  
+    // Synchroniser `tempPreferences` avec `preferences` à chaque ouverture du modal
+    useEffect(() => {
+      if (isModalVisible) {
+        console.log('Ouverture du modal : synchronisation des préférences');
+        setTempPreferences(preferences);
+      }
+    }, [isModalVisible, preferences]);
+  
+    // Inverser une préférence temporaire
+    const toggleTempPreference = useCallback((type: string) => {
+      setTempPreferences((prev) => ({
+        ...prev,
+        [type]: !prev[type],
+      }));
+    }, []);
+  
+    // Sauvegarder les préférences
+    const savePreferences = async () => {
+      try {
+        if (JSON.stringify(tempPreferences) !== JSON.stringify(preferences)) {
+          console.log('Préférences modifiées, mise à jour...');
+          setPreferences(tempPreferences);
+          await AsyncStorage.setItem('notificationPreferences', JSON.stringify(tempPreferences));
+        } else {
+          console.log('Aucune modification détectée.');
+        }
+        console.log('Fermeture du modal après sauvegarde');
+        setModalVisible(false); // Fermer le modal
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde des préférences :', error);
+        alert('Une erreur est survenue lors de la sauvegarde des préférences.');
+        setModalVisible(false); // Assurez-vous de fermer le modal même en cas d'erreur
+      }
+    };
+  
+    // Types de notifications regroupés par catégories
+    const groupedNotificationTypes = [
+      {
+        category: 'Activités sur mes signalements',
+        items: [
+          { type: 'VOTE', label: 'Votes reçus sur mes signalements' },
+          { type: 'COMMENT', label: 'Commentaires sur mes signalements' },
+        ],
+      },
+      {
+        category: 'Activités sur mes posts',
+        items: [
+          { type: 'LIKE', label: 'Mentions J’aime sur mes publications' },
+          { type: 'comment', label: 'Commentaires sur mes publications' },
+        ],
+      },
+      {
+        category: 'Relations et communications',
+        items: [
+          { type: 'FOLLOW', label: 'Nouveaux abonnés' },
+          { type: 'new_message', label: 'Messages privés reçus' },
+        ],
+      },
+      {
+        category: 'Actualités des relations',
+        items: [
+          { type: 'NEW_POST', label: 'Nouvelles publications de mes relations' },
+        ],
+      },
+    ];
+  
+    // Rendu conditionnel du modal
+    return (
+      isModalVisible && (
+        <Modal
+          visible={isModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => {
+            console.log('Fermeture forcée via onRequestClose');
+            setModalVisible(false);
+          }}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Préférences de notification</Text>
+  
+              {/* Affichage des catégories et switches */}
+              {groupedNotificationTypes.map((group) => (
+                <View key={group.category} style={styles.categorySection}>
+                  <Text style={styles.categoryTitle}>{group.category}</Text>
+                  {group.items.map((item) => (
+                    <View key={item.type} style={styles.preferenceItem}>
+                      <Text style={styles.preferenceLabel}>{item.label}</Text>
+                      <Switch
+                        value={tempPreferences[item.type]}
+                        onValueChange={() => toggleTempPreference(item.type)}
+                      />
+                    </View>
+                  ))}
+                </View>
+              ))}
+  
+              {/* Boutons d'action */}
+              <View>
+                <TouchableOpacity style={styles.saveButton} onPress={savePreferences}>
+                  <Text style={styles.saveButtonText}>Enregistrer</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    console.log('Annulation et fermeture du modal');
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Annuler</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )
+    );
+  };
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -467,8 +637,19 @@ export default function NotificationsScreen({ navigation }) {
 
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
+      <TouchableOpacity
+  style={styles.filterButton}
+  onPress={() => {
+    console.log('Ouverture du modal');
+    setModalVisible(true);
+  }}
+>
+  <Ionicons name="options" size={20} color="#555" style={styles.iconStyle} />
+  <Text style={styles.filterButtonText}>Filtre</Text>
+</TouchableOpacity>
+
       <FlatList
-        data={notifications}
+         data={filteredNotifications}
         renderItem={renderNotification}
         keyExtractor={(item) => item.id.toString()}
         refreshControl={
@@ -488,6 +669,8 @@ export default function NotificationsScreen({ navigation }) {
         }
         contentContainerStyle={styles.flatListContent}
       />
+       <NotificationPreferencesModal />
+
       {/* Bouton de notifications avec compteur */}
       <View style={styles.markAllButtonContainer}>
         <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
@@ -519,11 +702,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
-    backgroundColor: '#F7F2DE',
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    color: "#093A3E", // Couleur dorée ou autre
+    backgroundColor: "#F7F2DE",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc", // Utilisez le nom de la police que vous avez défini
   },
   typeBadge: {
     flexDirection: "row",
@@ -660,5 +843,78 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  iconStyle: { marginRight: 8 },
+  filterButtonText: { color: "#555", fontWeight: "bold" },
+  notificationText: { fontSize: 14 },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    margin: 20,
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 30,
+    textAlign: "center",
+  },
+  categorySection: {
+    marginBottom: 20,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4caf50",
+    marginBottom: 10,
+  },
+  preferenceItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  preferenceLabel: {
+    fontSize: 14,
+    color: "#333",
+  },
+  saveButton: {
+    backgroundColor: "#4caf50",
+    padding: 10,
+    borderRadius: 30,
+  },
+  saveButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  cancelButton: {
+    backgroundColor: "#f44336",
+    padding: 10,
+    borderRadius: 30,
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
   },
 });

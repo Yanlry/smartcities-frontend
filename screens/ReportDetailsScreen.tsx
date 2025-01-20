@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { useLocation } from "../hooks/useLocation";
@@ -40,23 +41,35 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     location?.latitude,
     location?.longitude
   );
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const userId = await getUserId(); // Récupère le userId depuis AsyncStorage
-      setCurrentUserId(userId); // Met à jour l'état local
-    })();
+    fetchUserId();
   }, []);
 
   useEffect(() => {
+    adjustMap();
+  }, [routeCoords, report, location]);
+
+  useEffect(() => {
+    updateVotes();
+  }, [report]);
+  // Récupère l'utilisateur actuel
+  const fetchUserId = async () => {
+    const userId = await getUserId();
+    setCurrentUserId(userId);
+  };
+
+  // Gère le positionnement de la carte
+  const adjustMap = () => {
     if (mapRef.current && routeCoords.length > 0) {
-      // Étape 1 : Ajuster les limites pour voir tout le tracé
+      // Ajuster les limites pour voir tout le tracé
       mapRef.current.fitToCoordinates(routeCoords, {
         edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
 
-      // Étape 2 : Après un délai, zoomer sur le report
+      // Zoomer sur le report après un délai
       setTimeout(() => {
         const reportCamera = {
           center: {
@@ -64,10 +77,10 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
             longitude: report.longitude,
           },
         };
-        mapRef.current?.animateCamera(reportCamera, { duration: 500 }); // Animation sur 2 secondes
-      }, 500); // Attendre que la carte s'ajuste au tracé
+        mapRef.current?.animateCamera(reportCamera, { duration: 500 });
+      }, 500);
 
-      // Étape 3 : Ensuite, zoomer doucement vers votre position
+      // Zoomer doucement vers la position de l'utilisateur après un autre délai
       setTimeout(() => {
         if (location?.latitude && location?.longitude) {
           const userCamera = {
@@ -76,24 +89,25 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
               longitude: location.longitude,
             },
           };
-          mapRef.current?.animateCamera(userCamera, { duration: 1000 }); // Animation sur 3 secondes
+          mapRef.current?.animateCamera(userCamera, { duration: 1000 });
         }
-      }, 2000); // Délai après la fin du zoom sur le report
+      }, 2000);
     }
-  }, [routeCoords, report, location]);
+  };
 
-  useEffect(() => {
+  // Met à jour les votes
+  const updateVotes = () => {
     if (report) {
       setVotes({
         upVotes: report.upVotes,
         downVotes: report.downVotes,
       });
     }
-  }, [report]);
+  };
 
   const handleVote = async (type: "up" | "down") => {
     if (!location || !report || !currentUserId) return;
-
+  
     try {
       const payload = {
         reportId: report.id,
@@ -102,30 +116,27 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         latitude: location.latitude,
         longitude: location.longitude,
       };
-
+  
       const response = await fetch(`${API_URL}/reports/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Vote failed");
       }
-
+  
       const result = await response.json();
-
+  
       // Mise à jour immédiate des votes
       setVotes({
         upVotes: result.updatedVotes.upVotes,
         downVotes: result.updatedVotes.downVotes,
       });
     } catch (error) {
-      Alert.alert(
-        "Vous avez déjà voté",
-        "Vous avez déja utiliser votre droit de vote pour cette annonce."
-      );
+      Alert.alert("Erreur", error.message || "Une erreur est survenue");
     }
   };
 
@@ -137,7 +148,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       </View>
     );
   }
-  
+
   if (!report) {
     return (
       <View style={styles.loadingContainer}>
@@ -158,6 +169,18 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     setModalVisible(false);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true); // Active le spinner de rafraîchissement
+    try {
+      await fetchUserId(); // Récupère l'utilisateur
+      adjustMap(); // Ajuste la carte
+      updateVotes(); // Met à jour les votes
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement :", error.message);
+    } finally {
+      setRefreshing(false); // Désactive le spinner
+    }
+  };
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.header}>
@@ -183,130 +206,115 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           />
         </TouchableOpacity>
       </View>
-      <ScrollView style={styles.container}>
-      <View style={styles.mapContainer}>
-  <MapView
-    ref={mapRef}
-    style={styles.map}
-    mapType="hybrid"
-    onMapReady={() => {
-      if (mapRef.current) {
-        const camera = {
-          center: {
-            latitude: report.latitude,
-            longitude: report.longitude,
-          },
-          pitch: 5,
-          heading: 0,
-          zoom: 15,
-          altitude: 100,
-        };
-        mapRef.current.setCamera(camera);
-      }
-    }}
-  >
-    {/* Marqueur pour la position actuelle */}
-    <Marker
-      coordinate={{
-        latitude: location.latitude,
-        longitude: location.longitude,
-      }}
-      title="Votre position"
-      pinColor="red"
-    />
-
-    {/* Marqueur pour le signalement */}
-    <Marker
-      coordinate={{
-        latitude: report.latitude,
-        longitude: report.longitude,
-      }}
-      title={report.title}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#093A3E"]}
+            tintColor="#093A3E"
+          />
+        }
       >
-        <Image
-          source={getTypeIcon(report.type)}
-          style={{ width: 40, height: 40, resizeMode: "contain" }}
-        />
-      </View>
-    </Marker>
+        <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            mapType="hybrid"
+            onMapReady={() => {
+              if (mapRef.current) {
+                const camera = {
+                  center: {
+                    latitude: report.latitude,
+                    longitude: report.longitude,
+                  },
+                  pitch: 5,
+                  heading: 0,
+                  zoom: 15,
+                  altitude: 100,
+                };
+                mapRef.current.setCamera(camera);
+              }
+            }}
+          >
+            {/* Marqueur pour la position actuelle */}
+            <Marker
+              coordinate={{
+                latitude: location.latitude,
+                longitude: location.longitude,
+              }}
+              title="Votre position"
+              pinColor="red"
+            />
 
-    {/* Ligne de tracé */}
-    {routeCoords.length > 0 && (
-      <Polyline
-        coordinates={routeCoords}
-        strokeColor="#357DED"
-        strokeWidth={5}
-      />
-    )}
-  </MapView>
+            {/* Marqueur pour le signalement */}
+            <Marker
+              coordinate={{
+                latitude: report.latitude,
+                longitude: report.longitude,
+              }}
+              title={report.title}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Image
+                  source={getTypeIcon(report.type)}
+                  style={{ width: 40, height: 40, resizeMode: "contain" }}
+                />
+              </View>
+            </Marker>
 
-  {/* Titre superposé */}
-  <View style={styles.titleContainer}>
-    <Text style={styles.titleText}>Avez-vous vu cet événement ?</Text>
-  </View>
+            {/* Ligne de tracé */}
+            {routeCoords.length > 0 && (
+              <Polyline
+                coordinates={routeCoords}
+                strokeColor="#357DED"
+                strokeWidth={5}
+              />
+            )}
+          </MapView>
 
-  {/* Boutons superposés */}
-  <View style={styles.buttonsContainer}>
-    <TouchableOpacity
-      onPress={() => {
-        Alert.alert(
-          "Confirmer le vote",
-          "Vous vous apprêtez à voter POUR et à confirmer la présence de l'événement. Cette action est irréversible. Êtes-vous sûr ?",
-          [
-            { text: "Annuler", style: "cancel" },
-            {
-              text: "Confirmer",
-              onPress: () => handleVote("up"),
-            },
-          ]
-        );
-      }}
-      style={[styles.voteButton, styles.upVoteButton]}
-    >
-      <Ionicons name="thumbs-up" size={28} color="#57A773" />
-      <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      onPress={() => {
-        Alert.alert(
-          "Confirmer le vote",
-          "Vous vous apprêtez à voter CONTRE et à invalider cet événement. Cette action est irréversible. Êtes-vous sûr ?",
-          [
-            { text: "Annuler", style: "cancel" },
-            {
-              text: "Confirmer",
-              onPress: () => handleVote("down"),
-            },
-          ]
-        );
-      }}
-      style={[styles.voteButton, styles.downVoteButton]}
-    >
-      <Ionicons name="thumbs-down" size={28} color="#ff4d4f" />
-      <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
-    </TouchableOpacity>
-  </View>
-</View>
-
-        <View style={styles.content}>
-          <View style={styles.cardTitle}>
-            <Text style={styles.title}>{report.title}</Text>
+          {/* Titre superposé */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleTextMap}>
+              Avez-vous vu cet événement ?
+            </Text>
           </View>
 
+          {/* Boutons superposés */}
+          <View style={styles.buttonsContainer}>
+            <TouchableOpacity
+              onPress={() => handleVote("up")}
+              style={[styles.voteButton, styles.upVoteButton]}
+            >
+              <Ionicons name="thumbs-up" size={28} color="#57A773" />
+              <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleVote("down")}
+              style={[styles.voteButton, styles.downVoteButton]}
+            >
+              <Ionicons name="thumbs-down" size={28} color="#ff4d4f" />
+              <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.separator}>
+          <Text style={styles.separatorText}></Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.detailLabel}>✏️ Description :</Text>
-          <Text style={styles.descriptionText}>{report.description}</Text>
+          <Text style={styles.detailLabel}>✏️ Titre du signalement :</Text>
+          <Text style={styles.titleText}>{report.title}</Text>
         </View>
 
         <View style={styles.detailCardPhoto}>
@@ -353,6 +361,11 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
               </View>
             </Modal>
           )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.detailLabel}>✏️ Description :</Text>
+          <Text style={styles.descriptionText}>{report.description}</Text>
         </View>
 
         <View style={[styles.card, styles.detailCard]}>

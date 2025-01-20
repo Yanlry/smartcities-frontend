@@ -52,7 +52,7 @@ export default StyleSheet.create({
     elevation: 3,
   },
   mapContainer: {
-    height: 350,
+    height: 250,
     backgroundColor: "#f4f4f4", // Ajout d'un fond clair autour de la carte
     overflow: "hidden", // Assurez-vous que la carte reste à l'intérieur des bordures
     shadowColor: "#000",
@@ -60,26 +60,43 @@ export default StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    marginBottom: 10,
   },
   map: {
     flex: 1,
   },
+  separator: {
+    width: "30%", // 30% de la largeur de l'écran
+    height: 3, // Épaisseur de la ligne
+    backgroundColor: "#ddd", // Couleur du séparateur
+    alignSelf: "center", // Centre horizontalement
+    marginVertical: 5, // Espacement vertical au-dessus et en dessous
+  },
+  separatorText: {
+    textAlign: "center", // Centrage horizontal du texte
+    color: "#666", // Couleur du texte
+    fontSize: 14,
+    marginTop: 8, // Espacement au-dessus du texte (si nécessaire)
+  },
   titleContainer: {
     position: "absolute", // Superposé à la carte
-    top: 20, // Positionné en haut
+    top: 5, // Positionné en haut
     left: 20,
     right: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Fond semi-transparent
     borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 5,
     alignItems: "center",
   },
+  titleTextMap: {
+    color: "#ccc",
+    fontSize: 18,
+    padding: 3,
+  },
   titleText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
+    color: "#555",
+    fontSize: 18,
+    marginTop:12,
   },
   buttonsContainer: {
     position: "absolute", // Superposition des boutons
@@ -119,8 +136,8 @@ export default StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond transparent
+    borderRadius: 150,
+    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond transparent
   },
   titleVotes: {
     flexDirection: "row",
@@ -129,7 +146,7 @@ export default StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond transparent
+    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond transparent
   },
   upVoteButton: {
     marginRight: 10,
@@ -140,10 +157,12 @@ export default StyleSheet.create({
   voteTextUp: {
     color: "#57A773",
     fontSize: 16,
+    fontWeight: "bold",
     marginLeft: 8,
   },
   voteTextDown: {
     color: "#ff4d4f",
+    fontWeight: "bold",
     fontSize: 16,
     marginLeft: 8,
   },
@@ -289,8 +308,7 @@ export default StyleSheet.create({
     elevation: 3,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize:18,
     textAlign: "center",
     color: "#333",
   },

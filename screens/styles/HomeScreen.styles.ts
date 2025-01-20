@@ -556,6 +556,7 @@ export default StyleSheet.create({
     alignItems: "center",
     width: 120,
     marginTop: 20,
+    marginBottom: 10,
   },
   smarterImage: {
     width: 100,
