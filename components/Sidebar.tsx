@@ -7,11 +7,11 @@ import {
   Dimensions,
   TouchableOpacity,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"; // Installez : expo install @expo/vector-icons
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"; 
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation";
-import { useAuth } from "../context/AuthContext"; // Importez le Contexte
+import { useAuth } from "../context/AuthContext";
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -23,7 +23,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const [sidebarAnimation] = useState(new Animated.Value(-300));
   const navigation = useNavigation<NavigationProp>();
-  const { handleLogout } = useAuth(); // Récupérez handleLogout depuis le Contexte
+  const { handleLogout } = useAuth(); 
 
   useEffect(() => {
     console.log("Sidebar isOpen changed:", isOpen);
@@ -35,15 +35,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   }, [isOpen]);
 
   const handleNavigation = (screen: keyof RootStackParamList) => {
-    navigation.navigate(screen as any); // Cast explicite si nécessaire
+    navigation.navigate(screen as any); 
     toggleSidebar();
   };
 
   const handleLogoutWithSidebarClose = () => {
-    toggleSidebar(); // Fermez la Sidebar
+    toggleSidebar(); 
     setTimeout(() => {
-      handleLogout(); // Déconnectez l'utilisateur
-    }, 300); // Attendez la fin de l'animation
+      handleLogout(); 
+    }, 300); 
   };
 
   return (

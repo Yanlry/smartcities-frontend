@@ -64,7 +64,6 @@ export default function CreateEvent({ navigation }) {
         return;
       }
 
-      // Vérifier si l'utilisateur a déjà sélectionné 7 photos
       if (photos.length >= 7) {
         Alert.alert(
           "Limite atteinte",
@@ -75,7 +74,7 @@ export default function CreateEvent({ navigation }) {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        allowsMultipleSelection: true, // Permettre la sélection multiple
+        allowsMultipleSelection: true, 
         allowsEditing: false,
         quality: 1,
       });
@@ -83,7 +82,6 @@ export default function CreateEvent({ navigation }) {
       if (!result.canceled) {
         console.log("Images sélectionnées :", result.assets);
 
-        // Filtrer les photos valides (en excluant celles de taille > 10 Mo)
         const validPhotos = result.assets.filter((photo) => {
           if (photo.fileSize && photo.fileSize > 10 * 1024 * 1024) {
             Alert.alert(
@@ -97,19 +95,17 @@ export default function CreateEvent({ navigation }) {
           return true;
         });
 
-        // Limiter la sélection à 7 photos maximum
         const newPhotos = [...photos, ...validPhotos];
 
-        // Si le nombre total dépasse 7, on limite à 7 photos
         if (newPhotos.length > 7) {
           Alert.alert(
             "Limite atteinte",
             "Vous pouvez sélectionner jusqu'à 7 photos maximum."
           );
-          newPhotos.splice(7); // Garde seulement les 7 premières photos
+          newPhotos.splice(7); 
         }
 
-        setPhotos(newPhotos); // Mettez à jour l'état des photos avec la nouvelle liste
+        setPhotos(newPhotos);
       } else {
         console.log("Sélection annulée");
       }
@@ -118,10 +114,9 @@ export default function CreateEvent({ navigation }) {
     }
   };
 
-  // Fonction pour supprimer une photo
   const handleRemovePhoto = (index: number) => {
-    const updatedPhotos = photos.filter((_, i) => i !== index); // Filtrer la photo à supprimer
-    setPhotos(updatedPhotos); // Mettre à jour l'état des photos
+    const updatedPhotos = photos.filter((_, i) => i !== index); 
+    setPhotos(updatedPhotos); 
   };
 
   const handleMapPress = async (event: any) => {
@@ -174,9 +169,8 @@ export default function CreateEvent({ navigation }) {
       const data = await response.json();
   
       if (data.results.length > 0) {
-        // Traite l'adresse récupérée pour remplacer "Unnamed Road"
         let address = data.results[0].formatted;
-        address = address.replace(/unnamed road/gi, 'Route inconnue'); // Remplace "Unnamed Road"
+        address = address.replace(/unnamed road/gi, 'Route inconnue'); 
   
         setQuery(address);
         Alert.alert("Position actuelle sélectionnée", `${address}`);
@@ -209,15 +203,14 @@ export default function CreateEvent({ navigation }) {
       const data = await response.json();
 
       if (data.results.length > 0) {
-        // Trier les suggestions par code postal
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB; // Trie croissant
+          return postalA - postalB; 
         });
 
-        setSuggestions(sortedSuggestions); // Affiche les suggestions triées
-        setModalVisible(true); // Ouvre la liste des résultats
+        setSuggestions(sortedSuggestions); 
+        setModalVisible(true); 
       } else {
         setSuggestions([]);
         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -231,15 +224,12 @@ export default function CreateEvent({ navigation }) {
 const handleSuggestionSelect = (item: any) => {
   const { lat, lng } = item.geometry;
 
-  // Remplace "Unnamed Road" par "Route inconnue" dans l'adresse formatée
   const formattedAddress = item.formatted.replace(/Unnamed Road/gi, 'Route inconnue');
 
-  // Met à jour la localisation sélectionnée
   setSelectedLocation({ latitude: lat, longitude: lng });
-  setQuery(formattedAddress); // Utilise l'adresse modifiée
+  setQuery(formattedAddress); 
   setModalVisible(false);
 
-  // Anime la carte vers la nouvelle région
   mapRef.current?.animateToRegion({
     latitude: lat,
     longitude: lng,
@@ -252,7 +242,6 @@ const handleSuggestionSelect = (item: any) => {
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    // Vérification de base
     if (
       !title.trim() ||
       !description.trim() ||
@@ -279,17 +268,15 @@ const handleSuggestionSelect = (item: any) => {
     setProgress(0);
 
     try {
-      // Étape 1 : Préparation des fichiers
       setProgress(steps[0].progress);
       console.log("Préparation des fichiers...");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulation d'un délai
+      await new Promise((resolve) => setTimeout(resolve, 1000)); 
 
       const userId = await getUserIdFromToken();
       if (!userId) {
         throw new Error("Impossible de récupérer l'ID utilisateur.");
       }
 
-      // Préparation du FormData
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);
@@ -310,11 +297,10 @@ const handleSuggestionSelect = (item: any) => {
             uri: photo.uri,
             name: photo.uri.split("/").pop(),
             type: photo.type || "image/jpeg",
-          } as any // Cast explicite pour TypeScript
+          } as any 
         );
       });
 
-      // Étape 2 : Téléchargement des fichiers
       setProgress(steps[1].progress);
       console.log("Téléchargement en cours...");
       const response = await fetch(`${API_URL}/events`, {
@@ -326,10 +312,9 @@ const handleSuggestionSelect = (item: any) => {
         throw new Error(`Erreur serveur : ${response.status}`);
       }
 
-      // Étape 3 : Finalisation
       setProgress(steps[2].progress);
       console.log("Finalisation...");
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulation d'un délai
+      await new Promise((resolve) => setTimeout(resolve, 500)); 
 
       const data = await response.json();
       Alert.alert("Succès", "L'événement a étais créé avec succès !");
@@ -351,8 +336,8 @@ const handleSuggestionSelect = (item: any) => {
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); // Recherche un code postal à 5 chiffres
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; // Infinity si pas de code postal
+    const postalCodeMatch = address.match(/\b\d{5}\b/); 
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; 
   };
 
   return (
@@ -371,15 +356,13 @@ const handleSuggestionSelect = (item: any) => {
           <ScrollView horizontal style={styles.photoContainer}>
             {photos.map((photo, index) => (
               <View key={index} style={styles.photoWrapper}>
-                {/* Afficher la croix rouge */}
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => handleRemovePhoto(index)} // Supprimer la photo en cliquant sur la croix
+                  onPress={() => handleRemovePhoto(index)} 
                 >
                   <Ionicons name="close-circle" size={24} color="red" />
                 </TouchableOpacity>
 
-                {/* Afficher la photo */}
                 <Image source={{ uri: photo.uri }} style={styles.photo} />
               </View>
             ))}
@@ -401,13 +384,13 @@ const handleSuggestionSelect = (item: any) => {
           style={[
             styles.input,
             { height: 100, maxHeight: 200, paddingHorizontal: 20 },
-          ]} // Limite la hauteur à 100px
+          ]} 
           value={description}
           onChangeText={setDescription}
           placeholder="Description"
-          multiline={true} // Permet plusieurs lignes
-          scrollEnabled={true} // Active le défilement
-          textAlignVertical="top" // Aligne le texte en haut
+          multiline={true} 
+          scrollEnabled={true} 
+          textAlignVertical="top" 
           placeholderTextColor={"#ccc"}
         />
         <Text style={styles.label}>Date</Text>
@@ -459,7 +442,7 @@ const handleSuggestionSelect = (item: any) => {
           <ActivityIndicator size="large" color="#093A3E" />
         ) : (
           <TouchableOpacity
-            onPress={() => setIsMapExpanded(true)} // Agrandit la carte au clic
+            onPress={() => setIsMapExpanded(true)} 
             activeOpacity={1}
           >
             <View
@@ -469,7 +452,7 @@ const handleSuggestionSelect = (item: any) => {
               <MapView
                 ref={mapRef}
                 style={{
-                  height: isMapExpanded ? 300 : 100, // Ajuste la hauteur selon l'état
+                  height: isMapExpanded ? 300 : 100, 
                   borderRadius: 30,
                 }}
                 initialRegion={{
@@ -478,9 +461,9 @@ const handleSuggestionSelect = (item: any) => {
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
-                scrollEnabled={isMapExpanded} // Rend la carte non interactive lorsqu'elle est réduite
-                zoomEnabled={isMapExpanded} // Désactive le zoom lorsqu'elle est réduite
-                onPress={isMapExpanded ? handleMapPress : undefined} // Désactive les clics lorsqu'elle est réduite
+                scrollEnabled={isMapExpanded} 
+                zoomEnabled={isMapExpanded} 
+                onPress={isMapExpanded ? handleMapPress : undefined} 
               >
                 {selectedLocation && (
                   <Marker
@@ -492,7 +475,6 @@ const handleSuggestionSelect = (item: any) => {
                 )}
               </MapView>
 
-              {/* Texte indicatif lorsque la carte est réduite */}
               {!isMapExpanded && (
                 <View
                   style={{
@@ -503,7 +485,7 @@ const handleSuggestionSelect = (item: any) => {
                     bottom: 0,
                     justifyContent: "center",
                     alignItems: "center",
-                    backgroundColor: "rgba(0, 0, 0, 0.5)", // Overlay sombre
+                    backgroundColor: "rgba(0, 0, 0, 0.5)", 
                     borderRadius: 30,
                   }}
                 >
@@ -549,11 +531,11 @@ const handleSuggestionSelect = (item: any) => {
             <View style={styles.submitButton}>
               <TouchableOpacity
                 style={[
-                  styles.button, // Style du bouton
-                  isSubmitting && styles.buttonDisabled, // Applique un style désactivé si nécessaire
+                  styles.button, 
+                  isSubmitting && styles.buttonDisabled, 
                 ]}
-                onPress={handleSubmit} // Appelle la fonction de soumission
-                disabled={isSubmitting} // Désactive le bouton si déjà en soumission
+                onPress={handleSubmit}
+                disabled={isSubmitting} 
               >
                 <Text style={styles.buttonText}>
                   {isSubmitting ? "Envoi en cours..." : "Créer l'événement"}

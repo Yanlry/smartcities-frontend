@@ -36,18 +36,21 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation<MapScreenNavigationProp>();
   const DEFAULT_RADIUS_KM = 5;
-  
+
   const fetchReportsInRegion = async () => {
     if (!mapRegion) return;
-  
+
     setLoadingReports(true);
     try {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
-      
-      // Fixer un rayon minimal (5 km) pour éviter une zone trop grande/petite
+
       const radiusKm = Math.max(latitudeDelta * 111, longitudeDelta * 111, 5);
-  
-      const result = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
+
+      const result = await fetchAllReportsInRegion(
+        latitude,
+        longitude,
+        radiusKm
+      );
       setReports(result);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements :", error);
@@ -59,18 +62,21 @@ export default function MapScreen() {
       setLoadingReports(false);
     }
   };
-  
+
   const fetchEventsInRegion = async () => {
     if (!mapRegion) return;
-  
+
     setLoadingReports(true);
     try {
       const { latitude, longitude, latitudeDelta, longitudeDelta } = mapRegion;
-  
-      // Fixer un rayon minimal (5 km) pour éviter une zone trop grande/petite
+
       const radiusKm = Math.max(latitudeDelta * 111, longitudeDelta * 111, 5);
-  
-      const result = await fetchAllEventsInRegion(latitude, longitude, radiusKm);
+
+      const result = await fetchAllEventsInRegion(
+        latitude,
+        longitude,
+        radiusKm
+      );
       setEvents(result);
     } catch (error) {
       console.error("Erreur lors du chargement des événements :", error);
@@ -82,13 +88,12 @@ export default function MapScreen() {
       setLoadingReports(false);
     }
   };
-  
+
   const fetchDataInRegion = async () => {
     if (!mapRegion) return;
-  
+
     setLoadingReports(true);
     try {
-      // Appel simultané des deux fonctions
       await Promise.all([fetchReportsInRegion(), fetchEventsInRegion()]);
     } catch (error) {
       console.error("Erreur lors du chargement des données :", error);
@@ -115,12 +120,11 @@ export default function MapScreen() {
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
       };
-  
+
       setMapRegion(initialRegion);
-  
-      // Appelez fetchDataInRegion après avoir défini la région
+
       fetchDataInRegion();
-  
+
       if (mapRef.current) {
         const camera: Camera = {
           center: {
@@ -179,55 +183,63 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <MapView
-  ref={mapRef}
-  style={styles.map}
-  region={mapRegion || undefined}
-  onRegionChangeComplete={handleRegionChangeComplete}
-  mapType={mapType}
-  showsBuildings={false} // Désactive les bâtiments 3D
-  pitchEnabled={false} // Désactive l'inclinaison
-  rotateEnabled={false} // Désactive la rotation
-  showsCompass={true} // (Optionnel) Affiche la boussole si rotation désactivée
->
+        ref={mapRef}
+        style={styles.map}
+        region={mapRegion || undefined}
+        onRegionChangeComplete={handleRegionChangeComplete}
+        mapType={mapType}
+        showsBuildings={false}
+        pitchEnabled={false}
+        rotateEnabled={false}
+        showsCompass={true}
+      >
         {filteredMarkers().map((item) => {
-  // Vérifie si l'élément est un rapport
-  const isReport = (item: Report | ReportEvent): item is Report =>
-    (item as Report).type !== undefined;
+          const isReport = (item: Report | ReportEvent): item is Report =>
+            (item as Report).type !== undefined;
 
-  return (
-    <Marker
-      key={item.id}
-      coordinate={{
-        latitude: item.latitude,
-        longitude: item.longitude,
-      }}
-      onPress={() => {
-        // Affiche le titre lorsque l'utilisateur clique
-        if (isReport(item)) {
-          navigation.navigate("ReportDetailsScreen", { reportId: item.id });
-        } else {
-          navigation.navigate("EventDetailsScreen", { eventId: item.id.toString() });
-        }
-      }}
-    >
-      <View style={{ alignItems: "center" }}>
-        {/* Affiche le titre au-dessus de l'image */}
-        <Text style={{ backgroundColor: "white", padding: 4, borderRadius: 5,fontSize:10 }}>
-          {isReport(item) ? item.title : item.name}
-        </Text>
-        {/* Image du marqueur */}
-        <Image
-          source={
-            isReport(item)
-              ? getTypeIcon(item.type)
-              : require("../assets/images/1.jpg")
-          }
-          style={{ width: 40, height: 40, resizeMode: "contain" }}
-        />
-      </View>
-    </Marker>
-  );
-})}
+          return (
+            <Marker
+              key={item.id}
+              coordinate={{
+                latitude: item.latitude,
+                longitude: item.longitude,
+              }}
+              onPress={() => {
+                if (isReport(item)) {
+                  navigation.navigate("ReportDetailsScreen", {
+                    reportId: item.id,
+                  });
+                } else {
+                  navigation.navigate("EventDetailsScreen", {
+                    eventId: item.id.toString(),
+                  });
+                }
+              }}
+            >
+              <View style={{ alignItems: "center" }}>
+                <Text
+                  style={{
+                    backgroundColor: "white",
+                    padding: 4,
+                    borderRadius: 5,
+                    fontSize: 10,
+                  }}
+                >
+                  {isReport(item) ? item.title : item.name}
+                </Text>
+                {/* Image du marqueur */}
+                <Image
+                  source={
+                    isReport(item)
+                      ? getTypeIcon(item.type)
+                      : require("../assets/images/1.jpg")
+                  }
+                  style={{ width: 40, height: 40, resizeMode: "contain" }}
+                />
+              </View>
+            </Marker>
+          );
+        })}
       </MapView>
 
       <TouchableOpacity style={styles.mapTypeButton} onPress={toggleMapType}>
@@ -243,7 +255,7 @@ export default function MapScreen() {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.searchButton}
-        onPress={fetchDataInRegion} // Appelle les deux fonctions en même temps
+        onPress={fetchDataInRegion} 
       >
         <Text style={styles.searchButtonText}>Rechercher dans cette zone</Text>
       </TouchableOpacity>
@@ -344,6 +356,10 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     backgroundColor: "#A3A3A3",
   },
-  activeFilter: { backgroundColor: "#CA483F", borderColor: "#CA483F", fontWeight: "bold"},
-  filterText: { color: "#fff", fontSize : 10, textAlign : "center" },
+  activeFilter: {
+    backgroundColor: "#CA483F",
+    borderColor: "#CA483F",
+    fontWeight: "bold",
+  },
+  filterText: { color: "#fff", fontSize: 10, textAlign: "center" },
 });

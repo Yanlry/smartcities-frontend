@@ -2,20 +2,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // @ts-ignore
 import { API_URL } from "@env";
 
-// Fonction utilitaire pour vérifier si un token est expiré
 const isTokenExpired = (token: string): boolean => {
   try {
     const [, payload] = token.split('.');
-    const { exp } = JSON.parse(atob(payload)); // Décodage de la charge utile
-    return Date.now() >= exp * 1000; // Vérifie si l'expiration est passée
+    const { exp } = JSON.parse(atob(payload)); 
+    return Date.now() >= exp * 1000; 
   } catch (error) {
     console.error("Erreur lors de la vérification de l'expiration du token :", error);
-    return true; // Par défaut, considère le token comme expiré en cas d'erreur
+    return true; 
   }
 };
 
 export function useToken() {
-  // Gestion du token d'accès
   const setToken = async (token: string) => {
     console.log("Stockage du token d'accès :", token);
     await AsyncStorage.setItem('authToken', token);
@@ -37,7 +35,7 @@ export function useToken() {
       return refreshedToken;
     }
   
-    console.warn("Impossible de récupérer un token valide."); // Avertissement au lieu d'une erreur
+    console.warn("Impossible de récupérer un token valide."); 
     return null;
   };
 
@@ -46,7 +44,6 @@ export function useToken() {
     await AsyncStorage.removeItem('authToken');
   };
 
-  // Gestion du refresh token
   const setRefreshToken = async (refreshToken: string) => {
     console.log("Stockage du refresh token :", refreshToken);
     await AsyncStorage.setItem('refreshToken', refreshToken);
@@ -55,7 +52,7 @@ export function useToken() {
   const getRefreshToken = async () => {
     const refreshToken = await AsyncStorage.getItem('refreshToken');
     if (!refreshToken) {
-      console.warn("Aucun refresh token disponible pour rafraîchir le token d'accès."); // Avertissement au lieu d'une erreur
+      console.warn("Aucun refresh token disponible pour rafraîchir le token d'accès."); 
     } else {
       console.log("Refresh token récupéré :", refreshToken);
     }
@@ -67,11 +64,10 @@ export function useToken() {
     await AsyncStorage.removeItem('refreshToken');
   };
 
-  // Rafraîchir le token d'accès
   const refreshAccessToken = async () => {
     const refreshToken = await getRefreshToken();
     if (!refreshToken) {
-      console.warn('Aucun refresh token disponible pour rafraîchir le token d\'accès.'); // Avertissement
+      console.warn('Aucun refresh token disponible pour rafraîchir le token d\'accès.'); 
       return null;
     }
   
@@ -84,14 +80,13 @@ export function useToken() {
       });
   
       if (!response.ok) {
-        console.warn('Échec du rafraîchissement du token d\'accès, réponse non OK.'); // Avertissement
+        console.warn('Échec du rafraîchissement du token d\'accès, réponse non OK.'); 
         return null;
       }
   
       const { accessToken, refreshToken: newRefreshToken } = await response.json();
       console.log("Nouveau token reçu :", accessToken);
   
-      // Stocker les nouveaux tokens
       await setToken(accessToken);
       if (newRefreshToken) {
         await setRefreshToken(newRefreshToken);
@@ -99,11 +94,10 @@ export function useToken() {
   
       return accessToken;
     } catch (error) {
-      console.warn('Erreur lors du rafraîchissement du token d\'accès :', error); // Avertissement
+      console.warn('Erreur lors du rafraîchissement du token d\'accès :', error); 
       return null;
     }
   };
-  // Gestion de l'userId
   const setUserId = async (userId: number) => {
     console.log('Stockage du userId dans AsyncStorage :', userId);
     await AsyncStorage.setItem('userId', userId.toString());
@@ -120,7 +114,6 @@ export function useToken() {
     await AsyncStorage.removeItem('userId');
   };
 
-  // Nettoyage global
   const clearAll = async () => {
     console.log("Suppression de toutes les données stockées.");
     await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userId']);

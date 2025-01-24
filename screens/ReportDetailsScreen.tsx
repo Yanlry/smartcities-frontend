@@ -21,7 +21,7 @@ import styles from "./styles/ReportDetailsScreen.styles";
 import { Ionicons } from "@expo/vector-icons";
 // @ts-ignore
 import { API_URL } from "@env";
-import CommentsSection from "../components/CommentsSection"; // Remplacez par le bon chemin
+import CommentsSection from "../components/CommentsSection";  
 type Photo = {
   id: string;
   url: string;
@@ -29,11 +29,11 @@ type Photo = {
 
 export default function ReportDetailsScreen({ route, navigation }: any) {
   const { reportId } = route.params;
-  const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
+  const { getUserId } = useToken();  
   const { location } = useLocation();
   const mapRef = useRef<MapView>(null);
   const [votes, setVotes] = useState({ upVotes: 0, downVotes: 0 });
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);  
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const { report, routeCoords, loading } = useFetchReportDetails(
@@ -53,23 +53,20 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
 
   useEffect(() => {
     updateVotes();
-  }, [report]);
-  // Récupère l'utilisateur actuel
+  }, [report]); 
+
   const fetchUserId = async () => {
     const userId = await getUserId();
     setCurrentUserId(userId);
   };
-
-  // Gère le positionnement de la carte
+ 
   const adjustMap = () => {
-    if (mapRef.current && routeCoords.length > 0) {
-      // Ajuster les limites pour voir tout le tracé
+    if (mapRef.current && routeCoords.length > 0) { 
       mapRef.current.fitToCoordinates(routeCoords, {
         edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
-
-      // Zoomer sur le report après un délai
+ 
       setTimeout(() => {
         const reportCamera = {
           center: {
@@ -79,8 +76,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         };
         mapRef.current?.animateCamera(reportCamera, { duration: 500 });
       }, 500);
-
-      // Zoomer doucement vers la position de l'utilisateur après un autre délai
+ 
       setTimeout(() => {
         if (location?.latitude && location?.longitude) {
           const userCamera = {
@@ -94,8 +90,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       }, 2000);
     }
   };
-
-  // Met à jour les votes
+ 
   const updateVotes = () => {
     if (report) {
       setVotes({
@@ -129,8 +124,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       }
   
       const result = await response.json();
-  
-      // Mise à jour immédiate des votes
+   
       setVotes({
         upVotes: result.updatedVotes.upVotes,
         downVotes: result.updatedVotes.downVotes,
@@ -170,15 +164,15 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   };
 
   const onRefresh = async () => {
-    setRefreshing(true); // Active le spinner de rafraîchissement
+    setRefreshing(true);  
     try {
-      await fetchUserId(); // Récupère l'utilisateur
-      adjustMap(); // Ajuste la carte
-      updateVotes(); // Met à jour les votes
+      await fetchUserId();  
+      adjustMap();  
+      updateVotes();  
     } catch (error) {
       console.error("Erreur lors du rafraîchissement :", error.message);
     } finally {
-      setRefreshing(false); // Désactive le spinner
+      setRefreshing(false);  
     }
   };
   return (
@@ -186,7 +180,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ marginLeft: 10 }} // Alignement gauche
+          style={{ marginLeft: 10 }}  
         >
           <Icon name="arrow-back-outline" size={28} color="#F7F2DE" />
         </TouchableOpacity>
@@ -201,7 +195,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <Icon
             name="notifications-outline"
             size={28}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE"  
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>

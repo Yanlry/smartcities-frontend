@@ -34,7 +34,7 @@ interface Post {
   content?: string;
   likesCount?: number;
   comments?: Comment[];
-  photos?: string[]; // Ajoutez les photos ici
+  photos?: string[];  
 }
 
 interface Comment {
@@ -45,7 +45,7 @@ interface Comment {
   text: string;
   parentId?: string | null;
   userId?: string;
-  replies?: Comment[]; // Ajoutez les réponses ici
+  replies?: Comment[];  
 }
 
 export default function PostDetailsScreen({ navigation }) {
@@ -65,24 +65,23 @@ export default function PostDetailsScreen({ navigation }) {
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyVisibility, setReplyVisibility] = useState({});
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { unreadCount } = useNotification(); // Récupération du compteur
+  const { unreadCount } = useNotification();  
   const [userId, setUserId] = useState<number | null>(null);
   const scaleValue = useRef(new Animated.Value(1)).current;
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0); // Index de l'image active
-
-  // Animation infinie
+  const [activeIndex, setActiveIndex] = useState(0);  
+ 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(scaleValue, {
-          toValue: 1.2, // Le bouton grandit
+          toValue: 1.2,  
           duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(scaleValue, {
-          toValue: 1, // Retour à la taille normale
+          toValue: 1,  
           duration: 800,
           useNativeDriver: true,
         }),
@@ -90,15 +89,15 @@ export default function PostDetailsScreen({ navigation }) {
     );
     pulseAnimation.start();
 
-    return () => pulseAnimation.stop(); // Nettoyer à la fin
+    return () => pulseAnimation.stop(); 
   }, [scaleValue]);
 
   const fetchPostDetails = async () => {
-    setLoading(true); // Démarre le loader
+    setLoading(true);  
 
     try {
-      const { getToken } = useToken(); // Utilisez useToken pour récupérer le token
-      const token = await getToken(); // Récupère un token valide
+      const { getToken } = useToken();  
+      const token = await getToken(); 
 
       if (!token) {
         throw new Error("Token JWT introuvable. Veuillez vous reconnecter.");
@@ -107,46 +106,44 @@ export default function PostDetailsScreen({ navigation }) {
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`, // Ajoute le token JWT
+          Authorization: `Bearer ${token}`,  
           "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
         console.error(`Erreur HTTP: ${response.status}`);
-        setPost(null); // Définit le post à null si le post n'est pas trouvé
+        setPost(null);   
         return;
       }
 
       const data = await response.json();
       console.log("Données récupérées :", data);
-
-      // Vérifie si le post est vide ou invalide
+ 
       if (!data || Object.keys(data).length === 0) {
-        setPost(null); // Définit le post à null en cas de données invalides
-      } else {
-        // Ajoute des valeurs par défaut pour éviter des erreurs d'affichage
+        setPost(null);  
+      } else { 
         const formattedPost = {
           ...data,
-          photos: data.photos || [], // Définit un tableau vide si les photos sont absentes
-          authorName: data.authorName || "Utilisateur inconnu", // Définit un nom par défaut si absent
-          profilePhoto: data.profilePhoto || "https://via.placeholder.com/150", // URL par défaut pour la photo de profil
+          photos: data.photos || [],  
+          authorName: data.authorName || "Utilisateur inconnu",  
+          profilePhoto: data.profilePhoto || "https://via.placeholder.com/150", 
         };
 
-        setPost(formattedPost); // Met à jour le post avec les données formatées
+        setPost(formattedPost);  
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du post :", error.message);
-      setPost(null); // Définit le post à null en cas d'erreur
+      setPost(null);  
     } finally {
-      setLoading(false); // Arrête le loader
+      setLoading(false);  
     }
   };
 
   useEffect(() => {
     const fetchUserId = async () => {
       const id = await getUserId();
-      setUserId(id); // Stockez l'ID utilisateur
+      setUserId(id); 
     };
     fetchUserId();
     fetchPostDetails();
@@ -241,27 +238,24 @@ export default function PostDetailsScreen({ navigation }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId: post?.id, // ID du post auquel la réponse est liée
-          userId, // ID de l'utilisateur actuel
-          text: replyInputs[parentId], // Texte de la réponse
-          parentId, // ID du commentaire parent
+          postId: post?.id,  
+          userId,  
+          text: replyInputs[parentId],  
+          parentId,  
         }),
       });
 
       if (!response.ok) {
         throw new Error("Erreur lors de l'ajout de la réponse");
       }
-
-      // Réinitialiser l'input pour la réponse
+ 
       setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-      setReplyToCommentId(null); // Fermer le champ de réponse
-
-      // Mettre à jour les commentaires localement (optionnel, pour un affichage instantané)
+      setReplyToCommentId(null);   
+ 
       const newReply = await response.json();
       setPost((prevPost) => {
         if (!prevPost || !prevPost.comments) return prevPost;
-
-        // Trouver le commentaire parent et y ajouter la réponse
+ 
         const updatedComments = prevPost.comments.map((comment) => {
           if (comment.id === parentId) {
             return {
@@ -274,8 +268,7 @@ export default function PostDetailsScreen({ navigation }) {
 
         return { ...prevPost, comments: updatedComments };
       });
-
-      // Recharge les données depuis le backend (optionnel)
+ 
       fetchPostDetails();
     } catch (error) {
       Alert.alert(
@@ -309,7 +302,7 @@ export default function PostDetailsScreen({ navigation }) {
               if (!response.ok) {
                 throw new Error("Erreur lors de la suppression de la réponse");
               }
-              fetchPostDetails(); // Recharger les publications et les commentaires après suppression
+              fetchPostDetails();  
             } catch (error) {
               Alert.alert(
                 "Erreur",
@@ -350,7 +343,7 @@ export default function PostDetailsScreen({ navigation }) {
                 );
               }
 
-              fetchPostDetails(); // Recharger les détails du post après suppression
+              fetchPostDetails();  
             } catch (error) {
               Alert.alert(
                 "Erreur",
@@ -385,9 +378,8 @@ export default function PostDetailsScreen({ navigation }) {
                 throw new Error(
                   "Erreur lors de la suppression de la publication"
                 );
-              }
-              // Recharger les publications après suppression
-              fetchPostDetails(); // Si `fetchPosts` est une fonction de rafraîchissement
+              } 
+              fetchPostDetails();  
             } catch (error) {
               Alert.alert(
                 "Erreur",
@@ -489,10 +481,10 @@ export default function PostDetailsScreen({ navigation }) {
               onPress={() =>
                 setReplyVisibility((prev) => ({
                   ...prev,
-                  [comment.id]: !prev[comment.id], // Inverser l'état pour afficher/masquer
+                  [comment.id]: !prev[comment.id],  
                 }))
               }
-              style={styles.showMoreButton} // Applique le même style
+              style={styles.showMoreButton} 
             >
               <Text style={styles.showMoreText}>
                 {replyVisibility[comment.id]
@@ -563,7 +555,7 @@ export default function PostDetailsScreen({ navigation }) {
     return (
       <View style={styles.container}>
         <Image
-          source={require("../assets/images/sad.png")} // Chemin de votre image
+          source={require("../assets/images/sad.png")} 
           style={styles.image}
         />
         <Text style={styles.text}>
@@ -579,7 +571,7 @@ export default function PostDetailsScreen({ navigation }) {
         >
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.goBack()} // Revenir à l'écran précédent
+            onPress={() => navigation.goBack()}  
           >
             <Text style={styles.buttonText}>Retour</Text>
           </TouchableOpacity>
@@ -589,9 +581,9 @@ export default function PostDetailsScreen({ navigation }) {
   }
 
   const handlePhotoPress = (photo) => {
-    console.log("Photo pressée :", photo); // Vérifie que cette fonction est appelée avec la bonne valeur
-    setSelectedPhoto(photo); // Stocke l'URI de la photo
-    setIsModalVisible(true); // Ouvre le modal
+    console.log("Photo pressée :", photo);  
+    setSelectedPhoto(photo);  
+    setIsModalVisible(true);  
   };
 
   const handleScrollImage = (event) => {
@@ -605,11 +597,10 @@ export default function PostDetailsScreen({ navigation }) {
     try {
       const result = await Share.share({
         message:
-          "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
-        title: "Partager ce post", // Titre (optionnel)
+          "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", 
+        title: "Partager ce post",  
       });
-
-      // Vérifiez si l'utilisateur a partagé ou annulé
+ 
       if (result.action === Share.sharedAction) {
         if (result.activityType) {
           console.log("Partagé via :", result.activityType);
@@ -632,7 +623,7 @@ export default function PostDetailsScreen({ navigation }) {
           <Icon
             name="menu"
             size={28}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE"  
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -711,14 +702,14 @@ export default function PostDetailsScreen({ navigation }) {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onScroll={handleScrollImage} // Gère l'état des indicateurs
+                onScroll={handleScrollImage}  
                 scrollEventThrottle={16}
                 contentContainerStyle={{ margin: 0, padding: 0 }}
               >
                 {post.photos.map((photo, index) => (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => handlePhotoPress(photo)} // Appelle handlePhotoPress avec la photo sélectionnée
+                    onPress={() => handlePhotoPress(photo)}  
                   >
                     <Image
                       source={{ uri: photo }}
@@ -731,19 +722,19 @@ export default function PostDetailsScreen({ navigation }) {
                 visible={isModalVisible}
                 transparent={true}
                 animationType="fade"
-                onRequestClose={() => setIsModalVisible(false)} // Gestion du bouton "Retour"
+                onRequestClose={() => setIsModalVisible(false)}  
               >
                 <View style={styles.modalBackground}>
                   <TouchableOpacity
                     style={styles.closeButton}
-                    onPress={() => setIsModalVisible(false)} // Ferme le modal
+                    onPress={() => setIsModalVisible(false)} 
                   >
                     <Text style={styles.closeText}>X</Text>
                   </TouchableOpacity>
                   {selectedPhoto && (
                     <Image
                       source={{ uri: selectedPhoto }}
-                      style={styles.fullscreenPhoto} // Affiche l'image en plein écran
+                      style={styles.fullscreenPhoto}  
                     />
                   )}
                 </View>
@@ -773,13 +764,13 @@ export default function PostDetailsScreen({ navigation }) {
                 <Icon
                   name={post.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
                   size={22}
-                  color={post.likedByUser ? "#007bff" : "#656765"} // Couleur dynamique pour l'icône
+                  color={post.likedByUser ? "#007bff" : "#656765"}  
                   style={styles.likeIcon}
                 />
                 <Text
                   style={[
                     styles.likeButtonText,
-                    { color: post.likedByUser ? "#007bff" : "#656765" }, // Couleur dynamique pour le texte
+                    { color: post.likedByUser ? "#007bff" : "#656765" },  
                   ]}
                 >
                   {post.likesCount || 0} {/* Nombre de likes */}
@@ -834,8 +825,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   photoCarouselItem: {
-    width: Dimensions.get("window").width, // Largeur de l'image = largeur de l'écran
-    height: 200, // Hauteur du carrousel
+    width: Dimensions.get("window").width, 
+    height: 200,  
     resizeMode: "cover",
   },
   indicatorsContainer: {
@@ -852,7 +843,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   activeIndicator: {
-    backgroundColor: "#000", // Couleur différente pour l'indicateur actif
+    backgroundColor: "#000",  
   },
   loader: {
     flex: 1,
@@ -876,7 +867,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -898,11 +889,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E", // Couleur dorée ou autre
+    color: "#093A3E",  
     backgroundColor: "#F7F2DE",
     letterSpacing: 2,
     fontWeight: "bold",
-    fontFamily: "Insanibc", // Utilisez le nom de la police que vous avez défini
+    fontFamily: "Insanibc",  
   },
   typeBadge: {
     flexDirection: "row",
@@ -932,7 +923,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
     padding: 5,
-    zIndex: 10, // Priorité d'affichage
+    zIndex: 10,  
   },
   postHeader: {
     flexDirection: "row",
@@ -991,14 +982,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   postInfo: {
-    flex: 1, // S'étend pour utiliser l'espace restant
+    flex: 1,  
   },
   likeButtonContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   likeIcon: {
-    marginRight: 3, // Espace entre l'icône et le texte
+    marginRight: 3,  
   },
   likeButtonText: {
     color: "#fff",
@@ -1081,7 +1072,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   commentContainer: {
-    flexDirection: "column", // Permet d'empiler les réponses sous le commentaire principal
+    flexDirection: "column",  
     alignItems: "flex-start",
     padding: 10,
     borderRadius: 8,
@@ -1090,8 +1081,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginTop: 10,
-    width: "100%", // Utiliser la largeur maximale du parent
-    maxWidth: "100%", // Empêcher le dépassement
+    width: "100%",  
+    maxWidth: "100%",  
     padding: 10,
     paddingVertical: 15,
     backgroundColor: "#eef6ff",
@@ -1099,7 +1090,7 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     borderLeftWidth: 2,
     borderLeftColor: "#007bff",
-    overflow: "hidden", // Empêche le débordement visible
+    overflow: "hidden",  
   },
   commentAvatar: {
     width: 40,
@@ -1109,9 +1100,9 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   commentContent: {
-    width: "100%", // Utiliser toute la largeur disponible
-    flexShrink: 1, // Permet de réduire le conteneur si le texte est long
-    overflow: "hidden", // Empêche tout débordement visible
+    width: "100%",  
+    flexShrink: 1,  
+    overflow: "hidden",  
   },
   commentVisible: {
     backgroundColor: "#f7f7f7",
@@ -1169,7 +1160,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   button: {
-    backgroundColor: "#093A3E", // Couleur vive et chaude
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 50,
@@ -1194,13 +1185,13 @@ const styles = StyleSheet.create({
   fullscreenPhoto: {
     width: "90%",
     height: "70%",
-    resizeMode: "contain", // S'assure que l'image ne déborde pas
+    resizeMode: "contain",  
     borderRadius: 10,
   },
 
   modalBackground: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.8)",  
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1218,7 +1209,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   photoInGrid: {
-    width: "48%", // Adaptez selon votre style
+    width: "48%",  
     aspectRatio: 1,
     borderRadius: 8,
     marginBottom: 10,

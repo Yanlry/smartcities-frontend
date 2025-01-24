@@ -13,11 +13,10 @@ export const hexToRgba = (hex: string, alpha: number): string => {
     const diffInDays = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
   
     let baseOpacity;
-    if (diffInDays < 1) baseOpacity = 0.8; // Signalement récent
-    else if (diffInDays < 7) baseOpacity = 0.6; // Signalement de moins d'une semaine
-    else baseOpacity = 0.4; // Signalement plus ancien
-  
-    // Renforce l'opacité avec un facteur d'intensité et limite à 1
+    if (diffInDays < 1) baseOpacity = 0.8;  
+    else if (diffInDays < 7) baseOpacity = 0.6; 
+    else baseOpacity = 0.4;  
+   
     return Math.min(baseOpacity * intensityFactor, 1);
   };
   

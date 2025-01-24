@@ -105,12 +105,10 @@ export const typeLabels: { [key: string]: string } = {
     currentVotes: number | undefined,
     setVotes: React.Dispatch<React.SetStateAction<number | undefined>>
   ) => {
-    try {
-      // Mise à jour optimiste : mettre à jour les votes immédiatement
+    try { 
       const newVotes = type === "up" ? (currentVotes || 0) + 1 : (currentVotes || 0) - 1;
       setVotes(newVotes);
-  
-      // Appel API
+   
       const payload = {
         reportId,
         userId,
@@ -122,15 +120,13 @@ export const typeLabels: { [key: string]: string } = {
   
       const response = await axios.post(`${API_URL}/reports/vote`, payload);
       console.log("Réponse du backend :", response.data);
-  
-      // Synchroniser avec le backend si la réponse contient des votes mis à jour
+   
       if (response.data.updatedVotes !== undefined) {
         setVotes(response.data.updatedVotes);
       }
     } catch (error) {
       console.error("Erreur lors de l'envoi du vote :", error.response?.data || error);
-  
-      // Revenir à l'état précédent en cas d'erreur
+   
       setVotes(currentVotes);
     }
   };

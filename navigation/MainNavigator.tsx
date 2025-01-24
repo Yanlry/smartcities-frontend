@@ -2,7 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { NotificationProvider } from '../context/NotificationContext'; // Importez NotificationProvider
+import { NotificationProvider } from '../context/NotificationContext'; 
 
 const Stack = createStackNavigator();
 

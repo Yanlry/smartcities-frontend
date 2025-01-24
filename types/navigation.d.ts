@@ -11,10 +11,10 @@ export type RootStackParamList = {
   EventDetailsScreen: { eventId: string };
   EventsScreen: undefined;
   ReportScreen: undefined;
-  NotificationsScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
-  RankingScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
-  ConversationsScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
-  CityScreen: undefined; // Ajoutez cette ligne pour résoudre l'erreur
+  NotificationsScreen: undefined; 
+  RankingScreen: undefined; 
+  ConversationsScreen: undefined; 
+  CityScreen: undefined; 
   PostDetailsScreen: { postId: number };
 };
 

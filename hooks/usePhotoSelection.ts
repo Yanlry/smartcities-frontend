@@ -1,4 +1,3 @@
-// /hooks/usePhotoSelection.ts
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";

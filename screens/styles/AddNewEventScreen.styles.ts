@@ -10,12 +10,12 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    elevation: 3, // Pour les ombres sur Android
+    elevation: 3,  
     paddingTop: 50,
   },
   homeTitle: {
-    flexDirection: "row", // Aligne les enfants en ligne (horizontalement)
-    alignItems: "center", // Centre verticalement les éléments
+    flexDirection: "row",  
+    alignItems: "center",  
   },
   backButton: {
     padding: 10,
@@ -72,7 +72,7 @@ export default StyleSheet.create({
   inputWithButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10, // React Native ne prend pas en charge "gap". Remplacez-le par "marginHorizontal" si nécessaire
+    gap: 10,  
   },
   inputSearch: {
     flex: 1,
@@ -110,35 +110,35 @@ export default StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: "center", // Centre verticalement
-    alignItems: "center", // Centre horizontalement
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center",  
+    alignItems: "center",  
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
   },
   modalContent: {
-    width: "80%", // Largeur relative à l'écran
-    backgroundColor: "#fff", // Fond blanc
-    borderRadius: 10, // Coins arrondis
-    padding: 20, // Espacement intérieur
-    shadowColor: "#000", // Ombre
-    shadowOffset: { width: 0, height: 4 }, // Position de l'ombre
-    shadowOpacity: 0.3, // Opacité de l'ombre
-    shadowRadius: 5, // Rayon de l'ombre
-    elevation: 10, // Ombre pour Android
-    alignItems: "center", // Centre le contenu horizontalement
+    width: "80%",  
+    backgroundColor: "#fff",  
+    borderRadius: 10,  
+    padding: 20,  
+    shadowColor: "#000",  
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3,  
+    shadowRadius: 5,  
+    elevation: 10,  
+    alignItems: "center",  
   },
   modalText: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 15, // Espacement entre le texte et la barre de progression
-    textAlign: "center", // Centrer le texte
-    color: "#333", // Couleur du texte
+    marginBottom: 15,  
+    textAlign: "center",  
+    color: "#333",  
   },
   modalPercentage: {
     fontSize: 14,
     fontWeight: "500",
-    marginTop: 10, // Espacement entre la barre de progression et le pourcentage
+    marginTop: 10,  
     textAlign: "center",
-    color: "#2c3e50", // Bleu pourcentage
+    color: "#2c3e50",  
   },
   suggestionItem: {
     padding: 10,
@@ -195,29 +195,29 @@ export default StyleSheet.create({
   },
   submitButtonContainer: {
     paddingBottom: 50,
-    justifyContent: "center", // Centrer l'élément dans le container
-    alignItems: "center", // Centrer l'élément dans le container
+    justifyContent: "center", 
+    alignItems: "center", 
   },
   submitButton: {
-    marginVertical: 20, // Espacement autour du bouton
-    alignItems: "center", // Centrer le bouton horizontalement
+    marginVertical: 20,  
+    alignItems: "center",  
   },
   button: {
-    backgroundColor: "#2c3e50", // Couleur de fond
-    paddingVertical: 15, // Espacement vertical
-    paddingHorizontal: 30, // Espacement horizontal
-    borderRadius: 30, // Coins arrondis
+    backgroundColor: "#2c3e50",  
+    paddingVertical: 15,  
+    paddingHorizontal: 30,  
+    borderRadius: 30, 
   },
   buttonText: {
-    color: "#fff", // Couleur du texte
-    fontSize: 16, // Taille de la police
-    fontWeight: "bold", // Texte en gras
-    textAlign: "center", // Centrage du texte
+    color: "#fff",  
+    fontSize: 16,  
+    fontWeight: "bold", 
+    textAlign: "center", 
   },
   buttonPhoto: {
     width: "70%",
     height: 50,
-    borderRadius: 25, // Coins arrondis
+    borderRadius: 25, 
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 25,
@@ -228,17 +228,16 @@ export default StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-
-  // Texte du bouton
+ 
   buttonTextPhoto: {
-    color: "#FFFFFF", // Texte blanc
+    color: "#FFFFFF",  
     fontSize: 16,
     fontWeight: "bold",
-    textTransform: "uppercase", // Texte en majuscules
-    letterSpacing: 1, // Espacement pour un style élégant
+    textTransform: "uppercase",  
+    letterSpacing: 1,  
   },
   buttonDisabled: {
-    backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
+    backgroundColor: "#ccc",  
   },
   containerPhoto: {
     flex: 1,
@@ -251,7 +250,7 @@ export default StyleSheet.create({
   },
 
   photoWrapper: {
-    position: "relative", // Nécessaire pour positionner la croix
+    position: "relative", 
     marginRight: 10,
   },
   photo: {
@@ -263,7 +262,7 @@ export default StyleSheet.create({
     position: "absolute",
     top: 5,
     right: 5,
-    zIndex: 1, // S'assurer que la croix est au-dessus de l'image
+    zIndex: 1,  
   },
   progressModalContent: {
     backgroundColor: "white",

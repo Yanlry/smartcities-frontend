@@ -73,7 +73,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     }
 
     const cityData = {
-      nom_commune: selectedCity.nom_commune, // Utilise la valeur complète de l'état
+      nom_commune: selectedCity.nom_commune,  
       code_postal: selectedCity.code_postal,
       latitude,
       longitude,
@@ -85,22 +85,20 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   };
 
   const handleAddressSearch = () => {
-    const trimmedQuery = query.trim(); // Supprime les espaces en début et en fin de chaîne
+    const trimmedQuery = query.trim();  
 
     if (!trimmedQuery) {
       console.warn("Recherche annulée : champ query vide.");
       return;
     }
-
-    // Filtrer les villes par nom de commune ou code postal
-    const filteredCities = franceCities.filter((city) => {
-      // Supprimer les espaces inutiles dans Ligne_5 et Nom_commune pour comparer proprement
+ 
+    const filteredCities = franceCities.filter((city) => { 
       const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
       const codePostal = city.Code_postal.toString().trim();
 
       return (
-        cityName.includes(trimmedQuery.toLowerCase()) || // Recherche dans le nom de la ville
-        codePostal.startsWith(trimmedQuery) // Recherche par code postal
+        cityName.includes(trimmedQuery.toLowerCase()) ||  
+        codePostal.startsWith(trimmedQuery)  
       );
     });
 
@@ -120,8 +118,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     const [latitude, longitude] = item.coordonnees_gps
       .split(",")
       .map((coord: string) => parseFloat(coord.trim()));
-
-    // Mettre à jour l'état avec les données de la ville sélectionnée
+ 
     setSelectedCity({
       nom_commune: item.Nom_commune,
       code_postal: item.Code_postal,
@@ -133,13 +130,11 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       latitude,
       longitude,
     });
-
-    // Met à jour les états
+ 
     setLatitude(latitude);
     setLongitude(longitude);
     setSelectedLocation({ latitude, longitude });
-
-    // Met à jour la requête avec la ville sélectionnée
+ 
     setQuery(`${item.Nom_commune} ${item.Ligne_5 ? `(${item.Ligne_5})` : ""}`);
 
     setModalVisible(false);
@@ -148,8 +143,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   const handleLogin = () => {
     navigation.navigate("Login");
   };
-
-  // Affichage principal
+ 
   return (
     <View style={styles.container}>
       {/* Arrière-plan avec image */}
@@ -158,8 +152,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         style={styles.background}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContainer} // Ajouté
-          keyboardShouldPersistTaps="handled" // Permet de fermer le clavier au clic ailleurs
+          contentContainerStyle={styles.scrollContainer}  
+          keyboardShouldPersistTaps="handled"  
         >
           {/* Contenu flou */}
           <BlurView intensity={80} style={styles.blurContainer}>
@@ -183,8 +177,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               placeholder="Prénom"
               placeholderTextColor="#c7c7c7"
               onChangeText={setLastName}
-              autoCorrect={false} // Désactive la correction automatique
-              spellCheck={false} // Désactive la vérification orthographique
+              autoCorrect={false} 
+              spellCheck={false} 
             />
             <TextInput
               style={styles.input}
@@ -192,8 +186,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               onChangeText={setFirstName}
               placeholder="Nom"
               placeholderTextColor="#c7c7c7"
-              autoCorrect={false} // Désactive la correction automatique
-              spellCheck={false} // Désactive la vérification orthographique
+              autoCorrect={false} 
+              spellCheck={false} 
             />
             <TextInput
               style={styles.input}
@@ -201,8 +195,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               onChangeText={setUsername}
               placeholder="Nom d'utilisateur"
               placeholderTextColor="#c7c7c7"
-              autoCorrect={false} // Désactive la correction automatique
-              spellCheck={false} // Désactive la vérification orthographique
+              autoCorrect={false} 
+              spellCheck={false} 
             />
             <TextInput
               style={styles.input}
@@ -212,8 +206,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               keyboardType="email-address"
               placeholderTextColor="#c7c7c7"
               autoCapitalize="none"
-              autoCorrect={false} // Désactive la correction automatique
-              spellCheck={false} // Désactive la vérification orthographique
+              autoCorrect={false} 
+              spellCheck={false} 
             />
             <TextInput
               style={styles.input}
@@ -222,8 +216,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               placeholder="Mot de passe"
               secureTextEntry
               placeholderTextColor="#c7c7c7"
-              autoCorrect={false} // Désactive la correction automatique
-              spellCheck={false} // Désactive la vérification orthographique
+              autoCorrect={false} 
+              spellCheck={false} 
             />
             <View style={styles.searchContainer}>
               <TextInput
@@ -252,8 +246,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                   <ScrollView>
-                    {suggestions.map((item, index) => {
-                      // Extraire les coordonnées GPS
+                    {suggestions.map((item, index) => { 
                       const [latitude, longitude] = item.coordonnees_gps
                         .split(",")
                         .map((coord: string) => parseFloat(coord.trim()));
@@ -297,7 +290,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
                   !firstName ||
                   !photos) && {
                   backgroundColor: "#ccc",
-                }, // Désactivé si les champs sont vides
+                },  
               ]}
               onPress={handleRegisterClick}
               disabled={
@@ -309,7 +302,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
                 !username ||
                 !photos ||
                 isRegisterClicked
-              } // Désactivé si les champs sont vides ou en cours de traitement
+              }  
             >
               <Text style={styles.modalButtonTextSubmit}>
                 {isLoading ? "En cours..." : "S'inscrire"}
@@ -333,13 +326,12 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  // Conteneur principal
+const styles = StyleSheet.create({ 
   container: {
     flex: 1,
   },
   scrollContainer: {
-    flexGrow: 1, // Permet à la ScrollView de remplir l'écran même si le contenu est plus petit
+    flexGrow: 1,  
   },
 
   background: {
@@ -350,28 +342,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // Section floue
+  
   blurContainer: {
     flex: 1,
-    minHeight: 600, // Assurez une hauteur minimale pour que le contenu soit bien positionné
+    minHeight: 600,  
     marginVertical: 40,
     width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.3)", // Fond translucide
+    backgroundColor: "rgba(255, 255, 255, 0.3)",  
     borderRadius: 20,
     padding: 30,
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center", // Centre le BlurView horizontalement
+    alignSelf: "center", 
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
-    overflow: "hidden", // Empêche les débordements et applique le radius
-  },
-  // Bouton retour
+    overflow: "hidden",  
+  }, 
   backButton: {
-    backgroundColor: "#ffffff", // Fond blanc pour le bouton
-    borderRadius: 50, // Forme circulaire
+    backgroundColor: "#ffffff", 
+    borderRadius: 50,  
     width: 40,
     height: 40,
     justifyContent: "center",
@@ -388,74 +379,67 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     marginBottom: 20,
-  },
-  // Titre principal
+  }, 
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50", // Bleu foncé moderne
+    color: "#2c3e50", 
     textAlign: "center",
-  },
-  // Titre principal
+  }, 
   titlePhoto: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#2c3e50", // Bleu foncé moderne
+    color: "#2c3e50", 
     marginBottom: 8,
     marginTop: 20,
     textAlign: "center",
-  },
-  // Sous-titre
+  }, 
   subtitle: {
     fontSize: 16,
-    color: "#2c3e50", // Gris élégant
+    color: "#2c3e50", 
     marginBottom: 25,
     textAlign: "center",
     lineHeight: 22,
   },
-
-  // Champs de saisie
+ 
   input: {
     height: 50,
-    borderColor: "#ecf0f1", // Bordure grise légère
+    borderColor: "#ecf0f1",  
     borderWidth: 1,
     paddingHorizontal: 20,
     borderRadius: 30,
     width: "100%",
-    backgroundColor: "#ffffff", // Fond blanc
+    backgroundColor: "#ffffff", 
     fontSize: 16,
-    color: "#34495e", // Texte gris foncé
+    color: "#34495e",  
     marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2, // Ombre douce
+    elevation: 2,  
   },
-
-  // Bouton s'inscrire
+ 
   registerButton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#2c3e50", // Bleu moderne
-    borderRadius: 25, // Coins arrondis
+    backgroundColor: "#2c3e50",  
+    borderRadius: 25,  
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#2980b9", // Ombre bleue
+    shadowColor: "#2980b9", 
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 4,
   },
-
-  // Bouton en état cliqué
+ 
   buttonClicked: {
-    backgroundColor: "#27ae60", // Vert confirmation
+    backgroundColor: "#27ae60",  
   },
-
-  // Texte du bouton s'inscrire
+ 
   registerButtonText: {
-    color: "#ffffff", // Texte blanc
+    color: "#ffffff",  
     fontSize: 18,
     fontWeight: "bold",
     textTransform: "uppercase",
@@ -468,10 +452,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
   },
   modalButtonDisabled: {
-    backgroundColor: "#ccc", // Couleur grise pour indiquer que le bouton est désactivé
+    backgroundColor: "#ccc",  
   },
   modalButtonText: {
-    color: "#fff", // Texte blanc
+    color: "#fff",  
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -484,21 +468,21 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    justifyContent: "center", // Centre verticalement
-    alignItems: "center", // Centre horizontalement
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center",  
+    alignItems: "center", 
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
   },
   modalContent: {
-    width: "80%", // Largeur relative à l'écran
-    backgroundColor: "#fff", // Fond blanc
-    borderRadius: 10, // Coins arrondis
-    padding: 20, // Espacement intérieur
-    shadowColor: "#000", // Ombre
-    shadowOffset: { width: 0, height: 4 }, // Position de l'ombre
-    shadowOpacity: 0.3, // Opacité de l'ombre
-    shadowRadius: 5, // Rayon de l'ombre
-    elevation: 10, // Ombre pour Android
-    alignItems: "center", // Centre le contenu horizontalement
+    width: "80%", 
+    backgroundColor: "#fff", 
+    borderRadius: 10,  
+    padding: 20,  
+    shadowColor: "#000",  
+    shadowOffset: { width: 0, height: 4 },  
+    shadowOpacity: 0.3, 
+    shadowRadius: 5,  
+    elevation: 10,  
+    alignItems: "center",  
   },
   suggestionItem: {
     padding: 10,
@@ -511,29 +495,29 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   searchContainer: {
-    flexDirection: "row", // Aligne TextInput et TouchableOpacity horizontalement
-    alignItems: "center", // Centre verticalement
+    flexDirection: "row",  
+    alignItems: "center", 
     borderColor: "#ccc",
     borderRadius: 5,
     padding: 5,
   },
   inputSearch: {
     flex: 1,
-    borderColor: "#ecf0f1", // Bordure grise légère
+    borderColor: "#ecf0f1", 
     borderWidth: 1,
     height: 50,
     paddingHorizontal: 20,
     borderRadius: 30,
     width: "100%",
-    backgroundColor: "#ffffff", // Fond blanc
+    backgroundColor: "#ffffff",  
     fontSize: 16,
-    color: "#34495e", // Texte gris foncé
+    color: "#34495e",  
     marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2, // Ombre douce
+    elevation: 2,  
   },
   searchButton: {
     position: "absolute",
@@ -541,21 +525,18 @@ const styles = StyleSheet.create({
     right: 10,
     padding: 10,
     borderRadius: 5,
-  },
-  // Lien pour se connecter
+  }, 
   loginLink: {
     marginTop: 20,
     flexDirection: "row",
     alignItems: "center",
   },
-
-  // Texte d'invitation à se connecter
+ 
   loginText: {
-    color: "#2c3e50", // Gris élégant
+    color: "#2c3e50",  
     fontSize: 15,
   },
-
-  // Bouton se connecter
+ 
   loginButton: {
     borderColor: "#2c3e50",
     borderWidth: 2,
@@ -566,10 +547,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-  // Texte du bouton se connecter
+ 
   loginButtonText: {
-    color: "#2c3e50", // Bleu moderne
+    color: "#2c3e50",  
     fontSize: 15,
     fontWeight: "600",
   },
@@ -577,7 +557,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)", // Fond sombre
+    backgroundColor: "rgba(0, 0, 0, 0.7)",  
   },
 
   loaderText: {

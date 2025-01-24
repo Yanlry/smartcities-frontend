@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode'; // Corrigez l'import ici si nécessaire
+import { jwtDecode } from 'jwt-decode'; 
 
 
 export const getUserIdFromToken = async (): Promise<number | null> => {
@@ -11,8 +11,7 @@ export const getUserIdFromToken = async (): Promise<number | null> => {
       console.error('Aucun token trouvé dans AsyncStorage.');
       return null;
     }
-
-    // Décoder le token pour récupérer le userId
+ 
     const decoded: { userId: number } = jwtDecode(token);
     console.log('Payload décodé du token:', decoded);
 

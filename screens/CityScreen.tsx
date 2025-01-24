@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/Sidebar";
@@ -7,7 +13,7 @@ import { Linking } from "react-native";
 import MairieInfoCard from "../components/MairieInfoCard";
 
 export default function CityScreen({ navigation }) {
-  const { unreadCount } = useNotification(); // Récupération du compteur
+  const { unreadCount } = useNotification();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -21,12 +27,11 @@ export default function CityScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.headerNav}>
-        {/* Bouton pour ouvrir le menu */}
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -57,8 +62,7 @@ export default function CityScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.containerInfo}>
-      <MairieInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
-       
+        <MairieInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
       </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
@@ -74,7 +78,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -84,11 +88,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
-    backgroundColor: '#F7F2DE',
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    color: "#093A3E",
+    backgroundColor: "#F7F2DE",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc",
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -111,7 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-  title:{
+  title: {
     fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
@@ -122,5 +126,4 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 20,
   },
-
 });

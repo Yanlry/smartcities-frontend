@@ -1,13 +1,13 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'], // Conserve le preset Expo
+    presets: ['babel-preset-expo'],
     plugins: [
       [
         'module:react-native-dotenv',
         {
           moduleName: '@env',
-          path: '../backend/.env', // Chemin relatif vers le fichier .env dans le backend
+          path: '../backend/.env', 
           safe: false,
           allowUndefined: true,
         },

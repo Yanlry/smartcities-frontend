@@ -29,11 +29,11 @@ export default function LoginScreen({ navigation, onLogin }: any) {
   const [isRegisterClicked, setIsRegisterClicked] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [step, setStep] = useState(1); // Étape du processus
+  const [step, setStep] = useState(1);  
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // État pour la visibilité du mot de passe
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);  
 
   const handleLoginClick = () => {
     handleLogin(onLogin);
@@ -59,29 +59,28 @@ export default function LoginScreen({ navigation, onLogin }: any) {
 
       if (response.ok) {
         const data = await response.json();
-        Alert.alert("Succès", data.message); // Affiche le message de succès
-        setStep(2); // Passer à l'étape 2
+        Alert.alert("Succès", data.message); 
+        setStep(2);  
       } else if (response.status === 404) {
         const data = await response.json();
         Alert.alert(
           "Vérifié le champs de saisie",
           data.message || "Adresse email introuvable."
-        ); // Affiche l'erreur pour un email inexistant
+        );  
       } else {
         const data = await response.json();
         Alert.alert("Erreur", data.message || "Une erreur est survenue.");
       }
     } catch (error) {
-      console.error("Erreur réseau :", error); // Log pour débogage
+      console.error("Erreur réseau :", error);  
       Alert.alert("Erreur", "Impossible de se connecter au serveur.");
     } finally {
-      setIsLoading(false); // Fin du chargement
+      setIsLoading(false);  
     }
   };
   
   const handleResetPassword = async () => {
-    setIsLoading(true);
-    // Étape 2 : Réinitialisation du mot de passe avec le token
+    setIsLoading(true); 
     try {
       const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: "POST",
@@ -95,8 +94,8 @@ export default function LoginScreen({ navigation, onLogin }: any) {
 
       if (response.ok) {
         Alert.alert("Succès", "Votre mot de passe a été réinitialisé.");
-        setIsModalVisible(false); // Fermer le modal
-        setStep(1); // Réinitialiser les étapes
+        setIsModalVisible(false);  
+        setStep(1);  
       } else {
         const data = await response.json();
         Alert.alert("Erreur", data.message || "Une erreur s'est produite.");
@@ -104,7 +103,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
     } catch (error) {
       Alert.alert("Erreur", "Impossible de se connecter au serveur.");
     } finally {
-      setIsLoading(false); // Fin du chargement
+      setIsLoading(false);  
     }
   };
 
@@ -115,13 +114,12 @@ export default function LoginScreen({ navigation, onLogin }: any) {
       [
         {
           text: "Non",
-          style: "cancel", // Fermer l'alerte
+          style: "cancel",  
         },
         {
           text: "Oui",
           onPress: async () => {
-            try {
-              // Appeler une API pour invalider le token si nécessaire
+            try { 
               const response = await fetch(
                 "http://localhost:3000/auth/invalidate-token",
                 {
@@ -143,10 +141,9 @@ export default function LoginScreen({ navigation, onLogin }: any) {
             } catch (error) {
               console.log("Erreur", "Impossible de se connecter au serveur.");
             }
-
-            // Fermer le modal et réinitialiser les étapes
+ 
             setIsModalVisible(false);
-            setStep(1); // Retourner à l'étape initiale
+            setStep(1);  
             setForgotPasswordEmail("");
             setResetToken("");
             setNewPassword("");
@@ -175,8 +172,8 @@ export default function LoginScreen({ navigation, onLogin }: any) {
             placeholder="Adresse Email"
             placeholderTextColor="#aaa"
             keyboardType="email-address"
-            autoCorrect={false} // Désactive la correction automatique
-            spellCheck={false} // Désactive la vérification orthographique
+            autoCorrect={false}  
+            spellCheck={false} 
           />
 
           <View style={styles.inputContainer}>
@@ -186,15 +183,15 @@ export default function LoginScreen({ navigation, onLogin }: any) {
               onChangeText={(text) => setPassword(text)}
               placeholder="Mot de passe"
               placeholderTextColor="#aaa"
-              secureTextEntry={!isPasswordVisible} // Contrôle la visibilité
-              autoCorrect={false} // Désactive la correction automatique
-              spellCheck={false} // Désactive la vérification orthographique
+              secureTextEntry={!isPasswordVisible}  
+              autoCorrect={false}  
+              spellCheck={false} 
             />
             <TouchableOpacity
-              onPress={() => setIsPasswordVisible(!isPasswordVisible)} // Toggle visibilité
+              onPress={() => setIsPasswordVisible(!isPasswordVisible)}  
             >
               <Icon
-                name={isPasswordVisible ? "visibility-off" : "visibility"} // Icône selon l'état
+                name={isPasswordVisible ? "visibility-off" : "visibility"} 
                 size={26}
                 color="#666"
                 style={styles.icon}
@@ -249,16 +246,16 @@ export default function LoginScreen({ navigation, onLogin }: any) {
                   placeholder="Adresse Email"
                   placeholderTextColor="#aaa"
                   keyboardType="email-address"
-                  autoCorrect={false} // Désactive la correction automatique
-                  spellCheck={false} // Désactive la vérification orthographique
+                  autoCorrect={false}  
+                  spellCheck={false} 
                 />
                 <TouchableOpacity
                   style={[
                     styles.modalButtonSubmit,
-                    !forgotPasswordEmail && { backgroundColor: "#ccc" }, // Grisé si désactivé
+                    !forgotPasswordEmail && { backgroundColor: "#ccc" },  
                   ]}
                   onPress={handleForgotPassword}
-                  disabled={!forgotPasswordEmail} // Désactivation du bouton
+                  disabled={!forgotPasswordEmail} 
                 >
                   <Text style={styles.modalButtonTextSubmit}>Envoyer</Text>
                 </TouchableOpacity>
@@ -286,8 +283,8 @@ export default function LoginScreen({ navigation, onLogin }: any) {
                   placeholder="Adresse Email"
                   placeholderTextColor="#aaa"
                   keyboardType="email-address"
-                  autoCorrect={false} // Désactive la correction automatique
-                  spellCheck={false} // Désactive la vérification orthographique
+                  autoCorrect={false} 
+                  spellCheck={false} 
                 />
                 <TextInput
                   style={styles.inputModal}
@@ -295,8 +292,8 @@ export default function LoginScreen({ navigation, onLogin }: any) {
                   onChangeText={setResetToken}
                   placeholder="Token"
                   placeholderTextColor="#aaa"
-                  autoCorrect={false} // Désactive la correction automatique
-                  spellCheck={false} // Désactive la vérification orthographique
+                  autoCorrect={false} 
+                  spellCheck={false} 
                 />
                 <TextInput
                   style={styles.inputModal}
@@ -304,8 +301,8 @@ export default function LoginScreen({ navigation, onLogin }: any) {
                   onChangeText={setNewPassword}
                   placeholder="Nouveau mot de passe"
                   placeholderTextColor="#aaa"
-                  autoCorrect={false} // Désactive la correction automatique
-                  spellCheck={false} // Désactive la vérification orthographique
+                  autoCorrect={false} 
+                  spellCheck={false} 
                   secureTextEntry
                 />
                 <TouchableOpacity
@@ -313,7 +310,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
                     styles.modalButtonSubmit,
                     (!forgotPasswordEmail || !resetToken || !newPassword) && {
                       backgroundColor: "#ccc",
-                    }, // Désactivé si les champs sont vides
+                    }, 
                   ]}
                   onPress={handleResetPassword}
                   disabled={
@@ -321,7 +318,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
                     !resetToken ||
                     !newPassword ||
                     isLoading
-                  } // Désactivé si les champs sont vides ou en cours de traitement
+                  }   
                 >
                   <Text style={styles.modalButtonTextSubmit}>
                     {isLoading ? "En cours..." : "Réinitialiser"}
@@ -342,13 +339,11 @@ export default function LoginScreen({ navigation, onLogin }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  // Conteneur principal
+const styles = StyleSheet.create({ 
   container: {
     flex: 1,
   },
-
-  // Arrière-plan
+ 
   background: {
     flex: 1,
     width: "100%",
@@ -360,7 +355,7 @@ const styles = StyleSheet.create({
 
   blurContainer: {
     width: "90%",
-    backgroundColor: "rgba(255, 255, 255, 0.1)", // Plus translucide avec 5 % d'opacité
+    backgroundColor: "rgba(255, 255, 255, 0.1)",  
     borderRadius: 50,
     padding: 20,
     alignItems: "center",
@@ -368,10 +363,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
-    overflow: "hidden", // Empêche les débordements et applique le radius
+    overflow: "hidden",  
   },
-
-  // Titre principal
+ 
   title: {
     fontSize: 32,
     fontWeight: "bold",
@@ -379,20 +373,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
   },
-
-  // Sous-titre
+ 
   subtitle: {
     fontSize: 18,
     color: "#093A3E",
     marginBottom: 20,
     textAlign: "center",
   },
-
-  // Champs de saisie
+ 
   input: {
     width: "100%",
     height: 50,
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // Blanc semi-transparent
+    backgroundColor: "rgba(255, 255, 255, 0.8)",  
     borderRadius: 30,
     paddingHorizontal: 15,
     marginBottom: 15,
@@ -402,7 +394,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.6)",
   },
   inputContainer: {
-    flexDirection: "row", // Aligne le champ et l'icône côte à côte
+    flexDirection: "row",  
     alignItems: "center",
     borderRadius: 5,
     marginVertical: 10,
@@ -417,7 +409,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     height: 50,
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // Blanc semi-transparent
+    backgroundColor: "rgba(255, 255, 255, 0.8)",  
     borderRadius: 30,
     paddingHorizontal: 15,
     marginBottom: 15,
@@ -438,12 +430,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.6)",
   },
-
-  // Bouton "Se connecter"
+ 
   loginButton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#093A3E", // Bleu moderne
+    backgroundColor: "#093A3E",  
     shadowColor: "#093A3E",
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.6,
@@ -460,15 +451,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-
-  // Texte "Pas de compte"
+ 
   registerText: {
     marginTop: 15,
     fontSize: 16,
     color: "#093A3E",
   },
-
-  // Bouton "S'inscrire"
+ 
   registerButton: {
     marginTop: 10,
     width: "100%",
@@ -489,7 +478,7 @@ const styles = StyleSheet.create({
   },
 
   buttonClicked: {
-    backgroundColor: "#CBCBCB", // Vert agréable pour indiquer que le bouton a été cliqué
+    backgroundColor: "#CBCBCB",  
   },
 
   registerButtonText: {
@@ -536,10 +525,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
   },
   modalButtonDisabled: {
-    backgroundColor: "#ccc", // Couleur grise pour indiquer que le bouton est désactivé
+    backgroundColor: "#ccc",  
   },
   modalButtonText: {
-    color: "#fff", // Texte blanc
+    color: "#fff",  
     fontWeight: "bold",
     fontSize: 16,
   },

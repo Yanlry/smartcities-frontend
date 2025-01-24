@@ -17,7 +17,6 @@ const PhotoManager = ({ photos, setPhotos, maxPhotos = 7 }) => {
         return;
       }
 
-      // Vérifier si l'utilisateur a déjà atteint la limite
       if (photos.length >= maxPhotos) {
         Alert.alert(
           "Limite atteinte",
@@ -28,15 +27,14 @@ const PhotoManager = ({ photos, setPhotos, maxPhotos = 7 }) => {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true, // Permettre le recadrage
+        allowsEditing: true, 
         quality: 1,
-        aspect: [1, 1], // Recadrage carré
+        aspect: [1, 1], 
       });
 
       if (!result.canceled) {
         console.log("Images sélectionnées :", result.assets);
 
-        // Filtrer les photos valides (en excluant celles de taille > 10 Mo)
         const validPhotos = result.assets.filter((photo) => {
           if (photo.fileSize && photo.fileSize > 10 * 1024 * 1024) {
             Alert.alert(
@@ -50,19 +48,17 @@ const PhotoManager = ({ photos, setPhotos, maxPhotos = 7 }) => {
           return true;
         });
 
-        // Ajouter les nouvelles photos
         let newPhotos = [...photos, ...validPhotos];
 
-        // Si le nombre total dépasse maxPhotos, on limite à maxPhotos
         if (newPhotos.length > maxPhotos) {
           Alert.alert(
             "Limite atteinte",
             `Vous pouvez sélectionner jusqu'à ${maxPhotos} photo(s) maximum.`
           );
-          newPhotos = newPhotos.slice(0, maxPhotos); // Garde seulement les maxPhotos premières photos
+          newPhotos = newPhotos.slice(0, maxPhotos); 
         }
 
-        setPhotos(newPhotos); // Mettez à jour l'état des photos
+        setPhotos(newPhotos); 
       } else {
         console.log("Sélection annulée");
       }
@@ -102,7 +98,6 @@ const PhotoManager = ({ photos, setPhotos, maxPhotos = 7 }) => {
 };
 
 const styles = StyleSheet.create({
-  // Conteneur principal
   containerPhoto: {
     marginTop: 20,
     width: "100%",
@@ -118,42 +113,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 10,
     elevation: 5,
-    borderRadius: 25, // Coins arrondis
+    borderRadius: 25, 
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 15,
     
   },
 
-  // Texte du bouton
   buttonText: {
-    color: "#FFFFFF", // Texte blanc
+    color: "#FFFFFF", 
     fontSize: 13,
     fontWeight: "bold",
-    textTransform: "uppercase", // Texte en majuscules
-    letterSpacing: 1, // Espacement pour un style élégant
+    textTransform: "uppercase",
+    letterSpacing: 1, 
   },
   
-  // Conteneur des photos
   photoContainer: {
     width: "100%",
     marginBottom: 20,
   },
 
-  // Style d'un conteneur individuel de photo
   photoWrapper: {
     marginRight: 10,
     position: "relative",
   },
 
-  // Bouton pour supprimer une photo
   deleteButton: {
     position: "absolute",
     top: 5,
     right: 5,
     zIndex: 1,
-    backgroundColor: "#fff", // Fond blanc
-    borderRadius: 15, // Forme ronde
+    backgroundColor: "#fff", 
+    borderRadius: 15, 
     padding: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -162,11 +153,10 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  // Style pour les photos affichées
   photo: {
     width: 100,
     height: 100,
-    borderRadius: 12, // Coins arrondis
+    borderRadius: 12, 
     borderWidth: 2,
     borderColor: "#ddd",
   },

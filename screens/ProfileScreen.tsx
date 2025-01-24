@@ -60,11 +60,11 @@ type User = {
 };
 
 export default function ProfileScreen({ navigation, onLogout, route }) {
-  const [user, setUser] = useState<User | null>(null); // Type explicite ajouté ici
+  const [user, setUser] = useState<User | null>(null);  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editable, setEditable] = useState(false); // Mode édition
+  const [editable, setEditable] = useState(false);  
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -78,9 +78,9 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   });
   const [stats, setStats] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { unreadCount } = useNotification(); // Récupération du compteur
+  const { unreadCount } = useNotification();  
   const [isEditingCity, setIsEditingCity] = useState(false);
-  const [suggestions, setSuggestions] = useState<City[]>([]); // Stocke les villes correspondantes
+  const [suggestions, setSuggestions] = useState<City[]>([]);  
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -105,7 +105,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
 
   useEffect(() => {
     navigation.setOptions({
-      gestureEnabled: false, // Désactive le retour par geste
+      gestureEnabled: false,  
     });
     async function fetchUser() {
       try {
@@ -119,7 +119,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
             "Erreur lors de la récupération des données utilisateur"
           );
 
-        const data: User = await response.json(); // Assure que les données reçues correspondent au type User
+        const data: User = await response.json();  
         setUser(data);
       } catch (err: any) {
         setError(err.message);
@@ -136,7 +136,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       setFormData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        email: user.showEmail ? user.email || "" : "", // Montre ou masque l'email selon `showEmail`
+        email: user.showEmail ? user.email || "" : "",  
         showEmail: user.showEmail || false,
         username: user.username || "",
         currentPassword: "",
@@ -147,13 +147,12 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user?.id) return; // Ne pas exécuter si user.id est undefined
+      if (!user?.id) return;  
 
       try {
         setLoading(true);
         setError(null);
-
-        // Utiliser l'ID du profil visité
+ 
         const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
@@ -170,7 +169,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
     };
 
     fetchStats();
-  }, [user]); // Dépendance sur user
+  }, [user]);  
 
   if (loading) {
     return (
@@ -264,7 +263,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
         lastName: formData.lastName,
         email: formData.email,
         username: formData.username,
-        showEmail: formData.showEmail.toString(), // Convertir en chaîne ("true" ou "false")
+        showEmail: formData.showEmail.toString(),  
       };
 
       const response = await fetch(`${API_URL}/users/${user?.id}`, {
@@ -272,7 +271,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload), // N'envoie que les champs nécessaires
+        body: JSON.stringify(payload),  
       });
 
       if (!response.ok) {
@@ -280,7 +279,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       }
 
       Alert.alert("Succès", "Les informations ont été mises à jour.");
-      setEditable(false); // Désactive le mode édition
+      setEditable(false);  
     } catch (error) {
       Alert.alert("Erreur", "Impossible de sauvegarder les modifications.");
     }
@@ -314,8 +313,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       Alert.alert("Succès", "Mot de passe modifié avec succès.");
       setFormData((prevState) => ({
         ...prevState,
-        currentPassword: "", // Vide le champ actuel
-        newPassword: "", // Vide le champ du nouveau mot de passe
+        currentPassword: "",  
+        newPassword: "",  
       }));
     } catch (error: any) {
       Alert.alert(
@@ -330,7 +329,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
   };
 
   const handleSearchCity = () => {
-    const trimmedQuery = query.trim(); // Supprime les espaces inutiles
+    const trimmedQuery = query.trim();  
 
     if (!trimmedQuery) {
       Alert.alert(
@@ -339,18 +338,16 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       );
       return;
     }
-
-    // Détecter si la recherche est un code postal (entier)
+ 
     const isCodePostal = /^[0-9]{5}$/.test(trimmedQuery);
-
-    // Filtrer les villes par code postal ou nom de ville
+ 
     const filteredCities = franceCities.filter((city) => {
       const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
       const codePostal = city.Code_postal.toString().trim();
 
       return isCodePostal
-        ? codePostal === trimmedQuery // Recherche par code postal
-        : cityName.includes(trimmedQuery.toLowerCase()); // Recherche par nom de ville
+        ? codePostal === trimmedQuery  
+        : cityName.includes(trimmedQuery.toLowerCase());  
     });
 
     if (filteredCities.length > 0) {
@@ -367,8 +364,8 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
 
   const handleCitySelection = (city: City) => {
     setSelectedCity(city);
-    setModalVisible(false); // Fermer le modal
-    setQuery(`${city.Nom_commune} (${city.Code_postal})`); // Mettre à jour le champ de recherche
+    setModalVisible(false);  
+    setQuery(`${city.Nom_commune} (${city.Code_postal})`);  
   };
 
   const handleSaveCity = async () => {
@@ -428,8 +425,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
       if (!response.ok) {
         throw new Error("Erreur lors du désuivi de cet utilisateur.");
       }
-
-      // Mettre à jour localement la liste des abonnements
+ 
       setUser((prevUser) =>
         prevUser
           ? {
@@ -457,7 +453,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE"  
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -551,7 +547,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
               <Text style={styles.label}>Email :</Text>
               <TextInput
                 style={[styles.input, !editable && styles.inputDisabled]}
-                value={formData.email} // L'email est visible ici uniquement si showEmail est activé
+                value={formData.email} 
                 onChangeText={(text) => handleInputChange("email", text)}
                 editable={editable}
               />
@@ -567,8 +563,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
               <Switch
                 value={formData.showEmail}
                 onValueChange={async (value) => {
-                  try {
-                    // Envoyer la mise à jour au backend
+                  try { 
                     const response = await axios.post(
                       `${API_URL}/users/show-email`,
                       {
@@ -576,17 +571,15 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                         showEmail: value,
                       }
                     );
-
-                    // Mettre à jour l'état local après la réussite
+ 
                     const updatedShowEmail = response.data.showEmail;
 
                     setFormData((prevState) => ({
                       ...prevState,
                       showEmail: updatedShowEmail,
-                      email: updatedShowEmail ? user?.email || "" : "", // Met à jour l'email localement selon la visibilité
+                      email: updatedShowEmail ? user?.email || "" : "",  
                     }));
-
-                    // Optionnel : rafraîchir l'utilisateur
+ 
                     const refreshedUser = await fetch(
                       `${API_URL}/users/${user?.id}`
                     ).then((res) => res.json());
@@ -610,12 +603,10 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
           <TouchableOpacity
             style={styles.buttonProfil}
             onPress={() => {
-              if (editable) {
-                // Sauvegarder les modifications
+              if (editable) { 
                 handleSave();
-                setEditable(false); // Désactiver le mode édition
-              } else {
-                // Vérifier si l'email est affiché
+                setEditable(false);  
+              } else { 
                 if (!formData.showEmail) {
                   Alert.alert(
                     "Afficher l'email",
@@ -623,8 +614,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                   );
                   return;
                 }
-
-                // Passer en mode édition
+ 
                 setEditable(true);
               }
             }}
@@ -646,18 +636,18 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Entrez votre mot de passe actuel"
-                  secureTextEntry={!showCurrentPassword} // Contrôle la visibilité
-                  value={formData.currentPassword} // Liaison avec currentPassword
+                  secureTextEntry={!showCurrentPassword}  
+                  value={formData.currentPassword}  
                   onChangeText={
                     (text) =>
-                      setFormData({ ...formData, currentPassword: text }) // Met à jour uniquement currentPassword
+                      setFormData({ ...formData, currentPassword: text })  
                   }
                 />
                 <TouchableOpacity
-                  onPress={() => setShowCurrentPassword(!showCurrentPassword)} // Toggle visibilité
+                  onPress={() => setShowCurrentPassword(!showCurrentPassword)}  
                 >
                   <Icon
-                    name={showCurrentPassword ? "visibility-off" : "visibility"} // Icône selon l'état
+                    name={showCurrentPassword ? "visibility-off" : "visibility"}  
                     size={20}
                     color="gray"
                     style={styles.icon}
@@ -673,17 +663,17 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Entrez le nouveau mot de passe"
-                  secureTextEntry={!showNewPassword} // Contrôle la visibilité
-                  value={formData.newPassword} // Liaison avec newPassword
+                  secureTextEntry={!showNewPassword} 
+                  value={formData.newPassword}  
                   onChangeText={
-                    (text) => setFormData({ ...formData, newPassword: text }) // Met à jour uniquement newPassword
+                    (text) => setFormData({ ...formData, newPassword: text })  
                   }
                 />
                 <TouchableOpacity
-                  onPress={() => setShowNewPassword(!showNewPassword)} // Toggle visibilité
+                  onPress={() => setShowNewPassword(!showNewPassword)} 
                 >
                   <Icon
-                    name={showNewPassword ? "visibility-off" : "visibility"} // Icône selon l'état
+                    name={showNewPassword ? "visibility-off" : "visibility"}  
                     size={20}
                     color="gray"
                     style={styles.icon}
@@ -860,7 +850,7 @@ export default function ProfileScreen({ navigation, onLogout, route }) {
                         />
                         <Text style={styles.userName}>{item.username}</Text>
 
-                        {selectedList === "following" && ( // Bouton désabonnement uniquement pour les abonnements
+                        {selectedList === "following" && (  
                           <TouchableOpacity
                             style={styles.unfollowButton}
                             onPress={() => handleUnfollow(item.id)}

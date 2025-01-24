@@ -98,7 +98,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   >([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [modalNameVisible, setModalNameVisible] = useState(false);
-  const nomCommune = user?.nomCommune || ""; // Nom de la commune de l'utilisateur
+  const nomCommune = user?.nomCommune || ""; 
   const { data } = useFetchStatistics(
     `${API_URL}/reports/statistics`,
     nomCommune
@@ -147,8 +147,8 @@ export default function HomeScreen({ navigation, handleScroll }) {
         }
 
         const rankingData = await rankingResponse.json();
-        setRanking(rankingData.ranking); // Classement de l'utilisateur
-        setTotalUsers(rankingData.totalUsers); // Nombre total d'utilisateurs
+        setRanking(rankingData.ranking); 
+        setTotalUsers(rankingData.totalUsers);
       } catch (error) {
         console.error("Erreur lors de la récupération du classement :", error);
         setError(error.message || "Erreur inconnue.");
@@ -275,14 +275,13 @@ export default function HomeScreen({ navigation, handleScroll }) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
 
-        const userCityNormalized = normalizeCityName(userCity); // Normaliser la ville utilisateur
+        const userCityNormalized = normalizeCityName(userCity); 
 
         const filteredEvents = response.data
           .filter((event: any) => {
             const eventCity = extractCityAfterPostalCode(event.location);
             const eventCityNormalized = normalizeCityName(eventCity);
 
-            // Comparaison des villes normalisées
             return eventCityNormalized === userCityNormalized;
           })
           .map((event: any) => ({
@@ -291,7 +290,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
             image:
               event.photos.find((photo: any) => photo.isProfile)?.url ||
               event.photos[0]?.url ||
-              "https://via.placeholder.com/300", // Gestion des images
+              "https://via.placeholder.com/300", 
           }));
 
         setFeaturedEvents(filteredEvents);
@@ -308,14 +307,12 @@ export default function HomeScreen({ navigation, handleScroll }) {
     }
   }, [userCity]);
 
-  // Fonction pour extraire la ville juste après le code postal
   const extractCityAfterPostalCode = (location: string) => {
     if (!location) return "";
-    const match = location.match(/\d{5}\s+([^,]+)/); // Capture ce qui suit les 5 chiffres
+    const match = location.match(/\d{5}\s+([^,]+)/); 
     return match ? match[1].trim() : "";
   };
 
-  // Fonction pour normaliser les noms de ville
   const normalizeCityName = (cityName: string) => {
     if (!cityName) return "";
     return cityName
@@ -401,16 +398,15 @@ export default function HomeScreen({ navigation, handleScroll }) {
     let months = now.getMonth() - date.getMonth();
     let days = now.getDate() - date.getDate();
 
-    // Ajuster les mois si nécessaire
     if (days < 0) {
-      months -= 1; // Réduit d'un mois si les jours ne suffisent pas
+      months -= 1; 
       const previousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      days += previousMonth.getDate(); // Ajoute les jours du mois précédent
+      days += previousMonth.getDate(); 
     }
 
     if (months < 0) {
-      years -= 1; // Réduit d'une année si les mois ne suffisent pas
-      months += 12; // Ajoute 12 mois pour rendre le calcul correct
+      years -= 1; 
+      months += 12; 
     }
 
     if (years > 1) {
@@ -572,12 +568,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const onRefresh = async () => {
     setRefreshing(true);
 
-    // Simule une attente ou une action
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     setRefreshing(false);
 
-    // Naviguer vers une autre page après le rafraîchissement
     navigation.replace("Main");
   };
 
@@ -682,7 +676,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     if (votes >= 1000) {
       return {
         title: "Légende urbaine",
-        backgroundColor: "#70B3B1", // Diamant
+        backgroundColor: "#70B3B1", 
         textColor: "#fff",
         borderColor: "#044745",
         shadowColor: "#70B3B1",
@@ -693,7 +687,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 500) {
       return {
         title: "Icône locale",
-        backgroundColor: "#FAF3E3", // Or
+        backgroundColor: "#FAF3E3", 
         textColor: "#856404",
         borderColor: "#856404",
         shadowColor: "#D4AF37",
@@ -704,7 +698,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 250) {
       return {
         title: "Pilier de la communauté",
-        backgroundColor: "#E1E1E1", // Argent
+        backgroundColor: "#E1E1E1", 
         textColor: "#6A6A6A",
         borderColor: "#919191",
         shadowColor: "#6A6A6A",
@@ -715,7 +709,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 100) {
       return {
         title: "Ambassadeur citoyen",
-        backgroundColor: "#E1E1E1", // Bronze
+        backgroundColor: "#E1E1E1", 
         textColor: "#6A6A6A",
         starsColor: "#919191",
         shadowColor: "#6A6A6A",
@@ -726,7 +720,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 50) {
       return {
         title: "Citoyen de confiance",
-        backgroundColor: "#CEA992", // Bronze
+        backgroundColor: "#CEA992", 
         textColor: "#853104",
         starsColor: "#853104",
         shadowColor: "#853104",
@@ -737,7 +731,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 5) {
       return {
         title: "Apprenti citoyen",
-        backgroundColor: "#CEA992", // Bronze
+        backgroundColor: "#CEA992", 
         textColor: "#853104",
         starsColor: "#853104",
         borderColor: "#D47637",
@@ -749,7 +743,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else {
       return {
         title: "Premiers pas",
-        backgroundColor: "#093A3E", // Blanc pour début
+        backgroundColor: "#093A3E", 
         textColor: "#fff",
         borderColor: "#fff",
         shadowColor: "#093A3E",
@@ -831,7 +825,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                       <View style={styles.optionItem}>
                         <Text style={styles.optionText}>{item.label}</Text>
                         <Switch
-                          value={user?.useFullName === item.value} // Active si l'option correspond
+                          value={user?.useFullName === item.value} 
                           onValueChange={() =>
                             handleOptionChange(
                               item.value ? "fullName" : "username"
@@ -1120,7 +1114,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       <TouchableOpacity
         style={[
           styles.sectionHeader,
-          isSectionVisible && styles.sectionHeaderVisible, // Ajoute un style spécifique si la section est ouverte
+          isSectionVisible && styles.sectionHeaderVisible, 
         ]}
         onPress={toggleSection}
         activeOpacity={0.8}

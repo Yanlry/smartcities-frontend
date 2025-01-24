@@ -61,7 +61,7 @@ export default function ReportScreen({ navigation }) {
     };
 
     fetchUserReports();
-  }, [currentReport]); // Dépendance ajoutée
+  }, [currentReport]);  
 
   type Report = {
     id: number;
@@ -69,8 +69,8 @@ export default function ReportScreen({ navigation }) {
     description: string;
     city: string;
     createdAt: string;
-    updatedAt?: string; // facultatif
-    photos?: { url: string }[]; // facultatif
+    updatedAt?: string;  
+    photos?: { url: string }[];  
   };
 
   const renderItem = ({ item }) => (
@@ -128,8 +128,7 @@ export default function ReportScreen({ navigation }) {
       if (!response.ok) {
         throw new Error("Erreur lors de la suppression du signalement.");
       }
-
-      // Supprimer localement le signalement de la liste
+ 
       setReports((prevReports) =>
         prevReports.filter((report) => report.id !== reportId)
       );
@@ -167,8 +166,7 @@ export default function ReportScreen({ navigation }) {
 
     const { id, createdAt, votes, trustRate, distance, ...filteredReport } =
       updatedReport;
-
-    // Log des photos envoyées
+ 
     console.log("Photos envoyées :", filteredReport.photos);
 
     try {
@@ -227,8 +225,8 @@ export default function ReportScreen({ navigation }) {
 
         console.log("Adresse récupérée depuis OpenCage Data :", address);
 
-        setSuggestions(data.results); // Remplit les suggestions avec les résultats
-        setModalVisible(true); // Ouvre directement la liste des suggestions
+        setSuggestions(data.results);  
+        setModalVisible(true);  
       } else {
         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
       }
@@ -256,16 +254,15 @@ export default function ReportScreen({ navigation }) {
       const response = await fetch(url);
       const data = await response.json();
 
-      if (data.results.length > 0) {
-        // Trier les suggestions par code postal
+      if (data.results.length > 0) { 
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB; // Trie croissant
+          return postalA - postalB;  
         });
 
-        setSuggestions(sortedSuggestions); // Affiche les suggestions triées
-        setModalVisible(true); // Ouvre la liste des résultats
+        setSuggestions(sortedSuggestions);  
+        setModalVisible(true);  
       } else {
         setSuggestions([]);
         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -277,35 +274,31 @@ export default function ReportScreen({ navigation }) {
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); // Recherche un code postal à 5 chiffres
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; // Infinity si pas de code postal
+    const postalCodeMatch = address.match(/\b\d{5}\b/); 
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;  
   };
 
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
-
-      // Traite le texte de la ville pour remplacer "Unnamed Road"
+ 
       const formattedCity = item.formatted.replace(
         /unnamed road/g,
         "Route inconnue"
       );
-
-      // Met à jour le rapport avec l'adresse sélectionnée
+ 
       setCurrentReport((prevReport) => {
         if (!prevReport) return prevReport;
         return {
           ...prevReport,
-          city: formattedCity, // Utilise la version formatée de la ville
+          city: formattedCity,  
           latitude: lat,
           longitude: lng,
         };
       });
-
-      // Valide l'adresse
+ 
       setIsAddressValidated(true);
-
-      // Zoom sur la nouvelle région
+ 
       mapRef.current?.animateToRegion(
         {
           latitude: lat,
@@ -351,7 +344,7 @@ export default function ReportScreen({ navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE"  
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -442,7 +435,7 @@ export default function ReportScreen({ navigation }) {
                       ...currentReport,
                       city: text,
                     } as Report);
-                    setIsAddressValidated(false); // Réinitialise la validation
+                    setIsAddressValidated(false);  
                   }}
                 />
                 <TouchableOpacity
@@ -489,16 +482,14 @@ export default function ReportScreen({ navigation }) {
               <Text style={styles.photoSectionTitle}>Photos</Text>
               <PhotoManager
                 photos={
-                  currentReport?.photos?.map((photo) => {
-                    // Assurez-vous que chaque photo a une propriété `uri` attendue par `Image`
+                  currentReport?.photos?.map((photo) => { 
                     return { uri: photo.url };
                   }) || []
                 }
                 setPhotos={(newPhotos) => {
                   setCurrentReport({
                     ...currentReport,
-                    photos: newPhotos.map((photo) => ({
-                      // Transformez les nouvelles photos en objets avec `url` si nécessaire
+                    photos: newPhotos.map((photo) => ({ 
                       url: photo.uri || photo.url,
                     })),
                   } as Report);
@@ -510,7 +501,7 @@ export default function ReportScreen({ navigation }) {
                 style={[
                   styles.saveButton,
                   (!isAddressValidated || !isValidInput()) &&
-                    styles.disabledButton, // Désactiver si invalide
+                    styles.disabledButton,  
                 ]}
                 onPress={() => {
                   if (isAddressValidated && isValidInput()) {
@@ -519,7 +510,7 @@ export default function ReportScreen({ navigation }) {
                     const errors = getValidationErrors();
                     Alert.alert(
                       "Validation requise",
-                      errors.join("\n") // Affiche toutes les erreurs sur des lignes séparées
+                      errors.join("\n")  
                     );
                   }
                 }}
@@ -550,7 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E",  
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -560,11 +551,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
+    color: '#093A3E',  
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    fontFamily: 'Insanibc',  
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -610,10 +601,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   reportImage: {
-    width: "100%", // Prend toute la largeur du conteneur
-    height: 200, // Hauteur fixe
-    borderRadius: 8, // Coins arrondis
-    marginBottom: 8, // Espacement avec les autres éléments
+    width: "100%",  
+    height: 200,  
+    borderRadius: 8,  
+    marginBottom: 8,  
   },
   reportTitle: {
     fontSize: 18,
@@ -637,7 +628,7 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   changeReport: {
-    backgroundColor: "#FF9800", // Vert moderne pour un bouton positif
+    backgroundColor: "#FF9800",  
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -647,10 +638,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
-    elevation: 3, // Ombre pour Android
+    elevation: 3,  
   },
   changeReportText: {
-    color: "#FFFFFF", // Texte blanc pour le contraste
+    color: "#FFFFFF",  
     fontSize: 14,
     fontWeight: "bold",
   },
@@ -691,28 +682,28 @@ const styles = StyleSheet.create({
   },
   inputTitle: {
     width: "100%",
-    height: 50, // Hauteur fixe (peut être ajustée)
-    maxHeight: 50, // Empêche l'agrandissement vertical
+    height: 50,  
+    maxHeight: 50, 
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingHorizontal: 15,
     paddingLeft: 30,
-    marginBottom: 25, // Espacement avec l'élément suivant
+    marginBottom: 25,  
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", // Empêche le débordement
+    overflow: "hidden",  
   },
   input: {
     width: "100%",
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
-    paddingVertical: 10, // Ajustez en fonction de votre design
+    paddingVertical: 10,  
     paddingHorizontal: 15,
     paddingLeft: 25,
     paddingTop: 20,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", // Empêche le débordement
+    overflow: "hidden", 
   },
   textArea: {
     height: 100,
@@ -750,15 +741,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputSearch: {
-    height: 50, // Assurez une hauteur uniforme
-    textAlignVertical: "center", // Centre le texte verticalement
-    paddingHorizontal: 10, // Ajoute un espace pour le texte à gauche et à droite
-    paddingLeft: 20, // Ajoutez un espacement à gauche
+    height: 50,  
+    textAlignVertical: "center", 
+    paddingHorizontal: 10,
+    paddingLeft: 20, 
 
     backgroundColor: "#f5f5f5",
     width: "65%",
-    borderRadius: 30, // Ajoutez un arrondi aux coins
-    fontSize: 16, // Ajustez la taille de la police
+    borderRadius: 30,  
+    fontSize: 16,  
     color: "#333",
     marginTop: 40,
   },
@@ -769,7 +760,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#34495E",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
+    marginLeft: 10, 
     marginTop: 40,
   },
   rowButtonLocation: {
@@ -779,15 +770,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDAE49",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
+    marginLeft: 10, 
     marginTop: 40,
   },
   modalOverlay: {
     flex: 1,
     paddingVertical: 50,
-    justifyContent: "center", // Centre verticalement
-    alignItems: "center", // Centre horizontalement
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center",  
+    alignItems: "center",  
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
   },
   suggestionItem: {
     padding: 10,

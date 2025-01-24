@@ -11,7 +11,7 @@ const KeyboardWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"} // Ajuste pour iOS et Android
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         {children}

@@ -20,7 +20,7 @@ export function useAuth() {
   const [progressModalVisible, setProgressModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);  
-  const { setToken, clearToken, setUserId,  } = useToken(); // Ajout de getToken pour récupérer le token actuel
+  const { setToken, clearToken, setUserId,  } = useToken(); 
 
   const steps = [
     { label: "Préparation des fichiers", progress: 0.2 },
@@ -28,7 +28,7 @@ export function useAuth() {
     { label: "Finalisation, veuillez patientez", progress: 1.0 },
   ];
   const handleLogin = async (onLogin: () => void) => {
-    const { setToken, setRefreshToken, setUserId, clearAll } = useToken(); // Ajout de `setRefreshToken`
+    const { setToken, setRefreshToken, setUserId, clearAll } = useToken(); 
   
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
@@ -41,14 +41,12 @@ export function useAuth() {
       const response = await login(lowerCaseEmail, password);
   
       if (response.status === 200 || response.status === 201) {
-        const { accessToken, refreshToken, userId } = response.data; // Assure-toi que le backend renvoie `refreshToken`
+        const { accessToken, refreshToken, userId } = response.data; 
   
-        // Suppression des données existantes
         await clearAll();
   
-        // Stockage des nouvelles données
         await setToken(accessToken);
-        await setRefreshToken(refreshToken); // Stocke le refresh token
+        await setRefreshToken(refreshToken); 
         await setUserId(userId);
   
         setIsAuthenticated(true);
@@ -97,7 +95,6 @@ export function useAuth() {
       formData.append("firstName", firstName);
       formData.append("username", username);
   
-      // Ajouter les champs de localisation avec des logs pour vérification
       console.log("Ajout des données de localisation à FormData...");
       formData.append("nom_commune", cityData.nom_commune);
       formData.append("code_postal", cityData.code_postal);
@@ -151,8 +148,8 @@ export function useAuth() {
   
   const logout = async () => {
     console.log('Déconnexion en cours...');
-    await clearToken(); // Supprime le token dans AsyncStorage
-    setIsAuthenticated(false); // Réinitialise l'état d'authentification
+    await clearToken();
+    setIsAuthenticated(false); 
     console.log('Déconnexion réussie, token supprimé.');
   };
   

@@ -34,7 +34,7 @@ const RankingScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { unreadCount } = useNotification(); // Récupération du compteur
+  const { unreadCount } = useNotification();  
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -42,7 +42,7 @@ const RankingScreen = ({ navigation }) => {
       setError(null);
 
       try {
-        const userId = await getUserIdFromToken(); // Remplace par ta méthode pour récupérer l'ID utilisateur
+        const userId = await getUserIdFromToken();  
         if (!userId) {
           throw new Error("Impossible de récupérer l'ID utilisateur.");
         }
@@ -178,7 +178,7 @@ const RankingScreen = ({ navigation }) => {
         style={[
           styles.rankingItem,
           isTopThree && { borderColor: borderColor, borderWidth: 2 },
-          index === rankingData.length - 1 && { marginBottom: 50 }, // Ajout d'une marge au dernier élément
+          index === rankingData.length - 1 && { marginBottom: 50 },  
         ]}
         onPress={() =>
           navigation.navigate("UserProfileScreen", { userId: item.id })
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -251,11 +251,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
+    color: '#093A3E',  
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    fontFamily: 'Insanibc',  
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -302,18 +302,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 10,
-    elevation: 4, // Ombre pour Android
+    elevation: 4,  
     alignItems: "center",
   },
   welcomeText: {
     fontSize: 24,
     fontWeight: "500",
-    color: "#333", // Couleur neutre
+    color: "#333",  
     textAlign: "center",
     marginBottom: 5,
   },
   cityContainer: {
-    backgroundColor: "#E6F7FF", // Bleu doux
+    backgroundColor: "#E6F7FF",  
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   cityName: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#007BFF", // Bleu accent
+    color: "#007BFF", 
     textAlign: "center",
   },
   rankingContainer: {
@@ -332,18 +332,18 @@ const styles = StyleSheet.create({
   rankingText: {
     fontSize: 16,
     fontWeight: "400",
-    color: "#555", // Couleur grise subtile
+    color: "#555",  
     textAlign: "center",
   },
   rankingNumber: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#007BFF", // Or pour le classement
+    color: "#007BFF",  
   },
   totalUsers: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#555", // Bleu accent
+    color: "#555",  
   },
   subtitle: {
     fontSize: 16,
@@ -364,12 +364,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   topThreeImage: {
-    width: 70, // Agrandir l'image
+    width: 70,  
     height: 70,
     borderRadius: 35,
   },
   topThreeUserInfo: {
-    marginTop: 15, // Centrer le texte
+    marginTop: 15,  
   },
   badgeMedal: {
     position: "absolute",

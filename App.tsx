@@ -57,7 +57,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { getToken } = useToken();
-  const previousOffset = useRef(0); // Dernier offset du scroll
+  const previousOffset = useRef(0);
   const threshold = 10;
   const headerTranslateY = useSharedValue(0);
 
@@ -65,14 +65,11 @@ export default function App() {
     const currentOffset = event.nativeEvent.contentOffset.y;
 
     if (currentOffset - previousOffset.current > threshold) {
-      // Scroll vers le bas (cacher le header)
       headerTranslateY.value = withTiming(-100, { duration: 200 });
     } else if (previousOffset.current - currentOffset > threshold) {
-      // Scroll vers le haut (afficher le header)
       headerTranslateY.value = withTiming(0, { duration: 200 });
     }
 
-    // Met à jour l'offset précédent
     previousOffset.current = currentOffset;
   };
 
@@ -86,7 +83,7 @@ export default function App() {
   const clearAllTokens = async () => {
     console.log("Suppression de toutes les données stockées.");
     const keys = await AsyncStorage.getAllKeys();
-    console.log("Clés avant suppression :", keys); // Ajoute un log pour vérifier les clés restantes
+    console.log("Clés avant suppression :", keys);
     await AsyncStorage.multiRemove([
       "authToken",
       "refreshToken",
@@ -94,15 +91,15 @@ export default function App() {
       "userToken",
     ]);
     const remainingKeys = await AsyncStorage.getAllKeys();
-    console.log("Clés après suppression :", remainingKeys); // Validez que tout est supprimé
+    console.log("Clés après suppression :", remainingKeys);
   };
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const token = await getToken(); // Vérifie s'il existe un token valide
+        const token = await getToken();
         if (token) {
-          setIsLoggedIn(true); // L'utilisateur est déjà connecté
+          setIsLoggedIn(true);
           console.log("Session restaurée, utilisateur connecté.");
         } else {
           console.log("Aucun token valide trouvé, utilisateur non connecté.");
@@ -113,7 +110,7 @@ export default function App() {
           error
         );
       } finally {
-        setLoading(false); // Fin de la vérification
+        setLoading(false);
       }
     };
 
@@ -123,8 +120,8 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await clearAllTokens();
-      await AsyncStorage.removeItem("userToken"); // Supprimez les données de session
-      setIsLoggedIn(false); // Réinitialise l'état de connexion
+      await AsyncStorage.removeItem("userToken");
+      setIsLoggedIn(false);
       console.log("Déconnexion réussie");
     } catch (error) {
       console.error("Erreur lors de la déconnexion :", error);
@@ -132,13 +129,13 @@ export default function App() {
   };
 
   const CustomHeader = ({ navigation, headerTranslateY }) => {
-    const { unreadCount } = useNotification(); // Compteur des notifications non lues
+    const { unreadCount } = useNotification();
 
     return (
       <Animated.View
         style={[
           styles.headerContainer,
-          { transform: [{ translateY: headerTranslateY }] }, // Appliquez l'animation
+          { transform: [{ translateY: headerTranslateY }] },
         ]}
       >
         <View style={styles.header}>
@@ -169,22 +166,21 @@ export default function App() {
   };
 
   const EmptyScreen = () => {
-    return null; // Écran vide intentionnellement
+    return null;
   };
 
   const [fontsLoaded] = useFonts({
-    Insanibc: require("../frontend/assets/fonts/Insanibc.ttf"), // Assurez-vous que le chemin est correct
+    Insanibc: require("../frontend/assets/fonts/Insanibc.ttf"),
   });
 
   if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#0000ff" />; // Afficher un loader tant que la police n'est pas chargée
+    return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const actionSheetRef = useRef<typeof ActionSheet | null>(null); // Référence pour l'ActionSheet
-    // Fonction pour récupérer l'ID utilisateur
+    const actionSheetRef = useRef<typeof ActionSheet | null>(null);
     const fetchUserId = async () => {
       try {
         console.log("Début de la récupération de l'ID utilisateur...");
@@ -192,8 +188,7 @@ export default function App() {
         if (!token) {
           throw new Error("Aucun token trouvé");
         }
-        // Décoder le token pour obtenir l'ID utilisateur (exemple avec JWT)
-        const payload = JSON.parse(atob(token.split(".")[1])); // Décodage de la partie payload
+        const payload = JSON.parse(atob(token.split(".")[1]));
         console.log("Payload décodé :", payload);
         return payload.userId;
       } catch (error) {
@@ -205,7 +200,6 @@ export default function App() {
       }
     };
 
-    // Récupérer l'ID utilisateur lors du chargement
     useEffect(() => {
       const initializeUserId = async () => {
         const id = await fetchUserId();
@@ -254,7 +248,9 @@ export default function App() {
               if (route.name === "Accueil") {
                 iconName = focused ? "home" : "home-outline";
               } else if (route.name === "Conversations") {
-                iconName = focused ? "chatbubble-ellipses" : "chatbubble-ellipses-outline";
+                iconName = focused
+                  ? "chatbubble-ellipses"
+                  : "chatbubble-ellipses-outline";
               } else if (route.name === "Social") {
                 iconName = focused ? "people" : "people-outline";
               } else if (route.name === "Carte") {
@@ -273,14 +269,14 @@ export default function App() {
                     alignItems: "center",
                   }}
                 >
-                 <Icon
-    name={iconName}
-    size={focused ? size + 15: size} // Augmente la taille si sélectionné
-    color={focused ? "#F7F2DE" : "#F7F2DE"} // Change la couleur en fonction de l'état
-    style={{
-      fontWeight: focused ? "bold" : "normal", // Simule un trait plus épais
-    }}
-  />
+                  <Icon
+                    name={iconName}
+                    size={focused ? size + 15 : size}
+                    color={focused ? "#F7F2DE" : "#F7F2DE"}
+                    style={{
+                      fontWeight: focused ? "bold" : "normal",
+                    }}
+                  />
                 </View>
               );
             },
@@ -303,7 +299,7 @@ export default function App() {
             {({ navigation }) => {
               useEffect(() => {
                 const unsubscribe = navigation.addListener("focus", () => {
-                  headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                  headerTranslateY.value = withTiming(0, { duration: 200 });
                 });
                 return unsubscribe;
               }, [navigation]);
@@ -323,7 +319,7 @@ export default function App() {
             initialParams={{ userId }}
             listeners={{
               focus: () => {
-                headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                headerTranslateY.value = withTiming(0, { duration: 200 });
               },
             }}
           />
@@ -333,11 +329,11 @@ export default function App() {
             component={EmptyScreen}
             listeners={{
               tabPress: (e) => {
-                e.preventDefault(); // Empêche la navigation
-                actionSheetRef.current?.show(); // Affiche l'ActionSheet
+                e.preventDefault();
+                actionSheetRef.current?.show();
               },
               focus: () => {
-                headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                headerTranslateY.value = withTiming(0, { duration: 200 });
               },
             }}
           />
@@ -346,7 +342,7 @@ export default function App() {
             {({ navigation }) => {
               useEffect(() => {
                 const unsubscribe = navigation.addListener("focus", () => {
-                  headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                  headerTranslateY.value = withTiming(0, { duration: 200 });
                 });
                 return unsubscribe;
               }, [navigation]);
@@ -360,13 +356,12 @@ export default function App() {
             component={MapScreen}
             listeners={{
               focus: () => {
-                headerTranslateY.value = withTiming(0, { duration: 200 }); // Réinitialise le header
+                headerTranslateY.value = withTiming(0, { duration: 200 });
               },
             }}
           />
         </Tab.Navigator>
 
-        {/* ActionSheet pour ajouter un signalement ou un événement */}
         <ActionSheet
           ref={(o) => (actionSheetRef.current = o)}
           title="Que souhaitez-vous ajouter ?"
@@ -432,10 +427,7 @@ export default function App() {
                     <Stack.Screen name="Main" component={TabNavigator} />
                     <Stack.Screen name="ProfileScreen">
                       {(props) => (
-                        <ProfileScreen
-                          {...props}
-                          onLogout={handleLogout} // Passez handleLogout ici
-                        />
+                        <ProfileScreen {...props} onLogout={handleLogout} />
                       )}
                     </Stack.Screen>
                     <Stack.Screen
@@ -524,28 +516,28 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   header: {
-    position: "absolute", // Position absolue pour superposer au contenu
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10, // Assurez que le header est au-dessus de la carte
+    zIndex: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E",
     paddingTop: 40,
     paddingHorizontal: 20,
-    height: 90, // Hauteur ajustée
+    height: 90,
   },
   headerTitle: {
     fontSize: 24,
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#F7F2DE', // Couleur dorée ou autre
-    letterSpacing:4,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    color: "#F7F2DE",
+    letterSpacing: 4,
+    fontWeight: "bold",
+    fontFamily: "Insanibc",
   },
   badge: {
     position: "absolute",

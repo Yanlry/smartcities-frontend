@@ -11,6 +11,6 @@ export const getTypeIcon = (type: string) => {
     case "reparation":
       return require("../assets/icons/reparation.png");
     default:
-      return null; // Retourne null si le type ne correspond à aucun cas
+      return null;  
   }
 };

@@ -24,13 +24,13 @@ export default StyleSheet.create({
     marginTop: 10,
   },
   sectionHeaderVisible: {
-    backgroundColor: "#f5f5f5", // Même couleur pour le contenu ouvert
+    backgroundColor: "#f5f5f5",
     borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10, // Arrondi pour joindre l'en-tête et le contenu
+    borderBottomRightRadius: 10,
   },
   sectionContent: {
-    marginTop: -9, // Superpose légèrement pour éviter une ligne visible
-    backgroundColor: "#f5f5f5", // Même couleur que l'en-tête
+    marginTop: -9,
+    backgroundColor: "#f5f5f5",
   },
   arrow: {
     fontSize: 18,
@@ -47,7 +47,6 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  
 
   //  ------------------------------------------------ LOADING
 
@@ -230,16 +229,15 @@ export default StyleSheet.create({
     color: "#111",
   },
 
-
   userCity: {
     fontSize: 12,
-    color: "#777", // Couleur par défaut pour le texte
+    color: "#777",
     paddingTop: 4,
-    marginRight : 2,
+    marginRight: 2,
   },
   cityNameUser: {
-    color: "#093A3E", // Texte de la ville en bleu
-    fontWeight: "bold", // Optionnel pour mettre en valeur la ville
+    color: "#093A3E",
+    fontWeight: "bold",
   },
   userDetails: {
     fontSize: 12,
@@ -247,21 +245,19 @@ export default StyleSheet.create({
     marginTop: 4,
     textAlign: "center",
   },
-  
+
   badgeWrapper: {
-    alignItems: "center", // Centre les icônes et le badge horizontalement
-    marginTop: 10, // Espace entre les badges et le reste du contenu
+    alignItems: "center",
+    marginTop: 10,
   },
   iconsContainer: {
-    flexDirection: "row", // Aligne les icônes horizontalement
+    flexDirection: "row",
     justifyContent: "center",
-    zIndex: 1, // Assure que les icônes sont au-dessus
-    marginBottom: -17, // Espace en bas pour séparer les badges du reste
-
+    zIndex: 1,
+    marginBottom: -17,
   },
   badgeContainer: {
-    
-    marginTop:5,
+    marginTop: 5,
     width: "100%",
     paddingHorizontal: 20,
     height: 40,
@@ -269,14 +265,14 @@ export default StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    shadowOpacity:0.8,
+    shadowOpacity: 0.8,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
   },
   badgeOrnement: {
     position: "absolute",
-    top:14,
+    top: 14,
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
@@ -335,12 +331,11 @@ export default StyleSheet.create({
     backgroundColor: "#ddd",
   },
 
-
   voteSummary: {
     flexDirection: "row",
     paddingTop: 15,
     marginBottom: 10,
-    gap:10,
+    gap: 10,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -362,10 +357,10 @@ export default StyleSheet.create({
     width: "48%",
   },
   positiveVote: {
-    backgroundColor: "#E8F5E9", // Légère teinte verte
+    backgroundColor: "#E8F5E9",  
   },
   negativeVote: {
-    backgroundColor: "#FDECEA", // Légère teinte rouge
+    backgroundColor: "#FDECEA",  
   },
   voteCount: {
     fontSize: 18,
@@ -379,7 +374,6 @@ export default StyleSheet.create({
     color: "#999",
     textAlign: "center",
   },
-
 
   modalContentRanking: {
     flex: 1,
@@ -458,31 +452,31 @@ export default StyleSheet.create({
     fontSize: 16,
   },
   nonTopThreeItem: {
-    backgroundColor: "#EFEFEF", // Couleur de fond pour ceux hors du top 3
-    borderWidth: 0, // Pas de contour
+    backgroundColor: "#EFEFEF",  
+    borderWidth: 0,  
     borderRadius: 60,
     paddingLeft: 10,
   },
   nonTopThreeText: {
-    color: "#666", // Couleur plus subtile pour ceux hors du top 3
-    fontWeight: "normal", // Style plus léger pour différencier
+    color: "#666",  
+    fontWeight: "normal",  
   },
   cityName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#007BFF", // Couleur pour le nom de la ville
+    color: "#007BFF",  
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond sombre semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.6)",  
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     width: "90%",
-    height: "80%", // Hauteur limitée pour permettre le défilement
-    backgroundColor: "#FFF", // Fond blanc
+    height: "80%",  
+    backgroundColor: "#FFF",  
     borderRadius: 60,
     padding: 20,
     alignItems: "center",
@@ -504,7 +498,7 @@ export default StyleSheet.create({
     marginBottom: 15,
     padding: 20,
     borderRadius: 150,
-    backgroundColor: "#F9F9F9", // Fond légèrement gris
+    backgroundColor: "#F9F9F9",  
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
@@ -532,7 +526,7 @@ export default StyleSheet.create({
   },
   closeButton: {
     marginTop: 20,
-    backgroundColor: "#FF4500", // Rouge intense
+    backgroundColor: "#FF4500",  
     paddingHorizontal: 25,
     paddingVertical: 10,
     borderRadius: 50,
@@ -561,11 +555,11 @@ export default StyleSheet.create({
   smarterImage: {
     width: 100,
     height: 100,
-    borderRadius: 50, // Assure l'image circulaire
+    borderRadius: 50,  
     marginBottom: 10,
     marginTop: 5,
-    borderWidth: 3, // Épaisseur du contour
-    borderColor: "#ddd", // Couleur par défaut (changée dynamiquement)
+    borderWidth: 3,  
+    borderColor: "#ddd",  
   },
   rankingName: {
     fontSize: 14,
@@ -574,40 +568,39 @@ export default StyleSheet.create({
     textAlign: "center",
   },
   medal: {
-    fontSize: 40, // Taille de la médaille
+    fontSize: 40,  
     position: "absolute",
-    top: -10, // Position légèrement au-dessus de l'image
-    left: 30, // Décalage vers la gauche
-    zIndex: 1, // Assure que la médaille est au-dessus de l'image
+    top: -10,  
+    left: 30,  
+    zIndex: 1,  
   },
   seeAllButton: {
-    
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 50, // Rendre le bouton circulaire
-    width: 100, // Taille du cercle
+    borderRadius: 50,  
+    width: 100,  
     height: 100,
     marginTop: 25,
     marginHorizontal: 10,
-    position: "relative", // Nécessaire pour positionner les barres
+    position: "relative",  
   },
   bar: {
     position: "absolute",
-    padding:10,
-    backgroundColor: "#093A3E", // Couleur des barres
+    padding: 10,
+    backgroundColor: "#093A3E",  
   },
   horizontalBar: {
-    width: 100, // Longueur de la barre horizontale
-    borderRadius: 5, // Coins arrondis pour un design plus doux
+    width: 100, 
+    borderRadius: 5, 
   },
   verticalBar: {
-    height: 100, // Longueur de la barre verticale
-    borderRadius: 5, // Coins arrondis
+    height: 100,  
+    borderRadius: 5, 
   },
   seeAllText: {
-    position: "absolute", // Pour le superposer au centre
+    position: "absolute", 
     color: "#fff",
-    letterSpacing: 2, // Espacement entre les lettres
+    letterSpacing: 2, 
     fontSize: 12,
     fontWeight: "bold",
     textAlign: "center",
@@ -628,37 +621,37 @@ export default StyleSheet.create({
     fontStyle: "italic",
   },
   timelineContainer: {
-    flexDirection: "row", // Permet un défilement horizontal
+    flexDirection: "row",  
     alignItems: "center",
     marginTop: 20,
   },
   timelinePointContainer: {
     alignItems: "center",
-    marginHorizontal: 5, // Espacement entre chaque signalement
+    marginHorizontal: 5,  
   },
   photoContainer: {
-    flexDirection: "row", // Aligne les photos sur une ligne
-    justifyContent: "space-between", // Espace égal entre les photos
-    marginBottom: 10, // Espace en bas pour séparer les photos du texte
+    flexDirection: "row",  
+    justifyContent: "space-between",  
+    marginBottom: 10,  
   },
   singlePhoto: {
-    width: "100%", // Occupe toute la largeur
-    height: 200, // Hauteur fixe (ajustez selon vos besoins)
+    width: "100%",  
+    height: 200, 
     borderRadius: 8,
   },
   multiPhoto: {
-    width: "48%", // Chaque photo prend 48% de la largeur avec un petit espace entre elles
-    height: 200, // Hauteur fixe (ajustez selon vos besoins)
+    width: "48%",  
+    height: 200,  
     borderRadius: 8,
   },
   noPhotoContainer: {
-    justifyContent: "center", // Centre le texte
+    justifyContent: "center",  
     alignItems: "center",
-    height: 200, // Hauteur fixe (ajustez selon vos besoins)
-    width: "100%", // Occupe tout l'espace
+    height: 200,  
+    width: "100%",  
   },
   noPhotoText: {
-    color: "#888", // Couleur grisée pour le texte
+    color: "#888",  
     fontSize: 16,
     fontStyle: "italic",
   },
@@ -673,12 +666,12 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
-    marginBottom: 10, // Distance entre l'étiquette et le bloc signalement
+    marginBottom: 10,  
   },
   labelText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFF", // Couleur blanche pour contraster avec le fond dynamique
+    color: "#FFF",  
     textAlign: "center",
   },
   timelineBlock: {
@@ -713,10 +706,10 @@ export default StyleSheet.create({
   },
   voteSummaryReport: {
     flexDirection: "row",
-    justifyContent: "space-between", // Répartir les éléments à gauche et à droite
-    alignItems: "center", // Aligner verticalement les éléments
-    paddingHorizontal: 10, // Ajoute un peu d'espace interne horizontal
-    marginTop: 10, // Espacement avec l'élément au-dessus
+    justifyContent: "space-between",  
+    alignItems: "center",  
+    paddingHorizontal: 10,  
+    marginTop: 10,  
   },
   voteButtonsContainer: {
     flexDirection: "row",
@@ -749,7 +742,7 @@ export default StyleSheet.create({
     width: 120,
     height: 120,
     marginTop: 20,
-marginLeft: 5,
+    marginLeft: 5,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
@@ -791,12 +784,12 @@ marginLeft: 5,
     borderBottomStartRadius: 10,
   },
   errorText: {
-    color: "red", // Couleur rouge pour attirer l'attention
-    fontSize: 16, // Taille de texte confortable
-    fontWeight: "bold", // Texte en gras pour plus de visibilité
-    textAlign: "center", // Centré pour un affichage clair
-    marginTop: 10, // Espace en haut pour le séparer des autres éléments
-    marginHorizontal: 20, // Marges horizontales pour éviter d’être collé aux bords
+    color: "red", 
+    fontSize: 16, 
+    fontWeight: "bold",  
+    textAlign: "center",  
+    marginTop: 10,  
+    marginHorizontal: 20,  
   },
 
   // ------------------------------------------------  CALENDRIER
@@ -827,7 +820,6 @@ marginLeft: 5,
     elevation: 3,
     marginBottom: 20,
     marginHorizontal: 10,
-
   },
   eventTitle: {
     fontSize: 18,
@@ -919,7 +911,6 @@ marginLeft: 5,
     shadowRadius: 5,
     elevation: 4,
     marginHorizontal: 10,
-
   },
   profileImageMayor: {
     width: 100,
@@ -972,7 +963,6 @@ marginLeft: 5,
     shadowRadius: 5,
     elevation: 4,
     marginHorizontal: 10,
-
   },
   officeImage: {
     width: 100,
@@ -1008,12 +998,12 @@ marginLeft: 5,
   // ------------------------------------------------  FOOTER
 
   footerCopyrightText: {
-    textAlign: "center", // Centré horizontalement
+    textAlign: "center",  
     marginTop: 40,
     marginBottom: 80,
-    color: "#888", // Gris pour un style subtil
-    fontSize: 12, // Taille de police petite et discrète
-    fontStyle: "italic", // Optionnel, pour une touche élégante
-    letterSpacing: 0.5, // Un peu d'espacement entre les lettres
+    color: "#888", 
+    fontSize: 12,  
+    fontStyle: "italic",  
+    letterSpacing: 0.5,  
   },
 });

@@ -7,9 +7,9 @@ export const fetchReportsByCategory = async (category: string) => {
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération des signalements');
     }
-    return await response.json(); // Retourne la liste des signalements filtrée
+    return await response.json();  
   } catch (error) {
     console.error('Erreur dans fetchReportsByCategory:', error);
-    throw error; // Relance l'erreur pour la gérer dans le frontend
+    throw error;  
   }
 };

@@ -3,13 +3,13 @@ import { StyleSheet } from 'react-native';
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff", // Fond blanc pour une apparence propre
+    backgroundColor: "#ffffff",  
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E",  
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -19,11 +19,11 @@ export default StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
+    color: '#093A3E',  
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    fontFamily: 'Insanibc', 
   },
   typeBadge: {
     flexDirection: "row",
@@ -33,7 +33,7 @@ export default StyleSheet.create({
   icon: {
     width: 24,
     height: 24,
-    marginHorizontal: 5, // Espacement entre les icônes
+    marginHorizontal: 5,  
   },
   typeText: {
     fontSize: 20,
@@ -53,8 +53,8 @@ export default StyleSheet.create({
   },
   mapContainer: {
     height: 250,
-    backgroundColor: "#f4f4f4", // Ajout d'un fond clair autour de la carte
-    overflow: "hidden", // Assurez-vous que la carte reste à l'intérieur des bordures
+    backgroundColor: "#f4f4f4",  
+    overflow: "hidden",  
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -66,24 +66,24 @@ export default StyleSheet.create({
     flex: 1,
   },
   separator: {
-    width: "30%", // 30% de la largeur de l'écran
-    height: 3, // Épaisseur de la ligne
-    backgroundColor: "#ddd", // Couleur du séparateur
-    alignSelf: "center", // Centre horizontalement
-    marginVertical: 5, // Espacement vertical au-dessus et en dessous
+    width: "30%",  
+    height: 3, 
+    backgroundColor: "#ddd", 
+    alignSelf: "center",  
+    marginVertical: 5,  
   },
   separatorText: {
-    textAlign: "center", // Centrage horizontal du texte
-    color: "#666", // Couleur du texte
+    textAlign: "center", 
+    color: "#666", 
     fontSize: 14,
-    marginTop: 8, // Espacement au-dessus du texte (si nécessaire)
+    marginTop: 8,  
   },
   titleContainer: {
-    position: "absolute", // Superposé à la carte
-    top: 5, // Positionné en haut
+    position: "absolute",  
+    top: 5,  
     left: 20,
     right: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.7)", // Fond semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.7)",  
     borderRadius: 10,
     paddingVertical: 5,
     alignItems: "center",
@@ -99,8 +99,8 @@ export default StyleSheet.create({
     marginTop:12,
   },
   buttonsContainer: {
-    position: "absolute", // Superposition des boutons
-    bottom: 20, // Position en bas de l'écran
+    position: "absolute",  
+    bottom: 20,  
     left: 20,
     right: 20,
     flexDirection: "row",
@@ -137,7 +137,7 @@ export default StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 150,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond transparent
+    backgroundColor: "rgba(0, 0, 0, 0.8)", 
   },
   titleVotes: {
     flexDirection: "row",
@@ -146,7 +146,7 @@ export default StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond transparent
+    backgroundColor: "rgba(0, 0, 0, 0.8)", 
   },
   upVoteButton: {
     marginRight: 10,
@@ -406,24 +406,24 @@ export default StyleSheet.create({
     borderRadius: 10,
   },
   closeButton: {
-    position: 'absolute',   // Pour positionner le bouton au-dessus du contenu
-    top: 50,                // Décalage par rapport au haut du conteneur
-    right: 20,              // Décalage par rapport à la droite du conteneur
-    backgroundColor: '#FF3B30', // Couleur de fond (rouge pour "fermer")
-    width: 40,              // Largeur du bouton
-    height: 40,             // Hauteur du bouton
-    borderRadius: 20,       // Rendre le bouton circulaire
-    justifyContent: 'center', // Centrer le contenu verticalement
-    alignItems: 'center',     // Centrer le contenu horizontalement
-    shadowColor: '#000',     // Ombre pour donner de la profondeur
+    position: 'absolute',    
+    top: 50,                 
+    right: 20,             
+    backgroundColor: '#FF3B30',  
+    width: 40,            
+    height: 40,         
+    borderRadius: 20,     
+    justifyContent: 'center',  
+    alignItems: 'center',  
+    shadowColor: '#000',   
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-    elevation: 5,            // Ombre pour Android
+    elevation: 5,      
   },
   closeButtonText: {
-    color: '#FFFFFF',        // Couleur du texte
-    fontSize: 18,            // Taille de la croix
-    fontWeight: 'bold',      // Texte en gras
+    color: '#FFFFFF',     
+    fontSize: 18,          
+    fontWeight: 'bold',  
   },
 });

@@ -31,7 +31,6 @@ export default function MairieInfoCard({
   const [smarterData, setSmarterData] = useState<User[]>([]);
   interface Event {
     title: string;
-    // Add other properties if needed
   }
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -50,7 +49,7 @@ export default function MairieInfoCard({
         setLoadingEvents(true);
         setError(null);
 
-        const cityName = city; // Ville définie manuellement
+        const cityName = city; 
         const userId = String(await getUserIdFromToken());
         if (!userId) {
           throw new Error("Impossible de récupérer l'ID utilisateur.");
@@ -69,7 +68,7 @@ export default function MairieInfoCard({
               ? `${user.firstName} ${user.lastName}`
               : user.username,
             ranking: user.ranking,
-            image: { uri: user.photo || "https://via.placeholder.com/150" }, // Mapping correct
+            image: { uri: user.photo || "https://via.placeholder.com/150" }, 
           }))
         );
         setRanking(rankingData.ranking);
@@ -192,21 +191,21 @@ export default function MairieInfoCard({
             {smarterData.slice(0, 10).map((item, index) => {
               const borderColor =
                 index + 1 === 1
-                  ? "#FFD700" // Or
+                  ? "#FFD700" 
                   : index + 1 === 2
-                  ? "#C0C0C0" // Argent
+                  ? "#C0C0C0" 
                   : index + 1 === 3
-                  ? "#CD7F32" // Bronze
-                  : "#fff"; // Couleur par défaut
+                  ? "#CD7F32" 
+                  : "#fff"; 
 
               const medal =
                 index + 1 === 1
-                  ? "🥇" // Médaille d'or
+                  ? "🥇" 
                   : index + 1 === 2
-                  ? "🥈" // Médaille d'argent
+                  ? "🥈" 
                   : index + 1 === 3
-                  ? "🥉" // Médaille de bronze
-                  : null; // Pas de médaille pour les autres
+                  ? "🥉" 
+                  : null; 
 
               console.log("URL d'image pour l'utilisateur :", item.image?.uri);
 
@@ -416,11 +415,11 @@ const styles = StyleSheet.create({
   smarterImage: {
     width: 100,
     height: 100,
-    borderRadius: 50, // Assure l'image circulaire
+    borderRadius: 50, 
     marginBottom: 10,
     marginTop: 5,
-    borderWidth: 3, // Épaisseur du contour
-    borderColor: "#ddd", // Couleur par défaut (changée dynamiquement)
+    borderWidth: 3, 
+    borderColor: "#ddd", 
   },
   rankingName: {
     fontSize: 14,
@@ -429,11 +428,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   medal: {
-    fontSize: 40, // Taille de la médaille
+    fontSize: 40,
     position: "absolute",
-    top: 0, // Position légèrement au-dessus de l'image
-    left: 0, // Décalage vers la gauche
-    zIndex: 1, // Assure que la médaille est au-dessus de l'image
+    top: 0, 
+    left: 0, 
+    zIndex: 1, 
   },
   seeAllButton: {
     backgroundColor: "#093A3E",

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export const fetchConfig = async () => {
   try {
-    const response = await axios.get('http://localhost:3000/config'); // Adapte l'URL selon ton backend
+    const response = await axios.get('http://localhost:3000/config');  
     const { apiUrl, mapsApiKey } = response.data;
 
     console.log('API URL:', apiUrl);

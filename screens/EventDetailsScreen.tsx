@@ -28,11 +28,11 @@ export default function EventDetails({ route }) {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { eventId } = route.params;
   const [isRegistered, setIsRegistered] = useState(false);
-  const { getUserId } = useToken(); // Importe la fonction pour récupérer l'ID utilisateur
+  const { getUserId } = useToken(); 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { unreadCount } = useNotification(); // Récupération du compteur
+  const { unreadCount } = useNotification(); 
   const [isLoading, setIsLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0); // Ajoute l'état pour gérer l'index courant des images
+  const [currentIndex, setCurrentIndex] = useState(0); 
 
   interface Event {
     photos: { url: string }[];
@@ -40,8 +40,8 @@ export default function EventDetails({ route }) {
     description: string;
     location: string;
     date: string;
-    attendees: { user: Participant }[]; // Liste des participants
-    organizer: Participant; // Organisateur de l'événement
+    attendees: { user: Participant }[];
+    organizer: Participant; 
     useFullName: boolean;
   }
 
@@ -55,14 +55,14 @@ export default function EventDetails({ route }) {
   }
 
   const [event, setEvent] = useState<Event | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Stocke l'ID utilisateur
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); 
 
   useEffect(() => {
     const fetchUserId = async () => {
       try {
-        const userId = await getUserId(); // Récupère le userId depuis AsyncStorage
+        const userId = await getUserId(); 
         console.log(`ID utilisateur récupéré depuis AsyncStorage : ${userId}`);
-        setCurrentUserId(userId); // Met à jour l'état local
+        setCurrentUserId(userId); 
       } catch (error) {
         console.error(
           "Erreur lors de la récupération de l'utilisateur :",
@@ -91,7 +91,7 @@ export default function EventDetails({ route }) {
     };
 
     const checkRegistration = async () => {
-      if (!currentUserId) return; // Attend que currentUserId soit défini
+      if (!currentUserId) return; 
 
       try {
         const url = `${API_URL}/events/${eventId}/is-registered?userId=${currentUserId}`;
@@ -134,7 +134,7 @@ export default function EventDetails({ route }) {
                 day: "numeric",
               })}`
             : "Date non disponible"
-        }\n\nLien : https://smartcities.com/events/${eventId}`, // Vous pouvez remplacer par une URL réelle
+        }\n\nLien : https://smartcities.com/events/${eventId}`, 
       });
 
       if (result.action === Share.sharedAction) {
@@ -171,31 +171,28 @@ export default function EventDetails({ route }) {
         `Tentative d'inscription avec eventId: ${eventId}, userId: ${currentUserId}`
       );
 
-      // Inscription à l'événement
       await axios.post(`${API_URL}/events/${eventId}/join`, {
         userId: currentUserId,
       });
 
-      // Afficher une alerte personnalisée
       Alert.alert(
-        "Inscription réussie", // Titre de l'alerte
-        "Votre inscription est confirmée, profitez bien de l’événement !", // Message de l'alerte
+        "Inscription réussie", 
+        "Votre inscription est confirmée, profitez bien de l’événement !", 
         [
           {
-            text: "OK", // Bouton de confirmation
-            onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
+            text: "OK", 
+            onPress: () => console.log("OK Pressed"), 
           },
         ],
-        { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
+        { cancelable: false } 
       );
 
-      setIsRegistered(true); // Met à jour l'état pour refléter l'inscription
+      setIsRegistered(true); 
 
-      // Met à jour les détails de l'événement pour inclure les participants
       const updatedEventResponse = await axios.get(
         `${API_URL}/events/${eventId}`
       );
-      setEvent(updatedEventResponse.data); // Remplace l'événement dans l'état
+      setEvent(updatedEventResponse.data);
     } catch (error) {
       if (error.response?.status === 404) {
         alert("Événement ou utilisateur introuvable.");
@@ -224,21 +221,19 @@ export default function EventDetails({ route }) {
         }
       );
 
-      // Afficher une alerte personnalisée
       Alert.alert(
-        "Désinscription enregistrée", // Titre de l'alerte
-        "N’hésitez pas à vous réinscrire si vous changez d’avis !", // Message de l'alerte
+        "Désinscription enregistrée", 
+        "N’hésitez pas à vous réinscrire si vous changez d’avis !", 
         [
           {
-            text: "OK", // Bouton de confirmation
-            onPress: () => console.log("OK Pressed"), // Optionnel : action au clic
+            text: "OK", 
+            onPress: () => console.log("OK Pressed"),
           },
         ],
-        { cancelable: false } // L'utilisateur ne peut pas fermer l'alerte en cliquant en dehors (facultatif)
+        { cancelable: false } 
       );
       setIsRegistered(false);
 
-      // Supprimer l'utilisateur de la liste des participants
       setEvent((prevEvent) => {
         if (!prevEvent) return prevEvent;
         return {
@@ -246,7 +241,7 @@ export default function EventDetails({ route }) {
           attendees: prevEvent.attendees.filter(
             (attendee) => attendee.user.id !== currentUserId
           ),
-          photos: prevEvent.photos || [], // Ensure photos is always defined
+          photos: prevEvent.photos || [], 
         };
       });
     } catch (error) {
@@ -261,30 +256,27 @@ export default function EventDetails({ route }) {
 
   const getDisplayName = (user) => {
     if (user.useFullName) {
-      return `${user.firstName} ${user.lastName}`; // Affiche le nom complet
+      return `${user.firstName} ${user.lastName}`; 
     }
-    return `${user.username}`; // Sinon, affiche le username
+    return `${user.username}`; 
   };
 
   return (
     <View>
       <View style={styles.headerNav}>
-        {/* Bouton pour ouvrir le menu */}
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE" 
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
 
-        {/* Titre de la page */}
         <View style={styles.typeBadge}>
           <Text style={styles.headerTitleNav}>Événement</Text>
         </View>
 
-        {/* Bouton de notifications avec compteur */}
         <TouchableOpacity
           onPress={() => navigation.navigate("NotificationsScreen")}
         >
@@ -304,7 +296,6 @@ export default function EventDetails({ route }) {
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Image en-tête */}
         <View style={styles.imageContainer}>
           {isLoading && (
             <ActivityIndicator
@@ -313,9 +304,8 @@ export default function EventDetails({ route }) {
               style={styles.loader}
             />
           )}
-          {/* Carrousel d'images */}
           <FlatList
-            data={event.photos} // Tableau des photos
+            data={event.photos} 
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -326,7 +316,7 @@ export default function EventDetails({ route }) {
                   uri: item.url || "https://via.placeholder.com/600",
                 }}
                 style={styles.image}
-                onLoad={() => setIsLoading(false)} // Une fois l'image chargée
+                onLoad={() => setIsLoading(false)} 
               />
             )}
             onScroll={(e) => {
@@ -336,7 +326,6 @@ export default function EventDetails({ route }) {
               );
             }}
           />
-          {/* Indicateurs (dots) */}
           <View style={styles.indicatorContainer}>
             {event.photos?.map((_, index) => (
               <View
@@ -350,7 +339,6 @@ export default function EventDetails({ route }) {
           </View>
         </View>
 
-        {/* Titre et Actions */}
         <View style={styles.header}>
           <Text style={styles.title}>
             {event.title || "Titre indisponible"}
@@ -498,7 +486,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -508,11 +496,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
+    color: '#093A3E', 
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    fontFamily: 'Insanibc', 
   },
   typeBadge: {
     flexDirection: "row",
@@ -545,8 +533,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   participantListContainer: {
-    flex: 1, // Le conteneur utilise tout l'espace disponible
-    marginBottom: 120, // Pour espacer les derniers participants
+    flex: 1, 
+    marginBottom: 120, 
   },
   participantList: {
     marginTop: 10,

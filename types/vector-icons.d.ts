@@ -1,4 +1,3 @@
-// types/vector-icons.d.ts
 declare module 'react-native-vector-icons/Ionicons' {
     import { Component } from 'react';
     import { TextProps } from 'react-native';

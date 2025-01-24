@@ -11,7 +11,7 @@ import {
   Modal,
   TextInput,
   Keyboard,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNotification } from "../context/NotificationContext";
@@ -26,7 +26,7 @@ import MapView from "react-native-maps";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
 export default function EventsScreen({ navigation }) {
-  const { unreadCount } = useNotification(); // Récupération du compteur
+  const { unreadCount } = useNotification();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [events, setEvents] = useState<
     {
@@ -41,7 +41,7 @@ export default function EventsScreen({ navigation }) {
   const { location, loading } = useLocation();
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const mapRef = useRef<MapView>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false); // Modal de modification
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<{
     id: number;
     title: string;
@@ -53,7 +53,6 @@ export default function EventsScreen({ navigation }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-
 
   useEffect(() => {
     const fetchUserEvents = async () => {
@@ -72,13 +71,12 @@ export default function EventsScreen({ navigation }) {
 
         const data = await response.json();
         console.log("Données des événements récupérées :", data);
-        setEvents(data); // Met à jour tous les événements
+        setEvents(data);
       } catch (error) {
         console.error("Erreur lors de la récupération des événements :", error);
       }
     };
 
-    // Requête lorsque `currentEvent` change
     fetchUserEvents();
   }, [currentEvent]);
 
@@ -95,7 +93,6 @@ export default function EventsScreen({ navigation }) {
         photos,
       } = updatedEvent;
 
-      // Préparation des données pour le backend
       const eventData = {
         title,
         description,
@@ -104,13 +101,12 @@ export default function EventsScreen({ navigation }) {
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         photos: photos.map((photo) => ({
-          url: photo.uri || photo.url, // Assurez-vous d'envoyer les URLs
+          url: photo.uri || photo.url, 
         })),
       };
 
       console.log("Données envoyées au backend :", eventData);
 
-      // Requête PUT pour la mise à jour
       const response = await fetch(`${API_URL}/events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -123,17 +119,14 @@ export default function EventsScreen({ navigation }) {
         throw new Error("Erreur lors de la mise à jour de l'événement.");
       }
 
-      // Récupération des données mises à jour
       const updatedEventData = await response.json();
 
       console.log("Événement mis à jour :", updatedEventData);
 
-      // Mise à jour locale des événements dans le state
       setEvents((prevEvents) =>
         prevEvents.map((event) => (event.id === id ? updatedEventData : event))
       );
 
-      // Fermeture du modal après succès
       closeModal();
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error.message || error);
@@ -144,7 +137,7 @@ export default function EventsScreen({ navigation }) {
   const openModal = (event) => {
     setCurrentEvent({
       ...event,
-      photos: event.photos || [], // Assurez-vous que les photos sont initialisées
+      photos: event.photos || [], 
     });
     setIsModalVisible(true);
   };
@@ -157,8 +150,8 @@ export default function EventsScreen({ navigation }) {
   const renderItem = ({ item }) => {
     const imageUrl =
       item.photos?.length > 0
-        ? item.photos[0].url // Utilise la première photo comme aperçu
-        : "https://via.placeholder.com/150"; // Image par défaut si aucune photo
+        ? item.photos[0].url 
+        : "https://via.placeholder.com/150";
 
     const eventDate = item.date
       ? new Date(item.date).toLocaleDateString()
@@ -201,13 +194,13 @@ export default function EventsScreen({ navigation }) {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => openModal(item)} // Fonction pour modifier l'événement
+            onPress={() => openModal(item)} 
           >
             <Text style={styles.editButtonText}>Modifier</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => confirmDelete(item.id)} // Fonction pour supprimer l'événement
+            onPress={() => confirmDelete(item.id)} 
           >
             <Icon name="delete" size={24} color="#FF3B30" />
           </TouchableOpacity>
@@ -233,7 +226,7 @@ export default function EventsScreen({ navigation }) {
 
   const deleteEvent = async (eventId) => {
     try {
-      const userId = await getUserId(); // Récupérer l'ID utilisateur
+      const userId = await getUserId(); 
       if (!userId) {
         console.error("Impossible de récupérer l'ID utilisateur.");
         return;
@@ -250,7 +243,6 @@ export default function EventsScreen({ navigation }) {
         throw new Error("Erreur lors de la suppression de l'événement.");
       }
 
-      // Supprimer localement l'événement de la liste
       setEvents((prevEvents) =>
         prevEvents.filter((event) => event.id !== eventId)
       );
@@ -285,8 +277,8 @@ export default function EventsScreen({ navigation }) {
 
         console.log("Adresse récupérée depuis OpenCage Data :", address);
 
-        setSuggestions(data.results); // Remplit les suggestions avec les résultats
-        setModalVisible(true); // Ouvre directement la liste des suggestions
+        setSuggestions(data.results); 
+        setModalVisible(true); 
       } else {
         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
       }
@@ -315,15 +307,14 @@ export default function EventsScreen({ navigation }) {
       const data = await response.json();
 
       if (data.results.length > 0) {
-        // Trier les suggestions par code postal
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB; // Trie croissant
+          return postalA - postalB; 
         });
 
-        setSuggestions(sortedSuggestions); // Affiche les suggestions triées
-        setModalVisible(true); // Ouvre la liste des résultats
+        setSuggestions(sortedSuggestions); 
+        setModalVisible(true); 
       } else {
         setSuggestions([]);
         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -335,35 +326,31 @@ export default function EventsScreen({ navigation }) {
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); // Recherche un code postal à 5 chiffres
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; // Infinity si pas de code postal
+    const postalCodeMatch = address.match(/\b\d{5}\b/); 
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; 
   };
 
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
-  
-      // Formate l'adresse pour remplacer "Unnamed Road" par "Route inconnue"
+
       const formattedLocation = item.formatted.replace(
         /unnamed road/gi,
         "Route inconnue"
       );
-  
-      // Met à jour l'événement avec les données sélectionnées
+
       setCurrentEvent((prevEvent) => {
         if (!prevEvent) return prevEvent;
         return {
           ...prevEvent,
-          location: formattedLocation, // Met à jour le champ `location`
+          location: formattedLocation, 
           latitude: lat,
           longitude: lng,
         };
       });
-  
-      // Valide l'adresse
+
       setIsAddressValidated(true);
-  
-      // Ferme la modal des suggestions
+
       setModalVisible(false);
     }
   };
@@ -371,12 +358,11 @@ export default function EventsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.headerNav}>
-        {/* Bouton pour ouvrir le menu */}
         <TouchableOpacity onPress={toggleSidebar}>
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE" 
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -484,35 +470,36 @@ export default function EventsScreen({ navigation }) {
 
               {/* Champ Lieu */}
               <View style={styles.inputWithButton}>
-  <TextInput
-    style={styles.inputSearch}
-    placeholder="Rechercher une adresse"
-    value={currentEvent?.location || ""} // Remplacez `city` par `location`
-    placeholderTextColor="#c7c7c7"
-    onChangeText={(text) => {
-      setCurrentEvent((prev) =>
-        prev ? { ...prev, location: text } : null
-      );
-      setIsAddressValidated(false); // Réinitialise la validation
-    }}
-  />
-  <TouchableOpacity
-    style={styles.searchButton}
-    onPress={() =>
-      currentEvent && handleAddressSearch(currentEvent.location) // Utilisez `location`
-    }
-  >
-    <Ionicons name="search-sharp" size={18} color="#fff" />
-  </TouchableOpacity>
-  <TouchableOpacity
-    style={styles.rowButtonLocation}
-    onPress={handleUseLocation}
-  >
-    <Ionicons name="location-sharp" size={18} color="#fff" />
-  </TouchableOpacity>
-</View>
-   {/* Suggestions d'adresses */}
-   <Modal
+                <TextInput
+                  style={styles.inputSearch}
+                  placeholder="Rechercher une adresse"
+                  value={currentEvent?.location || ""} 
+                  placeholderTextColor="#c7c7c7"
+                  onChangeText={(text) => {
+                    setCurrentEvent((prev) =>
+                      prev ? { ...prev, location: text } : null
+                    );
+                    setIsAddressValidated(false); 
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.searchButton}
+                  onPress={
+                    () =>
+                      currentEvent && handleAddressSearch(currentEvent.location) 
+                  }
+                >
+                  <Ionicons name="search-sharp" size={18} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.rowButtonLocation}
+                  onPress={handleUseLocation}
+                >
+                  <Ionicons name="location-sharp" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              {/* Suggestions d'adresses */}
+              <Modal
                 visible={modalVisible}
                 animationType="slide"
                 transparent={true}
@@ -576,7 +563,6 @@ export default function EventsScreen({ navigation }) {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-     
     </View>
   );
 }
@@ -590,7 +576,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -600,11 +586,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
-    backgroundColor: '#F7F2DE',
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    color: "#093A3E", 
+    backgroundColor: "#F7F2DE",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc", 
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -640,26 +626,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
-    elevation: 4, // Ombre douce
+    elevation: 4, 
     borderWidth: 1,
-    borderColor: "#E8E8E8", // Légère bordure pour le contraste
+    borderColor: "#E8E8E8", 
   },
   eventTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333333", // Texte sombre pour un bon contraste
+    color: "#333333", 
     marginBottom: 5,
   },
   eventDescription: {
     fontSize: 14,
-    color: "#666666", // Texte légèrement atténué
+    color: "#666666",
     marginBottom: 10,
   },
   eventImage: {
-    width: "100%", // Largeur de l'image pour qu'elle occupe tout l'espace disponible
-    height: 150, // Hauteur fixe pour un affichage uniforme
-    borderRadius: 8, // Coins arrondis pour correspondre au style de la carte
-    marginBottom: 10, // Espacement entre l'image et le texte
+    width: "100%", 
+    height: 150, 
+    borderRadius: 8, 
+    marginBottom: 10, 
   },
   eventFooter: {
     flexDirection: "row",
@@ -668,11 +654,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E8E8E8",
     paddingTop: 10,
-    marginBottom: 5, // Décalage négatif pour compenser la marge du conteneur parent
+    marginBottom: 5, 
   },
   eventDate: {
     fontSize: 12,
-    color: "#999999", // Texte discret
+    color: "#999999", 
   },
   noEventsContainer: {
     flex: 1,
@@ -685,13 +671,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   actionButtons: {
-    flexDirection: "row", // Place les boutons côte à côte
-    justifyContent: "space-between", // Espacement entre les boutons
-    alignItems: "center", // Aligne les boutons verticalement
-    marginTop: 10, // Espacement par rapport au reste de la carte
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginTop: 10, 
   },
   editButton: {
-    backgroundColor: "#2196F3", // Bleu pour indiquer une action
+    backgroundColor: "#2196F3", 
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -740,28 +726,28 @@ const styles = StyleSheet.create({
   },
   inputTitle: {
     width: "100%",
-    height: 50, // Hauteur fixe (peut être ajustée)
-    maxHeight: 50, // Empêche l'agrandissement vertical
+    height: 50, 
+    maxHeight: 50, 
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingHorizontal: 15,
     paddingLeft: 30,
-    marginBottom: 25, // Espacement avec l'élément suivant
+    marginBottom: 25, 
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", // Empêche le débordement
+    overflow: "hidden", 
   },
   input: {
     width: "100%",
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
-    paddingVertical: 10, // Ajustez en fonction de votre design
+    paddingVertical: 10, 
     paddingHorizontal: 15,
     paddingLeft: 25,
     paddingTop: 20,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", // Empêche le débordement
+    overflow: "hidden", 
   },
   textArea: {
     height: 100,
@@ -816,15 +802,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputSearch: {
-    height: 50, // Assurez une hauteur uniforme
-    textAlignVertical: "center", // Centre le texte verticalement
-    paddingHorizontal: 10, // Ajoute un espace pour le texte à gauche et à droite
-    paddingLeft: 20, // Ajoutez un espacement à gauche
+    height: 50, 
+    textAlignVertical: "center", 
+    paddingHorizontal: 10, 
+    paddingLeft: 20, 
 
     backgroundColor: "#f5f5f5",
     width: "65%",
-    borderRadius: 30, // Ajoutez un arrondi aux coins
-    fontSize: 16, // Ajustez la taille de la police
+    borderRadius: 30, 
+    fontSize: 16, 
     color: "#333",
     marginTop: 10,
   },
@@ -835,7 +821,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#34495E",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
+    marginLeft: 10, 
     marginTop: 10,
   },
   rowButtonLocation: {
@@ -845,15 +831,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDAE49",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
+    marginLeft: 10, 
     marginTop: 10,
   },
   modalOverlay: {
     flex: 1,
     paddingVertical: 50,
-    justifyContent: "center", // Centre verticalement
-    alignItems: "center", // Centre horizontalement
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "rgba(0, 0, 0, 0.5)", 
   },
   suggestionItem: {
     padding: 10,

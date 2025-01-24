@@ -32,8 +32,8 @@ type Report = {
   city: string;
   latitude: number;
   longitude: number;
-  distance?: number; // La distance doit être incluse
-  photos?: { url: string }[]; // Ajoute la propriété photos
+  distance?: number;
+  photos?: { url: string }[];
 };
 
 export default function CategoryReportsScreen() {
@@ -59,10 +59,8 @@ export default function CategoryReportsScreen() {
         const location = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = location.coords;
 
-        // Appel à `processReports` pour récupérer les rapports enrichis
         const enrichedReports = await processReports(latitude, longitude);
 
-        // Logs pour le débogage
         console.log("Rapports enrichis retournés :", enrichedReports);
 
         const filteredReports = enrichedReports.filter(
@@ -104,7 +102,6 @@ export default function CategoryReportsScreen() {
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
 
-        {/* Titre de la catégorie */}
         <Text style={styles.categoryTitle}>{category}</Text>
       </View>
       <ScrollView
@@ -128,7 +125,6 @@ export default function CategoryReportsScreen() {
                 }
               >
                 <Text style={styles.reportTitle}>
-                  {/* Limite le titre à 50 caractères */}
                   {report.title
                     ? report.title.length > 32
                       ? report.title.substring(0, 32) + "..."
@@ -137,7 +133,6 @@ export default function CategoryReportsScreen() {
                 </Text>
 
                 <Text style={styles.reportDescription}>
-                  {/* Limite la description à 100 caractères */}
                   {report.description
                     ? report.description.length > 40
                       ? report.description.substring(0, 40) + "..."
@@ -150,20 +145,18 @@ export default function CategoryReportsScreen() {
                     report.photos.map((photo, index) => (
                       <Image
                         key={index}
-                        source={{ uri: photo.url }} // Accès à la clé "url"
+                        source={{ uri: photo.url }}
                         style={styles.photo}
                         resizeMode="cover"
                       />
                     ))
                   ) : (
-                    // Placeholder ou message si aucune photo n'est disponible
                     <View style={styles.placeholder}>
                       <Text style={styles.noPhotosText}>Aucune photo</Text>
                     </View>
                   )}
                 </View>
 
-                {/* Ajouter un conteneur pour la ville et la distance */}
                 <View style={styles.footerContainer}>
                   <Text style={styles.reportCity}>
                     {report.city ? formatCity(report.city) : "Ville inconnue"}
@@ -191,34 +184,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F8F8",
     padding: 16,
   },
-  // Bouton Retour
   backButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#4A90E2", // Bleu doux
+    backgroundColor: "#4A90E2",
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 90, // Bouton arrondi
+    borderRadius: 90,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 3, // Ombre pour Android
+    elevation: 3,
   },
   backButtonText: {
     fontSize: 22,
     fontWeight: "600",
-    color: "#FFFFFF", // Texte blanc
+    color: "#FFFFFF",
   },
 
-  // Conteneur du titre
   categoryContainer: {
     marginTop: 20,
-    flexDirection: "row", // Aligner les éléments horizontalement
+    flexDirection: "row",
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#E3ECFF", // Fond bleu pastel
+    backgroundColor: "#E3ECFF",
     borderRadius: 12,
-    alignItems: "center", // Centrer le texte horizontalement
+    alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -226,12 +217,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   categoryTitle: {
-    fontSize: 24, // Plus grand pour bien ressortir
+    fontSize: 24,
     fontWeight: "700",
-    color: "#333C5A", // Bleu/gris foncé pour le texte
-    textTransform: "capitalize", // Mettre en majuscule la première lettre
-    letterSpacing: 2, // Légère espacement des lettres
-    marginLeft: 55, // Espacement avec le bouton Retour
+    color: "#333C5A",
+    textTransform: "capitalize",
+    letterSpacing: 2,
+    marginLeft: 55,
   },
   scrollView: {
     flex: 1,
@@ -251,7 +242,7 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingHorizontal: 15,
     paddingBottom: 8,
-    width: "48%", // Permet deux colonnes
+    width: "48%",
     marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -259,23 +250,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
     alignItems: "flex-start",
-    justifyContent: "space-between", // Pour espacer les éléments verticalement
+    justifyContent: "space-between",
   },
 
   reportDescription: {
     fontSize: 14,
     color: "#3A3A3C",
     marginBottom: 12,
-    flexGrow: 1, // Permet d'utiliser tout l'espace restant pour "pousser" les autres éléments vers le bas
+    flexGrow: 1,
   },
 
   footerContainer: {
-    marginTop: "auto", // Forcer cet élément à se positionner en bas
+    marginTop: "auto",
     width: "100%",
     marginVertical: 8,
-    flexDirection: "column", // Affiche la ville et la distance sur une seule ligne
-    justifyContent: "space-between", // Sépare la ville et la distance aux extrémités
-    alignItems: "center", // Aligne verticalement
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   reportCity: {
@@ -285,14 +276,14 @@ const styles = StyleSheet.create({
   },
 
   photosContainer: {
-    width: "100%", // Zone photo alignée sur la largeur de la carte
-    height: 120, // Taille fixe pour garantir un affichage uniforme
+    width: "100%",
+    height: 120,
 
     borderRadius: 8,
     overflow: "hidden",
-    backgroundColor: "#F0F0F0", // Couleur de fond pour le placeholder
-    justifyContent: "center", // Centrer verticalement
-    alignItems: "center", // Centrer horizontalement
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   photo: {
@@ -301,16 +292,16 @@ const styles = StyleSheet.create({
   },
 
   placeholder: {
-    flex: 1, // Prend tout l'espace disponible
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 8, // Coins arrondis comme les images
+    borderRadius: 8,
   },
 
   noPhotosText: {
     fontSize: 14,
     color: "#8E8E93",
-    fontStyle: "italic", // Ajoute une touche stylisée au texte
+    fontStyle: "italic",
   },
 
   reportDistance: {

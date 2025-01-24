@@ -48,7 +48,6 @@ const ChatScreen = ({ route, navigation }: any) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const flatListRef = useRef<FlatList>(null);
-  // Variable d'état pour suivre l'ID du dernier message envoyé
   const [lastSentMessage, setLastSentMessage] = useState<Message | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
@@ -59,7 +58,6 @@ const ChatScreen = ({ route, navigation }: any) => {
   }>({ id: "", name: "Utilisateur inconnu", profilePhoto: null });
   const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState("");
 
-  // Fonction pour récupérer les détails d'un utilisateur (nom et photo de profil)
   const fetchUserDetails = async (
     userId: number
   ): Promise<{ id: string; name: string; profilePhoto: string | null }> => {
@@ -121,18 +119,15 @@ const ChatScreen = ({ route, navigation }: any) => {
 
       setMessages(fetchedMessages);
 
-      // Mettre à jour le dernier message envoyé
       const lastMessageSent = fetchedMessages
         .filter((msg) => msg.senderId === senderId)
-        .pop(); // Récupère le dernier message envoyé
+        .pop(); 
       setLastSentMessage(lastMessageSent || null);
 
-      // Scroller vers le bas
       if (flatListRef.current) {
         flatListRef.current.scrollToEnd({ animated: true });
       }
 
-      // Marquer les messages non lus comme "lus"
       const unreadMessages = snapshot.docs.filter(
         (doc) => doc.data().receiverId === senderId && !doc.data().isRead
       );
@@ -145,7 +140,6 @@ const ChatScreen = ({ route, navigation }: any) => {
             unreadMessages.map((doc) => updateDoc(doc.ref, { isRead: true }))
           );
 
-          // Mettre à jour l'état localement
           setMessages((prevMessages) =>
             prevMessages.map((msg) =>
               unreadMessages.find((unread) => unread.id === msg.id)
@@ -247,7 +241,6 @@ const ChatScreen = ({ route, navigation }: any) => {
       const conversationsRef = collection(db, "conversations");
       const conversationId = [senderId, receiverId].sort().join("_");
   
-      // Ajouter le message à Firestore
       const docRef = await addDoc(messagesRef, {
         senderId,
         receiverId,
@@ -258,12 +251,10 @@ const ChatScreen = ({ route, navigation }: any) => {
   
       console.log("Message ajouté avec succès :", docRef.id);
   
-      // Vérifiez si la conversation existe
       const conversationDocRef = doc(conversationsRef, conversationId);
       const conversationSnapshot = await getDoc(conversationDocRef);
   
       if (!conversationSnapshot.exists()) {
-        // Créez un document pour une nouvelle conversation
         await setDoc(conversationDocRef, {
           participants: [senderId, receiverId],
           lastMessage: newMessage.trim(),
@@ -271,7 +262,6 @@ const ChatScreen = ({ route, navigation }: any) => {
         });
         console.log("Nouvelle conversation créée :", conversationId);
       } else {
-        // Mettre à jour la conversation existante
         await updateDoc(conversationDocRef, {
           lastMessage: newMessage.trim(),
           lastMessageTimestamp: serverTimestamp(),
@@ -281,13 +271,11 @@ const ChatScreen = ({ route, navigation }: any) => {
   
       setNewMessage("");
   
-      // Scroller vers le bas après l'envoi du message
       if (flatListRef.current) {
         flatListRef.current.scrollToEnd({ animated: true });
       }
   
-      // Récupérer les informations de l'utilisateur expéditeur via l'API REST
-      let senderName = "Un utilisateur"; // Valeur par défaut
+      let senderName = "Un utilisateur"; 
       try {
         const userResponse = await fetch(`${API_URL}/users/${senderId}`);
         if (!userResponse.ok) throw new Error(`Erreur API utilisateur : ${userResponse.statusText}`);
@@ -299,7 +287,6 @@ const ChatScreen = ({ route, navigation }: any) => {
         console.error("Erreur lors de la récupération des informations utilisateur :", error);
       }
   
-      // Envoyer une notification
       try {
         const bodyData = {
           userId: receiverId,
@@ -358,7 +345,6 @@ const ChatScreen = ({ route, navigation }: any) => {
           )
         );
 
-        // Si un callback est passé pour mettre à jour le badge
         if (onConversationRead) {
           onConversationRead(receiverId);
         }
@@ -375,13 +361,13 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   
     try {
-      const reporterId = senderId; // L'utilisateur actuel
+      const reporterId = senderId; 
       const conversationId = [senderId, receiverId].sort().join("_");
   
       const payload = {
         to: "yannleroy23@gmail.com",
         subject: "Signalement d'une conversation",
-        conversationId, // Assurez-vous que la clé est correcte
+        conversationId, 
         reporterId,
         reportReason,
       };
@@ -635,7 +621,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -645,11 +631,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
+    color: '#093A3E', 
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
-    fontFamily: 'Insanibc',// Utilisez le nom de la police que vous avez défini
+    fontFamily: 'Insanibc',
   },
   typeBadge: {
     flexDirection: "row",
@@ -658,14 +644,14 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     position: "absolute",
-    top: 0, // Occupe toute la hauteur
+    top: 0, 
     left: 0,
     right: 0,
-    bottom: 0, // Occupe toute la hauteur
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    bottom: 0, 
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000, // Toujours au-dessus
+    zIndex: 1000, 
   },
   modalContainer: {
     width: "90%",
@@ -677,24 +663,24 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 10, // Ombre pour un effet surélevé
+    elevation: 10,
   },
   textInput: {
     borderWidth: 1,
     height: 90,
     width: "100%",
-    borderColor: "#ccc", // Light gray border
+    borderColor: "#ccc", 
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
     marginTop: 10,
-    backgroundColor: "#F2F4F7", // Subtle off-white background
+    backgroundColor: "#F2F4F7", 
     marginBottom: 20,
-    color: "#333", // Dark gray text
+    color: "#333", 
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700", // Titre plus bold
+    fontWeight: "700",
     color: "#333",
     marginBottom: 15,
     textAlign: "center",
@@ -751,15 +737,15 @@ const styles = StyleSheet.create({
   },
   messageText: { fontSize: 18 },
   infoMessage: {
-    flexDirection: "row", // Aligne les éléments horizontalement
+    flexDirection: "row", 
     alignItems: "center",
     marginTop: 5,
   },
   sentInfoMessage: {
-    justifyContent: "flex-end", // Aligne les infos des messages envoyés à droite
+    justifyContent: "flex-end", 
   },
   receivedInfoMessage: {
-    justifyContent: "flex-start", // Aligne les infos des messages reçus à gauche
+    justifyContent: "flex-start", 
   },
   timestamp: {
     fontSize: 10,
@@ -772,7 +758,7 @@ const styles = StyleSheet.create({
   },
   sentMessageText: {
     fontSize: 16,
-    color: "#000000", // Texte blanc pour les messages envoyés
+    color: "#000000", 
   },
   dateHeader: {
     textAlign: "center",
@@ -782,7 +768,7 @@ const styles = StyleSheet.create({
   },
   receivedMessageText: {
     fontSize: 16,
-    color: "#000000", // Texte noir pour les messages reçus
+    color: "#000000", 
   },
   inputContainer: {
     flexDirection: "row",

@@ -45,7 +45,7 @@ export default StyleSheet.create({
     padding: 20,
     maxHeight: "80%",
   },
-    categoriesContainer: {
+  categoriesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
@@ -98,17 +98,17 @@ export default StyleSheet.create({
   },
   rowContainer: {
     flexDirection: "row",
-    justifyContent: "space-between", // Espace uniforme entre les boutons
-    alignItems: "center", // Centre les boutons verticalement
-    width: "95%", // Le conteneur occupe 90% de l'espace disponible
-    alignSelf: "center", // Centre horizontalement le conteneur
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "95%",
+    alignSelf: "center",
   },
   rowButtonMap: {
     width: "47%",
-    flexDirection: "row", // Icône et texte alignés horizontalement
-    justifyContent: "center", // Centrage horizontal à l'intérieur du bouton
-    alignItems: "center", // Centrage vertical à l'intérieur du bouton
-    backgroundColor: "#34495E", // Bleu pour "Rechercher"
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#34495E",
     padding: 10,
     borderRadius: 50,
   },
@@ -119,9 +119,8 @@ export default StyleSheet.create({
     backgroundColor: "#EDAE49",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
-    marginTop : 40,
-
+    marginLeft: 10,
+    marginTop: 40,
   },
   selectedIconContainer: {
     alignItems: "center",
@@ -142,45 +141,45 @@ export default StyleSheet.create({
   },
   submitButtonContainer: {
     paddingBottom: 50,
-    justifyContent: "center", // Centrer l'élément dans le container
-    alignItems: "center", // Centrer l'élément dans le container
+    justifyContent: "center",
+    alignItems: "center",
   },
   submitButton: {
-    marginVertical: 20, // Espacement autour du bouton
-    alignItems: "center", // Centrer le bouton horizontalement
+    marginVertical: 20,
+    alignItems: "center",
   },
   button: {
-    backgroundColor: "#2c3e50", // Couleur de fond
-    paddingVertical: 12, // Espacement vertical
-    paddingHorizontal: 20, // Espacement horizontal
-    borderRadius: 30, // Coins arrondis
+    backgroundColor: "#2c3e50",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
   },
   buttonSubmit: {
-    backgroundColor: "#d81b60", // Bleu moderne
+    backgroundColor: "#d81b60",
     shadowColor: "#d81b60",
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
     elevation: 5,
-    paddingVertical: 12, // Espacement vertical
-    paddingHorizontal: 20, // Espacement horizontal
-    borderRadius: 30, // Coins arrondis
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
   },
   buttonDisabled: {
-    backgroundColor: "#ccc", // Couleur grisée lorsque désactivé
+    backgroundColor: "#ccc",
   },
   buttonText: {
-    color: "#fff", // Couleur du texte
-    fontSize: 16, // Taille de la police
-    fontWeight: "bold", // Texte en gras
-    textAlign: "center", // Centrage du texte
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   modalText: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 15, // Espacement entre le texte et la barre de progression
-    textAlign: "center", // Centrer le texte
-    color: "#333", // Couleur du texte
+    marginBottom: 15,
+    textAlign: "center",
+    color: "#333",
   },
   description: {
     marginTop: 10,
@@ -247,32 +246,31 @@ export default StyleSheet.create({
     textAlign: "center",
   },
   inputTitle: {
-    flex: 1, // Permet au champ d'occuper l'espace disponible
+    flex: 1,
     width: 330,
-    height: 50, // Hauteur fixe (peut être ajustée)
-    maxHeight: 50, // Empêche l'agrandissement vertical
+    height: 50,
+    maxHeight: 50,
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingHorizontal: 15,
     paddingLeft: 30,
-    marginBottom: 25, // Espacement avec l'élément suivant
+    marginBottom: 25,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", // Empêche le débordement
+    overflow: "hidden",
   },
   input: {
-    flex: 1, // Permet au champ d'occuper l'espace disponiblehei
-    maxHeight: 250, // Empêche l'agrandissement vertical
+    flex: 1,
+    maxHeight: 250,
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
-    paddingVertical: 10, // Ajustez en fonction de votre design
+    paddingVertical: 10,
     paddingHorizontal: 15,
     paddingLeft: 25,
     paddingTop: 20,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", // Empêche le débordement
-    
+    overflow: "hidden",
   },
   textArea: {
     height: 100,
@@ -283,17 +281,16 @@ export default StyleSheet.create({
     alignItems: "center",
   },
   inputSearch: {
-    height: 50, // Assurez une hauteur uniforme
-    textAlignVertical: 'center', // Centre le texte verticalement
-    paddingHorizontal: 10, // Ajoute un espace pour le texte à gauche et à droite
-   paddingLeft: 20, // Ajoutez un espacement à gauche
-    
+    height: 50,
+    textAlignVertical: "center",
+    paddingHorizontal: 10,
+    paddingLeft: 20,
     backgroundColor: "#f5f5f5",
-    width:"65%",
-    borderRadius: 30, // Ajoutez un arrondi aux coins
-    fontSize: 16, // Ajustez la taille de la police
+    width: "65%",
+    borderRadius: 30,  
+    fontSize: 16,  
     color: "#333",
-    marginTop : 40,
+    marginTop: 40,
   },
   searchButton: {
     width: 40,
@@ -302,26 +299,26 @@ export default StyleSheet.create({
     backgroundColor: "#34495E",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, // Espace entre le champ et le bouton
-    marginTop : 40,
+    marginLeft: 10, 
+    marginTop: 40,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: "center", // Centre verticalement
-    alignItems: "center", // Centre horizontalement
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    justifyContent: "center",  
+    alignItems: "center",  
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
   },
   modalContent: {
-    width: "80%", // Largeur relative à l'écran
-    backgroundColor: "#fff", // Fond blanc
-    borderRadius: 10, // Coins arrondis
-    padding: 20, // Espacement intérieur
-    shadowColor: "#000", // Ombre
-    shadowOffset: { width: 0, height: 4 }, // Position de l'ombre
-    shadowOpacity: 0.3, // Opacité de l'ombre
-    shadowRadius: 5, // Rayon de l'ombre
-    elevation: 10, // Ombre pour Android
-    alignItems: "center", // Centre le contenu horizontalement
+    width: "80%", 
+    backgroundColor: "#fff",  
+    borderRadius: 10, 
+    padding: 20,  
+    shadowColor: "#000",  
+    shadowOffset: { width: 0, height: 4 },  
+    shadowOpacity: 0.3, 
+    shadowRadius: 5,  
+    elevation: 10, 
+    alignItems: "center",  
   },
   suggestionItem: {
     padding: 10,
@@ -379,9 +376,9 @@ export default StyleSheet.create({
     elevation: 5,
   },
   homeTitle: {
-    flexDirection: "row", // Aligne les enfants en ligne (horizontalement)
-    alignItems: "center", // Centre verticalement les éléments
-    marginBottom: 20, // Ajoutez un espacement en bas si nécessaire
+    flexDirection: "row",  
+    alignItems: "center",  
+    marginBottom: 20,  
     marginTop: 10,
   },
   backButton: {
@@ -402,13 +399,12 @@ export default StyleSheet.create({
   pageTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#2c3e50",
-    // Ajustez la couleur si nécessaire
+    color: "#2c3e50", 
     marginTop: 20,
     textAlign: "center",
   },
-  containerThird: { 
-    paddingHorizontal: 20, 
-    marginTop: 35 ,
+  containerThird: {
+    paddingHorizontal: 20,
+    marginTop: 35,
   },
 });

@@ -1,8 +1,8 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
 // @ts-ignore
-import { API_URL, ORS_API_KEY } from "@env"; // Import des variables depuis .env
+import { API_URL, ORS_API_KEY } from "@env";
 
 export interface Photo {
   id: number;
@@ -20,12 +20,10 @@ export interface Report {
   category: string;
   distance?: number;
   createdAt: string;
-  photos: Photo[]; // Liste des photos associées
-  upVotes: number; // Nombre de votes positifs
-  downVotes: number; // Nombre de votes négatifs
+  photos: Photo[];
+  upVotes: number;
+  downVotes: number;
 }
-
-
 
 export interface Event {
   id: number;
@@ -49,14 +47,14 @@ export const fetchAllEventsInRegion = async (
 
     return response.data;
   } catch (error: any) {
-    console.error("Erreur dans fetchAllEventsInRegion :", error.response?.data || error.message);
+    console.error(
+      "Erreur dans fetchAllEventsInRegion :",
+      error.response?.data || error.message
+    );
     throw new Error("Impossible de récupérer les événements.");
   }
 };
-
-/**
- * Récupère les signalements dans un rayon donné.
- */
+ 
 export const fetchReports = async (
   latitude: number,
   longitude: number,
@@ -73,14 +71,17 @@ export const fetchReports = async (
 
     return response.data;
   } catch (error: any) {
-    console.error("Erreur dans fetchReports :", error.response?.data || error.message);
+    console.error(
+      "Erreur dans fetchReports :",
+      error.response?.data || error.message
+    );
     throw new Error("Impossible de récupérer les signalements.");
   }
 };
 
 export const createReport = async (data: any): Promise<any> => {
   try {
-    const token = await AsyncStorage.getItem('authToken');
+    const token = await AsyncStorage.getItem("authToken");
     if (!token) {
       console.error("Aucun token trouvé dans AsyncStorage.");
       throw new Error("Utilisateur non connecté.");
@@ -102,107 +103,25 @@ export const createReport = async (data: any): Promise<any> => {
     const response = await axios.post(`${API_URL}/reports`, reportData, {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     return response.data;
   } catch (error: any) {
-    console.error("Erreur lors de la création du signalement :", error.response?.data || error.message);
+    console.error(
+      "Erreur lors de la création du signalement :",
+      error.response?.data || error.message
+    );
     throw new Error("Impossible de créer le signalement.");
   }
 };
 
-const distanceCache = new Map<string, number[]>(); // Cache global pour les distances
-/**
- * Calcule les distances de conduite en utilisant OpenRouteService.
- */
+const distanceCache = new Map<string, number[]>();  
+ 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// FONCTION ORIGINALE --------------------
-// export const fetchDrivingDistances = async (
-//   origin: [number, number],
-//   destinations: [number, number][]
-// ): Promise<number[]> => {
-//   const cacheKey = `${JSON.stringify(origin)}:${JSON.stringify(destinations)}`;
-  
-//   if (distanceCache.has(cacheKey)) {
-//     console.log("Distances récupérées depuis le cache.");
-//     return distanceCache.get(cacheKey)!;
-//   }
-
-//   try {
-//     await delay(1500); // Délai pour respecter les quotas API
-
-//     const response = await axios.post(
-//       'https://api.openrouteservice.org/v2/matrix/driving-car',
-//       {
-//         locations: [origin, ...destinations],
-//         metrics: ['distance'],
-//       },
-//       {
-//         headers: {
-//           Authorization: ORS_API_KEY,
-//           'Content-Type': 'application/json',
-//         },
-//       }
-//     );
-
-//     if (!response.data?.distances || response.data.distances.length === 0) {
-//       throw new Error("Aucune distance retournée par OpenRouteService.");
-//     }
-
-//     const distances = response.data.distances[0].slice(1); // Exclut l'origine
-//     distanceCache.set(cacheKey, distances);
-//     return distances;
-//   } catch (error: any) {
-//     console.error("Erreur dans fetchDrivingDistances :", error.response?.data || error.message);
-
-//     if (error.response?.data?.error === "Quota exceeded") {
-//       console.warn("Quota dépassé pour OpenRouteService. Retour par défaut.");
-//       return destinations.map(() => Infinity); // Fallback
-//     }
-
-//     throw new Error("Impossible de calculer les distances.");
-//   }
-// };
-
-// FONCTION ORIGINALE  --------------------
-// export const fetchAllReportsInRegion = async (
-//   latitude: number,
-//   longitude: number,
-//   radiusKm: number = 2000
-// ): Promise<Report[]> => {
-//   try {
-//     const rawReports = await fetchReports(latitude, longitude, radiusKm);
-
-//     if (rawReports.length === 0) {
-//       console.log("Aucun signalement trouvé dans la région.");
-//       return [];
-//     }
-
-//     const destinations: [number, number][] = rawReports.map((report) => [
-//       report.longitude,
-//       report.latitude,
-//     ]);
-
-//     const distances = await fetchDrivingDistances([longitude, latitude], destinations);
-
-//     const enrichedReports = rawReports.map((report, index) => ({
-//       ...report,
-//       distance: distances[index] / 1000 || Infinity, // Convertit en km
-//     }));
-
-//     return enrichedReports.sort((a, b) => a.distance - b.distance); // Trie par distance
-//   } catch (error: any) {
-//     console.error("Erreur dans fetchAllReportsInRegion :", error.message);
-//     throw new Error("Impossible de charger les signalements enrichis.");
-//   }
-// };
-
-// CALCUER LA DISTANCE ENTRE DEUX POINTS APPROXIMATIVE
-
-// Traite les signalements et retourne les plus proches.
+ 
 export const processReports = async (
   latitude: number,
   longitude: number,
@@ -210,71 +129,19 @@ export const processReports = async (
   limit: number = 10
 ): Promise<Report[]> => {
   try {
-    const enrichedReports = await fetchAllReportsInRegion(latitude, longitude, radiusKm);
+    const enrichedReports = await fetchAllReportsInRegion(
+      latitude,
+      longitude,
+      radiusKm
+    );
 
-    return enrichedReports.slice(0, limit); // Limite les résultats
+    return enrichedReports.slice(0, limit);  
   } catch (error: any) {
     console.error("Erreur dans processReports :", error.message);
     throw new Error("Impossible de traiter les signalements.");
   }
 };
-
-// FONCTION DE REMPLACEMENT 1
-// export const fetchDrivingDistances = async (
-//   origin: [number, number],
-//   destinations: [number, number][]
-// ): Promise<number[]> => {
-//   const cacheKey = `${JSON.stringify(origin)}:${JSON.stringify(destinations)}`;
-  
-//   if (distanceCache.has(cacheKey)) {
-//     console.log("Distances récupérées depuis le cache.");
-//     return distanceCache.get(cacheKey)!;
-//   }
-
-//   try {
-//     await delay(1500); // Délai pour respecter les quotas API
-
-//     const response = await axios.post(
-//       'https://api.openrouteservice.org/v2/matrix/driving-car',
-//       {
-//         locations: [origin, ...destinations],
-//         metrics: ['distance'],
-//       },
-//       {
-//         headers: {
-//           Authorization: ORS_API_KEY,
-//           'Content-Type': 'application/json',
-//         },
-//       }
-//     );
-
-//     if (!response.data?.distances || response.data.distances.length === 0) {
-//       throw new Error("Aucune distance retournée par OpenRouteService.");
-//     }
-
-//     const distances = response.data.distances[0].slice(1); // Exclut l'origine
-//     distanceCache.set(cacheKey, distances);
-//     return distances;
-//   } catch (error: any) {
-//     console.error("Erreur dans fetchDrivingDistances :", error.response?.data || error.message);
-
-//     // Vérification du quota dépassé
-//     if (error.response?.data?.error === "Quota exceeded") {
-//       console.warn("Quota dépassé pour OpenRouteService. Utilisation des distances infinies comme fallback.");
-//       return destinations.map(() => Infinity); // Fallback : toutes les distances à l'infini
-//     }
-
-//     // Vérification d'une erreur 502
-//     if (error.response?.status === 502) {
-//       console.warn("502 Bad Gateway : ORS est temporairement indisponible. Fallback avec distances infinies.");
-//       return destinations.map(() => Infinity); // Fallback
-//     }
-
-//     throw new Error("Impossible de calculer les distances.");
-//   }
-// };
-
-// CALCUER LA DISTANCE ENTRE DEUX POINTS APPROXIMATIVE
+ 
 const calculateHaversineDistance = (
   lat1: number,
   lon1: number,
@@ -282,7 +149,7 @@ const calculateHaversineDistance = (
   lon2: number
 ): number => {
   const toRad = (value: number) => (value * Math.PI) / 180;
-  const R = 6371; // Rayon de la Terre en km
+  const R = 6371; 
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
 
@@ -294,10 +161,9 @@ const calculateHaversineDistance = (
       Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance en km
+  return R * c;  
 };
-
-// FONCTION DE REMPLACEMENT APPROX
+ 
 export const fetchDrivingDistances = async (
   origin: [number, number],
   destinations: [number, number][]
@@ -310,45 +176,45 @@ export const fetchDrivingDistances = async (
   }
 
   try {
-    await delay(1500); // Respect des quotas API
+    await delay(1500);  
 
     const response = await axios.post(
-      'https://api.openrouteservice.org/v2/matrix/driving-car',
+      "https://api.openrouteservice.org/v2/matrix/driving-car",
       {
         locations: [origin, ...destinations],
-        metrics: ['distance'],
+        metrics: ["distance"],
       },
       {
         headers: {
           Authorization: ORS_API_KEY,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
 
     if (!response.data?.distances || response.data.distances.length === 0) {
       console.warn("Aucune distance retournée par OpenRouteService.");
-      return destinations.map(() => Infinity); // Fallback
+      return destinations.map(() => Infinity);  
     }
 
-    const distances = response.data.distances[0].slice(1); // Exclut l'origine
+    const distances = response.data.distances[0].slice(1);  
     distanceCache.set(cacheKey, distances);
     return distances;
   } catch (error: any) {
-    console.warn("Erreur dans fetchDrivingDistances :", error.message || "Erreur inconnue");
-
-    // Utiliser le fallback Haversine
+    console.warn(
+      "Erreur dans fetchDrivingDistances :",
+      error.message || "Erreur inconnue"
+    );
+ 
     const fallbackDistances = destinations.map(([lon, lat]) =>
       calculateHaversineDistance(origin[1], origin[0], lat, lon)
     );
-
-    // Mettre en cache les distances fallback
+ 
     distanceCache.set(cacheKey, fallbackDistances);
     return fallbackDistances;
   }
 };
-
-// FONCTION DE REMPLACEMENT APPROX
+ 
 export const fetchAllReportsInRegion = async (
   latitude: number,
   longitude: number,
@@ -367,16 +233,22 @@ export const fetchAllReportsInRegion = async (
       report.latitude,
     ]);
 
-    const distances = await fetchDrivingDistances([longitude, latitude], destinations);
+    const distances = await fetchDrivingDistances(
+      [longitude, latitude],
+      destinations
+    );
 
     const enrichedReports = rawReports.map((report, index) => ({
       ...report,
-      distance: distances[index] / 1000 || Infinity, // Convertit en km
+      distance: distances[index] / 1000 || Infinity, 
     }));
 
-    return enrichedReports.sort((a, b) => a.distance - b.distance); // Trie par distance
+    return enrichedReports.sort((a, b) => a.distance - b.distance);  
   } catch (error: any) {
-    console.warn("Erreur dans fetchAllReportsInRegion :", error.message || "Erreur inconnue.");
-    return []; // Retourner une liste vide en cas d'échec
+    console.warn(
+      "Erreur dans fetchAllReportsInRegion :",
+      error.message || "Erreur inconnue."
+    );
+    return [];  
   }
 };

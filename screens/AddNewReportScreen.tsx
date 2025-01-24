@@ -69,7 +69,6 @@ export default function AddNewReportScreen({navigation}) {
   const handleMapPress = async (event: any) => {
     const { latitude: lat, longitude: lng } = event.nativeEvent.coordinate;
 
-    // Efface les pins précédents et met à jour
     setSelectedLocation({ latitude: lat, longitude: lng });
     setLatitude(lat);
     setLongitude(lng);
@@ -120,9 +119,9 @@ export default function AddNewReportScreen({navigation}) {
 
         console.log('Adresse récupérée depuis OpenCage Data :', address);
 
-        setQuery(address); // Met automatiquement à jour le champ d'adresse
-        setSuggestions(data.results); // Remplit les suggestions avec les résultats
-        setModalVisible(true); // Ouvre directement la liste des suggestions
+        setQuery(address); 
+        setSuggestions(data.results); 
+        setModalVisible(true); 
       } else {
         Alert.alert('Erreur', "Impossible de déterminer l'adresse exacte.");
       }
@@ -148,15 +147,14 @@ export default function AddNewReportScreen({navigation}) {
       const data = await response.json();
 
       if (data.results.length > 0) {
-        // Trier les suggestions par code postal
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB; // Trie croissant
+          return postalA - postalB; 
         });
 
-        setSuggestions(sortedSuggestions); // Affiche les suggestions triées
-        setModalVisible(true); // Ouvre la liste des résultats
+        setSuggestions(sortedSuggestions); 
+        setModalVisible(true); 
       } else {
         setSuggestions([]);
         Alert.alert('Erreur', 'Aucune adresse correspondante trouvée.');
@@ -168,43 +166,39 @@ export default function AddNewReportScreen({navigation}) {
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); // Recherche un code postal à 5 chiffres
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; // Infinity si pas de code postal
+    const postalCodeMatch = address.match(/\b\d{5}\b/); 
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; 
   };
 
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
   
-      // Met à jour la localisation sélectionnée
       setSelectedLocation({ latitude: lat, longitude: lng });
       setLatitude(lat);
       setLongitude(lng);
   
-      // Zoom sur la nouvelle région
       mapRef.current?.animateToRegion(
         {
           latitude: lat,
           longitude: lng,
-          latitudeDelta: 0.005, // Zoom précis
+          latitudeDelta: 0.005, 
           longitudeDelta: 0.005,
         },
-        1000 // Durée de l'animation en millisecondes
+        1000 
       );
     }
   
-    // Remplace "Unnamed Road" par "Route inconnue" dans l'adresse formatée
     const formattedAddress = item.formatted.replace(/unnamed road/gi, 'Route inconnue');
   
-    setQuery(formattedAddress); // Met à jour avec l'adresse modifiée
-    setModalVisible(false); // Ferme le modal des suggestions
+    setQuery(formattedAddress); 
+    setModalVisible(false); 
   };
   
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
   
-    // Vérification des champs requis
     if (
       !title.trim() ||
       !description.trim() ||
@@ -227,17 +221,15 @@ export default function AddNewReportScreen({navigation}) {
     setProgress(0);
   
     try {
-      // Étape 1 : Préparation des fichiers
       setProgress(steps[0].progress);
       console.log("Préparation des fichiers...");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulation d'un délai
+      await new Promise((resolve) => setTimeout(resolve, 1000)); 
   
       const userId = await getUserIdFromToken();
       if (!userId) {
         throw new Error("Impossible de récupérer l'ID utilisateur.");
       }
   
-      // Préparation du FormData
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);
@@ -260,11 +252,10 @@ export default function AddNewReportScreen({navigation}) {
             uri: photo.uri,
             name: photo.uri.split("/").pop(),
             type: photo.type || "image/jpeg",
-          } as any // Cast explicite pour TypeScript
+          } as any 
         );
       });
   
-      // Étape 2 : Téléchargement des fichiers
       setProgress(steps[1].progress);
       console.log("Téléchargement en cours...");
       const response = await fetch(`${API_URL}/reports`, {
@@ -276,10 +267,9 @@ export default function AddNewReportScreen({navigation}) {
         throw new Error(`Erreur serveur : ${response.status}`);
       }
   
-      // Étape 3 : Finalisation
       setProgress(steps[2].progress);
       console.log("Finalisation...");
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulation d'un délai
+      await new Promise((resolve) => setTimeout(resolve, 500)); 
   
       const data = await response.json();
       Alert.alert("Succès", "Le signalement a été créé avec succès !");
@@ -308,9 +298,9 @@ export default function AddNewReportScreen({navigation}) {
   return (
     <KeyboardAwareScrollView
       contentContainerStyle={styles.container}
-      enableOnAndroid={true} // Active la gestion pour Android
-      extraHeight={100} // Ajoute un espace pour éviter que le clavier cache le champ
-      keyboardShouldPersistTaps="handled" // Permet de toucher à l'extérieur pour fermer le clavier
+      enableOnAndroid={true} 
+      extraHeight={100} 
+      keyboardShouldPersistTaps="handled" 
     >
       <View style={styles.container}>
         <ScrollView
@@ -408,15 +398,15 @@ export default function AddNewReportScreen({navigation}) {
               ) : (
                 <View style={{  height: 450, marginVertical: 20 }}>
                   <MapView
-                    ref={mapRef} // Connectez la référence
+                    ref={mapRef} 
                     style={{ flex: 1, borderRadius: 50 }}
                     initialRegion={{
-                      latitude: location ? location.latitude : 48.8566, // Paris par défaut
+                      latitude: location ? location.latitude : 48.8566,
                       longitude: location ? location.longitude : 2.3522,
                       latitudeDelta: 0.01,
                       longitudeDelta: 0.01,
                     }}
-                    onPress={handleMapPress} // Ajoute un pin rouge à chaque clic
+                    onPress={handleMapPress} 
                   >
                     {selectedLocation && (
                       <Marker
@@ -435,7 +425,6 @@ export default function AddNewReportScreen({navigation}) {
                 </View>
               )}
 
-              {/* Suggestions d'adresses */}
               <Modal
                 visible={modalVisible}
                 animationType="slide"
@@ -458,7 +447,6 @@ export default function AddNewReportScreen({navigation}) {
                   </View>
                 </View>
               </Modal>
-              {/* Bouton de soumission */}
               <View style={styles.submitButtonContainer}>
           {isSubmitting ? (
             <ActivityIndicator size="large" color="#093A3E" />
@@ -466,11 +454,11 @@ export default function AddNewReportScreen({navigation}) {
             <View style={styles.submitButton}>
               <TouchableOpacity
                 style={[
-                  styles.buttonSubmit, // Style du bouton
-                  isSubmitting && styles.buttonDisabled, // Applique un style désactivé si nécessaire
+                  styles.buttonSubmit, 
+                  isSubmitting && styles.buttonDisabled, 
                 ]}
-                onPress={handleSubmit} // Appelle la fonction de soumission
-                disabled={isSubmitting} // Désactive le bouton si déjà en soumission
+                onPress={handleSubmit} 
+                disabled={isSubmitting} 
               >
                 <Text style={styles.buttonText}>
                   {isSubmitting ? "Envoi en cours..." : "Signalez le problème"}
@@ -485,7 +473,6 @@ export default function AddNewReportScreen({navigation}) {
           
         </ScrollView>
 
-        {/* Boutons de navigation fixes */}
         <View style={styles.navigation}>
           {step > 1 && (
             <TouchableOpacity style={styles.navButtonLeft} onPress={prevStep}>

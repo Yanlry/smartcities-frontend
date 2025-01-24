@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useToken } from "../hooks/useToken"; // Hook pour récupérer le token
+import { useToken } from "../hooks/useToken"; 
 // @ts-ignore
 import { API_URL } from "@env";
 
@@ -16,57 +16,50 @@ export const NotificationProvider = ({ children }) => {
     const { getToken, refreshAccessToken } = useToken();
   
     try {
-      // Récupérer le token initial
       let token = await getToken();
   
       if (!token) {
         console.warn("Aucun token disponible pour fetchWithAuth. Requête ignorée.");
-        return null; // Retourne null si aucun token n'est disponible
+        return null; 
       }
   
-      // Ajouter le token dans les en-têtes
       options.headers = {
         ...(options.headers || {}),
         Authorization: `Bearer ${token}`,
       };
   
-      // Effectuer la requête initiale
       let response = await fetch(url, options);
   
-      // Gérer le cas où le token a expiré (401 Unauthorized)
       if (response.status === 401) {
         console.warn("Token expiré, tentative de rafraîchissement...");
         token = await refreshAccessToken();
   
         if (!token) {
           console.warn("Rafraîchissement du token échoué. Requête ignorée.");
-          return null; // Retourne null si le rafraîchissement échoue
+          return null; 
         }
   
-        // Ajouter le nouveau token dans les en-têtes
         options.headers = {
           ...(options.headers || {}),
           Authorization: `Bearer ${token}`,
         };
   
-        // Réessayer la requête avec le nouveau token
         response = await fetch(url, options);
       }
   
-      // Vérifier si la réponse est valide
       if (!response.ok) {
         const errorDetails = await response.json().catch(() => ({}));
         console.warn(
           `Erreur API (${response.status}):`,
           errorDetails.message || response.statusText
         );
-        return null; // Retourne null si la réponse est invalide
+        return null; 
       }
   
-      return response; // Retourne la réponse si tout va bien
+      return response; 
     } catch (error: any) {
       console.warn("Erreur silencieuse dans fetchWithAuth :", error.message);
-      return null; // Retourne null en cas d'erreur inattendue
+      return null; 
     }
   };
   const fetchUnreadCount = async () => {
@@ -76,7 +69,7 @@ export const NotificationProvider = ({ children }) => {
   
       if (!response) {
         console.warn("Aucune réponse valide obtenue pour les notifications non lues.");
-        setUnreadCount(0); // Définit le compteur à 0 par défaut
+        setUnreadCount(0); 
         return;
       }
   
@@ -84,9 +77,8 @@ export const NotificationProvider = ({ children }) => {
       console.log("Notifications non lues récupérées avec succès :", count);
       setUnreadCount(count);
     } catch (error) {
-      // Log discret pour les erreurs inattendues
       console.warn("Erreur inattendue lors de la récupération des notifications :", error.message);
-      setUnreadCount(0); // Définit le compteur à 0 en cas d'erreur
+      setUnreadCount(0); 
     }
   };
 

@@ -2,34 +2,31 @@ import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
 
-
-  // Style Global  :
-
   cardContent: {
     flexDirection: "row",
-    justifyContent: "space-around", // Espace égal entre les items
+    justifyContent: "space-around",  
     alignItems: "center",
-    flexWrap: "wrap", // Permet de passer à la ligne si les éléments débordent
-    paddingHorizontal: 10, // Ajout d'espace sur les côtés pour éviter le débordement
+    flexWrap: "wrap",  
+    paddingHorizontal: 10,  
   },
   statItem: {
-    justifyContent: "center", // Centre verticalement le contenu de statItem
-    alignItems: "center", // Centre horizontalement le contenu de statItem
-    padding: 10, // Espacement interne
+    justifyContent: "center",  
+    alignItems: "center",  
+    padding: 10,  
   },
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    textAlign: "center", // Centre le nombre horizontalement
-    marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#093A3E", // Couleur sombre pour le nombre
+    textAlign: "center",  
+    marginBottom: 5,  
+    color: "#093A3E",  
   },
   statLabel: {
-    textAlign: "center", // Centre le texte horizontalement
+    textAlign: "center",  
     fontSize: 14,
-    color: "#555", // Couleur du texte
-    fontWeight: "bold", // Texte en gras
-    lineHeight: 20, // Espacement entre les lignes
+    color: "#555",  
+    fontWeight: "bold",  
+    lineHeight: 20,  
   },
 
 
@@ -96,10 +93,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-
-
-// Modal ville
-
+ 
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -162,7 +156,7 @@ searchButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E",  
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -172,11 +166,11 @@ searchButton: {
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', // Couleur dorée ou autre
+    color: '#093A3E', 
     backgroundColor: '#F7F2DE',
     letterSpacing:2,
     fontWeight: 'bold',
-    fontFamily: 'Insanibc', // Utilisez le nom de la police que vous avez défini
+    fontFamily: 'Insanibc',  
   },
   typeBadge: {
     flexDirection: "row",
@@ -203,28 +197,28 @@ searchButton: {
     padding: 20,
   },
   profileImageContainer: {
-    alignItems: "center", // Centrer le contenu horizontalement
-    justifyContent: "center", // Centrer le contenu verticalement
-    padding: 20, // Espacement interne pour respirer
-    backgroundColor: "#F2F4F7", // Fond clair pour contraster
-    borderRadius: 15, // Coins arrondis
-    shadowColor: "#000", // Ombre douce
+    alignItems: "center",  
+    justifyContent: "center", 
+    padding: 20,  
+    backgroundColor: "#F2F4F7", 
+    borderRadius: 15, 
+    shadowColor: "#000", 
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    elevation: 3, // Ombre sur Android
-    marginBottom: 20, // Espacement avec la section suivante
+    elevation: 3,  
+    marginBottom: 20,  
   },
   profileImage: {
-    width: 200, // Largeur de l'image
-    height: 200, // Hauteur de l'image
-    borderRadius: 60, // Forme ronde (50% de width/height)
+    width: 200,  
+    height: 200,  
+    borderRadius: 60,  
   },
   noProfileImageText: {
-    color: "#999", // Couleur grise discrète
-    fontSize: 16, // Taille de police lisible
-    fontWeight: "bold", // Texte en gras pour plus de visibilité
-    marginBottom: 20, // Espacement avec le bouton
+    color: "#999",  
+    fontSize: 16,  
+    fontWeight: "bold",  
+    marginBottom: 20,  
   },
   updateButton: {
     marginTop: 20,
@@ -241,7 +235,7 @@ searchButton: {
     elevation: 5,
   },
   updateButtonText: {
-    color: "#FFFFFF", // Texte blanc
+    color: "#FFFFFF",  
     fontSize: 16,
     fontWeight: "bold",
     textTransform: "uppercase",
@@ -312,37 +306,37 @@ searchButton: {
   showEmail: {
     backgroundColor: "#F2F4F7",
     justifyContent: "space-between",
-    flexDirection: "row", // Place le texte et le switch côte à côte
-    alignItems: "center", // Centre verticalement le texte et le switch
+    flexDirection: "row",  
+    alignItems: "center",  
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 20,
     borderRadius: 50,
   },
   label: {
-    fontSize: 18, // Augmente la taille du texte
-    fontWeight: "400", // Donne une apparence plus proéminente
-    color: "#333", // Couleur sombre pour une bonne lisibilité
-    marginBottom: 5, // Espacement avec le champ suivant
+    fontSize: 18, 
+    fontWeight: "400", 
+    color: "#333", 
+    marginBottom: 5, 
   }, 
   labelEmail: {
     marginTop: 5,
     flex:1,
 
-    fontSize: 12, // Augmente la taille du texte
-    fontWeight: "400", // Donne une apparence plus proéminente
-    color: "#333", // Couleur sombre pour une bonne lisibilité
-    marginBottom: 5, // Espacement avec le champ suivant
+    fontSize: 12, 
+    fontWeight: "400", 
+    color: "#333", 
+    marginBottom: 5, 
   },
   inputContainer: {
-    flexDirection: "row", // Pour aligner l’icône à droite
+    flexDirection: "row", 
     alignItems: "center",
     backgroundColor: "#F2F4F7",
     borderRadius: 30,
     marginTop: 5,
   },
   input: {
-    flex: 1, // Prend tout l'espace sauf celui de l'icône
+    flex: 1,  
     height: 40,
     marginTop: 5,
     paddingLeft: 15,

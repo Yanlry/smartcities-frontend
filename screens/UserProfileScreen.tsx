@@ -46,29 +46,26 @@ type User = {
 
 export default function UserProfileScreen({ route, navigation }) {
   const { getToken, getUserId } = useToken();
-  const { userId } = route.params; // ID de l'utilisateur à afficher
-  const [user, setUser] = useState<User | null>(null); // Données de l'utilisateur
-  const [loading, setLoading] = useState(true); // Chargement des données
-  const [error, setError] = useState<string | null>(null); // Gestion des erreurs
-  const [isFollowing, setIsFollowing] = useState(false); // État de suivi
-  const [isSubmitting, setIsSubmitting] = useState(false); // Pour bloquer les clics pendant une requête
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ID de l'utilisateur connecté
+  const { userId } = route.params;
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
 
-  // Chargement des données utilisateur
   useEffect(() => {
     async function fetchData() {
       try {
-        // Récupérer l'ID de l'utilisateur connecté
         const userIdFromToken = await getUserIdFromToken();
 
         setCurrentUserId(userIdFromToken);
 
-        // Récupérer les données de l'utilisateur à afficher
         const response = await fetch(`${API_URL}/users/${userId}`);
         if (!response.ok) {
           throw new Error(
@@ -80,7 +77,6 @@ export default function UserProfileScreen({ route, navigation }) {
 
         setUser(data);
 
-        // Vérifier si l'utilisateur connecté suit déjà cet utilisateur
         const isCurrentlyFollowing: boolean =
           data.followers?.some(
             (follower: { id: number }) => follower.id === userIdFromToken
@@ -106,7 +102,6 @@ export default function UserProfileScreen({ route, navigation }) {
         setLoading(true);
         setError(null);
 
-        // Utiliser l'ID du profil visité (userId)
         const response = await axios.get(`${API_URL}/users/stats/${userId}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
@@ -127,9 +122,8 @@ export default function UserProfileScreen({ route, navigation }) {
     };
 
     fetchStats();
-  }, [userId]); // Ajout de userId comme dépendance
+  }, [userId]);
 
-  // Gestion du suivi (Follow)
   const handleFollow = async () => {
     if (!currentUserId) return;
 
@@ -146,8 +140,7 @@ export default function UserProfileScreen({ route, navigation }) {
       }
 
       setIsFollowing(true);
-
-      // Mettre à jour localement la liste des followers
+ 
       setUser((prevUser) =>
         prevUser
           ? {
@@ -157,7 +150,7 @@ export default function UserProfileScreen({ route, navigation }) {
                 {
                   id: currentUserId,
                   username: "Vous",
-                  profilePhoto: undefined, // Pas de photo locale pour "Vous"
+                  profilePhoto: undefined,  
                 },
               ],
             }
@@ -186,14 +179,14 @@ export default function UserProfileScreen({ route, navigation }) {
     }
 
     try {
-      const reporterId = await getUserId(); // Récupération de l'ID de l'utilisateur actuel
+      const reporterId = await getUserId();  
 
       console.log({
         to: "yannleroy23@gmail.com",
         subject: "Signalement d'un profil utilisateur",
-        userId, // Vérifiez que cette valeur est définie
-        reporterId, // Vérifiez que cette valeur est définie
-        reportReason, // Vérifiez que cette valeur est définie
+        userId,  
+        reporterId,  
+        reportReason,  
       });
 
       const response = await fetch(`${API_URL}/mails/send`, {
@@ -218,7 +211,7 @@ export default function UserProfileScreen({ route, navigation }) {
       const result = await response.json();
       console.log("Signalement envoyé :", result);
       Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
-      closeReportModal(); // Ferme le modal après succès
+      closeReportModal();  
     } catch (error) {
       console.error("Erreur lors de l'envoi du signalement :", error.message);
       Alert.alert(
@@ -226,8 +219,8 @@ export default function UserProfileScreen({ route, navigation }) {
         "Une erreur s'est produite lors de l'envoi du signalement."
       );
     }
-  };
-  // Gestion du désuivi (Unfollow)
+  }; 
+
   const handleUnfollow = async () => {
     if (!currentUserId) return;
 
@@ -244,8 +237,7 @@ export default function UserProfileScreen({ route, navigation }) {
       }
 
       setIsFollowing(false);
-
-      // Mettre à jour localement la liste des followers
+ 
       setUser((prevUser) =>
         prevUser
           ? {
@@ -288,7 +280,7 @@ export default function UserProfileScreen({ route, navigation }) {
     if (votes >= 1000) {
       return {
         title: "Légende urbaine",
-        backgroundColor: "#70B3B1", // Diamant
+        backgroundColor: "#70B3B1",  
         textColor: "#fff",
         borderColor: "#044745",
         shadowColor: "#70B3B1",
@@ -299,7 +291,7 @@ export default function UserProfileScreen({ route, navigation }) {
     } else if (votes >= 500) {
       return {
         title: "Icône locale",
-        backgroundColor: "#FAF3E3", // Or
+        backgroundColor: "#FAF3E3",  
         textColor: "#856404",
         borderColor: "#856404",
         shadowColor: "#D4AF37",
@@ -310,7 +302,7 @@ export default function UserProfileScreen({ route, navigation }) {
     } else if (votes >= 250) {
       return {
         title: "Pilier de la communauté",
-        backgroundColor: "#E1E1E1", // Argent
+        backgroundColor: "#E1E1E1",  
         textColor: "#6A6A6A",
         borderColor: "#919191",
         shadowColor: "#6A6A6A",
@@ -321,7 +313,7 @@ export default function UserProfileScreen({ route, navigation }) {
     } else if (votes >= 100) {
       return {
         title: "Ambassadeur citoyen",
-        backgroundColor: "#E1E1E1", // Bronze
+        backgroundColor: "#E1E1E1",  
         textColor: "#6A6A6A",
         starsColor: "#919191",
         shadowColor: "#6A6A6A",
@@ -332,7 +324,7 @@ export default function UserProfileScreen({ route, navigation }) {
     } else if (votes >= 50) {
       return {
         title: "Citoyen de confiance",
-        backgroundColor: "#CEA992", // Bronze
+        backgroundColor: "#CEA992",  
         textColor: "#853104",
         starsColor: "#853104",
         shadowColor: "#853104",
@@ -343,7 +335,7 @@ export default function UserProfileScreen({ route, navigation }) {
     } else if (votes >= 5) {
       return {
         title: "Apprenti citoyen",
-        backgroundColor: "#CEA992", // Bronze
+        backgroundColor: "#CEA992",  
         textColor: "#853104",
         starsColor: "#853104",
         borderColor: "#D47637",
@@ -355,7 +347,7 @@ export default function UserProfileScreen({ route, navigation }) {
     } else {
       return {
         title: "Premiers pas",
-        backgroundColor: "#093A3E", // Blanc pour début
+        backgroundColor: "#093A3E", 
         textColor: "#fff",
         borderColor: "#fff",
         shadowColor: "#093A3E",
@@ -374,7 +366,7 @@ export default function UserProfileScreen({ route, navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" // Couleur dorée
+            color="#F7F2DE" 
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -441,7 +433,7 @@ export default function UserProfileScreen({ route, navigation }) {
                 ? styles.silverBorder
                 : user?.ranking === 3
                 ? styles.bronzeBorder
-                : null, // Pas de bordure si classement > 3
+                : null,  
             ]}
           >
             {user?.profilePhoto?.url ? (
@@ -483,9 +475,7 @@ export default function UserProfileScreen({ route, navigation }) {
                   key={index}
                   name="star"
                   size={20}
-                  color={
-                    getBadgeStyles(stats?.votes.length).starsColor
-                  }
+                  color={getBadgeStyles(stats?.votes.length).starsColor}
                 />
               ))
             )}
@@ -499,10 +489,8 @@ export default function UserProfileScreen({ route, navigation }) {
               {
                 backgroundColor: getBadgeStyles(stats?.votes.length)
                   .backgroundColor,
-                borderColor: getBadgeStyles(stats?.votes.length)
-                  .borderColor,
-                shadowColor: getBadgeStyles(stats?.votes.length)
-                  .shadowColor,
+                borderColor: getBadgeStyles(stats?.votes.length).borderColor,
+                shadowColor: getBadgeStyles(stats?.votes.length).shadowColor,
               },
             ]}
           >
@@ -510,8 +498,7 @@ export default function UserProfileScreen({ route, navigation }) {
               style={[
                 styles.badgeOrnement,
                 {
-                  color: getBadgeStyles(stats?.votes.length)
-                    .textColor,
+                  color: getBadgeStyles(stats?.votes.length).textColor,
                 },
               ]}
             >
@@ -656,20 +643,20 @@ export default function UserProfileScreen({ route, navigation }) {
             )}
           </View>
           {/* Bouton de suivi */}
-        <View style={styles.followButtonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.followButton,
-              { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
-            ]}
-            onPress={isFollowing ? handleUnfollow : handleFollow}
-            disabled={isSubmitting} // Bloquer pendant la requête
-          >
-            <Text style={styles.followButtonText}>
-              {isFollowing ? "Se désabonner" : "S'abonner"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.followButtonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.followButton,
+                { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
+              ]}
+              onPress={isFollowing ? handleUnfollow : handleFollow}
+              disabled={isSubmitting}  
+            >
+              <Text style={styles.followButtonText}>
+                {isFollowing ? "Se désabonner" : "S'abonner"}
+              </Text>
+            </TouchableOpacity>
+          </View>
           {/* Nom d'utilisateur */}
           {currentUserId && userId && (
             <View style={styles.sendChatContainer}>
@@ -684,7 +671,6 @@ export default function UserProfileScreen({ route, navigation }) {
               >
                 <Text style={styles.sendChatText}>Envoyer un message</Text>
               </TouchableOpacity>
-                 
             </View>
           )}
         </View>
@@ -818,7 +804,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", // Couleur sombre
+    backgroundColor: "#093A3E", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -828,11 +814,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E", // Couleur dorée ou autre
+    color: "#093A3E",  
     backgroundColor: "#F7F2DE",
     letterSpacing: 2,
     fontWeight: "bold",
-    fontFamily: "Insanibc", // Utilisez le nom de la police que vous avez défini
+    fontFamily: "Insanibc",  
   },
   typeBadge: {
     flexDirection: "row",
@@ -841,14 +827,14 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     position: "absolute",
-    top: 0, // Occupe toute la hauteur
+    top: 0, 
     left: 0,
     right: 0,
-    bottom: 0, // Occupe toute la hauteur
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fond semi-transparent
+    bottom: 0, 
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000, // Toujours au-dessus
+    zIndex: 1000,  
   },
   modalContainer: {
     width: "90%",
@@ -860,30 +846,30 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 10, // Ombre pour un effet surélevé
+    elevation: 10,  
   },
   textInput: {
     borderWidth: 1,
     height: 90,
     width: "100%",
-    borderColor: "#ccc", // Light gray border
+    borderColor: "#ccc",  
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
     marginTop: 10,
-    backgroundColor: "#F2F4F7", // Subtle off-white background
+    backgroundColor: "#F2F4F7",  
     marginBottom: 20,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond sombre semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.6)",  
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     width: "90%",
-    height: "80%", // Hauteur limitée pour permettre le défilement
-    backgroundColor: "#FFF", // Fond blanc
+    height: "80%",  
+    backgroundColor: "#FFF",  
     borderRadius: 10,
     padding: 20,
     alignItems: "center",
@@ -905,7 +891,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 20,
     borderRadius: 150,
-    backgroundColor: "#F9F9F9", // Fond légèrement gris
+    backgroundColor: "#F9F9F9",  
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
@@ -933,7 +919,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 20,
-    backgroundColor: "#FF4500", // Rouge intense
+    backgroundColor: "#FF4500",  
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 8,
@@ -948,13 +934,13 @@ const styles = StyleSheet.create({
   },
 
   badgeWrapper: {
-    alignItems: "center", // Centre les icônes et le badge horizontalement
+    alignItems: "center",  
   },
   iconsContainer: {
-    flexDirection: "row", // Aligne les icônes horizontalement
+    flexDirection: "row",  
     justifyContent: "center",
-    zIndex: 1, // Assure que les icônes sont au-dessus
-    marginBottom: -17, // Espace en bas pour séparer les badges du reste
+    zIndex: 1,  
+    marginBottom: -17,  
   },
   badgeContainer: {
     marginTop: 5,
@@ -983,7 +969,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   sendChat: {
-    width : "80%",
+    width: "80%",
     backgroundColor: "#093A3E",
     paddingVertical: 12,
     paddingHorizontal: 40,
@@ -991,7 +977,7 @@ const styles = StyleSheet.create({
   },
   sendChatText: {
     color: "#FFF",
-    textAlign : "center",
+    textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
   },
@@ -1036,16 +1022,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   profileImageContainer: {
-    width: 150, // Taille de l'image de profil
+    width: 150,  
     height: 150,
-    borderRadius: 90, // Cercle parfait
+    borderRadius: 90,  
     justifyContent: "center",
     alignItems: "center",
   },
   profileImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 90, // Cercle parfait
+    borderRadius: 90,  
   },
   noProfileImageText: {
     fontSize: 14,
@@ -1053,35 +1039,35 @@ const styles = StyleSheet.create({
   },
   goldBorder: {
     borderWidth: 5,
-    borderColor: "#FFD700", // Couleur or
+    borderColor: "#FFD700",  
   },
   silverBorder: {
     borderWidth: 5,
-    borderColor: "#C0C0C0", // Couleur argent
+    borderColor: "#C0C0C0",  
   },
   bronzeBorder: {
     borderWidth: 5,
-    borderColor: "#CD7F32", // Couleur bronze
+    borderColor: "#CD7F32",  
   },
   medalContainer: {
     position: "absolute",
-    top: -20, // Médaille au-dessus de l'image
-    zIndex: 2, // Priorité d'affichage
+    top: -20,  
+    zIndex: 2,  
     padding: 5,
     borderRadius: 50,
-    elevation: 3, // Ombre pour l'effet de profondeur
+    elevation: 3,  
   },
   medalText: {
-    fontSize: 65, // Taille de la médaille (emoji)
+    fontSize: 65,  
   },
 
   followButtonContainer: {
-    width : "100%",
+    width: "100%",
     alignItems: "center",
     marginVertical: 10,
   },
   followButton: {
-    width : "80%",
+    width: "80%",
     backgroundColor: "#093A3E",
     paddingVertical: 12,
     paddingHorizontal: 40,
@@ -1118,17 +1104,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#555",
-    marginRight: 5, // Réduit l'espace entre "Email :" et la valeur
+    marginRight: 5, 
   },
   infoValueName: {
     fontSize: 17,
     color: "#333",
-    fontWeight: "600", // Ajout d'une légère distinction entre le label et la valeur
+    fontWeight: "600", 
   },
   infoValueEmail: {
     fontSize: 17,
     color: "#333",
-    fontWeight: "600", // Ajout d'une légère distinction entre le label et la valeur
+    fontWeight: "600", 
   },
   placeholderValue: {
     fontSize: 14,
@@ -1172,23 +1158,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statItem: {
-    justifyContent: "center", // Centre verticalement le contenu de statItem
-    alignItems: "center", // Centre horizontalement le contenu de statItem
-    padding: 10, // Espacement interne
+    justifyContent: "center",  
+    alignItems: "center",  
+    padding: 10, 
   },
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    textAlign: "center", // Centre le nombre horizontalement
-    marginBottom: 5, // Espace entre le nombre et le texte
-    color: "#093A3E", // Couleur sombre pour le nombre
+    textAlign: "center",  
+    marginBottom: 5,  
+    color: "#093A3E",  
   },
   statLabel: {
-    textAlign: "center", // Centre le texte horizontalement
+    textAlign: "center", 
     fontSize: 14,
-    color: "#555", // Couleur du texte
-    fontWeight: "bold", // Texte en gras
-    lineHeight: 20, // Espacement entre les lignes
+    color: "#555",  
+    fontWeight: "bold",  
+    lineHeight: 20,  
   },
   field: {
     fontSize: 14,

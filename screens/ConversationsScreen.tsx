@@ -24,14 +24,13 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     lastMessage: string;
     otherParticipantName?: string;
     lastMessageTimestamp?: string | null;
-    unreadCount?: number; // Indicateur pour les messages non lus
-    profilePhoto?: string | null; // Photo de profil du participant
+    unreadCount?: number; 
+    profilePhoto?: string | null; 
   }
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fonction pour récupérer les détails d'un utilisateur (nom et photo de profil)
   const fetchUserDetails = async (
     userId: number
   ): Promise<{ name: string; profilePhoto: string | null }> => {
@@ -88,7 +87,6 @@ const ConversationsScreen = ({ navigation, route }: any) => {
                 ? await fetchUserDetails(otherParticipant)
                 : { name: "Inconnu", profilePhoto: null };
 
-            // Récupérer les messages non lus pour chaque conversation
             const messagesRef = collection(db, "messages");
             const unreadMessagesQuery = query(
               messagesRef,
@@ -125,9 +123,8 @@ const ConversationsScreen = ({ navigation, route }: any) => {
           })
         );
 
-        // Trier les conversations par `lastMessageTimestamp` (ordre décroissant)
         const sortedConversations = fetchedConversations.sort((a, b) => {
-          if (!a.lastMessageTimestamp) return 1; // Les conversations sans timestamp vont en bas
+          if (!a.lastMessageTimestamp) return 1; 
           if (!b.lastMessageTimestamp) return -1;
           return (
             new Date(b.lastMessageTimestamp).getTime() -
@@ -161,7 +158,6 @@ const ConversationsScreen = ({ navigation, route }: any) => {
       )
     );
 
-    // Optionnel : Retourner l'état mis à jour pour validation
     return conversations.filter((conversation) =>
       conversation.participants.includes(receiverId)
     );

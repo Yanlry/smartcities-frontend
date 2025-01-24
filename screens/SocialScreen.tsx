@@ -26,14 +26,14 @@ export default function SocialScreen({ handleScroll }) {
   const [isLoading, setIsLoading] = useState(false);
   const { getUserId } = useToken();
   const [commentInputs, setCommentInputs] = useState({});
-  const [visibleComments, setVisibleComments] = useState({}); // Pour gérer les commentaires visibles
+  const [visibleComments, setVisibleComments] = useState({});  
   const [userId, setUserId] = useState<number | null>(null);
   const [replyInputs, setReplyInputs] = useState({});
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyVisibility, setReplyVisibility] = useState({});
   const [selectedImage, setSelectedImage] = useState<string[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0); // Index de l'image active
-  const [likedPosts, setLikedPosts] = useState<number[]>([]); // Définit le type comme un tableau de nombres
+  const [activeIndex, setActiveIndex] = useState(0);  
+  const [likedPosts, setLikedPosts] = useState<number[]>([]); 
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [visibleCommentSection, setVisibleCommentSection] = useState({});
@@ -41,14 +41,14 @@ export default function SocialScreen({ handleScroll }) {
   useEffect(() => {
     const fetchUserId = async () => {
       const id = await getUserId();
-      setUserId(id); // Stockez l'ID utilisateur
+      setUserId(id); 
     };
     fetchUserId();
     fetchPosts();
   }, []);
 
   useEffect(() => {
-    fetchPosts(); // Appelle fetchPosts chaque fois que `refresh` change
+    fetchPosts();  
   }, []);
 
   const fetchPosts = async () => {
@@ -76,21 +76,19 @@ export default function SocialScreen({ handleScroll }) {
       }
 
       const data = await response.json();
-
-      // Trier les posts du plus récent au plus ancien
+ 
       const sortedData = data.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       setPosts(sortedData);
-
-      // Mettre à jour les likedPosts en fonction de `likedByUser`
+ 
       const userLikedPosts = sortedData
-        .filter((post) => post.likedByUser) // Filtrer les posts likés par l'utilisateur
-        .map((post) => post.id); // Extraire leurs IDs
+        .filter((post) => post.likedByUser)  
+        .map((post) => post.id);  
 
-      setLikedPosts(userLikedPosts); // Initialiser l'état des likes
+      setLikedPosts(userLikedPosts);  
     } catch (error) {
       console.error("Erreur :", error.message);
       Alert.alert(
@@ -119,13 +117,12 @@ export default function SocialScreen({ handleScroll }) {
       if (!response.ok) {
         throw new Error("Erreur lors du like de la publication");
       }
-
-      // Met à jour l'état pour refléter que ce post est liké
+ 
       setLikedPosts(
         (prevLikedPosts) =>
           prevLikedPosts.includes(postId)
-            ? prevLikedPosts.filter((id) => id !== postId) // Unliker
-            : [...prevLikedPosts, postId] // Liker
+            ? prevLikedPosts.filter((id) => id !== postId)  
+            : [...prevLikedPosts, postId]  
       );
 
       fetchPosts();
@@ -188,7 +185,7 @@ export default function SocialScreen({ handleScroll }) {
   const toggleCommentsVisibility = (postId) => {
     setVisibleCommentSection((prev) => ({
       ...prev,
-      [postId]: !prev[postId], // Alterne la visibilité
+      [postId]: !prev[postId],  
     }));
   };
 
@@ -200,8 +197,8 @@ export default function SocialScreen({ handleScroll }) {
   const renderItem = ({ item }) => {
     const isExpanded = visibleComments[item.id];
     const displayedComments = isExpanded
-      ? item.comments // Affiche tous les commentaires si "isExpanded" est vrai
-      : []; // Aucun commentaire n'est affiché par défaut
+      ? item.comments  
+      : [];  
 
     const handleDeletePost = async (postId) => {
       Alert.alert(
@@ -226,7 +223,7 @@ export default function SocialScreen({ handleScroll }) {
                     "Erreur lors de la suppression de la publication"
                   );
                 }
-                fetchPosts(); // Recharger les publications après suppression
+                fetchPosts();  
               } catch (error) {
                 Alert.alert(
                   "Erreur",
@@ -265,7 +262,7 @@ export default function SocialScreen({ handleScroll }) {
                     "Erreur lors de la suppression du commentaire"
                   );
                 }
-                fetchPosts(); // Recharger les publications après suppression
+                fetchPosts();  
               } catch (error) {
                 Alert.alert(
                   "Erreur",
@@ -300,22 +297,20 @@ export default function SocialScreen({ handleScroll }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            postId: item.id, // ID du post auquel le commentaire est lié
-            userId, // ID de l'utilisateur actuel
-            text: replyInputs[parentId], // Texte de la réponse
-            parentId, // ID du commentaire parent
+            postId: item.id,  
+            userId,  
+            text: replyInputs[parentId],  
+            parentId,  
           }),
         });
 
         if (!response.ok) {
           throw new Error("Erreur lors de l'ajout de la réponse");
         }
-
-        // Réinitialiser l'input pour la réponse
+ 
         setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-        setReplyToCommentId(null); // Fermer le champ de réponse
-
-        // Mettre à jour les commentaires via fetchPosts ou une autre fonction locale
+        setReplyToCommentId(null);  
+ 
         fetchPosts();
       } catch (error) {
         Alert.alert(
@@ -351,7 +346,7 @@ export default function SocialScreen({ handleScroll }) {
                     "Erreur lors de la suppression de la réponse"
                   );
                 }
-                fetchPosts(); // Recharger les publications et les commentaires après suppression
+                fetchPosts();  
               } catch (error) {
                 Alert.alert(
                   "Erreur",
@@ -365,20 +360,19 @@ export default function SocialScreen({ handleScroll }) {
     };
 
     const handlePhotoPress = (photo) => {
-      console.log("Photo pressée :", photo); // Vérifie que cette fonction est appelée avec la bonne valeur
-      setSelectedPhoto(photo); // Stocke l'URI de la photo
-      setIsModalVisible(true); // Ouvre le modal
+      console.log("Photo pressée :", photo); 
+      setSelectedPhoto(photo);  
+      setIsModalVisible(true);  
     };
 
     const handleShare = async () => {
       try {
         const result = await Share.share({
           message:
-            "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", // Message ou URL à partager
-          title: "Partager ce post", // Titre (optionnel)
+            "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123",  
+          title: "Partager ce post", 
         });
-
-        // Vérifiez si l'utilisateur a partagé ou annulé
+ 
         if (result.action === Share.sharedAction) {
           if (result.activityType) {
             console.log("Partagé via :", result.activityType);
@@ -420,7 +414,7 @@ export default function SocialScreen({ handleScroll }) {
             </Text>
           </View>
           {/* Bouton de suppression */}
-          {item.authorId === userId && ( // Vérifiez si l'utilisateur est l'auteur
+          {item.authorId === userId && (  
             <TouchableOpacity
               style={styles.deleteIcon}
               onPress={() => handleDeletePost(item.id)}
@@ -449,8 +443,8 @@ export default function SocialScreen({ handleScroll }) {
               {item.photos.map((photo, index) => (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => handlePhotoPress(photo)} // Ouvre l'image en plein écran
-                  activeOpacity={1} // Désactive l'effet d'opacité
+                  onPress={() => handlePhotoPress(photo)}  
+                  activeOpacity={1}  
                 >
                   <Image
                     source={{ uri: photo }}
@@ -478,19 +472,19 @@ export default function SocialScreen({ handleScroll }) {
           visible={isModalVisible}
           transparent={true}
           animationType="fade"
-          onRequestClose={() => setIsModalVisible(false)} // Gestion du bouton "Retour"
+          onRequestClose={() => setIsModalVisible(false)} 
         >
           <View style={styles.modalBackground}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setIsModalVisible(false)} // Ferme le modal
+              onPress={() => setIsModalVisible(false)}  
             >
               <Text style={styles.closeText}>X</Text>
             </TouchableOpacity>
             {selectedPhoto && (
               <Image
                 source={{ uri: selectedPhoto }}
-                style={styles.fullscreenPhoto} // Affiche l'image en plein écran
+                style={styles.fullscreenPhoto}  
               />
             )}
           </View>
@@ -510,9 +504,9 @@ export default function SocialScreen({ handleScroll }) {
                   likedPosts.includes(item.id)
                     ? "thumbs-up"
                     : "thumbs-up-outline"
-                } // Icône dynamique
+                }  
                 size={22}
-                color={likedPosts.includes(item.id) ? "#007bff" : "#656765"} // Couleur dynamique
+                color={likedPosts.includes(item.id) ? "#007bff" : "#656765"}  
                 style={styles.likeIcon}
               />
               <Text
@@ -520,7 +514,7 @@ export default function SocialScreen({ handleScroll }) {
                   styles.likeButtonText,
                   {
                     color: likedPosts.includes(item.id) ? "#007bff" : "#656765",
-                  }, // Couleur dynamique
+                  },  
                 ]}
               >
                 {likedPosts.includes(item.id)
@@ -661,12 +655,12 @@ export default function SocialScreen({ handleScroll }) {
                     onPress={() =>
                       setReplyVisibility((prev) => ({
                         ...prev,
-                        [comment.id]: !prev[comment.id], // Alterne la visibilité des réponses
+                        [comment.id]: !prev[comment.id],  
                       }))
                     }
                     style={[
                       !replyVisibility[comment.id] &&
-                        styles.marginBottomWhenHidden, // Applique marginBottom uniquement si masqué
+                        styles.marginBottomWhenHidden,  
                     ]}
                   >
                     <Text style={styles.showMoreTextReply}>
@@ -745,8 +739,8 @@ export default function SocialScreen({ handleScroll }) {
 
   const handleRemovePhoto = (index) => {
     const updatedImages = [...selectedImage];
-    updatedImages.splice(index, 1); // Supprime l'image à l'index donné
-    setSelectedImage(updatedImages); // Met à jour la liste des images
+    updatedImages.splice(index, 1);  
+    setSelectedImage(updatedImages);  
   };
 
   const handleAddPost = async () => {
@@ -755,7 +749,7 @@ export default function SocialScreen({ handleScroll }) {
       return;
     }
 
-    setIsLoading(true); // Active le loader
+    setIsLoading(true);  
 
     try {
       const userId = await getUserId();
@@ -772,7 +766,7 @@ export default function SocialScreen({ handleScroll }) {
       if (selectedImage) {
         selectedImage.forEach((image) => {
           const filename = image.split("/").pop();
-          const fileType = filename ? filename.split(".").pop() : "jpg"; // Par défaut : JPG
+          const fileType = filename ? filename.split(".").pop() : "jpg";  
           formData.append("photos", {
             uri: image,
             name: filename,
@@ -798,12 +792,10 @@ export default function SocialScreen({ handleScroll }) {
 
       const newPost = await response.json();
       console.log("Publication créée :", newPost);
-
-      // Réinitialiser les champs
+ 
       setNewPostContent("");
       setSelectedImage([]);
-
-      // Actualiser les posts après création
+ 
       fetchPosts();
 
       Alert.alert("Succès", "Votre publication a été créée avec succès !");
@@ -814,12 +806,11 @@ export default function SocialScreen({ handleScroll }) {
         error.message || "Impossible de créer la publication."
       );
     } finally {
-      setIsLoading(false); // Désactive le loader
+      setIsLoading(false);  
     }
   };
 
-  const handlePickImage = async () => {
-    // Vérifie si la limite de 5 images est atteinte
+  const handlePickImage = async () => { 
     if (selectedImage.length >= 5) {
       Alert.alert(
         "Limite atteinte",
@@ -835,8 +826,7 @@ export default function SocialScreen({ handleScroll }) {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      // Ajoute l'image seulement si la limite n'est pas atteinte
+    if (!result.canceled) { 
       setSelectedImage((prevImages) => [...prevImages, result.assets[0].uri]);
     }
   };
@@ -881,13 +871,13 @@ export default function SocialScreen({ handleScroll }) {
                     {/* Affichage de l'image active en grand */}
                     <View style={styles.largeImageContainer}>
                       <Image
-                        source={{ uri: selectedImage[0] }} // Affiche la première image en grand
+                        source={{ uri: selectedImage[0] }}  
                         style={styles.largeImage}
                       />
                       {/* Icône de suppression pour la grande image */}
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() => handleRemovePhoto(0)} // Supprime la grande image
+                        onPress={() => handleRemovePhoto(0)}  
                       >
                         <Icon name="trash-outline" size={24} color="#FFF" />
                       </TouchableOpacity>
@@ -901,7 +891,7 @@ export default function SocialScreen({ handleScroll }) {
                           {/* Icône de suppression pour chaque petite image */}
                           <TouchableOpacity
                             style={styles.deleteButtonSmall}
-                            onPress={() => handleRemovePhoto(index + 1)} // Supprime la photo correspondante
+                            onPress={() => handleRemovePhoto(index + 1)}  
                           >
                             <Icon
                               name="close-circle-outline"
@@ -924,7 +914,7 @@ export default function SocialScreen({ handleScroll }) {
             <TouchableOpacity
               style={styles.publishButton}
               onPress={handleAddPost}
-              disabled={isLoading} // Désactiver le bouton si en chargement
+              disabled={isLoading}  
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color="#FFF" />
@@ -953,10 +943,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f2f5",
   },
   marginBottomWhenHidden: {
-    marginBottom: 20, // Valeur de marginBottom lorsque masqué
+    marginBottom: 20,  
   },
   largeImageContainer: {
-    position: "relative", // Permet de positionner l'icône par rapport à l'image
+    position: "relative",  
     width: "100%",
     alignItems: "center",
     marginBottom: 10,
@@ -970,10 +960,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   deleteButton: {
-    position: "absolute", // Positionne l'icône sur l'image
+    position: "absolute",  
     top: 10,
     right: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fond semi-transparent pour l'icône
+    backgroundColor: "rgba(0, 0, 0, 0.6)", 
     padding: 5,
     borderRadius: 20,
   },
@@ -983,7 +973,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   smallImageWrapper: {
-    position: "relative", // Permet de positionner l'icône sur l'image
+    position: "relative",  
   },
   smallImage: {
     width: 75,
@@ -1000,8 +990,8 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   photoCarouselItem: {
-    width: Dimensions.get("window").width, // Largeur exacte de l'écran
-    aspectRatio: 1, // Carré
+    width: Dimensions.get("window").width, 
+    aspectRatio: 1,  
     resizeMode: "contain",
     marginTop: 15,
   },
@@ -1048,12 +1038,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#333",
   },
   overlay: {
-    position: "absolute", // Permet de superposer la vue
+    position: "absolute",  
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Couleur semi-transparente
+    backgroundColor: "rgba(0, 0, 0, 0.5)",  
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1093,7 +1083,7 @@ const styles = StyleSheet.create({
   },
   commentIcon: {
     marginTop: 12,
-    marginLeft: 5, // Espacement entre l'icône et le texte
+    marginLeft: 5,  
   },
   commentCountText: {
     fontWeight: "bold",
@@ -1129,13 +1119,13 @@ const styles = StyleSheet.create({
   fullscreenPhoto: {
     width: "90%",
     height: "70%",
-    resizeMode: "contain", // S'assure que l'image ne déborde pas
+    resizeMode: "contain",  
     borderRadius: 10,
   },
 
   modalBackground: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Fond semi-transparent
+    backgroundColor: "rgba(0, 0, 0, 0.8)", 
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1153,7 +1143,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   likeIcon: {
-    marginRight: 5, // Espace entre l'icône et le texte
+    marginRight: 5,  
   },
   likeButtonText: {
     color: "#656765",
@@ -1184,7 +1174,7 @@ const styles = StyleSheet.create({
   },
   photoRowItem: {
     width: "100%",
-    aspectRatio: 1, // Carré
+    aspectRatio: 1,  
     borderRadius: 8,
     resizeMode: "cover",
     marginBottom: 10,
@@ -1257,7 +1247,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   postsList: {
-    paddingBottom: 10, // Conteneur pour les posts
+    paddingBottom: 10,  
   },
   showMoreTextComment: {
     color: "#555",
@@ -1305,7 +1295,7 @@ const styles = StyleSheet.create({
   },
 
   commentContainer: {
-    flexDirection: "column", // Permet d'empiler les réponses sous le commentaire principal
+    flexDirection: "column",  
     alignItems: "flex-start",
     width: "85%",
     padding: 10,

@@ -44,7 +44,6 @@ const Chart: React.FC<ChartProps> = ({
     if (!text) return ""; // Gérer les cas où le texte est vide
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
-  // Formatage du nom de la commune
   const formattedCommune = capitalize(nomCommune);
 
   useEffect(() => {
@@ -88,14 +87,14 @@ const Chart: React.FC<ChartProps> = ({
   const generateSummary = () => {
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
-      const color = barColors[index % barColors.length]; // Associer la couleur
+      const color = barColors[index % barColors.length]; 
 
       return (
         <View key={label} style={styles.summaryItem}>
           <View
             style={[
               styles.colorIndicator,
-              { backgroundColor: color }, // Couleur dynamique pour chaque catégorie
+              { backgroundColor: color }, 
             ]}
           />
           <Text style={styles.summaryText}>
@@ -120,7 +119,6 @@ const Chart: React.FC<ChartProps> = ({
         <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
-      {/* Affichage conditionnel du graphique */}
       {isStatsVisible && (
         <>
           <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
@@ -149,7 +147,6 @@ const Chart: React.FC<ChartProps> = ({
               style={styles.chart}
             />
 
-            {/* Section de résumé */}
             <View style={styles.summaryContainer}>
               <Text style={styles.summaryTitle}>
                 Résumé des signalements à {formattedCommune}
@@ -193,13 +190,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sectionHeaderVisible: {
-    backgroundColor: "#f5f5f5", // Même couleur pour le contenu ouvert
+    backgroundColor: "#f5f5f5", 
     borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10, // Arrondi pour joindre l'en-tête et le contenu
+    borderBottomRightRadius: 10, 
   },
   sectionContent: {
-    marginTop: -9, // Superpose légèrement pour éviter une ligne visible
-    backgroundColor: "#f5f5f5", // Même couleur que l'en-tête
+    marginTop: -9, 
+    backgroundColor: "#f5f5f5", 
   },
   arrow: {
     fontSize: 18,
@@ -207,7 +204,7 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     margin: 10,
-    backgroundColor: "#ffffff", // Fond blanc pour contraste
+    backgroundColor: "#ffffff", 
     padding: 20,
 
     borderRadius: 12,
@@ -217,23 +214,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5, // Ombre pour Android
+    elevation: 5, 
   },
   summaryTitle: {
     lineHeight: 24,
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#2c3e50", // Bleu sombre pour titre
-    textAlign: "center", // Titre centré
-    textTransform: "uppercase", // Capitalisation pour attirer l'attention
+    color: "#2c3e50", 
+    textAlign: "center", 
+    textTransform: "uppercase", 
     letterSpacing: 1,
   },
   summaryText: {
     fontSize: 15,
-    color: "#34495e", // Couleur gris-bleu
-    lineHeight: 24, // Meilleur espacement entre les lignes
-    textAlign: "justify", // Texte justifié pour une meilleure lecture
+    color: "#34495e", 
+    lineHeight: 24, 
+    textAlign: "justify", 
   },
   summaryItem: {
     flexDirection: "row",
@@ -244,7 +241,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     width: 16,
     height: 16,
-    borderRadius: 8, // Cercle coloré
+    borderRadius: 8,
     marginRight: 10,
   },
 });
