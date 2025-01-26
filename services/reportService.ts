@@ -171,7 +171,6 @@ export const fetchDrivingDistances = async (
   const cacheKey = `${JSON.stringify(origin)}:${JSON.stringify(destinations)}`;
 
   if (distanceCache.has(cacheKey)) {
-    console.log("Distances récupérées depuis le cache.");
     return distanceCache.get(cacheKey)!;
   }
 

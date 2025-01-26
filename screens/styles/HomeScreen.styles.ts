@@ -62,6 +62,163 @@ export default StyleSheet.create({
     color: "#093A3E",
   },
 
+  // ------------------------------------------------  MODAL PALIER
+
+  
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",  
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "90%",
+    height: "80%",  
+    backgroundColor: "#FFF",  
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#333",
+    textAlign: "center",
+  },
+  modalBody: {
+    width: "100%",
+    paddingBottom: 20,
+  },
+  tierCard: {
+    width: 280,
+    marginBottom: 15,
+    padding: 20,
+    borderRadius: 30,
+    backgroundColor: "#F9F9F9",  
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    alignItems: "center",
+  },
+  tierTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 5,
+    textAlign: "center",
+  },
+  tierDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  starsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#418074",  
+    paddingHorizontal: 25,
+    paddingVertical: 10,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: "#FFF",
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: "#FFF",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  // ------------------------------------------------  MODAL LIKE
+
+
+  modalOverlayLike: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", 
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContentLike: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  icon: {
+    backgroundColor: "#E7F3EF",
+    borderRadius: 50,
+    padding: 15,
+    marginBottom: 20,
+  },
+  titleModalLike: {
+    fontSize: 24, 
+    fontWeight: "700", 
+    color: "#222",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  description: {
+    fontSize: 16,
+    color: "#555",
+    textAlign: "center",
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  instructions: {
+    width: "100%",
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  instructionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15, 
+    backgroundColor: "#F9F9F9", 
+    borderRadius: 10,
+    padding: 10,
+  },
+  instructionText: {
+    fontSize: 15,
+    color: "#444",
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 22,
+  },
+  closeButtonModalLike: {
+    backgroundColor: "#418074",
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 25,
+    alignItems: "center",
+    width: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  closeButtonTextModalLike: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
 
   modalContainer: {
@@ -333,9 +490,7 @@ export default StyleSheet.create({
 
   voteSummary: {
     flexDirection: "row",
-    paddingTop: 15,
-    marginBottom: 10,
-    gap: 10,
+    paddingTop: 10,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -348,18 +503,21 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 8,
-    borderRadius: 50,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
-    width: "48%",
+    width: "50%",
   },
   positiveVote: {
+    borderStartStartRadius: 20,
+    borderBottomLeftRadius: 20,
     backgroundColor: "#E8F5E9",  
   },
   negativeVote: {
+    borderEndEndRadius: 20,
+borderTopRightRadius: 20,
     backgroundColor: "#FDECEA",  
   },
   voteCount: {
@@ -467,78 +625,7 @@ export default StyleSheet.create({
     color: "#007BFF",  
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",  
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "90%",
-    height: "80%",  
-    backgroundColor: "#FFF",  
-    borderRadius: 60,
-    padding: 20,
-    alignItems: "center",
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
-    textAlign: "center",
-  },
-  modalBody: {
-    width: "100%",
-    paddingBottom: 20,
-  },
-  tierCard: {
-    width: 280,
-    marginBottom: 15,
-    padding: 20,
-    borderRadius: 150,
-    backgroundColor: "#F9F9F9",  
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    alignItems: "center",
-  },
-  tierTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 5,
-    textAlign: "center",
-  },
-  tierDescription: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  starsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  closeButton: {
-    marginTop: 20,
-    backgroundColor: "#FF4500",  
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: "#FFF",
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: "#FFF",
-    fontWeight: "600",
-    textAlign: "center",
-  },
+ 
   //  ------------------------------------------------ TOP 10 DES SMARTERS
 
   sectionTitleTop10: {

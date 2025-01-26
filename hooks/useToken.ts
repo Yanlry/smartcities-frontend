@@ -21,17 +21,14 @@ export function useToken() {
 
   const getToken = async () => {
     const token = await AsyncStorage.getItem('authToken');
-    console.log('Token récupéré depuis AsyncStorage :', token);
   
     if (token && !isTokenExpired(token)) {
-      console.log("Token valide, retour de l'access token.");
       return token;
     }
   
     console.log("Token expiré ou non disponible, tentative de rafraîchissement...");
     const refreshedToken = await refreshAccessToken();
     if (refreshedToken) {
-      console.log("Token rafraîchi avec succès :", refreshedToken);
       return refreshedToken;
     }
   
@@ -45,7 +42,6 @@ export function useToken() {
   };
 
   const setRefreshToken = async (refreshToken: string) => {
-    console.log("Stockage du refresh token :", refreshToken);
     await AsyncStorage.setItem('refreshToken', refreshToken);
   };
 
@@ -54,7 +50,7 @@ export function useToken() {
     if (!refreshToken) {
       console.warn("Aucun refresh token disponible pour rafraîchir le token d'accès."); 
     } else {
-      console.log("Refresh token récupéré :", refreshToken);
+      console.log("Refresh token récupéré");
     }
     return refreshToken;
   };
@@ -85,7 +81,6 @@ export function useToken() {
       }
   
       const { accessToken, refreshToken: newRefreshToken } = await response.json();
-      console.log("Nouveau token reçu :", accessToken);
   
       await setToken(accessToken);
       if (newRefreshToken) {
@@ -105,7 +100,6 @@ export function useToken() {
 
   const getUserId = async () => {
     const userId = await AsyncStorage.getItem('userId');
-    console.log('ID utilisateur récupéré depuis AsyncStorage :', userId);
     return userId ? parseInt(userId, 10) : null;
   };
 

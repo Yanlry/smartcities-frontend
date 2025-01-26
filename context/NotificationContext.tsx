@@ -63,7 +63,6 @@ export const NotificationProvider = ({ children }) => {
     }
   };
   const fetchUnreadCount = async () => {
-    console.log("Début de la récupération des notifications non lues...");
     try {
       const response = await fetchWithAuth(`${API_URL}/notifications/unread/count`);
   
@@ -74,10 +73,8 @@ export const NotificationProvider = ({ children }) => {
       }
   
       const { count } = await response.json();
-      console.log("Notifications non lues récupérées avec succès :", count);
       setUnreadCount(count);
     } catch (error) {
-      console.warn("Erreur inattendue lors de la récupération des notifications :", error.message);
       setUnreadCount(0); 
     }
   };

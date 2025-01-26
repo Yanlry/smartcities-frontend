@@ -183,13 +183,11 @@ export default function App() {
     const actionSheetRef = useRef<typeof ActionSheet | null>(null);
     const fetchUserId = async () => {
       try {
-        console.log("Début de la récupération de l'ID utilisateur...");
         const token = await AsyncStorage.getItem("authToken");
         if (!token) {
           throw new Error("Aucun token trouvé");
         }
         const payload = JSON.parse(atob(token.split(".")[1]));
-        console.log("Payload décodé :", payload);
         return payload.userId;
       } catch (error) {
         console.error(
@@ -229,8 +227,6 @@ export default function App() {
         </View>
       );
     }
-
-    console.log("UserId dans TabNavigator :", userId);
 
     return (
       <>

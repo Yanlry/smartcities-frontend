@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Modal,
   Switch,
+  Vibration
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
@@ -51,6 +52,11 @@ export default function NotificationsScreen({ navigation }) {
     NEW_POST: true,
   };
   const [preferences, setPreferences] = useState(defaultPreferences);
+  const [tempPreferences, setTempPreferences] = useState({});
+
+  const [isEnabled, setIsEnabled] = useState(false);
+
+  const toggleSwitch = () => setIsEnabled((prevState) => !prevState);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -172,6 +178,13 @@ export default function NotificationsScreen({ navigation }) {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    if (isModalVisible) {
+      console.log("Ouverture du modal : synchronisation des préférences");
+      setTempPreferences(preferences);
+    }
+  }, [isModalVisible, preferences]);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
@@ -449,8 +462,10 @@ export default function NotificationsScreen({ navigation }) {
     );
   };
 
-  const filteredNotifications = notifications.filter(
-    (notification) => preferences[notification.type]
+  const filteredNotifications = useMemo(
+    () =>
+      notifications.filter((notification) => preferences[notification.type]),
+    [notifications, preferences]
   );
 
   const NotificationPreferencesModal = () => {
@@ -463,34 +478,27 @@ export default function NotificationsScreen({ navigation }) {
       }
     }, [isModalVisible, preferences]);
 
-    const toggleTempPreference = useCallback((type: string) => {
+    const toggleTempPreference = useCallback((type) => {
       setTempPreferences((prev) => ({
         ...prev,
         [type]: !prev[type],
       }));
     }, []);
 
-    const savePreferences = async () => {
+    const savePreferences = useCallback(async () => {
       try {
-        if (JSON.stringify(tempPreferences) !== JSON.stringify(preferences)) {
-          console.log("Préférences modifiées, mise à jour...");
-          setPreferences(tempPreferences);
-          await AsyncStorage.setItem(
-            "notificationPreferences",
-            JSON.stringify(tempPreferences)
-          );
-        } else {
-          console.log("Aucune modification détectée.");
-        }
-        console.log("Fermeture du modal après sauvegarde");
+        await AsyncStorage.setItem(
+          "notificationPreferences",
+          JSON.stringify(tempPreferences)
+        );
+        setPreferences(tempPreferences);
+        console.log("Préférences sauvegardées");
+
         setModalVisible(false);
       } catch (error) {
         console.error("Erreur lors de la sauvegarde des préférences :", error);
-        alert("Une erreur est survenue lors de la sauvegarde des préférences.");
-        setModalVisible(false);
       }
-    };
-
+    }, [tempPreferences]);
     const groupedNotificationTypes = [
       {
         category: "Activités sur mes signalements",
@@ -547,8 +555,10 @@ export default function NotificationsScreen({ navigation }) {
                     <View key={item.type} style={styles.preferenceItem}>
                       <Text style={styles.preferenceLabel}>{item.label}</Text>
                       <Switch
-                        value={tempPreferences[item.type]}
-                        onValueChange={() => toggleTempPreference(item.type)}
+                        value={tempPreferences[item.type]} 
+                        onValueChange={() => toggleTempPreference(item.type)} 
+                        trackColor={{ false: "#d3d3d3", true: "#093A3E" }} 
+                        ios_backgroundColor="#3e3e3e" 
                       />
                     </View>
                   ))}
@@ -557,21 +567,23 @@ export default function NotificationsScreen({ navigation }) {
 
               {/* Boutons d'action */}
               <View>
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={savePreferences}
-                >
-                  <Text style={styles.saveButtonText}>Enregistrer</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => {
-                    console.log("Annulation et fermeture du modal");
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text style={styles.cancelButtonText}>Annuler</Text>
-                </TouchableOpacity>
+                <View>
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={savePreferences}
+                  >
+                    <Text style={styles.saveButtonText}>Enregistrer</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => {
+                      console.log("Annulation et fermeture du modal");
+                      setModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Annuler</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
@@ -579,6 +591,7 @@ export default function NotificationsScreen({ navigation }) {
       )
     );
   };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -628,20 +641,21 @@ export default function NotificationsScreen({ navigation }) {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       <TouchableOpacity
-        style={styles.filterButton}
-        onPress={() => {
-          console.log("Ouverture du modal");
-          setModalVisible(true);
-        }}
-      >
-        <Ionicons
-          name="options"
-          size={20}
-          color="#555"
-          style={styles.iconStyle}
-        />
-        <Text style={styles.filterButtonText}>Filtre</Text>
-      </TouchableOpacity>
+      style={styles.filterButton}
+      onPress={() => {
+        Vibration.vibrate(); 
+        console.log("Ouverture du modal");
+        setModalVisible(true);
+      }}
+    >
+      <Ionicons
+        name="options"
+        size={20}
+        color="#555"
+        style={styles.iconStyle}
+      />
+      <Text style={styles.filterButtonText}>Filtre</Text>
+    </TouchableOpacity>
 
       <FlatList
         data={filteredNotifications}
@@ -732,7 +746,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     alignItems: "flex-start",
     paddingHorizontal: 20,
-    borderRadius: 50,
+    borderRadius: 20,
   },
 
   markAsReadText: {
@@ -750,7 +764,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E71B1B",
     flexDirection: "row",
     paddingHorizontal: 10,
-    borderRadius: 50,
+    borderRadius: 20,
   },
   deleteButtonText: {
     color: "#FFF",
@@ -763,7 +777,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   flatListContent: {
-    padding: 20,
+    padding: 10,
     flexGrow: 1,
   },
   emptyContainer: {
@@ -808,8 +822,8 @@ const styles = StyleSheet.create({
     paddingRight: 20,
     padding: 15,
     backgroundColor: "#FFF",
-    marginVertical: 5,
-    borderRadius: 50,
+    marginVertical: 3,
+    borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -844,7 +858,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 15,
     borderRadius: 25,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -864,13 +878,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 20,
     margin: 20,
-    borderRadius: 10,
+    borderRadius: 30,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 30,
     textAlign: "center",
+    color: "#093A3E",
   },
   categorySection: {
     marginBottom: 20,
@@ -892,7 +907,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   saveButton: {
-    backgroundColor: "#4caf50",
+    backgroundColor: "#093A3E",
     padding: 10,
     borderRadius: 30,
   },
@@ -904,7 +919,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: "#f44336",
     padding: 10,
-    borderRadius: 30,
+    borderRadius: 20,
     marginTop: 10,
   },
   cancelButtonText: {

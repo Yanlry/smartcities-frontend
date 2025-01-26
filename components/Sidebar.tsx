@@ -26,7 +26,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const { handleLogout } = useAuth(); 
 
   useEffect(() => {
-    console.log("Sidebar isOpen changed:", isOpen);
     Animated.timing(sidebarAnimation, {
       toValue: isOpen ? 0 : -300,
       duration: 300,

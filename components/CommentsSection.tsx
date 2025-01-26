@@ -38,12 +38,13 @@ export default function CommentsSection({ report }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const commentInputRef = React.useRef<TextInput>(null);
   const [loadingCommentId, setLoadingCommentId] = useState(null);
+  const [likedComments, setLikedComments] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const userId = await getUserId();
-        console.log("Utilisateur actuel :", userId);
         setCurrentUserId(userId);
       } catch (error) {
         console.error(
@@ -58,34 +59,106 @@ export default function CommentsSection({ report }) {
     fetchComments();
   }, [report.id]);
 
+  useEffect(() => {
+    fetchComments(); // Charger les commentaires à l'ouverture du report
+  }, []);
+
   const fetchComments = async () => {
     try {
+      const { getToken } = useToken();
+      const token = await getToken();
+
+      if (!token) {
+        throw new Error("Impossible de récupérer un token valide.");
+      }
+
       const response = await fetch(`${API_URL}/reports/${report.id}/comments`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`Erreur API : ${response.status}`);
+        throw new Error("Erreur lors du chargement des commentaires.");
       }
 
       const data = await response.json();
 
-      const formattedData = data.map((comment) => ({
-        ...comment,
-        user: {
-          ...comment.user,
-          profilePhoto:
-            comment.user?.photos?.[0]?.url || "https://via.placeholder.com/50",
-        },
-      }));
+      // Met à jour les commentaires
+      setComments(data);
 
-      setComments(formattedData);
+      // Initialisez l'état `likedComments` à partir de `likedByUser`
+      const userLikedComments = data
+        .filter((comment) => comment.likedByUser) // Filtrer les commentaires likés
+        .map((comment) => comment.id); // Récupérer leurs IDs
+
+      console.log("Commentaires principale likés :", userLikedComments);
+
+      setLikedComments(userLikedComments); // Met à jour l'état local des likes
     } catch (error) {
-      console.error(
-        "Erreur lors du chargement des commentaires :",
-        error.message
+      console.error("Erreur :", error.message);
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible de charger les commentaires."
       );
+    }
+  };
+
+  const handleLikeComment = async (commentId, isReply = false, parentCommentId = null) => {
+    try {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Utilisateur non authentifié.");
+  
+      console.log("Triggering like action for:", { commentId, isReply, parentCommentId });
+  
+      const response = await fetch(`${API_URL}/reports/comments/${commentId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+  
+      if (!response.ok) throw new Error("Erreur lors du like/unlike.");
+  
+      // Mise à jour de l'état
+      setComments((prevComments) =>
+        prevComments.map((comment) => {
+          // Si commentaire principal
+          if (!isReply && comment.id === commentId) {
+            return {
+              ...comment,
+              likesCount: comment.likedByUser
+                ? comment.likesCount - 1
+                : comment.likesCount + 1,
+              likedByUser: !comment.likedByUser,
+            };
+          }
+  
+          // Si réponse
+          if (isReply && comment.id === parentCommentId) {
+            return {
+              ...comment,
+              replies: comment.replies.map((reply) =>
+                reply.id === commentId
+                  ? {
+                      ...reply,
+                      likesCount: reply.likedByUser
+                        ? reply.likesCount - 1
+                        : reply.likesCount + 1,
+                      likedByUser: !reply.likedByUser,
+                    }
+                  : reply
+              ),
+            };
+          }
+  
+          return comment; // Retourne le reste inchangé
+        })
+      );
+    } catch (error) {
+      console.error("Erreur lors du like :", error.message);
+      Alert.alert("Erreur", error.message || "Action impossible.");
     }
   };
 
@@ -138,37 +211,35 @@ export default function CommentsSection({ report }) {
 
   const submitReply = async (parentId) => {
     if (isSubmitting) return;
-
+  
     setIsSubmitting(true);
-
+  
     const trimmedReplyText = replyText.trim();
     if (!trimmedReplyText) {
       setIsSubmitting(false);
       return;
     }
-
+  
     const payload = {
       reportId: report.id,
       userId: currentUserId,
       text: trimmedReplyText,
-      latitude: report.latitude,
-      longitude: report.longitude,
-      parentId,
+      parentId, // Ajout du parentId pour lier à un commentaire principal
     };
-
+  
     try {
       const response = await fetch(`${API_URL}/reports/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok)
-        throw new Error("Erreur lors de l'envoi de la réponse.");
-
+  
+      if (!response.ok) throw new Error("Erreur lors de l'envoi de la réponse.");
+  
       const newReply = await response.json();
       console.log("Nouvelle réponse créée :", newReply);
-
+  
+      // Ajouter la réponse sous le commentaire principal correspondant
       setComments((prevComments) =>
         prevComments.map((comment) =>
           comment.id === parentId
@@ -256,6 +327,31 @@ export default function CommentsSection({ report }) {
 
           {/* Icône de la bulle pour ouvrir/fermer */}
           <View style={styles.actionButtonsContainer}>
+            {/* Bouton pour liker le commentaire */}
+            <TouchableOpacity
+  onPress={() => handleLikeComment(comment.id)}
+  style={[
+    styles.likeButton,
+    comment.likedByUser && styles.likedButton,
+  ]}
+>
+  <View style={styles.likeButtonContent}>
+    <Icon
+      name={comment.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
+      size={22}
+      color={comment.likedByUser ? "#007bff" : "#656765"}
+    />
+    <Text
+      style={[
+        styles.likeButtonText,
+        { color: comment.likedByUser ? "#007bff" : "#656765" },
+      ]}
+    >
+      {comment.likesCount || 0}
+    </Text>
+  </View>
+</TouchableOpacity>
+            {/* Bouton pour afficher les réponses */}
             {!comment.parentId && (
               <TouchableOpacity
                 onPress={() =>
@@ -293,6 +389,7 @@ export default function CommentsSection({ report }) {
               </TouchableOpacity>
             )}
           </View>
+
           {expandedComments[comment.id] && (
             <View style={styles.replyInputContainer}>
               <TextInput
@@ -317,11 +414,55 @@ export default function CommentsSection({ report }) {
             </View>
           )}
 
-          {comment.replies &&
-            comment.replies.length > 0 &&
-            expandedComments[comment.id] && (
-              <View>{renderComments(comment.replies, level + 1)}</View>
-            )}
+{comment.replies &&
+  comment.replies.length > 0 &&
+  expandedComments[comment.id] &&
+  comment.replies.map((reply) => (
+    <View key={reply.id} style={[styles.replyContainer, { marginLeft: level * 10 }]}>
+      <View style={styles.userInfoContainer}>
+        <Image
+          source={{
+            uri:
+              reply.user?.profilePhoto ||
+              "https://via.placeholder.com/50",
+          }}
+          style={styles.userPhoto}
+        />
+        <Text style={styles.userName}>
+          {reply.user?.useFullName
+            ? `${reply.user.firstName} ${reply.user.lastName}`
+            : reply.user?.username || "Utilisateur inconnu"}
+        </Text>
+      </View>
+
+      <Text style={styles.replyText}>{reply.text}</Text>
+
+      {/* Bouton pour liker la réponse */}
+      <TouchableOpacity
+        onPress={() => handleLikeComment(reply.id, true, comment.id)} // Passe `isReply` et `parentCommentId`
+        style={[
+          styles.likeButton,
+          reply.likedByUser && styles.likedButton,
+        ]}
+      >
+        <View style={styles.likeButtonContent}>
+          <Icon
+            name={reply.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
+            size={22}
+            color={reply.likedByUser ? "#007bff" : "#656765"}
+          />
+          <Text
+            style={[
+              styles.likeButtonText,
+              { color: reply.likedByUser ? "#007bff" : "#656765" },
+            ]}
+          >
+            {reply.likesCount || 0}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  ))}
         </View>
       </TouchableWithoutFeedback>
     ));
@@ -332,7 +473,7 @@ export default function CommentsSection({ report }) {
   };
 
   const deleteComment = async (commentId) => {
-    setLoadingCommentId(commentId); 
+    setLoadingCommentId(commentId);
 
     try {
       const response = await fetch(`${API_URL}/reports/comment/${commentId}`, {
@@ -361,7 +502,7 @@ export default function CommentsSection({ report }) {
             }
             return comment;
           })
-          .filter(Boolean); 
+          .filter(Boolean);
 
       setComments(updateComments(comments));
     } catch (error) {
@@ -371,7 +512,7 @@ export default function CommentsSection({ report }) {
         "Une erreur s'est produite lors de la suppression."
       );
     } finally {
-      setLoadingCommentId(null); 
+      setLoadingCommentId(null);
     }
   };
 
@@ -393,7 +534,7 @@ export default function CommentsSection({ report }) {
     }
 
     try {
-      const userId = await getUserId(); 
+      const userId = await getUserId();
 
       const response = await fetch(`${API_URL}/mails/send`, {
         method: "POST",
@@ -406,7 +547,7 @@ export default function CommentsSection({ report }) {
           subject: "Signalement d'un commentaire",
           reportReason,
           reporterId: userId,
-          commentId: selectedCommentId, 
+          commentId: selectedCommentId,
         }),
       });
 
@@ -433,11 +574,12 @@ export default function CommentsSection({ report }) {
         <ScrollView
           style={styles.card}
           scrollEnabled={!isReportModalVisible}
-          keyboardShouldPersistTaps="handled" 
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ flexGrow: 1 }}
         >
           <View style={styles.addComment}>
             <Text style={styles.title}>Commentaires :</Text>
+
             <View style={styles.commentInputContainer}>
               <TextInput
                 ref={commentInputRef}
@@ -460,6 +602,13 @@ export default function CommentsSection({ report }) {
                 </Text>
               </TouchableOpacity>
             </View>
+            {comments.length > 0 && (
+              <View style={styles.alertContainer}>
+                <Text style={styles.alert}>
+                  Rester appuyer sur un commentaire pour le signaler
+                </Text>
+              </View>
+            )}
           </View>
           {comments.length === 0 ? (
             <Text style={styles.noCommentsText}>Aucun commentaire publié</Text>
@@ -502,14 +651,6 @@ export default function CommentsSection({ report }) {
             </View>
           </View>
         </Modal>
-
-        {comments.length > 0 && (
-          <View style={styles.alertContainer}>
-            <Text style={styles.alert}>
-              Rester appuyer sur un commentaire pour le signaler
-            </Text>
-          </View>
-        )}
       </View>
     </TouchableWithoutFeedback>
   );
@@ -581,10 +722,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   actionButtonsContainer: {
-    flexDirection: "row", 
-    gap: 10, 
-    alignItems: "center", 
-    marginTop: 10, 
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+    marginTop: 10,
   },
   noCommentsText: {
     textAlign: "center",
@@ -606,14 +747,14 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     position: "absolute",
-    top: 0, 
+    top: 0,
     left: 0,
     right: 0,
-    bottom: 0, 
+    bottom: 0,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000, 
+    zIndex: 1000,
   },
   modalContainer: {
     width: "90%",
@@ -625,23 +766,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 10, 
+    elevation: 10,
   },
   textInput: {
     borderWidth: 1,
     height: 50,
     width: "100%",
     textAlign: "center",
-    borderColor: "#ccc", 
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
-    backgroundColor: "#F2F4F7", 
+    backgroundColor: "#F2F4F7",
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700", 
+    fontWeight: "700",
     color: "#333",
     marginBottom: 15,
     textAlign: "center",
@@ -729,8 +870,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     paddingHorizontal: 10,
-    textAlignVertical: "center", 
-    minHeight: 20, 
+    textAlignVertical: "center",
+    minHeight: 20,
   },
   submitReplyButton: {
     backgroundColor: "#007bff",
@@ -778,7 +919,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   commentInputContainer: {
-    flexDirection: "row", 
+    flexDirection: "row",
     alignItems: "center",
     marginTop: 5,
     marginBottom: 5,
@@ -786,18 +927,18 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     borderRadius: 30,
     backgroundColor: "#f9f9f9",
-    paddingHorizontal: 8, 
-    paddingVertical: 10, 
+    paddingHorizontal: 8,
+    paddingVertical: 10,
   },
   commentInput: {
-    flex: 1, 
+    flex: 1,
     fontSize: 16,
     paddingVertical: 6,
     paddingHorizontal: 8,
     color: "#333",
   },
   submitCommentButton: {
-    marginLeft: 8, 
+    marginLeft: 8,
     paddingVertical: 6,
     paddingHorizontal: 12,
     backgroundColor: "#007bff",
@@ -837,7 +978,22 @@ const styles = StyleSheet.create({
   },
   commentIcon: {
     marginTop: 12,
-    marginLeft: 5, 
+  },
+  likeButton: {
+    marginTop: 2,
+  },
+  likeButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  likeIcon: {
+    marginRight: 5,
+  },
+  likeCountText: {
+    fontSize: 14,
+  },
+  likedButton: {
+    backgroundColor: "#f0f0f0",
   },
   commentCountText: {
     fontWeight: "bold",
@@ -846,9 +1002,17 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginLeft: 5,
   },
+  likeButtonText: {
+    fontWeight: "bold",
+    color: "#656765",
+    fontSize: 14,
+    marginTop: 5,
+    marginLeft: 5,
+  },
+
   commentButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 10,
+    marginBottom: 5,
   },
 });

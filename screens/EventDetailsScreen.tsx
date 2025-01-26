@@ -61,7 +61,6 @@ export default function EventDetails({ route }) {
     const fetchUserId = async () => {
       try {
         const userId = await getUserId(); 
-        console.log(`ID utilisateur récupéré depuis AsyncStorage : ${userId}`);
         setCurrentUserId(userId); 
       } catch (error) {
         console.error(

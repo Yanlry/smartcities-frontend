@@ -98,7 +98,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   >([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [modalNameVisible, setModalNameVisible] = useState(false);
-  const nomCommune = user?.nomCommune || ""; 
+  const nomCommune = user?.nomCommune || "";
   const { data } = useFetchStatistics(
     `${API_URL}/reports/statistics`,
     nomCommune
@@ -114,6 +114,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [isMayorInfoVisible, setMayorInfoVisible] = useState(true);
   const [areAllSectionsVisible, setAllSectionsVisible] = useState(true);
   const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
+  const [modalLikeVisible, setModalLikeVisible] = useState(false);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -147,7 +148,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         }
 
         const rankingData = await rankingResponse.json();
-        setRanking(rankingData.ranking); 
+        setRanking(rankingData.ranking);
         setTotalUsers(rankingData.totalUsers);
       } catch (error) {
         console.error("Erreur lors de la récupération du classement :", error);
@@ -275,7 +276,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
 
-        const userCityNormalized = normalizeCityName(userCity); 
+        const userCityNormalized = normalizeCityName(userCity);
 
         const filteredEvents = response.data
           .filter((event: any) => {
@@ -290,7 +291,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
             image:
               event.photos.find((photo: any) => photo.isProfile)?.url ||
               event.photos[0]?.url ||
-              "https://via.placeholder.com/300", 
+              "https://via.placeholder.com/300",
           }));
 
         setFeaturedEvents(filteredEvents);
@@ -309,7 +310,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
   const extractCityAfterPostalCode = (location: string) => {
     if (!location) return "";
-    const match = location.match(/\d{5}\s+([^,]+)/); 
+    const match = location.match(/\d{5}\s+([^,]+)/);
     return match ? match[1].trim() : "";
   };
 
@@ -321,7 +322,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       .replace(/\s+/g, " ")
       .trim();
   };
-  
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -399,14 +400,14 @@ export default function HomeScreen({ navigation, handleScroll }) {
     let days = now.getDate() - date.getDate();
 
     if (days < 0) {
-      months -= 1; 
+      months -= 1;
       const previousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      days += previousMonth.getDate(); 
+      days += previousMonth.getDate();
     }
 
     if (months < 0) {
-      years -= 1; 
-      months += 12; 
+      years -= 1;
+      months += 12;
     }
 
     if (years > 1) {
@@ -461,7 +462,9 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
+  const displayName = user?.useFullName
+    ? `${user.firstName} ${user.lastName}`
+    : user?.username;
 
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
@@ -676,7 +679,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     if (votes >= 1000) {
       return {
         title: "Légende urbaine",
-        backgroundColor: "#70B3B1", 
+        backgroundColor: "#70B3B1",
         textColor: "#fff",
         borderColor: "#044745",
         shadowColor: "#70B3B1",
@@ -687,7 +690,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 500) {
       return {
         title: "Icône locale",
-        backgroundColor: "#FAF3E3", 
+        backgroundColor: "#FAF3E3",
         textColor: "#856404",
         borderColor: "#856404",
         shadowColor: "#D4AF37",
@@ -698,7 +701,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 250) {
       return {
         title: "Pilier de la communauté",
-        backgroundColor: "#E1E1E1", 
+        backgroundColor: "#E1E1E1",
         textColor: "#6A6A6A",
         borderColor: "#919191",
         shadowColor: "#6A6A6A",
@@ -709,7 +712,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 100) {
       return {
         title: "Ambassadeur citoyen",
-        backgroundColor: "#E1E1E1", 
+        backgroundColor: "#E1E1E1",
         textColor: "#6A6A6A",
         starsColor: "#919191",
         shadowColor: "#6A6A6A",
@@ -720,7 +723,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 50) {
       return {
         title: "Citoyen de confiance",
-        backgroundColor: "#CEA992", 
+        backgroundColor: "#CEA992",
         textColor: "#853104",
         starsColor: "#853104",
         shadowColor: "#853104",
@@ -731,7 +734,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 5) {
       return {
         title: "Apprenti citoyen",
-        backgroundColor: "#CEA992", 
+        backgroundColor: "#CEA992",
         textColor: "#853104",
         starsColor: "#853104",
         borderColor: "#D47637",
@@ -743,7 +746,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else {
       return {
         title: "Premiers pas",
-        backgroundColor: "#093A3E", 
+        backgroundColor: "#093A3E",
         textColor: "#fff",
         borderColor: "#fff",
         shadowColor: "#093A3E",
@@ -825,7 +828,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                       <View style={styles.optionItem}>
                         <Text style={styles.optionText}>{item.label}</Text>
                         <Switch
-                          value={user?.useFullName === item.value} 
+                          value={user?.useFullName === item.value}
                           onValueChange={() =>
                             handleOptionChange(
                               item.value ? "fullName" : "username"
@@ -863,7 +866,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                   : "depuis un certain temps"}
               </Text>
             </Text>
-            
+
             <View style={styles.badgeWrapper}>
               {/* Conteneur des icônes (au-dessus du badge) */}
               <View style={styles.iconsContainer}>
@@ -1014,61 +1017,141 @@ export default function HomeScreen({ navigation, handleScroll }) {
             </Modal>
 
             {/* Votes */}
-            <View>
-  {stats && stats.votes ? (
-    stats.votes.length > 0 ? (
-      (() => {
-        interface Vote {
-          type: "up" | "down";
-        }
+            <TouchableOpacity onPress={() => setModalLikeVisible(true)}>
+              <View>
+                {stats && stats.votes ? (
+                  stats.votes.length > 0 ? (
+                    (() => {
+                      interface Vote {
+                        type: "up" | "down";
+                      }
 
-        interface VoteSummary {
-          up: number;
-          down: number;
-        }
+                      interface VoteSummary {
+                        up: number;
+                        down: number;
+                      }
 
-        const voteSummary: VoteSummary = stats.votes.reduce(
-          (acc: VoteSummary, vote: Vote) => {
-            if (vote.type === "up") acc.up++;
-            else acc.down++;
-            return acc;
-          },
-          { up: 0, down: 0 }
-        );
+                      const voteSummary: VoteSummary = stats.votes.reduce(
+                        (acc: VoteSummary, vote: Vote) => {
+                          if (vote.type === "up") acc.up++;
+                          else acc.down++;
+                          return acc;
+                        },
+                        { up: 0, down: 0 }
+                      );
 
-        return (
-          <View style={styles.voteSummary}>
-            {/* Bouton pour votes positifs */}
-            <View style={[styles.voteButton, styles.positiveVote]}>
-              <Ionicons
-                name="thumbs-up-outline"
-                size={28}
-                color="#418074"
-              />
-              <Text style={styles.voteCount}>{voteSummary.up}</Text>
-            </View>
+                      return (
+                        <View style={styles.voteSummary}>
+                          {/* Bouton pour votes positifs */}
+                          <View
+                            style={[styles.voteButton, styles.positiveVote]}
+                          >
+                            <Ionicons
+                              name="thumbs-up-outline"
+                              size={23}
+                              color="#418074"
+                            />
+                            <Text style={styles.voteCount}>
+                              {voteSummary.up}
+                            </Text>
+                          </View>
 
-            {/* Bouton pour votes négatifs */}
-            <View style={[styles.voteButton, styles.negativeVote]}>
-              <Ionicons
-                name="thumbs-down-outline"
-                size={28}
-                color="#A73830"
-              />
-              <Text style={styles.voteCount}>{voteSummary.down}</Text>
-            </View>
-          </View>
-        );
-      })()
-    ) : (
-      <Text style={styles.noVotesText}>
-        Pas encore de votes. Votez pour monter dans le classement
-      </Text>
-    )
-  ) : (
-    <Text style={styles.loadingText}>Chargement des votes...</Text>
-  )}
-</View>
+                          {/* Bouton pour votes négatifs */}
+                          <View
+                            style={[styles.voteButton, styles.negativeVote]}
+                          >
+                            <Ionicons
+                              name="thumbs-down-outline"
+                              size={23}
+                              color="#A73830"
+                            />
+                            <Text style={styles.voteCount}>
+                              {voteSummary.down}
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })()
+                  ) : (
+                    <Text style={styles.noVotesText}>
+                      Pas encore de votes. Votez pour monter dans le classement
+                    </Text>
+                  )
+                ) : (
+                  <Text style={styles.loadingText}>
+                    Chargement des votes...
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={modalLikeVisible}
+              onRequestClose={() => setModalLikeVisible(false)}
+            >
+              <View style={styles.modalOverlayLike}>
+                <View style={styles.modalContentLike}>
+                  {/* Icone informative */}
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={60}
+                    color="#418074"
+                    style={styles.icon}
+                  />
+
+                  {/* Titre principal */}
+                  <Text style={styles.titleModalLike}>
+                    Montez dans le classement !
+                  </Text>
+
+                  {/* Description */}
+                  <Text style={styles.description}>
+                    Pour monter dans le classement, il vous suffit de :
+                  </Text>
+
+                  {/* Instructions */}
+                  <View style={styles.instructions}>
+                    <View style={styles.instructionItem}>
+                      <Ionicons name="eye-outline" size={24} color="#555" />
+                      <Text style={styles.instructionText}>
+                        Constatez le maximum de signalements possibles.
+                      </Text>
+                    </View>
+                    <View style={styles.instructionItem}>
+                      <Ionicons
+                        name="thumbs-up-outline"
+                        size={24}
+                        color="#418074"
+                      />
+                      <Text style={styles.instructionText}>
+                        Votez "Oui" si le signalement est encore d'actualité.
+                      </Text>
+                    </View>
+                    <View style={styles.instructionItem}>
+                      <Ionicons
+                        name="thumbs-down-outline"
+                        size={24}
+                        color="#A73830"
+                      />
+                      <Text style={styles.instructionText}>
+                        Votez "Non" si le signalement n'est plus valide.
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Bouton pour fermer */}
+                  <TouchableOpacity
+                    style={styles.closeButtonModalLike}
+                    onPress={() => setModalLikeVisible(false)}
+                  >
+                    <Text style={styles.closeButtonTextModalLike}>
+                      OK, j'ai compris
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
           </View>
         </View>
 
@@ -1114,7 +1197,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       <TouchableOpacity
         style={[
           styles.sectionHeader,
-          isSectionVisible && styles.sectionHeaderVisible, 
+          isSectionVisible && styles.sectionHeaderVisible,
         ]}
         onPress={toggleSection}
         activeOpacity={0.8}

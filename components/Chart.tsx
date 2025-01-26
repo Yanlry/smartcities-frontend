@@ -8,6 +8,11 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { BarChart } from "react-native-chart-kit";
+import { useNavigation } from "@react-navigation/native";
+
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from "../types/navigation";
+
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -41,7 +46,7 @@ const Chart: React.FC<ChartProps> = ({
 
   const barColors = ["#e74c3c", "#f1c40f", "#9b59b6", "#3498db", "#2ecc71"];
   const capitalize = (text: string) => {
-    if (!text) return ""; // Gérer les cas où le texte est vide
+    if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
   const formattedCommune = capitalize(nomCommune);
@@ -84,17 +89,31 @@ const Chart: React.FC<ChartProps> = ({
     setStatsVisible((prevState) => !prevState);
   };
 
+  type CategoryReportsScreenNavigationProp = StackNavigationProp<
+    RootStackParamList,
+    'CategoryReportsScreen'
+  >;
+  
   const generateSummary = () => {
+      const navigation = useNavigation<CategoryReportsScreenNavigationProp>(); // Accès à la navigation
+  
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
-      const color = barColors[index % barColors.length]; 
-
+      const color = barColors[index % barColors.length];
+  
       return (
-        <View key={label} style={styles.summaryItem}>
+        <TouchableOpacity
+          key={label}
+          style={styles.summaryItem}
+          onPress={() => {
+            // Navigation vers CategoryReportsScreen avec le paramètre de catégorie
+            navigation.navigate("CategoryReportsScreen", { category: label });
+          }}
+        >
           <View
             style={[
               styles.colorIndicator,
-              { backgroundColor: color }, 
+              { backgroundColor: color },
             ]}
           />
           <Text style={styles.summaryText}>
@@ -103,7 +122,7 @@ const Chart: React.FC<ChartProps> = ({
               {count} signalement{count > 1 ? "s" : ""}
             </Text>
           </Text>
-        </View>
+        </TouchableOpacity>
       );
     });
   };
