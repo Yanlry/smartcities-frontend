@@ -10,9 +10,8 @@ import {
 import { BarChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 
-import { StackNavigationProp } from '@react-navigation/stack';
+import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation";
-
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -27,8 +26,8 @@ interface ChartProps {
 }
 
 const chartConfig = {
-  backgroundGradientFrom: "#f5f5f5",
-  backgroundGradientTo: "#f5f5f5",
+  backgroundGradientFrom: "#fff",
+  backgroundGradientTo: "#fff",
   decimalPlaces: 0,
   color: (opacity = 1) => `rgba(46, 204, 110, ${opacity})`,
   labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -91,30 +90,25 @@ const Chart: React.FC<ChartProps> = ({
 
   type CategoryReportsScreenNavigationProp = StackNavigationProp<
     RootStackParamList,
-    'CategoryReportsScreen'
+    "CategoryReportsScreen"
   >;
-  
+
   const generateSummary = () => {
-      const navigation = useNavigation<CategoryReportsScreenNavigationProp>();  
-  
+    const navigation = useNavigation<CategoryReportsScreenNavigationProp>();
+
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
       const color = barColors[index % barColors.length];
-  
+
       return (
         <TouchableOpacity
           key={label}
           style={styles.summaryItem}
-          onPress={() => { 
+          onPress={() => {
             navigation.navigate("CategoryReportsScreen", { category: label });
           }}
         >
-          <View
-            style={[
-              styles.colorIndicator,
-              { backgroundColor: color },
-            ]}
-          />
+          <View style={[styles.colorIndicator, { backgroundColor: color }]} />
           <Text style={styles.summaryText}>
             {label}:{" "}
             <Text style={{ fontWeight: "bold" }}>
@@ -129,13 +123,17 @@ const Chart: React.FC<ChartProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.sectionHeader}
-        onPress={toggleStats}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.title}>📊 Statistiques de la ville</Text>
-        <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
-      </TouchableOpacity>
+  style={[
+    styles.sectionHeader, // Style de base
+    isStatsVisible && { backgroundColor: "#f5f5f5" }, // Fond gris si isStatsVisible est true
+  ]}
+  onPress={toggleStats}
+  activeOpacity={0.8}
+>
+   <Text style={styles.title}> 📊 Statistiques de la ville
+  </Text>
+  <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
+</TouchableOpacity>
 
       {isStatsVisible && (
         <>
@@ -190,7 +188,7 @@ const styles = StyleSheet.create({
   chart: {
     marginTop: 10,
     borderRadius: 16,
-    marginLeft: -38,
+    marginLeft: -20,
   },
   subtitle: {
     fontSize: 14,
@@ -203,18 +201,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 10,
     paddingHorizontal: 15,
-    backgroundColor: "#f5f5f5",
+
     borderRadius: 8,
     marginTop: 10,
   },
   sectionHeaderVisible: {
-    backgroundColor: "#f5f5f5", 
+    backgroundColor: "#fff",
     borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10, 
+    borderBottomRightRadius: 10,
   },
   sectionContent: {
-    marginTop: -9, 
-    backgroundColor: "#f5f5f5", 
+    backgroundColor: "#fff",
   },
   arrow: {
     fontSize: 18,
@@ -222,7 +219,7 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     margin: 10,
-    backgroundColor: "#ffffff", 
+    backgroundColor: "#ffffff",
     padding: 20,
 
     borderRadius: 12,
@@ -232,23 +229,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5, 
+    elevation: 5,
   },
   summaryTitle: {
     lineHeight: 24,
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#2c3e50", 
-    textAlign: "center", 
-    textTransform: "uppercase", 
+    color: "#2c3e50",
+    textAlign: "center",
+    textTransform: "uppercase",
     letterSpacing: 1,
   },
   summaryText: {
     fontSize: 15,
-    color: "#34495e", 
-    lineHeight: 24, 
-    textAlign: "justify", 
+    color: "#34495e",
+    lineHeight: 24,
+    textAlign: "justify",
   },
   summaryItem: {
     flexDirection: "row",

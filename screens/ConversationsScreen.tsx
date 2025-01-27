@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   },
   unreadBadgeText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 12, 
     fontWeight: "bold",
   },
   noConversation: {

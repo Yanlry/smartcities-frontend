@@ -518,7 +518,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (showFollowers) {
     return (
       <View style={styles.containerFollower}>
-        <Text style={styles.title}>Mes followers</Text>
+        <Text style={styles.title}>Mes relations</Text>
         <FlatList
           data={user?.followers || []}
           keyExtractor={(item) => item.id.toString()}
@@ -679,33 +679,33 @@ export default function HomeScreen({ navigation, handleScroll }) {
     if (votes >= 1000) {
       return {
         title: "Légende urbaine",
-        backgroundColor: "#70B3B1",
+        backgroundColor: "#997BBA",
         textColor: "#fff",
-        borderColor: "#044745",
-        shadowColor: "#70B3B1",
-        starsColor: "#044745",
+        borderColor: "#5B3F78",
+        shadowColor: "#997BBA",
+        starsColor: "#5B3F78",
         stars: 6,
         icon: null,
       };
     } else if (votes >= 500) {
       return {
         title: "Icône locale",
-        backgroundColor: "#FAF3E3",
-        textColor: "#856404",
-        borderColor: "#856404",
-        shadowColor: "#D4AF37",
-        starsColor: "#D4AF37",
+        backgroundColor: "#70B3B1",
+        textColor: "#fff",
+        borderColor: "#044745",
+        shadowColor: "#70B3B1",
+        starsColor: "#044745",
         stars: 5,
         icon: null,
       };
     } else if (votes >= 250) {
       return {
-        title: "Pilier de la communauté",
-        backgroundColor: "#E1E1E1",
-        textColor: "#6A6A6A",
-        borderColor: "#919191",
-        shadowColor: "#6A6A6A",
-        starsColor: "#919191",
+        title: "Héros du quotidien",
+        backgroundColor: "#FAF3E3",
+        textColor: "#856404",
+        borderColor: "#856404",
+        shadowColor: "#D4AF37",
+        starsColor: "#D4AF37",
         stars: 4,
         icon: null,
       };
@@ -734,11 +734,11 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else if (votes >= 5) {
       return {
         title: "Apprenti citoyen",
-        backgroundColor: "#CEA992",
-        textColor: "#853104",
-        starsColor: "#853104",
-        borderColor: "#D47637",
-        shadowColor: "#853104",
+        backgroundColor: "#9BD4A2",
+        textColor: "#25562A",
+        starsColor: "#54B65F",
+        borderColor: "#54B65F",
+        shadowColor: "#54B65F",
 
         stars: 1,
         icon: null,
@@ -752,10 +752,25 @@ export default function HomeScreen({ navigation, handleScroll }) {
         shadowColor: "#093A3E",
         starsColor: "#0AAEA8",
         stars: 0,
-        icon: <Ionicons name="school" size={24} color="#fff" />,
+        icon: <Ionicons name="school" size={24} color="#0AAEA8" />,
       };
     }
   };
+
+  const calculateVoteSummary = (votes) => {
+    return votes.reduce(
+      (acc, vote) => {
+        if (vote.type === "up") acc.up++;
+        else acc.down++;
+        return acc;
+      },
+      { up: 0, down: 0 }
+    );
+  };
+
+  const voteSummary = stats?.votes
+    ? calculateVoteSummary(stats.votes)
+    : { up: 0, down: 0 };
 
   return (
     <ScrollView
@@ -768,39 +783,37 @@ export default function HomeScreen({ navigation, handleScroll }) {
     >
       <View style={styles.cardContainer}>
         <View style={styles.header}>
-          {user?.profilePhoto?.url ? (
-            <TouchableOpacity onPress={handleProfileImageClick}>
-              <Image
-                source={{ uri: user.profilePhoto.url }}
-                style={styles.profileImage}
-              />
+          {/** NOM ET ICONE */}
+          <View style={styles.nameContainer}>
+            <Text
+              onPress={() => setModalNameVisible(true)}
+              style={styles.userName}
+            >
+              {displayName}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setModalNameVisible(true)}
+              style={styles.dropdownButton}
+            >
+              <Ionicons name="settings-outline" size={16} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={handleProfileImageClick}>
-              <View style={styles.noProfileImage}>
-                <Text style={styles.noProfileImageText}>
-                  Pas de photo de profil
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-
-          <View style={styles.userInfo}>
-            <View style={styles.nameContainer}>
+            {/** VILLE ET INSCRIPTION */}
+            <Text style={styles.userCity}>
+              Engagé pour{" "}
               <Text
-                onPress={() => setModalNameVisible(true)}
-                style={styles.userName}
+                style={styles.cityNameUser}
+                onPress={() => navigation.navigate("CityScreen")}
               >
-                {displayName}
+                {user?.nomCommune || "une commune non définie"}
               </Text>
-              <TouchableOpacity
-                onPress={() => setModalNameVisible(true)}
-                style={styles.dropdownButton}
-              >
-                <Ionicons name="settings-outline" size={18} color="#102542" />
-              </TouchableOpacity>
-            </View>
-
+              <Text style={styles.userDetails}>
+                {" "}
+                depuis{" "}
+                {user?.createdAt
+                  ? `${calculateYearsSince(user.createdAt)}`
+                  : "depuis un certain temps"}
+              </Text>
+            </Text>
             <Modal
               visible={modalNameVisible}
               transparent={true}
@@ -849,24 +862,79 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 </View>
               </View>
             </Modal>
+          </View>
 
-            <Text style={styles.userCity}>
-              Engagé pour{" "}
-              <Text
-                style={styles.cityNameUser}
-                onPress={() => navigation.navigate("CityScreen")}
-              >
-                {user?.nomCommune || "une commune non définie"}
-              </Text>
-              <Text style={styles.userDetails}>
-                {" "}
-                depuis{" "}
-                {user?.createdAt
-                  ? `${calculateYearsSince(user.createdAt)}`
-                  : "depuis un certain temps"}
-              </Text>
+          <View style={styles.containerBande}>
+            {/* Bande supérieure avec le vote positif */}
+            <TouchableOpacity
+              onPress={() => setModalLikeVisible(true)}
+              style={styles.bandeUp}
+            >
+              <View style={styles.voteContainer}>
+                <Ionicons name="thumbs-up-outline" size={23} color="#418074" />
+                <Text style={styles.voteCount}>{voteSummary.up}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+            style={styles.relationItem}
+            onPress={toggleFollowersList}
+          >
+            <Text style={styles.statNumber}>
+              {user?.followers?.length || 0}
             </Text>
+            <Text style={styles.statLabel}>Relations</Text>
+          </TouchableOpacity>
+            {/* Image de profil */}
+            <View>
+              {user?.profilePhoto?.url ? (
+                <TouchableOpacity onPress={handleProfileImageClick}>
+                  <Image
+                    source={{ uri: user.profilePhoto.url }}
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={handleProfileImageClick}>
+                  <View style={styles.noProfileImage}>
+                    <Text style={styles.noProfileImageText}>
+                      Pas de photo de profil
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </View>
 
+            {/* Bande inférieure avec le vote négatif */}
+            <TouchableOpacity
+              onPress={() => setModalLikeVisible(true)}
+              style={styles.bandeDown}
+            >
+              <View style={styles.voteContainer}>
+                <Ionicons
+                  name="thumbs-down-outline"
+                  size={23}
+                  color="#A73830"
+                />
+                <Text style={styles.voteCount}>{voteSummary.down}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+            style={styles.rankingItem}
+            onPress={() => navigation.navigate("RankingScreen")}
+          >
+            <Text style={styles.statLabel}>
+                Vous etes classé{" "}
+              </Text>
+            <Text style={styles.statNumber}>
+              {ranking && totalUsers
+                ? `${ranking}${getRankingSuffix(ranking)}`
+                : "?"}
+            </Text>
+          </TouchableOpacity>
+          </View>
+
+          <View style={styles.userInfo}>
+            {/** BADGE */}
             <View style={styles.badgeWrapper}>
               {/* Conteneur des icônes (au-dessus du badge) */}
               <View style={styles.iconsContainer}>
@@ -914,7 +982,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
               </Pressable>
             </View>
 
-            {/* Modal */}
+            {/* MODAL DES PALIER */}
             <Modal
               animationType="slide"
               transparent={true}
@@ -923,8 +991,23 @@ export default function HomeScreen({ navigation, handleScroll }) {
             >
               <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
+                  {/* Icône informative */}
+                  <Ionicons
+                    name="medal-outline"
+                    size={60}
+                    color="#418074"
+                    style={styles.icon}
+                  />
+
                   {/* Titre principal */}
-                  <Text style={styles.modalTitle}>Paliers</Text>
+                  <Text style={styles.modalTitle}>Découvrez les paliers</Text>
+
+                  {/* Description */}
+                  <Text style={styles.modalDescription}>
+                    Chaque badge reflète votre niveau d’engagement citoyen. Plus
+                    vous participez en votant sur les différents signalements de
+                    la ville, plus vous gravissez les échelons des paliers
+                  </Text>
 
                   {/* Corps scrollable */}
                   <ScrollView contentContainerStyle={styles.modalBody}>
@@ -932,77 +1015,83 @@ export default function HomeScreen({ navigation, handleScroll }) {
                       {
                         name: "Légende urbaine",
                         description: "Plus de 1000 votes",
-                        stars: 6,
-                        starsColor: "#70B3B1",
+                        votes: 1000,
                       },
                       {
                         name: "Icône locale",
                         description: "500 à 999 votes",
-                        stars: 5,
-                        starsColor: "#D4AF37",
+                        votes: 500,
                       },
                       {
-                        name: "Pilier de la communauté",
+                        name: "Héros du quotidien",
                         description: "250 à 499 votes",
-                        stars: 4,
-                        starsColor: "#919191",
+                        votes: 250,
                       },
                       {
                         name: "Ambassadeur citoyen",
                         description: "100 à 249 votes",
-                        stars: 3,
-                        starsColor: "#919191",
+                        votes: 100,
                       },
                       {
                         name: "Citoyen de confiance",
                         description: "50 à 99 votes",
-                        stars: 2,
-                        starsColor: "#853104",
+                        votes: 50,
                       },
                       {
                         name: "Apprenti citoyen",
                         description: "5 à 49 votes",
-                        stars: 1,
-                        starsColor: "#853104",
+                        votes: 5,
                       },
                       {
                         name: "Premiers pas",
                         description: "Moins de 5 votes",
-                        stars: 0,
-                        starsColor: "#6A6A6A",
+                        votes: 0,
                       },
-                    ].map((tier, index) => (
-                      <View key={index} style={styles.tierCard}>
-                        {/* Étoiles */}
-                        <View style={styles.starsContainer}>
-                          {Array.from({ length: tier.stars }).map((_, i) => (
-                            <Ionicons
-                              key={i}
-                              name="star"
-                              size={20}
-                              color={tier.starsColor}
-                            />
-                          ))}
-                          {tier.stars === 0 && (
-                            <Ionicons
-                              name="school"
-                              size={24}
-                              color={tier.starsColor}
-                            />
-                          )}
-                        </View>
-                        {/* Titre */}
-                        <Text
-                          style={[styles.tierTitle, { color: tier.starsColor }]}
+                    ].map((tier, index) => {
+                      const badgeStyles = getBadgeStyles(tier.votes);
+
+                      return (
+                        <View
+                          key={index}
+                          style={[
+                            styles.tierCard,
+                            { borderColor: badgeStyles.borderColor },
+                          ]}
                         >
-                          {tier.name}
-                        </Text>
-                        {/* Description */}
-                        <Text style={styles.tierDescription}>
-                          {tier.description}
-                        </Text>
-                      </View>
-                    ))}
+                          {/* Étoiles */}
+                          <View style={styles.starsContainer}>
+                            {Array.from({ length: badgeStyles.stars }).map(
+                              (_, i) => (
+                                <Ionicons
+                                  key={i}
+                                  name="star"
+                                  size={20}
+                                  color={badgeStyles.starsColor}
+                                />
+                              )
+                            )}
+                            {badgeStyles.stars === 0 && badgeStyles.icon}
+                          </View>
+                          {/* Titre avec le même fond et la même bordure que le badge */}
+                          <Text
+                            style={[
+                              styles.tierTitle,
+                              {
+                                backgroundColor: badgeStyles.backgroundColor,
+                                borderColor: badgeStyles.borderColor,
+                                color: badgeStyles.textColor,
+                              },
+                            ]}
+                          >
+                            {tier.name}
+                          </Text>
+                          {/* Description */}
+                          <Text style={styles.tierDescription}>
+                            {tier.description}
+                          </Text>
+                        </View>
+                      );
+                    })}
                   </ScrollView>
 
                   {/* Bouton de fermeture */}
@@ -1015,75 +1104,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 </View>
               </View>
             </Modal>
-
-            {/* Votes */}
-            <TouchableOpacity onPress={() => setModalLikeVisible(true)}>
-              <View>
-                {stats && stats.votes ? (
-                  stats.votes.length > 0 ? (
-                    (() => {
-                      interface Vote {
-                        type: "up" | "down";
-                      }
-
-                      interface VoteSummary {
-                        up: number;
-                        down: number;
-                      }
-
-                      const voteSummary: VoteSummary = stats.votes.reduce(
-                        (acc: VoteSummary, vote: Vote) => {
-                          if (vote.type === "up") acc.up++;
-                          else acc.down++;
-                          return acc;
-                        },
-                        { up: 0, down: 0 }
-                      );
-
-                      return (
-                        <View style={styles.voteSummary}>
-                          {/* Bouton pour votes positifs */}
-                          <View
-                            style={[styles.voteButton, styles.positiveVote]}
-                          >
-                            <Ionicons
-                              name="thumbs-up-outline"
-                              size={23}
-                              color="#418074"
-                            />
-                            <Text style={styles.voteCount}>
-                              {voteSummary.up}
-                            </Text>
-                          </View>
-
-                          {/* Bouton pour votes négatifs */}
-                          <View
-                            style={[styles.voteButton, styles.negativeVote]}
-                          >
-                            <Ionicons
-                              name="thumbs-down-outline"
-                              size={23}
-                              color="#A73830"
-                            />
-                            <Text style={styles.voteCount}>
-                              {voteSummary.down}
-                            </Text>
-                          </View>
-                        </View>
-                      );
-                    })()
-                  ) : (
-                    <Text style={styles.noVotesText}>
-                      Pas encore de votes. Votez pour monter dans le classement
-                    </Text>
-                  )
-                ) : (
-                  <Text style={styles.loadingText}>
-                    Chargement des votes...
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
+            {/* MODAL DES VOTES */}
             <Modal
               animationType="fade"
               transparent={true}
@@ -1155,33 +1176,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
           </View>
         </View>
 
-        <View style={styles.statistics}>
-          <TouchableOpacity
-            style={styles.statItem}
-            onPress={toggleFollowersList}
-          >
-            <Text style={styles.statNumber}>
-              {user?.followers?.length || 0}
-            </Text>
-            <Text style={styles.statLabel}>Relations</Text>
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity
-            style={styles.statItem}
-            onPress={() => navigation.navigate("RankingScreen")}
-          >
-            <Text style={styles.statNumber}>
-              {ranking && totalUsers
-                ? `${ranking}${getRankingSuffix(ranking)}`
-                : "?"}
-            </Text>
-            {ranking && totalUsers && (
-              <Text style={styles.statLabel}>
-                du classement sur {totalUsers}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
+
       </View>
 
       <TouchableOpacity
@@ -1202,13 +1197,19 @@ export default function HomeScreen({ navigation, handleScroll }) {
         onPress={toggleSection}
         activeOpacity={0.8}
       >
-        <Text style={styles.sectionTitleTop10}>🏆 Top 10 des Smarter</Text>
+        <Text
+          style={[
+            styles.sectionTitleTop10,
+          ]}
+        >
+          🏆 Top 10 des Smarter
+        </Text>
         <Text style={styles.arrow}>{isSectionVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
       {/* Contenu de la section */}
       {isSectionVisible && (
-        <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+        <View style={styles.sectionContent}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {smarterData.slice(0, 10).map((item, index) => {
               const borderColor =
@@ -1262,19 +1263,18 @@ export default function HomeScreen({ navigation, handleScroll }) {
               style={styles.seeAllButton}
               onPress={() => navigation.navigate("RankingScreen")}
             >
-              {/* Barre horizontale */}
-              <View style={[styles.bar, styles.horizontalBar]} />
-              {/* Barre verticale */}
-              <View style={[styles.bar, styles.verticalBar]} />
               {/* Texte "VOIR TOUT" */}
-              <Text style={styles.seeAllText}>VOIR TOUT</Text>
+              <Text style={styles.seeAllText}>VOIR TOUT LE CLASSEMENT</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
       )}
 
       <TouchableOpacity
-        style={styles.sectionHeader}
+        style={[
+          styles.sectionHeader,
+          isReportsVisible && styles.sectionHeaderVisible,
+        ]}
         onPress={toggleReports}
         activeOpacity={0.8}
       >
@@ -1285,7 +1285,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Contenu de la section */}
       {isReportsVisible && (
         <>
-          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+          <View style={styles.sectionContent}>
             {reports.length === 0 ? (
               <View style={styles.emptyStateContainer}>
                 <Text style={styles.noReportsText}>
@@ -1410,7 +1410,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
       )}
 
       <TouchableOpacity
-        style={styles.sectionHeader}
+        style={[
+          styles.sectionHeader,
+          isEventsVisible && styles.sectionHeaderVisible,
+        ]}
         onPress={toggleEvents}
         activeOpacity={0.8}
       >
@@ -1421,7 +1424,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Contenu de la section */}
       {isEventsVisible && (
         <>
-          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+          <View style={styles.sectionContent}>
             {loading ? (
               <ActivityIndicator size="large" color="#3498db" />
             ) : error ? (
@@ -1474,7 +1477,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
       />
 
       <TouchableOpacity
-        style={styles.sectionHeader}
+        style={[
+          styles.sectionHeader,
+          isCalendarVisible && styles.sectionHeaderVisible,
+        ]}
         onPress={toggleCalendar}
         activeOpacity={0.8}
       >
@@ -1485,7 +1491,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Affichage conditionnel du calendrier et des événements */}
       {isCalendarVisible && (
         <>
-          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+          <View style={styles.sectionContent}>
             {/* Calendrier */}
             <View style={styles.calendarContainer}>
               <CalendarPicker
@@ -1552,7 +1558,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
       )}
 
       <TouchableOpacity
-        style={styles.sectionHeader}
+        style={[
+          styles.sectionHeader,
+          isCategoryReportsVisible && styles.sectionHeaderVisible,
+        ]}
         onPress={toggleCategoryReports}
         activeOpacity={0.8}
       >
@@ -1562,7 +1571,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
       {/* Affichage conditionnel du contenu */}
       {isCategoryReportsVisible && (
-        <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+        <View style={styles.sectionContent}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -1593,7 +1602,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
       )}
 
       <TouchableOpacity
-        style={styles.sectionHeader}
+        style={[
+          styles.sectionHeader,
+          isMayorInfoVisible && styles.sectionHeaderVisible,
+        ]}
         onPress={toggleMayorInfo}
         activeOpacity={0.8}
       >
@@ -1604,7 +1616,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       {/* Affichage conditionnel du contenu */}
       {isMayorInfoVisible && (
         <>
-          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
+          <View style={styles.sectionContent}>
             {/* Informations mairie */}
             <View style={styles.infoCard}>
               <Text style={styles.infoTitle}>Attention : Travaux ! </Text>
@@ -1693,3 +1705,5 @@ export default function HomeScreen({ navigation, handleScroll }) {
     </ScrollView>
   );
 }
+
+
