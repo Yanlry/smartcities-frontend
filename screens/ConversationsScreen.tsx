@@ -7,12 +7,28 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Alert,
+  Animated,
 } from "react-native";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  DocumentData,
+  Query,
+  getDocs as firebaseGetDocs,
+} from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import axios from "axios";
 // @ts-ignore
 import { API_URL } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+
+const getDocs = (unreadMessagesQuery: Query<DocumentData>) => {
+  return firebaseGetDocs(unreadMessagesQuery);
+};
 
 const ConversationsScreen = ({ navigation, route }: any) => {
   const userId = route.params?.userId;
@@ -24,12 +40,15 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     lastMessage: string;
     otherParticipantName?: string;
     lastMessageTimestamp?: string | null;
-    unreadCount?: number; 
-    profilePhoto?: string | null; 
+    unreadCount?: number;
+    profilePhoto?: string | null;
   }
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenConversations, setHiddenConversations] = useState<string[]>([]);
+  const [showHiddenConversations, setShowHiddenConversations] = useState(false);
+  const [allConversations, setAllConversations] = useState<Conversation[]>([]);
 
   const fetchUserDetails = async (
     userId: number
@@ -61,18 +80,18 @@ const ConversationsScreen = ({ navigation, route }: any) => {
       );
       return;
     }
-
+  
     console.log(
       "Début de la récupération des conversations pour userId :",
       userId
     );
-
+  
     const conversationsRef = collection(db, "conversations");
     const q = query(
       conversationsRef,
       where("participants", "array-contains", Number(userId))
     );
-
+  
     const unsubscribe = onSnapshot(
       q,
       async (snapshot) => {
@@ -82,31 +101,17 @@ const ConversationsScreen = ({ navigation, route }: any) => {
             const otherParticipant = data.participants.find(
               (id: number) => id !== Number(userId)
             );
-            const { name: otherParticipantName, profilePhoto } =
-              otherParticipant
-                ? await fetchUserDetails(otherParticipant)
-                : { name: "Inconnu", profilePhoto: null };
-
-            const messagesRef = collection(db, "messages");
+  
             const unreadMessagesQuery = query(
-              messagesRef,
+              collection(db, "messages"),
               where("receiverId", "==", Number(userId)),
               where("senderId", "==", otherParticipant),
               where("isRead", "==", false)
             );
-
-            const unreadMessagesSnapshot = await new Promise(
-              (resolve, reject) => {
-                onSnapshot(
-                  unreadMessagesQuery,
-                  (querySnapshot) => resolve(querySnapshot),
-                  (error) => reject(error)
-                );
-              }
-            );
-
-            const unreadCount = (unreadMessagesSnapshot as any).docs.length;
-
+  
+            const unreadMessagesSnapshot = await getDocs(unreadMessagesQuery);
+            const unreadCount = unreadMessagesSnapshot.docs.length;
+  
             return {
               id: doc.id,
               participants: data.participants,
@@ -116,23 +121,30 @@ const ConversationsScreen = ({ navigation, route }: any) => {
                     data.lastMessageTimestamp.seconds * 1000
                   ).toISOString()
                 : null,
-              otherParticipantName,
-              profilePhoto,
+              otherParticipantName: otherParticipant
+                ? (await fetchUserDetails(otherParticipant)).name
+                : "Inconnu",
+              profilePhoto: otherParticipant
+                ? (await fetchUserDetails(otherParticipant)).profilePhoto
+                : null,
               unreadCount,
             };
           })
         );
-
+  
         const sortedConversations = fetchedConversations.sort((a, b) => {
           if (!a.lastMessageTimestamp) return 1; 
           if (!b.lastMessageTimestamp) return -1;
-          return (
-            new Date(b.lastMessageTimestamp).getTime() -
-            new Date(a.lastMessageTimestamp).getTime()
-          );
+          return new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime();
         });
-
-        setConversations(sortedConversations);
+  
+        setAllConversations(sortedConversations);
+  
+        const visibleConversations = sortedConversations.filter(
+          (conversation) => !hiddenConversations.includes(conversation.id)
+        );
+  
+        setConversations(visibleConversations);
         setLoading(false);
       },
       (error) => {
@@ -143,11 +155,68 @@ const ConversationsScreen = ({ navigation, route }: any) => {
         setLoading(false);
       }
     );
-
+  
     return () => {
       unsubscribe();
     };
-  }, [userId]);
+  }, [userId, hiddenConversations]);
+
+  useEffect(() => {
+    const loadHiddenConversations = async () => {
+      try {
+        const savedHidden = await AsyncStorage.getItem("hiddenConversations");
+        if (savedHidden) {
+          const parsedHidden = JSON.parse(savedHidden);
+          setHiddenConversations(parsedHidden);
+ 
+          setConversations((prevConversations) =>
+            prevConversations.filter(
+              (conversation) => !parsedHidden.includes(conversation.id)
+            )
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors du chargement des conversations masquées :",
+          error
+        );
+      }
+    };
+
+    loadHiddenConversations();
+  }, []);
+
+  useEffect(() => {
+    const saveHiddenConversations = async () => {
+      try {
+        await AsyncStorage.setItem(
+          "hiddenConversations",
+          JSON.stringify(hiddenConversations)
+        );
+      } catch (error) {
+        console.error(
+          "Erreur lors de la sauvegarde des conversations masquées :",
+          error
+        );
+      }
+    };
+
+    saveHiddenConversations();
+  }, [hiddenConversations]);
+
+  const hideConversation = (conversationId: string) => {
+    setHiddenConversations((prev) => {
+      const updatedHiddenConversations = [...prev, conversationId];
+ 
+      setConversations((prevConversations) =>
+        prevConversations.filter(
+          (conversation) => conversation.id !== conversationId
+        )
+      );
+
+      return updatedHiddenConversations;
+    });
+  };
 
   const updateUnreadCount = (receiverId: number) => {
     setConversations((prevConversations) =>
@@ -194,6 +263,20 @@ const ConversationsScreen = ({ navigation, route }: any) => {
             receiverId: item.participants.find((id) => id !== Number(userId)),
           });
         }}
+        onLongPress={() =>
+          Alert.alert(
+            "Masquer la conversation",
+            "Voulez-vous vraiment masquer cette conversation ?",
+            [
+              { text: "Annuler", style: "cancel" },
+              {
+                text: "Masquer",
+                onPress: () => hideConversation(item.id),  
+                style: "destructive",
+              },
+            ]
+          )
+        }
       >
         <View>
           {item.profilePhoto ? (
@@ -248,8 +331,100 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const recoverConversation = (conversationId: string) => {
+    setHiddenConversations((prev) => {
+      const updated = prev.filter((id) => id !== conversationId);
+ 
+      const recoveredConversation = allConversations.find(
+        (conv) => conv.id === conversationId
+      );
+
+      if (recoveredConversation) {
+        setConversations((prevConversations) => [
+          ...prevConversations,
+          recoveredConversation,
+        ]);
+      }
+ 
+      AsyncStorage.setItem(
+        "hiddenConversations",
+        JSON.stringify(updated)
+      ).catch((error) =>
+        console.error(
+          "Erreur lors de la mise à jour des conversations masquées :",
+          error
+        )
+      );
+
+      return updated;
+    });
+  };
+
+
   return (
     <View style={styles.container}>
+      <View style={styles.titleContainer}>
+        <Text style={styles.titleConversations}>Conversations récentes</Text>
+  
+        <TouchableOpacity
+          style={styles.showHiddenButton}
+          onPress={() => setShowHiddenConversations(!showHiddenConversations)}
+        >
+          <Ionicons name="settings-outline" size={24} color="#093A3E" style={styles.icon} />
+        </TouchableOpacity>
+      </View>
+  
+      {showHiddenConversations && (
+        <>
+          {hiddenConversations.length > 0 ? (
+            <>
+              {/* Message explicatif */}
+              <Text style={styles.tooltip}>
+                Vous pouvez récupérer les conversations masquées ci-dessous.
+              </Text>
+  
+              {/* Liste des conversations masquées */}
+              <FlatList
+              style={styles.hiddenList}
+                data={allConversations.filter((conversation) =>
+                  hiddenConversations.includes(conversation.id)
+                )}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <View style={styles.hiddenConversationItem}>
+                    <View style={styles.profileContainer}>
+                      {item.profilePhoto ? (
+                        <Image
+                          source={{ uri: item.profilePhoto }}
+                          style={styles.profilePhoto}
+                        />
+                      ) : (
+                        <View style={styles.defaultProfilePhoto} />
+                      )}
+  
+                      <Text style={styles.hiddenConversationName}>
+                        {item.otherParticipantName || "Nom inconnu"}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.recoverButton}
+                      onPress={() => recoverConversation(item.id)}
+                    >
+                      <Text style={styles.recoverButtonText}>Récupérer</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            </>
+          ) : ( 
+            <Text style={styles.noHiddenConversations}>
+              Appuyez longuement sur une conversation pour la masquer, puis récupérez-la ici à tout moment !
+            </Text>
+          )}
+        </>
+      )}
+  
+      {/* Liste principale */}
       {loading ? (
         <ActivityIndicator size="large" color="#093A3E" />
       ) : conversations.length > 0 ? (
@@ -268,14 +443,16 @@ const ConversationsScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingVertical: 20,
     backgroundColor: "#F2F4F7",
-    paddingTop: 120,
+    paddingTop: 90,
+    paddingHorizontal: 10,
+    paddingBottom: 100,
+
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+  icon: {
+    marginRight: 10,
+    marginTop:3,
   },
   conversationItem: {
     padding: 10,
@@ -301,6 +478,12 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     backgroundColor: "#ccc",
   },
+  titleConversations: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#093A3E",
+    marginLeft: 10,
+  },
   conversationDetails: {
     flex: 1,
     justifyContent: "center",
@@ -323,15 +506,56 @@ const styles = StyleSheet.create({
     marginRight: 10,
     alignSelf: "center",
   },
+  noHiddenConversations: {
+    color: "#555",  
+    fontSize: 14,
+    textAlign: "center",
+    marginHorizontal: 20,
+    marginVertical: 20,
+    backgroundColor: "#FDD1D1", 
+    padding: 10,
+    borderRadius: 8,
+    fontStyle: "italic",  
+  },
+  tooltip: {
+    color: "#093A3E", 
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: "center",
+    backgroundColor: "#E8F1F2",  
+    padding: 10,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  hiddenList: {
+    borderWidth : 1,
+    borderColor: "#ccc",
+    backgroundColor: "#E5EFF0", 
+    borderRadius: 20,
+    height:"100%",
+    marginTop: 10,
+    marginBottom: 20,
+  },
   unreadBadgeText: {
     color: "#fff",
     fontSize: 12,
     fontWeight: "bold",
   },
   noConversation: {
+    marginTop: 20,
     fontSize: 16,
     color: "#666",
     textAlign: "center",
+  },
+  titleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 10,
   },
   timestamp: {
     fontSize: 12,
@@ -339,6 +563,46 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginRight: 10,
     marginBottom: 17,
+  },
+  profileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  showHiddenButton: {
+    flexDirection: "row",
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  hiddenConversation: {
+    fontSize: 12,
+    color: "#093A3E",
+    marginRight: 10,
+    fontWeight: "bold",
+  },
+  showHiddenButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+  hiddenConversationItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#CCC",
+  },
+  hiddenConversationName: {
+    fontSize: 16,
+  },
+  recoverButton: {
+    backgroundColor: "#28A745",
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 30,
+  },
+  recoverButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
 });
 

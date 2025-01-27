@@ -83,8 +83,8 @@ export const createReport = async (data: any): Promise<any> => {
   try {
     const token = await AsyncStorage.getItem("authToken");
     if (!token) {
-      console.error("Aucun token trouvé dans AsyncStorage.");
-      throw new Error("Utilisateur non connecté.");
+      console.warn('Aucun token trouvé dans AsyncStorage.');
+      return null;
     }
 
     const decoded: any = jwtDecode(token);

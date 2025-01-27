@@ -60,7 +60,7 @@ export default function CommentsSection({ report }) {
   }, [report.id]);
 
   useEffect(() => {
-    fetchComments(); // Charger les commentaires à l'ouverture du report
+    fetchComments();  
   }, []);
 
   const fetchComments = async () => {
@@ -85,18 +85,16 @@ export default function CommentsSection({ report }) {
       }
 
       const data = await response.json();
-
-      // Met à jour les commentaires
+ 
       setComments(data);
-
-      // Initialisez l'état `likedComments` à partir de `likedByUser`
+ 
       const userLikedComments = data
-        .filter((comment) => comment.likedByUser) // Filtrer les commentaires likés
-        .map((comment) => comment.id); // Récupérer leurs IDs
+        .filter((comment) => comment.likedByUser)  
+        .map((comment) => comment.id);  
 
       console.log("Commentaires principale likés :", userLikedComments);
 
-      setLikedComments(userLikedComments); // Met à jour l'état local des likes
+      setLikedComments(userLikedComments);  
     } catch (error) {
       console.error("Erreur :", error.message);
       Alert.alert(
@@ -106,25 +104,34 @@ export default function CommentsSection({ report }) {
     }
   };
 
-  const handleLikeComment = async (commentId, isReply = false, parentCommentId = null) => {
+  const handleLikeComment = async (
+    commentId,
+    isReply = false,
+    parentCommentId = null
+  ) => {
     try {
       const userId = await getUserId();
       if (!userId) throw new Error("Utilisateur non authentifié.");
-  
-      console.log("Triggering like action for:", { commentId, isReply, parentCommentId });
-  
-      const response = await fetch(`${API_URL}/reports/comments/${commentId}/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+
+      console.log("Triggering like action for:", {
+        commentId,
+        isReply,
+        parentCommentId,
       });
-  
+
+      const response = await fetch(
+        `${API_URL}/reports/comments/${commentId}/like`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
       if (!response.ok) throw new Error("Erreur lors du like/unlike.");
-  
-      // Mise à jour de l'état
+ 
       setComments((prevComments) =>
-        prevComments.map((comment) => {
-          // Si commentaire principal
+        prevComments.map((comment) => { 
           if (!isReply && comment.id === commentId) {
             return {
               ...comment,
@@ -134,8 +141,7 @@ export default function CommentsSection({ report }) {
               likedByUser: !comment.likedByUser,
             };
           }
-  
-          // Si réponse
+ 
           if (isReply && comment.id === parentCommentId) {
             return {
               ...comment,
@@ -152,8 +158,8 @@ export default function CommentsSection({ report }) {
               ),
             };
           }
-  
-          return comment; // Retourne le reste inchangé
+
+          return comment;  
         })
       );
     } catch (error) {
@@ -211,35 +217,35 @@ export default function CommentsSection({ report }) {
 
   const submitReply = async (parentId) => {
     if (isSubmitting) return;
-  
+
     setIsSubmitting(true);
-  
+
     const trimmedReplyText = replyText.trim();
     if (!trimmedReplyText) {
       setIsSubmitting(false);
       return;
     }
-  
+
     const payload = {
       reportId: report.id,
       userId: currentUserId,
       text: trimmedReplyText,
-      parentId, // Ajout du parentId pour lier à un commentaire principal
+      parentId,  
     };
-  
+
     try {
       const response = await fetch(`${API_URL}/reports/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-  
-      if (!response.ok) throw new Error("Erreur lors de l'envoi de la réponse.");
-  
+
+      if (!response.ok)
+        throw new Error("Erreur lors de l'envoi de la réponse.");
+
       const newReply = await response.json();
       console.log("Nouvelle réponse créée :", newReply);
-  
-      // Ajouter la réponse sous le commentaire principal correspondant
+ 
       setComments((prevComments) =>
         prevComments.map((comment) =>
           comment.id === parentId
@@ -329,28 +335,28 @@ export default function CommentsSection({ report }) {
           <View style={styles.actionButtonsContainer}>
             {/* Bouton pour liker le commentaire */}
             <TouchableOpacity
-  onPress={() => handleLikeComment(comment.id)}
-  style={[
-    styles.likeButton,
-    comment.likedByUser && styles.likedButton,
-  ]}
->
-  <View style={styles.likeButtonContent}>
-    <Icon
-      name={comment.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
-      size={22}
-      color={comment.likedByUser ? "#007bff" : "#656765"}
-    />
-    <Text
-      style={[
-        styles.likeButtonText,
-        { color: comment.likedByUser ? "#007bff" : "#656765" },
-      ]}
-    >
-      {comment.likesCount || 0}
-    </Text>
-  </View>
-</TouchableOpacity>
+              onPress={() => handleLikeComment(comment.id)}
+              style={[
+                styles.likeButton,
+                comment.likedByUser && styles.likedButton,
+              ]}
+            >
+              <View style={styles.likeButtonContent}>
+                <Icon
+                  name={comment.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
+                  size={22}
+                  color={comment.likedByUser ? "#007bff" : "#656765"}
+                />
+                <Text
+                  style={[
+                    styles.likeButtonText,
+                    { color: comment.likedByUser ? "#007bff" : "#656765" },
+                  ]}
+                >
+                  {comment.likesCount || 0}
+                </Text>
+              </View>
+            </TouchableOpacity>
             {/* Bouton pour afficher les réponses */}
             {!comment.parentId && (
               <TouchableOpacity
@@ -414,55 +420,101 @@ export default function CommentsSection({ report }) {
             </View>
           )}
 
-{comment.replies &&
-  comment.replies.length > 0 &&
-  expandedComments[comment.id] &&
-  comment.replies.map((reply) => (
-    <View key={reply.id} style={[styles.replyContainer, { marginLeft: level * 10 }]}>
-      <View style={styles.userInfoContainer}>
-        <Image
-          source={{
-            uri:
-              reply.user?.profilePhoto ||
-              "https://via.placeholder.com/50",
-          }}
-          style={styles.userPhoto}
-        />
-        <Text style={styles.userName}>
-          {reply.user?.useFullName
-            ? `${reply.user.firstName} ${reply.user.lastName}`
-            : reply.user?.username || "Utilisateur inconnu"}
-        </Text>
-      </View>
+          {comment.replies &&
+            comment.replies.length > 0 &&
+            expandedComments[comment.id] &&
+            comment.replies.map((reply) => (
+              <View
+                key={reply.id}
+                style={[styles.replyContainer, { marginLeft: level * 10 }]}
+              >
+                <View style={styles.userInfoContainer}>
+                  <Image
+                    source={{
+                      uri:
+                        reply.user?.profilePhoto ||
+                        "https://via.placeholder.com/50",
+                    }}
+                    style={styles.userPhoto}
+                  />
+                  <View>
+                    <Text style={styles.userName}>
+                      {reply.user?.useFullName
+                        ? `${reply.user.firstName} ${reply.user.lastName}`
+                        : reply.user?.username || "Utilisateur inconnu"}
+                    </Text>
+                    <Text style={styles.replyDate}>
+                      Le {new Date(reply.createdAt).toLocaleDateString()} à{" "}
+                      {new Date(reply.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+                </View>
+                {/* Bouton pour supprimer la réponse */}
+                {reply.user?.id === currentUserId && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      Alert.alert(
+                        "Confirmation de suppression",
+                        "Êtes-vous sûr de vouloir supprimer cette réponse ?",
+                        [
+                          { text: "Annuler", style: "cancel" },
+                          {
+                            text: "Supprimer",
+                            onPress: () => deleteComment(reply.id), 
+                            style: "destructive",
+                          },
+                        ]
+                      )
+                    }
+                    style={styles.deleteIconReply} 
+                    disabled={loadingCommentId === reply.id}
+                  >
+                    {loadingCommentId === reply.id ? (
+                      <ActivityIndicator size="small" color="#656765" />
+                    ) : (
+                      <Icon name="trash" size={16} color="#656765" />
+                    )}
+                  </TouchableOpacity>
+                )}
+                {/* Texte de la réponse */}
+                <Text style={styles.replyText}>{reply.text}</Text>
 
-      <Text style={styles.replyText}>{reply.text}</Text>
-
-      {/* Bouton pour liker la réponse */}
-      <TouchableOpacity
-        onPress={() => handleLikeComment(reply.id, true, comment.id)} // Passe `isReply` et `parentCommentId`
-        style={[
-          styles.likeButton,
-          reply.likedByUser && styles.likedButton,
-        ]}
-      >
-        <View style={styles.likeButtonContent}>
-          <Icon
-            name={reply.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
-            size={22}
-            color={reply.likedByUser ? "#007bff" : "#656765"}
-          />
-          <Text
-            style={[
-              styles.likeButtonText,
-              { color: reply.likedByUser ? "#007bff" : "#656765" },
-            ]}
-          >
-            {reply.likesCount || 0}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </View>
-  ))}
+                {/* Boutons d'actions pour la réponse */}
+                <View style={styles.actionButtonsContainer}>
+                  {/* Bouton pour liker la réponse */}
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleLikeComment(reply.id, true, comment.id)
+                    }  
+                    style={[
+                      styles.likeButton,
+                      reply.likedByUser && styles.likedButton,
+                    ]}
+                  >
+                    <View style={styles.likeButtonContent}>
+                      <Icon
+                        name={
+                          reply.likedByUser ? "thumbs-up" : "thumbs-up-outline"
+                        }
+                        size={22}
+                        color={reply.likedByUser ? "#007bff" : "#656765"}
+                      />
+                      <Text
+                        style={[
+                          styles.likeButtonText,
+                          { color: reply.likedByUser ? "#007bff" : "#656765" },
+                        ]}
+                      >
+                        {reply.likesCount || 0}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
         </View>
       </TouchableWithoutFeedback>
     ));
@@ -473,27 +525,30 @@ export default function CommentsSection({ report }) {
   };
 
   const deleteComment = async (commentId) => {
+    const token = await getToken();
+    console.log("Token utilisé pour la suppression :", token);
+
     setLoadingCommentId(commentId);
 
     try {
       const response = await fetch(`${API_URL}/reports/comment/${commentId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${await getToken()}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la suppression du commentaire.");
+        const error = await response.json();
+        console.error("Erreur API :", error);
+        throw new Error(error.message || "Erreur lors de la suppression.");
       }
-
-      const updateComments = (commentsList) =>
-        commentsList
+ 
+      setComments((prevComments) =>
+        prevComments
           .map((comment) => {
-            if (comment.id === commentId) {
-              return null;
-            }
+            if (comment.id === commentId) return null;
             if (comment.replies) {
               const updatedReplies = comment.replies.filter(
                 (reply) => reply.id !== commentId
@@ -502,11 +557,10 @@ export default function CommentsSection({ report }) {
             }
             return comment;
           })
-          .filter(Boolean);
-
-      setComments(updateComments(comments));
+          .filter(Boolean)
+      );
     } catch (error) {
-      console.error("Erreur:", error.message);
+      console.error("Erreur lors de la suppression :", error.message);
       Alert.alert(
         "Erreur",
         "Une erreur s'est produite lors de la suppression."
@@ -888,7 +942,7 @@ const styles = StyleSheet.create({
   replyContainer: {
     marginTop: 10,
     marginLeft: 20,
-    paddingVertical: 15,
+    paddingVertical: 8,
     paddingHorizontal: 20,
     backgroundColor: "#f1f5f9",
     borderRadius: 38,
@@ -898,6 +952,7 @@ const styles = StyleSheet.create({
   replyText: {
     fontSize: 13,
     color: "#555",
+    marginVertical: 5,
     fontWeight: "500",
   },
   replyDate: {
@@ -972,6 +1027,11 @@ const styles = StyleSheet.create({
     right: 15,
     top: 10,
   },
+  deleteIconReply: {
+    position: "absolute",
+    right: 25,
+    top:15,
+  },
   commentButtonContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -992,9 +1052,7 @@ const styles = StyleSheet.create({
   likeCountText: {
     fontSize: 14,
   },
-  likedButton: {
-    backgroundColor: "#f0f0f0",
-  },
+  likedButton: {},
   commentCountText: {
     fontWeight: "bold",
     color: "#656765",

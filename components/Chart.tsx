@@ -95,7 +95,7 @@ const Chart: React.FC<ChartProps> = ({
   >;
   
   const generateSummary = () => {
-      const navigation = useNavigation<CategoryReportsScreenNavigationProp>(); // Accès à la navigation
+      const navigation = useNavigation<CategoryReportsScreenNavigationProp>();  
   
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
@@ -105,8 +105,7 @@ const Chart: React.FC<ChartProps> = ({
         <TouchableOpacity
           key={label}
           style={styles.summaryItem}
-          onPress={() => {
-            // Navigation vers CategoryReportsScreen avec le paramètre de catégorie
+          onPress={() => { 
             navigation.navigate("CategoryReportsScreen", { category: label });
           }}
         >

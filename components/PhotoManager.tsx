@@ -1,4 +1,3 @@
-// components/PhotoManager.tsx
 import React from "react";
 import { View, TouchableOpacity, ScrollView, Image, Alert, Text, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";

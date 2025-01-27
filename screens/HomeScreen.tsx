@@ -166,7 +166,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       try {
         const userId = await getUserIdFromToken();
         if (!userId) {
-          console.error("ID utilisateur non trouvé");
+          console.warn("ID utilisateur non trouvé");
           return;
         }
 
