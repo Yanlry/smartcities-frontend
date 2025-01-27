@@ -123,17 +123,16 @@ const Chart: React.FC<ChartProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-  style={[
-    styles.sectionHeader, // Style de base
-    isStatsVisible && { backgroundColor: "#f5f5f5" }, // Fond gris si isStatsVisible est true
-  ]}
-  onPress={toggleStats}
-  activeOpacity={0.8}
->
-   <Text style={styles.title}> 📊 Statistiques de la ville
-  </Text>
-  <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
-</TouchableOpacity>
+        style={[
+          styles.sectionHeader,
+          isStatsVisible && { backgroundColor: "#f5f5f5" },
+        ]}
+        onPress={toggleStats}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.title}> 📊 Statistiques de la ville</Text>
+        <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
+      </TouchableOpacity>
 
       {isStatsVisible && (
         <>

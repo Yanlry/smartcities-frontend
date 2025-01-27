@@ -19,6 +19,7 @@ import { useToken } from "../hooks/useToken";
 import * as ImagePicker from "expo-image-picker";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Share } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SocialScreen({ handleScroll }) {
   const [posts, setPosts] = useState<any[]>([]);
@@ -26,44 +27,88 @@ export default function SocialScreen({ handleScroll }) {
   const [isLoading, setIsLoading] = useState(false);
   const { getUserId } = useToken();
   const [commentInputs, setCommentInputs] = useState({});
-  const [visibleComments, setVisibleComments] = useState({});  
+  const [visibleComments, setVisibleComments] = useState({});
   const [userId, setUserId] = useState<number | null>(null);
   const [replyInputs, setReplyInputs] = useState({});
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyVisibility, setReplyVisibility] = useState({});
   const [selectedImage, setSelectedImage] = useState<string[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);  
-  const [likedPosts, setLikedPosts] = useState<number[]>([]); 
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [likedPosts, setLikedPosts] = useState<number[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [visibleCommentSection, setVisibleCommentSection] = useState({});
+  const [isCityFilterEnabled, setIsCityFilterEnabled] = useState(false);
+  const [customCity, setCustomCity] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+
+
+  const filters = [
+    { label: "Tous les posts", value: false },
+    { label: "Posts de ma ville", value: true },
+  ];
 
   useEffect(() => {
-    const fetchUserId = async () => {
-      const id = await getUserId();
-      setUserId(id); 
+    const initialize = async () => {
+      try {
+        const id = await getUserId();
+        setUserId(id);
+
+        const savedFilter = await AsyncStorage.getItem("userFilterPreference");
+        const filterEnabled = savedFilter === "true";
+        setIsCityFilterEnabled(filterEnabled);
+
+        fetchPosts(filterEnabled);
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation :", error.message);
+      }
     };
-    fetchUserId();
-    fetchPosts();
+
+    initialize();
   }, []);
 
-  useEffect(() => {
-    fetchPosts();  
-  }, []);
-
-  const fetchPosts = async () => {
+  const fetchPosts = async (filterByCity = isCityFilterEnabled) => {
     setIsLoading(true);
     try {
-      const { getToken } = useToken();
-      const token = await getToken();
+      const { getToken, getUserId } = useToken();
 
-      if (!token) {
+      const token = await getToken();
+      const userId = await getUserId();
+
+      if (!token || !userId) {
         throw new Error(
-          "Impossible de récupérer un token valide. Veuillez vous reconnecter."
+          "Impossible de récupérer un token ou un ID utilisateur valide. Veuillez vous reconnecter."
         );
       }
 
-      const response = await fetch(`${API_URL}/posts`, {
+      console.log("ID utilisateur récupéré :", userId);
+
+      const userResponse = await fetch(`${API_URL}/users/${userId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!userResponse.ok) {
+        throw new Error(
+          "Impossible de récupérer les informations de l'utilisateur."
+        );
+      }
+
+      const userData = await userResponse.json();
+
+      const userCity = userData.nomCommune;
+      if (!userCity) {
+        throw new Error("Aucune commune associée à cet utilisateur.");
+      }
+
+      const query = filterByCity
+        ? `?cityName=${encodeURIComponent(userCity)}`
+        : "";
+
+      const response = await fetch(`${API_URL}/posts${query}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -76,19 +121,19 @@ export default function SocialScreen({ handleScroll }) {
       }
 
       const data = await response.json();
- 
+
       const sortedData = data.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       setPosts(sortedData);
- 
-      const userLikedPosts = sortedData
-        .filter((post) => post.likedByUser)  
-        .map((post) => post.id);  
 
-      setLikedPosts(userLikedPosts);  
+      const userLikedPosts = sortedData
+        .filter((post) => post.likedByUser)
+        .map((post) => post.id);
+
+      setLikedPosts(userLikedPosts);
     } catch (error) {
       console.error("Erreur :", error.message);
       Alert.alert(
@@ -117,12 +162,11 @@ export default function SocialScreen({ handleScroll }) {
       if (!response.ok) {
         throw new Error("Erreur lors du like de la publication");
       }
- 
-      setLikedPosts(
-        (prevLikedPosts) =>
-          prevLikedPosts.includes(postId)
-            ? prevLikedPosts.filter((id) => id !== postId)  
-            : [...prevLikedPosts, postId]  
+
+      setLikedPosts((prevLikedPosts) =>
+        prevLikedPosts.includes(postId)
+          ? prevLikedPosts.filter((id) => id !== postId)
+          : [...prevLikedPosts, postId]
       );
 
       fetchPosts();
@@ -185,7 +229,7 @@ export default function SocialScreen({ handleScroll }) {
   const toggleCommentsVisibility = (postId) => {
     setVisibleCommentSection((prev) => ({
       ...prev,
-      [postId]: !prev[postId],  
+      [postId]: !prev[postId],
     }));
   };
 
@@ -196,9 +240,7 @@ export default function SocialScreen({ handleScroll }) {
 
   const renderItem = ({ item }) => {
     const isExpanded = visibleComments[item.id];
-    const displayedComments = isExpanded
-      ? item.comments  
-      : [];  
+    const displayedComments = isExpanded ? item.comments : [];
 
     const handleDeletePost = async (postId) => {
       Alert.alert(
@@ -223,7 +265,7 @@ export default function SocialScreen({ handleScroll }) {
                     "Erreur lors de la suppression de la publication"
                   );
                 }
-                fetchPosts();  
+                fetchPosts();
               } catch (error) {
                 Alert.alert(
                   "Erreur",
@@ -262,7 +304,7 @@ export default function SocialScreen({ handleScroll }) {
                     "Erreur lors de la suppression du commentaire"
                   );
                 }
-                fetchPosts();  
+                fetchPosts();
               } catch (error) {
                 Alert.alert(
                   "Erreur",
@@ -297,20 +339,20 @@ export default function SocialScreen({ handleScroll }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            postId: item.id,  
-            userId,  
-            text: replyInputs[parentId],  
-            parentId,  
+            postId: item.id,
+            userId,
+            text: replyInputs[parentId],
+            parentId,
           }),
         });
 
         if (!response.ok) {
           throw new Error("Erreur lors de l'ajout de la réponse");
         }
- 
+
         setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-        setReplyToCommentId(null);  
- 
+        setReplyToCommentId(null);
+
         fetchPosts();
       } catch (error) {
         Alert.alert(
@@ -346,7 +388,7 @@ export default function SocialScreen({ handleScroll }) {
                     "Erreur lors de la suppression de la réponse"
                   );
                 }
-                fetchPosts();  
+                fetchPosts();
               } catch (error) {
                 Alert.alert(
                   "Erreur",
@@ -360,19 +402,19 @@ export default function SocialScreen({ handleScroll }) {
     };
 
     const handlePhotoPress = (photo) => {
-      console.log("Photo pressée :", photo); 
-      setSelectedPhoto(photo);  
-      setIsModalVisible(true);  
+      console.log("Photo pressée :", photo);
+      setSelectedPhoto(photo);
+      setIsModalVisible(true);
     };
 
     const handleShare = async () => {
       try {
         const result = await Share.share({
           message:
-            "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123",  
-          title: "Partager ce post", 
+            "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123",
+          title: "Partager ce post",
         });
- 
+
         if (result.action === Share.sharedAction) {
           if (result.activityType) {
             console.log("Partagé via :", result.activityType);
@@ -414,7 +456,7 @@ export default function SocialScreen({ handleScroll }) {
             </Text>
           </View>
           {/* Bouton de suppression */}
-          {item.authorId === userId && (  
+          {item.authorId === userId && (
             <TouchableOpacity
               style={styles.deleteIcon}
               onPress={() => handleDeletePost(item.id)}
@@ -443,8 +485,8 @@ export default function SocialScreen({ handleScroll }) {
               {item.photos.map((photo, index) => (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => handlePhotoPress(photo)}  
-                  activeOpacity={1}  
+                  onPress={() => handlePhotoPress(photo)}
+                  activeOpacity={1}
                 >
                   <Image
                     source={{ uri: photo }}
@@ -472,19 +514,19 @@ export default function SocialScreen({ handleScroll }) {
           visible={isModalVisible}
           transparent={true}
           animationType="fade"
-          onRequestClose={() => setIsModalVisible(false)} 
+          onRequestClose={() => setIsModalVisible(false)}
         >
           <View style={styles.modalBackground}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setIsModalVisible(false)}  
+              onPress={() => setIsModalVisible(false)}
             >
               <Text style={styles.closeText}>X</Text>
             </TouchableOpacity>
             {selectedPhoto && (
               <Image
                 source={{ uri: selectedPhoto }}
-                style={styles.fullscreenPhoto}  
+                style={styles.fullscreenPhoto}
               />
             )}
           </View>
@@ -504,9 +546,9 @@ export default function SocialScreen({ handleScroll }) {
                   likedPosts.includes(item.id)
                     ? "thumbs-up"
                     : "thumbs-up-outline"
-                }  
+                }
                 size={22}
-                color={likedPosts.includes(item.id) ? "#007bff" : "#656765"}  
+                color={likedPosts.includes(item.id) ? "#007bff" : "#656765"}
                 style={styles.likeIcon}
               />
               <Text
@@ -514,7 +556,7 @@ export default function SocialScreen({ handleScroll }) {
                   styles.likeButtonText,
                   {
                     color: likedPosts.includes(item.id) ? "#007bff" : "#656765",
-                  },  
+                  },
                 ]}
               >
                 {likedPosts.includes(item.id)
@@ -655,12 +697,12 @@ export default function SocialScreen({ handleScroll }) {
                     onPress={() =>
                       setReplyVisibility((prev) => ({
                         ...prev,
-                        [comment.id]: !prev[comment.id],  
+                        [comment.id]: !prev[comment.id],
                       }))
                     }
                     style={[
                       !replyVisibility[comment.id] &&
-                        styles.marginBottomWhenHidden,  
+                        styles.marginBottomWhenHidden,
                     ]}
                   >
                     <Text style={styles.showMoreTextReply}>
@@ -739,8 +781,8 @@ export default function SocialScreen({ handleScroll }) {
 
   const handleRemovePhoto = (index) => {
     const updatedImages = [...selectedImage];
-    updatedImages.splice(index, 1);  
-    setSelectedImage(updatedImages);  
+    updatedImages.splice(index, 1);
+    setSelectedImage(updatedImages);
   };
 
   const handleAddPost = async () => {
@@ -749,7 +791,7 @@ export default function SocialScreen({ handleScroll }) {
       return;
     }
 
-    setIsLoading(true);  
+    setIsLoading(true);
 
     try {
       const userId = await getUserId();
@@ -766,7 +808,7 @@ export default function SocialScreen({ handleScroll }) {
       if (selectedImage) {
         selectedImage.forEach((image) => {
           const filename = image.split("/").pop();
-          const fileType = filename ? filename.split(".").pop() : "jpg";  
+          const fileType = filename ? filename.split(".").pop() : "jpg";
           formData.append("photos", {
             uri: image,
             name: filename,
@@ -792,10 +834,10 @@ export default function SocialScreen({ handleScroll }) {
 
       const newPost = await response.json();
       console.log("Publication créée :", newPost);
- 
+
       setNewPostContent("");
       setSelectedImage([]);
- 
+
       fetchPosts();
 
       Alert.alert("Succès", "Votre publication a été créée avec succès !");
@@ -806,11 +848,11 @@ export default function SocialScreen({ handleScroll }) {
         error.message || "Impossible de créer la publication."
       );
     } finally {
-      setIsLoading(false);  
+      setIsLoading(false);
     }
   };
 
-  const handlePickImage = async () => { 
+  const handlePickImage = async () => {
     if (selectedImage.length >= 5) {
       Alert.alert(
         "Limite atteinte",
@@ -826,7 +868,7 @@ export default function SocialScreen({ handleScroll }) {
       quality: 1,
     });
 
-    if (!result.canceled) { 
+    if (!result.canceled) {
       setSelectedImage((prevImages) => [...prevImages, result.assets[0].uri]);
     }
   };
@@ -838,15 +880,42 @@ export default function SocialScreen({ handleScroll }) {
     setActiveIndex(index);
   };
 
+  const saveFilterPreference = async (filterByCity) => {
+    try {
+      await AsyncStorage.setItem(
+        "userFilterPreference",
+        filterByCity.toString()
+      );
+    } catch (error) {
+      console.error(
+        "Erreur lors de la sauvegarde des préférences :",
+        error.message
+      );
+    }
+  };
+
+  const selectedFilter = filters.find(
+    (filter) => filter.value === isCityFilterEnabled
+  )?.label;
+
+  const handleFilterSelect = (filterValue) => {
+    setIsCityFilterEnabled(filterValue);
+    saveFilterPreference(filterValue);
+    fetchPosts(filterValue);
+    setModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
-      <FlatList
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        data={posts}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={
+    <FlatList
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+      data={posts}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id.toString()}
+      ListHeaderComponent={
+        <View>
+          {/* Conteneur pour la publication */}
           <View style={styles.newPostContainer}>
             <View style={styles.inputRow}>
               <TextInput
@@ -859,62 +928,51 @@ export default function SocialScreen({ handleScroll }) {
                 style={styles.iconButton}
                 onPress={handlePickImage}
               >
-                <Icon name="image" size={24} color="#007bff" />
+                <Icon name="image" size={24} color="#4CAF93" />
               </TouchableOpacity>
             </View>
-
+  
             <View>
-              {/* Affichage de la première photo en grand */}
-              <View>
-                {selectedImage.length > 0 ? (
-                  <>
-                    {/* Affichage de l'image active en grand */}
-                    <View style={styles.largeImageContainer}>
-                      <Image
-                        source={{ uri: selectedImage[0] }}  
-                        style={styles.largeImage}
-                      />
-                      {/* Icône de suppression pour la grande image */}
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleRemovePhoto(0)}  
-                      >
-                        <Icon name="trash-outline" size={24} color="#FFF" />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Affichage des autres images en petit */}
-                    <View style={styles.smallImagesContainer}>
-                      {selectedImage.slice(1).map((uri, index) => (
-                        <View key={index} style={styles.smallImageWrapper}>
-                          <Image source={{ uri }} style={styles.smallImage} />
-                          {/* Icône de suppression pour chaque petite image */}
-                          <TouchableOpacity
-                            style={styles.deleteButtonSmall}
-                            onPress={() => handleRemovePhoto(index + 1)}  
-                          >
-                            <Icon
-                              name="close-circle-outline"
-                              size={20}
-                              color="#FFF"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  </>
-                ) : (
-                  <Text style={styles.noImageText}>
-                    Enrichisser votre post en selectionnant jusqu'à 5 photos
-                  </Text>
-                )}
-              </View>
+              {selectedImage.length > 0 ? (
+                <>
+                  <View style={styles.largeImageContainer}>
+                    <Image
+                      source={{ uri: selectedImage[0] }}
+                      style={styles.largeImage}
+                    />
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleRemovePhoto(0)}
+                    >
+                      <Icon name="trash-outline" size={24} color="#FFF" />
+                    </TouchableOpacity>
+                  </View>
+  
+                  <View style={styles.smallImagesContainer}>
+                    {selectedImage.slice(1).map((uri, index) => (
+                      <View key={index} style={styles.smallImageWrapper}>
+                        <Image source={{ uri }} style={styles.smallImage} />
+                        <TouchableOpacity
+                          style={styles.deleteButtonSmall}
+                          onPress={() => handleRemovePhoto(index + 1)}
+                        >
+                          <Icon name="close-circle-outline" size={20} color="#FFF" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <Text style={styles.noImageText}>
+                  Enrichissez votre post en sélectionnant jusqu'à 5 photos
+                </Text>
+              )}
             </View>
-
+  
             <TouchableOpacity
               style={styles.publishButton}
               onPress={handleAddPost}
-              disabled={isLoading}  
+              disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color="#FFF" />
@@ -922,18 +980,68 @@ export default function SocialScreen({ handleScroll }) {
                 <Text style={styles.publishButtonText}>Publier</Text>
               )}
             </TouchableOpacity>
-
-            {/* Voile opaque */}
+  
             {isLoading && (
               <View style={styles.overlay}>
                 <ActivityIndicator size="large" color="#FFF" />
               </View>
             )}
           </View>
-        }
-        contentContainerStyle={styles.postsList}
-      />
+  
+          {/* Conteneur pour les filtres */}
+          <View style={styles.filterContainer}>
+      {/* Bouton principal */}
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.filterText}>Préférence d'affichage : {selectedFilter}</Text>
+      </TouchableOpacity>
+
+      {/* Modal pour le menu déroulant */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <FlatList
+              data={filters}
+              keyExtractor={(item) => item.label}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.filterOption,
+                    isCityFilterEnabled === item.value && styles.activeFilter,
+                  ]}
+                  onPress={() => handleFilterSelect(item.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      isCityFilterEnabled === item.value && styles.activeFilterOptionText,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
+        </View>
+      }
+      contentContainerStyle={styles.postsList}
+    />
+  </View>
   );
 }
 
@@ -943,10 +1051,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f2f5",
   },
   marginBottomWhenHidden: {
-    marginBottom: 20,  
+    marginBottom: 20,
   },
   largeImageContainer: {
-    position: "relative",  
+    position: "relative",
     width: "100%",
     alignItems: "center",
     marginBottom: 10,
@@ -960,10 +1068,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   deleteButton: {
-    position: "absolute",  
+    position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", 
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     padding: 5,
     borderRadius: 20,
   },
@@ -973,7 +1081,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   smallImageWrapper: {
-    position: "relative",  
+    position: "relative",
   },
   smallImage: {
     width: 75,
@@ -990,16 +1098,15 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   photoCarouselItem: {
-    width: Dimensions.get("window").width, 
-    aspectRatio: 1,  
+    width: Dimensions.get("window").width,
+    aspectRatio: 1,
     resizeMode: "contain",
     marginTop: 15,
   },
   newPostContainer: {
     padding: 20,
-    marginTop: 100,
     backgroundColor: "#fff",
-    marginBottom: 10,
+    marginTop: 100,
   },
   postHeader: {
     flexDirection: "row",
@@ -1038,12 +1145,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#333",
   },
   overlay: {
-    position: "absolute",  
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",  
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1083,7 +1190,7 @@ const styles = StyleSheet.create({
   },
   commentIcon: {
     marginTop: 12,
-    marginLeft: 5,  
+    marginLeft: 5,
   },
   commentCountText: {
     fontWeight: "bold",
@@ -1119,13 +1226,13 @@ const styles = StyleSheet.create({
   fullscreenPhoto: {
     width: "90%",
     height: "70%",
-    resizeMode: "contain",  
+    resizeMode: "contain",
     borderRadius: 10,
   },
 
   modalBackground: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)", 
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1143,7 +1250,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   likeIcon: {
-    marginRight: 5,  
+    marginRight: 5,
   },
   likeButtonText: {
     color: "#656765",
@@ -1164,7 +1271,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
-    marginBottom:15,
+    marginBottom: 15,
     paddingHorizontal: 10,
   },
   photosRowContainer: {
@@ -1174,10 +1281,60 @@ const styles = StyleSheet.create({
   },
   photoRowItem: {
     width: "100%",
-    aspectRatio: 1,  
+    aspectRatio: 1,
     borderRadius: 8,
     resizeMode: "cover",
     marginBottom: 10,
+  },
+
+  
+  filterContainer: {
+    alignItems: "center",
+    margin: 10,
+  },
+  filterButton: {
+    borderRadius: 30,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#555",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
+  },
+  filterOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  activeFilter: {
+    backgroundColor: "#4CAF93", 
+    borderRadius: 8,
+  },
+  filterOptionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  activeFilterOptionText: {
+    color: "#FFF",
+    fontWeight: "bold",
   },
 
   morePhotosOverlay: {
@@ -1235,7 +1392,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   publishButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#4CAF93",
     padding: 10,
     borderRadius: 10,
     alignItems: "center",
@@ -1247,7 +1404,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   postsList: {
-    paddingBottom: 10,  
+    paddingBottom: 10,
   },
   showMoreTextComment: {
     color: "#555",
@@ -1295,11 +1452,11 @@ const styles = StyleSheet.create({
   },
 
   commentContainer: {
-    flexDirection: "column",  
+    flexDirection: "column",
     alignItems: "flex-start",
     width: "85%",
     padding: 10,
-    paddingLeft:15,
+    paddingLeft: 15,
     backgroundColor: "#f7f7f7",
     borderRadius: 20,
   },

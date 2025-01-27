@@ -1007,7 +1007,6 @@ const styles = StyleSheet.create({
   alertContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
     marginTop: 10,
     padding: 10,
     borderRadius: 10,
