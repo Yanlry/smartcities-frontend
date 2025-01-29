@@ -65,19 +65,6 @@ const Chart: React.FC<ChartProps> = ({
     );
   }
 
-  if (!data || !data.labels || data.labels.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>📊 Statistiques à {formattedCommune}</Text>
-        <Text style={styles.subtitle}>
-          Il n'y a actuellement aucun signalement dans votre ville. Peut-être
-          est-elle parfaite ? Si ce n'est pas le cas, améliorez votre ville et
-          soyez le premier à signaler un problème !
-        </Text>
-      </View>
-    );
-  }
-
   const validatedData = data.datasets[0].data.map((value) =>
     typeof value === "number" && !isNaN(value) ? value : 0
   );
@@ -122,6 +109,7 @@ const Chart: React.FC<ChartProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Bouton pour ouvrir/fermer la section */}
       <TouchableOpacity
         style={[
           styles.sectionHeader,
@@ -133,43 +121,54 @@ const Chart: React.FC<ChartProps> = ({
         <Text style={styles.title}> 📊 Statistiques de la ville</Text>
         <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
-
+  
+      {/* Contenu affiché uniquement si la section est ouverte */}
       {isStatsVisible && (
-        <>
-          <View style={[styles.sectionContent, styles.sectionHeaderVisible]}>
-            <BarChart
-              data={{
-                labels: data.labels,
-                datasets: [
-                  {
-                    data: validatedData,
-                    colors: validatedData.map(
-                      (_, index) => () => barColors[index % barColors.length]
-                    ),
-                  },
-                ],
-              }}
-              width={screenWidth}
-              height={290}
-              chartConfig={chartConfig}
-              yAxisLabel=""
-              yAxisSuffix=""
-              fromZero={true}
-              segments={Math.max(1, maxValue)}
-              showBarTops={false}
-              withCustomBarColorFromData={true}
-              flatColor={true}
-              style={styles.chart}
-            />
-
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryTitle}>
-                Résumé des signalements à {formattedCommune}
-              </Text>
-              {generateSummary()}
-            </View>
-          </View>
-        </>
+        <View style={styles.sectionContent}>
+          {/* Si aucun signalement, afficher un message */}
+          {(!data || !data.labels || data.labels.length === 0) ? (
+            <Text style={styles.subtitle}>
+              Il n'y a actuellement aucun signalement dans votre ville. Peut-être est-elle parfaite ? 
+              Si ce n'est pas le cas, améliorez votre ville et soyez le premier à signaler un problème !
+            </Text>
+          ) : (
+            <>
+              {/* Graphique */}
+              <BarChart
+                data={{
+                  labels: data.labels,
+                  datasets: [
+                    {
+                      data: validatedData,
+                      colors: validatedData.map(
+                        (_, index) => () => barColors[index % barColors.length]
+                      ),
+                    },
+                  ],
+                }}
+                width={screenWidth}
+                height={290}
+                chartConfig={chartConfig}
+                yAxisLabel=""
+                yAxisSuffix=""
+                fromZero={true}
+                segments={Math.max(1, maxValue)}
+                showBarTops={false}
+                withCustomBarColorFromData={true}
+                flatColor={true}
+                style={styles.chart}
+              />
+  
+              {/* Résumé des signalements */}
+              <View style={styles.summaryContainer}>
+                <Text style={styles.summaryTitle}>
+                  Résumé des signalements à {formattedCommune}
+                </Text>
+                {generateSummary()}
+              </View>
+            </>
+          )}
+        </View>
       )}
     </View>
   );
@@ -193,7 +192,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     color: "#888",
-    marginVertical: 10,
+    marginVertical: 20,
+    marginHorizontal: 20,
   },
   sectionHeader: {
     flexDirection: "row",

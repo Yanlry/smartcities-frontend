@@ -20,6 +20,7 @@ import * as ImagePicker from "expo-image-picker";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Share } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SocialScreen({ handleScroll }) {
   const [posts, setPosts] = useState<any[]>([]);
@@ -39,13 +40,12 @@ export default function SocialScreen({ handleScroll }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [visibleCommentSection, setVisibleCommentSection] = useState({});
   const [isCityFilterEnabled, setIsCityFilterEnabled] = useState(false);
-  const [customCity, setCustomCity] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
 
   const filters = [
-    { label: "Tous les posts", value: false },
-    { label: "Posts de ma ville", value: true },
+    { label: "Toutes les villes", value: false },
+    { label: "Publications de ma ville", value: true },
   ];
 
   useEffect(() => {
@@ -995,6 +995,7 @@ export default function SocialScreen({ handleScroll }) {
         style={styles.filterButton}
         onPress={() => setModalVisible(true)}
       >
+        <Ionicons name="settings-outline" size={16} />
         <Text style={styles.filterText}>Préférence d'affichage : {selectedFilter}</Text>
       </TouchableOpacity>
 
@@ -1049,6 +1050,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f0f2f5",
+    paddingBottom: 80,
   },
   marginBottomWhenHidden: {
     marginBottom: 20,
@@ -1293,12 +1295,15 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   filterButton: {
+    flexDirection: "row",
     borderRadius: 30,
   },
   filterText: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#555",
+    marginLeft: 5,
+    marginTop: 2,
   },
   modalOverlay: {
     flex: 1,

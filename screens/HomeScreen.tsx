@@ -115,6 +115,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [areAllSectionsVisible, setAllSectionsVisible] = useState(true);
   const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
   const [modalLikeVisible, setModalLikeVisible] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -433,10 +434,15 @@ export default function HomeScreen({ navigation, handleScroll }) {
     navigation.navigate("CategoryReportsScreen", { category });
   };
 
-  const toggleFollowersList = () => {
-    setShowFollowers((prev) => !prev);
-  };
+const toggleFollowersList = () => {
+  setShowFollowers((prev) => !prev);
+  setShowFollowing(false);  
+};
 
+const toggleFollowingList = () => {
+  setShowFollowing((prev) => !prev);
+  setShowFollowers(false); 
+};
   const handlePressPhoneNumber = () => {
     Linking.openURL("tel:0320440251");
   };
@@ -453,6 +459,19 @@ export default function HomeScreen({ navigation, handleScroll }) {
         style={styles.followerImage}
       />
       {/* Encapsulation du texte */}
+      <Text style={styles.followerName}>{item.username || "Utilisateur"}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderFollowing = ({ item }) => (
+    <TouchableOpacity
+      style={styles.followerItem}
+      onPress={() => navigation.navigate("UserProfileScreen", { userId: item.id })}
+    >
+      <Image
+        source={{ uri: item.profilePhoto || "https://via.placeholder.com/50" }}
+        style={styles.followerImage}
+      />
       <Text style={styles.followerName}>{item.username || "Utilisateur"}</Text>
     </TouchableOpacity>
   );
@@ -518,7 +537,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
   if (showFollowers) {
     return (
       <View style={styles.containerFollower}>
-        <Text style={styles.title}>Mes relations</Text>
+        <Text style={styles.title}>Mes abonnés</Text>
         <FlatList
           data={user?.followers || []}
           keyExtractor={(item) => item.id.toString()}
@@ -535,6 +554,23 @@ export default function HomeScreen({ navigation, handleScroll }) {
     );
   }
 
+  if (showFollowing) {
+    return (
+      <View style={styles.containerFollower}>
+        <Text style={styles.title}>Mes abonnements</Text>
+        <FlatList
+          data={user?.following || []}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderFollowing}
+          contentContainerStyle={styles.followerList}
+        />
+        <TouchableOpacity style={styles.backButton} onPress={toggleFollowingList}>
+          <Text style={styles.backButtonText}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
   const categories = [
     {
       name: "danger",
@@ -876,14 +912,18 @@ export default function HomeScreen({ navigation, handleScroll }) {
               </View>
             </TouchableOpacity>
             <TouchableOpacity
-            style={styles.relationItem}
+            style={styles.relationFollowers}
             onPress={toggleFollowersList}
           >
             <Text style={styles.statNumber}>
               {user?.followers?.length || 0}
             </Text>
-            <Text style={styles.statLabel}>Relations</Text>
+            <Text style={styles.statLabel}>Abonnés</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.relationFollowing} onPress={toggleFollowingList}>
+      <Text style={styles.statNumber}>{user?.following?.length || 0}</Text>
+      <Text style={styles.statLabel}>Abonnements</Text>
+    </TouchableOpacity>
             {/* Image de profil */}
             <View>
               {user?.profilePhoto?.url ? (
@@ -918,19 +958,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 <Text style={styles.voteCount}>{voteSummary.down}</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity
-            style={styles.rankingItem}
-            onPress={() => navigation.navigate("RankingScreen")}
-          >
-            <Text style={styles.statLabel}>
-                Vous etes classé{" "}
-              </Text>
-            <Text style={styles.statNumber}>
-              {ranking && totalUsers
-                ? `${ranking}${getRankingSuffix(ranking)}`
-                : "?"}
-            </Text>
-          </TouchableOpacity>
           </View>
 
           <View style={styles.userInfo}>
@@ -981,7 +1008,19 @@ export default function HomeScreen({ navigation, handleScroll }) {
                 </Text>
               </Pressable>
             </View>
-
+            <TouchableOpacity
+            style={styles.rankingItem}
+            onPress={() => navigation.navigate("RankingScreen")}
+          >
+            <Text style={styles.statLabel}>
+                Vous etes classé{" "}
+              </Text>
+            <Text style={styles.statNumber}>
+              {ranking && totalUsers
+                ? `${ranking}${getRankingSuffix(ranking)}`
+                : "?"}
+            </Text>
+          </TouchableOpacity>
             {/* MODAL DES PALIER */}
             <Modal
               animationType="slide"
@@ -1185,7 +1224,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         activeOpacity={0.8}
       >
         <Text style={styles.globalToggleButtonText}>
-          {areAllSectionsVisible ? "Fermer toutes les sections" : "Ouvrir tout"}
+          {areAllSectionsVisible ? "▲  Fermer toutes les sections  ▲" : "▼  Ouvrir tout  ▼"}
         </Text>
       </TouchableOpacity>
 
