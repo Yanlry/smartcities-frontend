@@ -434,15 +434,15 @@ export default function HomeScreen({ navigation, handleScroll }) {
     navigation.navigate("CategoryReportsScreen", { category });
   };
 
-const toggleFollowersList = () => {
-  setShowFollowers((prev) => !prev);
-  setShowFollowing(false);  
-};
+  const toggleFollowersList = () => {
+    setShowFollowers((prev) => !prev);
+    setShowFollowing(false);
+  };
 
-const toggleFollowingList = () => {
-  setShowFollowing((prev) => !prev);
-  setShowFollowers(false); 
-};
+  const toggleFollowingList = () => {
+    setShowFollowing((prev) => !prev);
+    setShowFollowers(false);
+  };
   const handlePressPhoneNumber = () => {
     Linking.openURL("tel:0320440251");
   };
@@ -466,7 +466,9 @@ const toggleFollowingList = () => {
   const renderFollowing = ({ item }) => (
     <TouchableOpacity
       style={styles.followerItem}
-      onPress={() => navigation.navigate("UserProfileScreen", { userId: item.id })}
+      onPress={() =>
+        navigation.navigate("UserProfileScreen", { userId: item.id })
+      }
     >
       <Image
         source={{ uri: item.profilePhoto || "https://via.placeholder.com/50" }}
@@ -564,13 +566,16 @@ const toggleFollowingList = () => {
           renderItem={renderFollowing}
           contentContainerStyle={styles.followerList}
         />
-        <TouchableOpacity style={styles.backButton} onPress={toggleFollowingList}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={toggleFollowingList}
+        >
           <Text style={styles.backButtonText}>Retour</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  
+
   const categories = [
     {
       name: "danger",
@@ -912,18 +917,23 @@ const toggleFollowingList = () => {
               </View>
             </TouchableOpacity>
             <TouchableOpacity
-            style={styles.relationFollowers}
-            onPress={toggleFollowersList}
-          >
-            <Text style={styles.statNumber}>
-              {user?.followers?.length || 0}
-            </Text>
-            <Text style={styles.statLabel}>Abonnés</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.relationFollowing} onPress={toggleFollowingList}>
-      <Text style={styles.statNumber}>{user?.following?.length || 0}</Text>
-      <Text style={styles.statLabel}>Abonnements</Text>
-    </TouchableOpacity>
+              style={styles.relationFollowers}
+              onPress={toggleFollowersList}
+            >
+              <Text style={styles.statNumber}>
+                {user?.followers?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnés</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.relationFollowing}
+              onPress={toggleFollowingList}
+            >
+              <Text style={styles.statNumber}>
+                {user?.following?.length || 0}
+              </Text>
+              <Text style={styles.statLabel}>Abonnements</Text>
+            </TouchableOpacity>
             {/* Image de profil */}
             <View>
               {user?.profilePhoto?.url ? (
@@ -1009,18 +1019,16 @@ const toggleFollowingList = () => {
               </Pressable>
             </View>
             <TouchableOpacity
-            style={styles.rankingItem}
-            onPress={() => navigation.navigate("RankingScreen")}
-          >
-            <Text style={styles.statLabel}>
-                Vous etes classé{" "}
+              style={styles.rankingItem}
+              onPress={() => navigation.navigate("RankingScreen")}
+            >
+              <Text style={styles.statLabel}>Vous etes classé </Text>
+              <Text style={styles.statNumber}>
+                {ranking && totalUsers
+                  ? `${ranking}${getRankingSuffix(ranking)}`
+                  : "?"}
               </Text>
-            <Text style={styles.statNumber}>
-              {ranking && totalUsers
-                ? `${ranking}${getRankingSuffix(ranking)}`
-                : "?"}
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
             {/* MODAL DES PALIER */}
             <Modal
               animationType="slide"
@@ -1043,9 +1051,13 @@ const toggleFollowingList = () => {
 
                   {/* Description */}
                   <Text style={styles.modalDescription}>
-                    Chaque badge reflète votre niveau d’engagement citoyen. Plus
-                    vous participez en votant sur les différents signalements de
-                    la ville, plus vous gravissez les échelons des paliers
+                    Chaque badge symbolise votre engagement citoyen. Plus vous
+                    participez en votant sur les signalements, plus vous
+                    progressez et débloquez de nouveaux paliers.
+                    {"\n"}
+                    {"\n"}
+                    💡 Bon à savoir : Vous pouvez voter dans n’importe quelle
+                    ville, alors n’attendez plus ! 🚀
                   </Text>
 
                   {/* Corps scrollable */}
@@ -1164,20 +1176,16 @@ const toggleFollowingList = () => {
                   <Text style={styles.titleModalLike}>
                     Montez dans le classement !
                   </Text>
-
-                  {/* Description */}
-                  <Text style={styles.description}>
-                    Pour monter dans le classement, il vous suffit de :
-                  </Text>
-
                   {/* Instructions */}
                   <View style={styles.instructions}>
                     <View style={styles.instructionItem}>
                       <Ionicons name="eye-outline" size={24} color="#555" />
                       <Text style={styles.instructionText}>
-                        Constatez le maximum de signalements possibles.
+                        Explorez et consultez un maximum de signalements pour
+                        rester informé.
                       </Text>
                     </View>
+
                     <View style={styles.instructionItem}>
                       <Ionicons
                         name="thumbs-up-outline"
@@ -1185,9 +1193,12 @@ const toggleFollowingList = () => {
                         color="#418074"
                       />
                       <Text style={styles.instructionText}>
-                        Votez "Oui" si le signalement est encore d'actualité.
+                        Votez <Text style={styles.highlight}>"Oui"</Text> si le
+                        problème signalé est toujours présent et nécessite une
+                        intervention.
                       </Text>
                     </View>
+
                     <View style={styles.instructionItem}>
                       <Ionicons
                         name="thumbs-down-outline"
@@ -1195,9 +1206,32 @@ const toggleFollowingList = () => {
                         color="#A73830"
                       />
                       <Text style={styles.instructionText}>
-                        Votez "Non" si le signalement n'est plus valide.
+                        Votez <Text style={styles.highlight}>"Non"</Text> si le
+                        problème a été résolu ou n’est plus d’actualité.
                       </Text>
                     </View>
+
+                    <View style={styles.instructionItem}>
+                      <Ionicons
+                        name="globe-outline"
+                        size={24}
+                        color="#007BFF"
+                      />
+                      <Text style={styles.instructionText}>
+                        Vous pouvez{" "}
+                        <Text style={styles.highlight}>
+                        voter dans toutes les villes
+                        </Text>
+                        , pas seulement la vôtre ! Plus vous participez, plus
+                        vous gagnez de points citoyens.
+                      </Text>
+                    </View>
+
+                    <Text style={styles.instructionsFooter}>
+                      📢 Plus vous interagissez, plus vous évoluez et débloquez
+                      de nouveaux badges. Contribuez à améliorer votre ville et
+                      celles des autres !
+                    </Text>
                   </View>
 
                   {/* Bouton pour fermer */}
@@ -1214,8 +1248,6 @@ const toggleFollowingList = () => {
             </Modal>
           </View>
         </View>
-
-
       </View>
 
       <TouchableOpacity
@@ -1224,7 +1256,9 @@ const toggleFollowingList = () => {
         activeOpacity={0.8}
       >
         <Text style={styles.globalToggleButtonText}>
-          {areAllSectionsVisible ? "▲  Fermer toutes les sections  ▲" : "▼  Ouvrir tout  ▼"}
+          {areAllSectionsVisible
+            ? "▲  Fermer toutes les sections  ▲"
+            : "▼  Ouvrir tout  ▼"}
         </Text>
       </TouchableOpacity>
 
@@ -1236,13 +1270,7 @@ const toggleFollowingList = () => {
         onPress={toggleSection}
         activeOpacity={0.8}
       >
-        <Text
-          style={[
-            styles.sectionTitleTop10,
-          ]}
-        >
-          🏆 Top 10 des Smarter
-        </Text>
+        <Text style={[styles.sectionTitleTop10]}>🏆 Top 10 des Smarter</Text>
         <Text style={styles.arrow}>{isSectionVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
@@ -1744,5 +1772,3 @@ const toggleFollowingList = () => {
     </ScrollView>
   );
 }
-
-

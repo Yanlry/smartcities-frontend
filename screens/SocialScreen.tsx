@@ -21,6 +21,14 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Share } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../types/navigation";
+
+type UserProfileScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "UserProfileScreen"
+>;
 
 export default function SocialScreen({ handleScroll }) {
   const [posts, setPosts] = useState<any[]>([]);
@@ -41,7 +49,12 @@ export default function SocialScreen({ handleScroll }) {
   const [visibleCommentSection, setVisibleCommentSection] = useState({});
   const [isCityFilterEnabled, setIsCityFilterEnabled] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation<UserProfileScreenNavigationProp>();
+  const [likedComments, setLikedComments] = useState({});
 
+  const handleNavigate = (userId: number) => {
+    navigation.navigate("UserProfileScreen", { userId: userId.toString() });
+  };
 
   const filters = [
     { label: "Toutes les villes", value: false },
@@ -122,10 +135,19 @@ export default function SocialScreen({ handleScroll }) {
 
       const data = await response.json();
 
-      const sortedData = data.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      const sortedData = data
+        .map((post) => ({
+          ...post,
+          comments: post.comments.map((comment) => ({
+            ...comment,
+            likedByUser: comment.likedByUser || false,  
+            likesCount: comment.likesCount || 0,  
+          })),
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
       setPosts(sortedData);
 
@@ -174,6 +196,57 @@ export default function SocialScreen({ handleScroll }) {
       Alert.alert(
         "Erreur",
         error.message || "Impossible d'aimer la publication."
+      );
+    }
+  };
+
+  const handleLikeComment = async (commentId) => {
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        console.error("Impossible de récupérer l'ID utilisateur.");
+        return;
+      }
+
+      console.log(
+        `🔄 Tentative de like du commentaire ${commentId} par l'utilisateur ${userId}`
+      );
+
+      const response = await fetch(
+        `${API_URL}/posts/comments/${commentId}/like`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("é Erreur lors du like du commentaire");
+      }
+
+      const data = await response.json();
+      console.log("🔄 Réponse API Like :", data);
+ 
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => ({
+          ...post,
+          comments: post.comments.map((comment) =>
+            comment.id === commentId
+              ? {
+                  ...comment,
+                  likedByUser: data.liked,  
+                  likesCount: data.likesCount, 
+                }
+              : comment
+          ),
+        }))
+      );
+    } catch (error) {
+      console.error("Erreur :", error.message);
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible d'aimer le commentaire."
       );
     }
   };
@@ -432,40 +505,41 @@ export default function SocialScreen({ handleScroll }) {
     return (
       <View style={styles.postContainer}>
         {/* En-tête du post */}
-        <View style={styles.postHeader}>
-          <Image
-            source={{
-              uri: item.profilePhoto || "https://via.placeholder.com/150",
-            }}
-            style={styles.avatar}
-          />
-          <View>
-            <Text style={styles.userName}>
-              {item.authorName || "Utilisateur inconnu"}
-            </Text>
-            <Text style={styles.timestamp}>
-              {item.createdAt
-                ? new Intl.DateTimeFormat("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }).format(new Date(item.createdAt))
-                : "Date inconnue"}
-            </Text>
+        <TouchableOpacity onPress={() => handleNavigate(item.authorId)}>
+          <View style={styles.postHeader}>
+            <Image
+              source={{
+                uri: item.profilePhoto || "https://via.placeholder.com/150",
+              }}
+              style={styles.avatar}
+            />
+            <View>
+              <Text style={styles.userName}>
+                {item.authorName || "Utilisateur inconnu"}
+              </Text>
+              <Text style={styles.timestamp}>
+                {item.createdAt
+                  ? new Intl.DateTimeFormat("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(item.createdAt))
+                  : "Date inconnue"}
+              </Text>
+            </View>
+            {/* Bouton de suppression */}
+            {item.authorId === userId && (
+              <TouchableOpacity
+                style={styles.deleteIcon}
+                onPress={() => handleDeletePost(item.id)}
+              >
+                <Icon name="trash" size={20} color="#656765" />
+              </TouchableOpacity>
+            )}
           </View>
-          {/* Bouton de suppression */}
-          {item.authorId === userId && (
-            <TouchableOpacity
-              style={styles.deleteIcon}
-              onPress={() => handleDeletePost(item.id)}
-            >
-              <Icon name="trash" size={20} color="#656765" />
-            </TouchableOpacity>
-          )}
-        </View>
-
+        </TouchableOpacity>
         {/* Contenu du post */}
         <Text style={styles.postText}>
           {item.content || "Contenu indisponible"}
@@ -574,18 +648,24 @@ export default function SocialScreen({ handleScroll }) {
             style={styles.commentButton}
           >
             <View style={styles.commentButtonContent}>
-              {/* Icône de commentaire */}
+              {/* Icône de commentaire qui change selon l'état */}
               <Icon
-                name="chatbubble-outline"
-                size={22}
                 style={styles.commentIcon}
-                color={"#656765"}
+                name={
+                  visibleComments[item.id] ? "chatbubble" : "chatbubble-outline"
+                }
+                size={22}
+                color={visibleComments[item.id] ? "#007BFF" : "#656765"}
               />
 
               {/* Nombre de commentaires */}
-              <Text style={styles.commentCountText}>
-                {item.comments?.length || 0}{" "}
-                {/* Affiche 0 si aucun commentaire */}
+              <Text
+                style={[
+                  styles.commentCountText,
+                  visibleComments[item.id] && { color: "#007BFF" },
+                ]}
+              >
+                {item.comments?.length || 0}
               </Text>
             </View>
           </TouchableOpacity>
@@ -649,25 +729,26 @@ export default function SocialScreen({ handleScroll }) {
                 </View>
                 <View style={styles.actionButton}>
                   <TouchableOpacity
-                    onPress={() =>
-                      setReplyToCommentId((prev) =>
-                        prev === comment.id ? null : comment.id
-                      )
-                    }
+                    onPress={() => handleLikeComment(comment.id)}
                   >
-                    <Text style={styles.replyButtonText}>J'aime</Text>
-                  </TouchableOpacity>
-                  {/* Bouton Répondre */}
-                  <TouchableOpacity
-                    onPress={() =>
-                      setReplyToCommentId((prev) =>
-                        prev === comment.id ? null : comment.id
-                      )
-                    }
-                  >
-                    <Text style={styles.replyButtonText}>Répondre</Text>
+                    <View style={styles.likeCommentButton}>
+                      <Icon
+                        name={comment.likedByUser ? "heart" : "heart-outline"}  
+                        size={20}
+                        color={comment.likedByUser ? "#FF0000" : "#656765"}
+                      />
+                      <Text
+                        style={[
+                          styles.likeCommentText,
+                          comment.likedByUser && { color: "#FF0000" },
+                        ]}
+                      >
+                        {comment.likesCount} {/* 👈 Supprime "J'aime" */}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
+                
                 {/* Champ de réponse conditionnel */}
                 {replyToCommentId === comment.id && (
                   <View style={styles.replyContainer}>
@@ -907,142 +988,150 @@ export default function SocialScreen({ handleScroll }) {
 
   return (
     <View style={styles.container}>
-    <FlatList
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-      data={posts}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id.toString()}
-      ListHeaderComponent={
-        <View>
-          {/* Conteneur pour la publication */}
-          <View style={styles.newPostContainer}>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={styles.newPostInput}
-                placeholder="Quoi de neuf ?"
-                value={newPostContent}
-                onChangeText={setNewPostContent}
-              />
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={handlePickImage}
-              >
-                <Icon name="image" size={24} color="#4CAF93" />
-              </TouchableOpacity>
-            </View>
-  
-            <View>
-              {selectedImage.length > 0 ? (
-                <>
-                  <View style={styles.largeImageContainer}>
-                    <Image
-                      source={{ uri: selectedImage[0] }}
-                      style={styles.largeImage}
-                    />
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleRemovePhoto(0)}
-                    >
-                      <Icon name="trash-outline" size={24} color="#FFF" />
-                    </TouchableOpacity>
-                  </View>
-  
-                  <View style={styles.smallImagesContainer}>
-                    {selectedImage.slice(1).map((uri, index) => (
-                      <View key={index} style={styles.smallImageWrapper}>
-                        <Image source={{ uri }} style={styles.smallImage} />
-                        <TouchableOpacity
-                          style={styles.deleteButtonSmall}
-                          onPress={() => handleRemovePhoto(index + 1)}
-                        >
-                          <Icon name="close-circle-outline" size={20} color="#FFF" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                </>
-              ) : (
-                <Text style={styles.noImageText}>
-                  Enrichissez votre post en sélectionnant jusqu'à 5 photos
-                </Text>
-              )}
-            </View>
-  
-            <TouchableOpacity
-              style={styles.publishButton}
-              onPress={handleAddPost}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#FFF" />
-              ) : (
-                <Text style={styles.publishButtonText}>Publier</Text>
-              )}
-            </TouchableOpacity>
-  
-            {isLoading && (
-              <View style={styles.overlay}>
-                <ActivityIndicator size="large" color="#FFF" />
-              </View>
-            )}
-          </View>
-  
-          {/* Conteneur pour les filtres */}
-          <View style={styles.filterContainer}>
-      {/* Bouton principal */}
-      <TouchableOpacity
-        style={styles.filterButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Ionicons name="settings-outline" size={16} />
-        <Text style={styles.filterText}>Préférence d'affichage : {selectedFilter}</Text>
-      </TouchableOpacity>
-
-      {/* Modal pour le menu déroulant */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <FlatList
-              data={filters}
-              keyExtractor={(item) => item.label}
-              renderItem={({ item }) => (
+      <FlatList
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <View>
+            {/* Conteneur pour la publication */}
+            <View style={styles.newPostContainer}>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.newPostInput}
+                  placeholder="Quoi de neuf ?"
+                  value={newPostContent}
+                  onChangeText={setNewPostContent}
+                />
                 <TouchableOpacity
-                  style={[
-                    styles.filterOption,
-                    isCityFilterEnabled === item.value && styles.activeFilter,
-                  ]}
-                  onPress={() => handleFilterSelect(item.value)}
+                  style={styles.iconButton}
+                  onPress={handlePickImage}
                 >
-                  <Text
-                    style={[
-                      styles.filterOptionText,
-                      isCityFilterEnabled === item.value && styles.activeFilterOptionText,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
+                  <Icon name="image" size={24} color="#4CAF93" />
                 </TouchableOpacity>
+              </View>
+
+              <View>
+                {selectedImage.length > 0 ? (
+                  <>
+                    <View style={styles.largeImageContainer}>
+                      <Image
+                        source={{ uri: selectedImage[0] }}
+                        style={styles.largeImage}
+                      />
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleRemovePhoto(0)}
+                      >
+                        <Icon name="trash-outline" size={24} color="#FFF" />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.smallImagesContainer}>
+                      {selectedImage.slice(1).map((uri, index) => (
+                        <View key={index} style={styles.smallImageWrapper}>
+                          <Image source={{ uri }} style={styles.smallImage} />
+                          <TouchableOpacity
+                            style={styles.deleteButtonSmall}
+                            onPress={() => handleRemovePhoto(index + 1)}
+                          >
+                            <Icon
+                              name="close-circle-outline"
+                              size={20}
+                              color="#FFF"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                ) : (
+                  <Text style={styles.noImageText}>
+                    Enrichissez votre post en sélectionnant jusqu'à 5 photos
+                  </Text>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={styles.publishButton}
+                onPress={handleAddPost}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.publishButtonText}>Publier</Text>
+                )}
+              </TouchableOpacity>
+
+              {isLoading && (
+                <View style={styles.overlay}>
+                  <ActivityIndicator size="large" color="#FFF" />
+                </View>
               )}
-            />
+            </View>
+
+            {/* Conteneur pour les filtres */}
+            <View style={styles.filterContainer}>
+              {/* Bouton principal */}
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={() => setModalVisible(true)}
+              >
+                <Ionicons name="settings-outline" size={16} />
+                <Text style={styles.filterText}>
+                  Préférence d'affichage : {selectedFilter}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Modal pour le menu déroulant */}
+              <Modal
+                visible={modalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+              >
+                <TouchableOpacity
+                  style={styles.modalOverlay}
+                  activeOpacity={1}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <View style={styles.modalContent}>
+                    <FlatList
+                      data={filters}
+                      keyExtractor={(item) => item.label}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={[
+                            styles.filterOption,
+                            isCityFilterEnabled === item.value &&
+                              styles.activeFilter,
+                          ]}
+                          onPress={() => handleFilterSelect(item.value)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterOptionText,
+                              isCityFilterEnabled === item.value &&
+                                styles.activeFilterOptionText,
+                            ]}
+                          >
+                            {item.label}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            </View>
           </View>
-        </TouchableOpacity>
-      </Modal>
+        }
+        contentContainerStyle={styles.postsList}
+      />
     </View>
-        </View>
-      }
-      contentContainerStyle={styles.postsList}
-    />
-  </View>
   );
 }
 
@@ -1207,6 +1296,30 @@ const styles = StyleSheet.create({
     marginLeft: 55,
     marginBottom: 15,
   },
+  likeCommentButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 5,
+    marginTop: 5,
+  },
+  likeCommentText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: "#656765",
+    fontWeight: "bold",
+  },
+  replyCommentButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 3,
+  },
+  replyCommentText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: "#656765",
+    fontWeight: "bold",
+  },
   commentBloc: {
     flexDirection: "row",
   },
@@ -1289,7 +1402,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  
   filterContainer: {
     alignItems: "center",
     margin: 10,
@@ -1330,7 +1442,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   activeFilter: {
-    backgroundColor: "#4CAF93", 
+    backgroundColor: "#4CAF93",
     borderRadius: 8,
   },
   filterOptionText: {

@@ -222,6 +222,17 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
+  highlight: {
+    fontWeight: "bold",
+    color: "#007BFF",
+  },
+  instructionsFooter: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 10,
+    textAlign: "center",
+    color: "#555",
+  },
 
   // ------------------------------------------------  MODAL PARTAGE DE POSITION
 
