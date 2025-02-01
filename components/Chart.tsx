@@ -82,17 +82,29 @@ const Chart: React.FC<ChartProps> = ({
 
   const generateSummary = () => {
     const navigation = useNavigation<CategoryReportsScreenNavigationProp>();
-
+  
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
       const color = barColors[index % barColors.length];
-
+  
       return (
         <TouchableOpacity
           key={label}
           style={styles.summaryItem}
           onPress={() => {
-            navigation.navigate("CategoryReportsScreen", { category: label });
+            const removeAccents = (str: string) =>
+              str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+            const normalizedCategory = removeAccents(
+              label.trim().toLowerCase()
+            );
+  
+            console.log(`📌 Navigation vers CategoryReportsScreen avec : ${normalizedCategory}, Ville: ${nomCommune}`);
+  
+            navigation.navigate("CategoryReportsScreen", {
+              category: normalizedCategory,
+              city: nomCommune, 
+            });
           }}
         >
           <View style={[styles.colorIndicator, { backgroundColor: color }]} />
@@ -121,15 +133,16 @@ const Chart: React.FC<ChartProps> = ({
         <Text style={styles.title}> 📊 Statistiques de la ville</Text>
         <Text style={styles.arrow}>{isStatsVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
-  
+
       {/* Contenu affiché uniquement si la section est ouverte */}
       {isStatsVisible && (
         <View style={styles.sectionContent}>
           {/* Si aucun signalement, afficher un message */}
-          {(!data || !data.labels || data.labels.length === 0) ? (
+          {!data || !data.labels || data.labels.length === 0 ? (
             <Text style={styles.subtitle}>
-              Il n'y a actuellement aucun signalement dans votre ville. Peut-être est-elle parfaite ? 
-              Si ce n'est pas le cas, améliorez votre ville et soyez le premier à signaler un problème !
+              Il n'y a actuellement aucun signalement dans votre ville.
+              Peut-être est-elle parfaite ? Si ce n'est pas le cas, améliorez
+              votre ville et soyez le premier à signaler un problème !
             </Text>
           ) : (
             <>
@@ -158,7 +171,7 @@ const Chart: React.FC<ChartProps> = ({
                 flatColor={true}
                 style={styles.chart}
               />
-  
+
               {/* Résumé des signalements */}
               <View style={styles.summaryContainer}>
                 <Text style={styles.summaryTitle}>

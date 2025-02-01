@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Platform
 } from "react-native";
 import * as Location from "expo-location";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
@@ -15,6 +16,9 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation";
 import { processReports } from "../services/reportService";
 import { formatCity } from "../utils/formatters";
+import { typeColors, categoryDescriptions } from "../utils/reportHelpers";
+import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 type CategoryReportsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -34,6 +38,7 @@ type Report = {
   longitude: number;
   distance?: number;
   photos?: { url: string }[];
+  createdAt: string;
 };
 
 export default function CategoryReportsScreen() {
@@ -42,46 +47,42 @@ export default function CategoryReportsScreen() {
   const { category } = route.params;
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
+  const opacity = reports.length > 0 ? calculateOpacity(reports[0].createdAt) : 0.6;  
+  const categoryColor = hexToRgba(typeColors[category.toLowerCase()] ?? "#CCCCCC", opacity);
+  const categoryDescription = categoryDescriptions[category.toLowerCase()] ?? "Aucune information disponible.";
 
-  useEffect(() => {
-    const fetchLocationAndReports = async () => {
-      setLoading(true);
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          Alert.alert(
-            "Erreur",
-            "La localisation est nécessaire pour trier les signalements."
-          );
-          return;
-        }
+useEffect(() => {
+  const fetchLocationAndReports = async () => {
+    setLoading(true);
+    try {
+      const { category, city } = route.params;  
 
-        const location = await Location.getCurrentPositionAsync({});
-        const { latitude, longitude } = location.coords;
-
-        const enrichedReports = await processReports(latitude, longitude);
-
-        console.log("Rapports enrichis retournés :", enrichedReports);
-
-        const filteredReports = enrichedReports.filter(
-          (report) =>
-            report.type &&
-            report.type.trim().toLowerCase() === category.trim().toLowerCase()
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Erreur",
+          "La localisation est nécessaire pour trier les signalements."
         );
-
-        console.log("Rapports filtrés :", filteredReports);
-
-        setReports(filteredReports);
-      } catch (error) {
-        console.error("Erreur lors du chargement des signalements :", error);
-        Alert.alert("Erreur", "Impossible de charger les signalements.");
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchLocationAndReports();
-  }, [category]);
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+ 
+      const enrichedReports = await processReports(latitude, longitude, category, city);
+
+      console.log("📌 Rapports filtrés :", enrichedReports);
+      setReports(enrichedReports);
+    } catch (error) {
+      console.error("❌ Erreur lors du chargement des signalements :", error);
+      Alert.alert("Erreur", "Impossible de charger les signalements.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchLocationAndReports();
+}, [category]);
 
   if (loading) {
     return (
@@ -94,16 +95,19 @@ export default function CategoryReportsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.categoryContainer}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
+  <View style={[styles.categoryContainer, { backgroundColor: categoryColor }]}>
+        {/* Bouton Retour avec Icône */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back-outline" size={26} color="#FFF" />
         </TouchableOpacity>
 
+        {/* Titre de la catégorie */}
         <Text style={styles.categoryTitle}>{category}</Text>
+
+        {/* Description de la catégorie */}
+        <Text style={styles.categoryDescription}>{categoryDescription}</Text>
       </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContainer}
@@ -182,50 +186,67 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F8F8",
-    padding: 16,
   },
-  backButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#4A90E2",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 90,
+  categoryContainer: {
+    paddingTop: 35,
+    height: 130,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
     shadowColor: "#000",
     shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  backButton: {
+    position: "absolute",
+    top: 45,
+    left: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.15)", 
+    padding: 10,
+    borderRadius: 50,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  backButtonText: {
-    fontSize: 22,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-
-  categoryContainer: {
-    marginTop: 20,
-    flexDirection: "row",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: "#E3ECFF",
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    marginBottom: 16,
+    elevation: 5,
   },
   categoryTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#333C5A",
-    textTransform: "capitalize",
-    letterSpacing: 2,
-    marginLeft: 55,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFF",
+    textTransform: "uppercase",
+    textAlign: "center",
+    marginTop: 5,
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 5,
   },
+  categoryDescription: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#FFF",
+    textAlign: "center",
+    marginTop: 5,
+    paddingHorizontal: 40,
+    opacity: 0.85,
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+
+
+
   scrollView: {
     flex: 1,
+    padding: 16,
   },
   scrollContainer: {
     paddingBottom: 20,

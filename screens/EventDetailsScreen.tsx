@@ -22,6 +22,7 @@ import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
 import { useNotification } from "../context/NotificationContext";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 
 export default function EventDetails({ route }) {
   const navigation =
@@ -339,31 +340,38 @@ export default function EventDetails({ route }) {
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {event.title || "Titre indisponible"}
-          </Text>
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-              <Text style={styles.buttonText}>Partager</Text>
-            </TouchableOpacity>
+      {/* Titre de l'événement */}
+      <Text style={styles.title} ellipsizeMode="tail">
+        {event.title || "Titre indisponible"}
+      </Text>
 
-            {isRegistered ? (
-              <TouchableOpacity
-                style={styles.buttonLeave}
-                onPress={unregisterFromEvent}
-              >
-                <Text style={styles.buttonText}>Se désinscrire</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={registerForEvent}
-              >
-                <Text style={styles.buttonText}>S'inscrire</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+      {/* Actions : Partager et Inscription */}
+      <View style={styles.actions}>
+        {/* Bouton Partager */}
+        <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
+          <Ionicons name="share-social" size={24} color="#fff" />
+          <Text style={styles.buttonText}>Partager</Text>
+        </TouchableOpacity>
+
+        {/* Bouton Inscription/Désinscription */}
+        {isRegistered ? (
+          <TouchableOpacity style={[styles.iconButton, styles.leaveButton]} onPress={unregisterFromEvent}>
+            <FontAwesome name="times-circle" size={24} color="#fff" />
+            <Text style={styles.buttonText}>Se désinscrire</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={[styles.iconButton, styles.joinButton]} onPress={registerForEvent}>
+            <Ionicons name="checkmark-circle" size={24} color="#fff" />
+            <Text style={styles.buttonText}>S'inscrire</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Description */}
+      <Text style={styles.description} ellipsizeMode="tail">
+        {event.description || "Description indisponible"}
+      </Text>
+    </View>
 
         {/* Informations Clés */}
         <View style={styles.infoContainer}>
@@ -522,15 +530,72 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
+
+
+
+
   header: {
     marginBottom: 20,
+    padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 10,
+    textAlign: "center",
   },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 15,
+    marginVertical: 10,
+  },
+  iconButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 30,
+    shadowColor: "#007AFF",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+  leaveButton: {
+    backgroundColor: "#E84855",
+    shadowColor: "#E84855",
+  },
+  joinButton: {
+    backgroundColor: "#28A745",
+    shadowColor: "#28A745",
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#555",
+    textAlign: "center",
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+
+
   participantListContainer: {
     flex: 1, 
     marginBottom: 120, 
@@ -558,51 +623,8 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     color: "gray",
   },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  shareButton: {
-    backgroundColor: "#6DB3C5",
-    shadowColor: "#6DB3C5",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 10,
-    borderRadius: 30,
-  },
-  button: {
-    backgroundColor: "#093A3E",
-    shadowColor: "#093A3E",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 10,
-    borderRadius: 30,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  buttonLeave: {
-    backgroundColor: "#E84855",
-    shadowColor: "#E84855",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 10,
-    borderRadius: 30,
-  },
+
+
   infoContainer: {
     marginBottom: 20,
     padding: 10,
@@ -632,9 +654,5 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: "#333",
   },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#555",
-  },
+
 });

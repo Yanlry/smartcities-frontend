@@ -956,10 +956,10 @@
   dependencies:
     uuid "^8.0.0"
 
-"@expo/cli@0.22.10":
-  version "0.22.10"
-  resolved "https://registry.yarnpkg.com/@expo/cli/-/cli-0.22.10.tgz#28c05ab3f825ce1fb3d6387c059cb19aa4639ec8"
-  integrity sha512-MA4TOtf6x8ixVaQbUINgest/DsrWcMVGMmjXYtnhUfwQGvZtJC+aI+xMBM7ow2OqY2B/xfoRcgqkvWkl36yxkA==
+"@expo/cli@0.22.11":
+  version "0.22.11"
+  resolved "https://registry.yarnpkg.com/@expo/cli/-/cli-0.22.11.tgz#5bbf562d897e60e170dfc6053a6f5bd71c651669"
+  integrity sha512-D5Vl7IBLi53WmL57NAFYB1mIqlMQxDIZVzbi/FTpo5a3oIHELKr0ElTKeOLf1f1/Y3FA7cxgphoawdA0+O1JWQ==
   dependencies:
     "@0no-co/graphql.web" "^1.0.8"
     "@babel/runtime" "^7.20.0"
@@ -2083,6 +2083,11 @@
   integrity sha512-Qd2kQ3yi6Y3+AcUlrHxSLlnBvpdCEMVGFlVBneVOjaFaPU61g1huc38g339ysXspwY1QZA2aNhrk/KlHGO+ewA==
   dependencies:
     merge-options "^3.0.4"
+
+"@react-native-community/blur@^4.4.1":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@react-native-community/blur/-/blur-4.4.1.tgz#72cbc0be5a84022c33091683ec6888925ebcca6e"
+  integrity sha512-XBSsRiYxE/MOEln2ayunShfJtWztHwUxLFcSL20o+HNNRnuUDv+GXkF6FmM2zE8ZUfrnhQ/zeTqvnuDPGw6O8A==
 
 "@react-native-community/cli-clean@15.1.3":
   version "15.1.3"
@@ -4747,6 +4752,14 @@ expo-constants@~17.0.4:
     "@expo/config" "~10.0.8"
     "@expo/env" "~0.4.1"
 
+expo-constants@~17.0.5:
+  version "17.0.5"
+  resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-17.0.5.tgz#b5deb4a4242cd6ef1f6c68e745664f69d41a0ffb"
+  integrity sha512-6SHXh32jCB+vrp2TRDNkoGoM421eOBPZIXX9ixI0hKKz71tIjD+LMr/P+rGUd/ks312MP3WK3j5vcYYPkCD8tQ==
+  dependencies:
+    "@expo/config" "~10.0.8"
+    "@expo/env" "~0.4.1"
+
 expo-file-system@~18.0.7:
   version "18.0.7"
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-18.0.7.tgz#218792dc0aeb7e0976a7f8f412a5d7de09b39610"
@@ -4771,10 +4784,10 @@ expo-image-loader@~5.0.0:
   resolved "https://registry.npmjs.org/expo-image-loader/-/expo-image-loader-5.0.0.tgz"
   integrity sha512-Eg+5FHtyzv3Jjw9dHwu2pWy4xjf8fu3V0Asyy42kO+t/FbvW/vjUixpTjPtgKQLQh+2/9Nk4JjFDV6FwCnF2ZA==
 
-expo-image-picker@~16.0.4:
-  version "16.0.4"
-  resolved "https://registry.yarnpkg.com/expo-image-picker/-/expo-image-picker-16.0.4.tgz#f4f1e8cf5453c08c2622aafe3f139b846b261d7e"
-  integrity sha512-LeTdQxL+kS8wiFOf+mTxDZmr0Ok3KwcpvCaDnXwCdCQuszVd4sSml7lg+oaJfkWj793u74M+8j0hQaEDHCgkxg==
+expo-image-picker@~16.0.5:
+  version "16.0.5"
+  resolved "https://registry.yarnpkg.com/expo-image-picker/-/expo-image-picker-16.0.5.tgz#fefb08f1a35980015122499fb388f2cfcbf08485"
+  integrity sha512-Rkc4vihqPN/48PV3QJkrG10Lg5s1LonKmpVnGwBSlHjRR5ngqJH++DYFndgD69hLaWrJukzCYpP3CyTMAAatWg==
   dependencies:
     expo-image-loader "~5.0.0"
 
@@ -4793,10 +4806,10 @@ expo-location@^18.0.5:
   resolved "https://registry.yarnpkg.com/expo-location/-/expo-location-18.0.5.tgz#d9421119a0ae5b91112d24168b57607a70b45686"
   integrity sha512-fcTtHseRUBh3XiATs2ghycjUJOYEl78lWUuaKRKPZMt+pLhqCX7OstbsySySCHHfz2MudvWaq2yXpe5cDmENzg==
 
-expo-modules-autolinking@2.0.6:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/expo-modules-autolinking/-/expo-modules-autolinking-2.0.6.tgz#4b88623eed97633f1617c3a6ef59a12bea39b650"
-  integrity sha512-E5G0t9kQ3i69uOD/nbU9MKrrLE7kl0DcfXOUmmRu6zskQ90kyg7eBXoxtg9C59oQCCXiQrNoBhEZCnAIKgI1og==
+expo-modules-autolinking@2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/expo-modules-autolinking/-/expo-modules-autolinking-2.0.7.tgz#fc40ba7505f42f971253ea20a927693f2c123a56"
+  integrity sha512-rkGc6a/90AC3q8wSy4V+iIpq6Fd0KXmQICKrvfmSWwrMgJmLfwP4QTrvLYPYOOMjFwNJcTaohcH8vzW/wYKrMg==
   dependencies:
     "@expo/spawn-async" "^1.7.2"
     chalk "^4.1.0"
@@ -4807,10 +4820,10 @@ expo-modules-autolinking@2.0.6:
     require-from-string "^2.0.2"
     resolve-from "^5.0.0"
 
-expo-modules-core@2.1.4:
-  version "2.1.4"
-  resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-2.1.4.tgz#f710555c6e0ede0776e8b72a7e2b50d7873542a0"
-  integrity sha512-gfsbTPSaocgcQQDy4Z4ztg1hcOofwODctAA+yoNcrUQr/hRaDc6ndIJQwGPjoGXnEbXVxFfzGGSAkNiqK1I7lQ==
+expo-modules-core@2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-2.2.0.tgz#2b74fc72524197cd7f9908b91fbd8d9c7b423673"
+  integrity sha512-mOFEHIe6jZ7G5pYUVSQ2Ghs3CUr9Uz6DOh4JI+4PsTf0gmEvMmMEOrxirS89jRWQjXPJ7QaGBK0CJrZlj/Sdeg==
   dependencies:
     invariant "^2.2.4"
 
@@ -4834,13 +4847,13 @@ expo-status-bar@~2.0.1:
   resolved "https://registry.yarnpkg.com/expo-status-bar/-/expo-status-bar-2.0.1.tgz#fc07726346dc30fbb68aadb0d7890b34fba42eee"
   integrity sha512-AkIPX7jWHRPp83UBZ1iXtVvyr0g+DgBVvIXTtlmPtmUsm8Vq9Bb5IGj86PW8osuFlgoTVAg7HI/+Ok7yEYwiRg==
 
-expo@~52.0.26:
-  version "52.0.26"
-  resolved "https://registry.yarnpkg.com/expo/-/expo-52.0.26.tgz#44fa51e6adf74eed1380814e322e3114cb3737c0"
-  integrity sha512-9osjHwAyLxCexnLEJXaZDZowbQl7IHqeMOcx90xwMQp2O/5XP+3T7uPK0sNdjlEO05QzAv0k4oXAKMRr5gdEqg==
+expo@~52.0.28:
+  version "52.0.28"
+  resolved "https://registry.yarnpkg.com/expo/-/expo-52.0.28.tgz#3dd23d5ebbccd50797c375b8723b6bfe1a374d4c"
+  integrity sha512-0O/JEYYCFszJ85frislm79YmlrQA5ghAQXV4dqcQcsy9FqftdicD4p/ehT36yiuGIhaKC6fn25LEaJ9JR2ei7g==
   dependencies:
     "@babel/runtime" "^7.20.0"
-    "@expo/cli" "0.22.10"
+    "@expo/cli" "0.22.11"
     "@expo/config" "~10.0.8"
     "@expo/config-plugins" "~9.0.14"
     "@expo/fingerprint" "0.11.7"
@@ -4848,12 +4861,12 @@ expo@~52.0.26:
     "@expo/vector-icons" "^14.0.0"
     babel-preset-expo "~12.0.6"
     expo-asset "~11.0.2"
-    expo-constants "~17.0.4"
+    expo-constants "~17.0.5"
     expo-file-system "~18.0.7"
     expo-font "~13.0.3"
     expo-keep-awake "~14.0.2"
-    expo-modules-autolinking "2.0.6"
-    expo-modules-core "2.1.4"
+    expo-modules-autolinking "2.0.7"
+    expo-modules-core "2.2.0"
     fbemitter "^3.0.0"
     web-streams-polyfill "^3.3.2"
     whatwg-url-without-unicode "8.0.0-3"
@@ -8460,7 +8473,7 @@ react-native-svg@15.8.0:
 
 react-native-vector-icons@^10.2.0:
   version "10.2.0"
-  resolved "https://registry.npmjs.org/react-native-vector-icons/-/react-native-vector-icons-10.2.0.tgz"
+  resolved "https://registry.yarnpkg.com/react-native-vector-icons/-/react-native-vector-icons-10.2.0.tgz#f438f2ca16f7d6be658fd6ec8f0d2b7e2132b91c"
   integrity sha512-n5HGcxUuVaTf9QJPs/W22xQpC2Z9u0nb0KgLPnVltP8vdUvOp6+R26gF55kilP/fV4eL4vsAHUqUjewppJMBOQ==
   dependencies:
     prop-types "^15.7.2"

@@ -213,11 +213,21 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
         if (location) {
           setLoadingReports(true);
-          const reports = await processReports(
-            location.latitude,
-            location.longitude
-          );
-          setReports(reports);
+          try {
+            const reports = await processReports(
+              location.latitude,
+              location.longitude,
+              ""  
+            );
+        
+            console.log("📌 Signalements reçus dans HomeScreen :", reports);  
+        
+            setReports(reports);
+          } catch (error) {
+            console.error("❌ Erreur lors du chargement des signalements :", error);
+          } finally {
+            setLoadingReports(false);
+          }
         }
       } catch (err: any) {
         console.error(
@@ -356,15 +366,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#102542" />
         <Text style={{ color: "#102542" }}>Chargement en cours...</Text>
-      </View>
-    );
-  }
-
-  if (!reports || reports.length === 0) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#102542" />
-        <Text style={styles.loadingText}>Chargement des signalements...</Text>
       </View>
     );
   }

@@ -55,6 +55,7 @@ export const fetchAllEventsInRegion = async (
   }
 };
  
+// 🔍 Vérification des signalements renvoyés
 export const fetchReports = async (
   latitude: number,
   longitude: number,
@@ -69,10 +70,11 @@ export const fetchReports = async (
       params: { latitude, longitude, radiusKm },
     });
 
+    console.log("✅ Signalements reçus :", response.data.length);
     return response.data;
   } catch (error: any) {
     console.error(
-      "Erreur dans fetchReports :",
+      "❌ Erreur dans fetchReports :",
       error.response?.data || error.message
     );
     throw new Error("Impossible de récupérer les signalements.");
@@ -122,20 +124,27 @@ const distanceCache = new Map<string, number[]>();
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
  
+// 🛠 Correction sur processReports (ajout de logs et vérification des données)
 export const processReports = async (
   latitude: number,
   longitude: number,
-  radiusKm: number = 2000,
-  limit: number = 10
+  category?: string,  // 👈 On met un ? pour le rendre optionnel
+  city?: string
 ): Promise<Report[]> => {
   try {
-    const enrichedReports = await fetchAllReportsInRegion(
-      latitude,
-      longitude,
-      radiusKm
-    );
+    let reports = await fetchAllReportsInRegion(latitude, longitude, 2000);
 
-    return enrichedReports.slice(0, limit);  
+    // ✅ Filtrer par catégorie SEULEMENT si elle est définie
+    if (category) {
+      reports = reports.filter(report => report.type.toLowerCase() === category.toLowerCase());
+    }
+
+    // ✅ Filtrer par ville si `city` est défini
+    if (city) {
+      reports = reports.filter(report => report.city.toLowerCase().includes(city.toLowerCase()));
+    }
+
+    return reports;
   } catch (error: any) {
     console.error("Erreur dans processReports :", error.message);
     throw new Error("Impossible de traiter les signalements.");
@@ -223,9 +232,11 @@ export const fetchAllReportsInRegion = async (
     const rawReports = await fetchReports(latitude, longitude, radiusKm);
 
     if (rawReports.length === 0) {
-      console.log("Aucun signalement trouvé dans la région.");
+      console.log("📌 Aucun signalement trouvé dans la région.");
       return [];
     }
+
+    console.log("📌 Tous les signalements avant enrichissement :", rawReports);
 
     const destinations: [number, number][] = rawReports.map((report) => [
       report.longitude,
@@ -239,15 +250,17 @@ export const fetchAllReportsInRegion = async (
 
     const enrichedReports = rawReports.map((report, index) => ({
       ...report,
-      distance: distances[index] / 1000 || Infinity, 
+      distance: distances[index] / 1000 || Infinity, // Convertir en km
     }));
 
-    return enrichedReports.sort((a, b) => a.distance - b.distance);  
+    console.log("📌 Signalements après enrichissement :", enrichedReports);
+
+    return enrichedReports.sort((a, b) => a.distance - b.distance);
   } catch (error: any) {
     console.warn(
-      "Erreur dans fetchAllReportsInRegion :",
+      "❌ Erreur dans fetchAllReportsInRegion :",
       error.message || "Erreur inconnue."
     );
-    return [];  
+    return [];
   }
 };

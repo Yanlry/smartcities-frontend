@@ -7,7 +7,7 @@ export type RootStackParamList = {
   ProfileScreen: undefined;
   UserProfileScreen: { userId: string };
   ReportDetailsScreen: { reportId: number };
-  CategoryReportsScreen: { category: string };
+  CategoryReportsScreen: { category: string; city?: string }; 
   EventDetailsScreen: { eventId: string };
   EventsScreen: undefined;
   ReportScreen: undefined;

@@ -21,6 +21,14 @@ export const typeLabels: { [key: string]: string } = {
     reparation: '#1E90FF',
   };
   
+  export const categoryDescriptions: { [key: string]: string } = {
+    danger: "Signale une situation présentant un risque immédiat pour les habitants.",
+    travaux: "Indique des travaux en cours ou prévus, pouvant impacter la circulation.",
+    nuisance: "Signale des nuisances sonores, olfactives ou visuelles affectant le voisinage.",
+    pollution: "Informe d'une pollution environnementale comme des déchets ou des émissions toxiques.",
+    reparation: "Indique des infrastructures nécessitant une réparation urgente ou en cours de réparation.",
+  };
+  
   export const getTypeLabel = (type: string): string => {
     return typeLabels[type] || type;
   };
@@ -35,7 +43,7 @@ export const typeLabels: { [key: string]: string } = {
 
   - Objets dangereux sur la voie publique (ex. câbles tombés, verre brisé)
 
-  - Zones instables ou dangereuses (ex. glissements de terrain, structures menaçant de s'effondrer)
+  - Zones instables ou dangereuses (ex. glissements dere terrain, structures menaçant de s'effondrer)
 
   - Situations à haut risque (ex. incendies, inondations, zones non sécurisées)`,
     },
