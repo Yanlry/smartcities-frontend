@@ -9,7 +9,7 @@ import {
   Image,
   RefreshControl,
 } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Marker, Polyline, MapType } from "react-native-maps";
 import { useLocation } from "../hooks/useLocation";
 import { useFetchReportDetails } from "../hooks/useFetchReportDetails";
 import { formatCity, formatDate } from "../utils/formatters";
@@ -42,7 +42,9 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
     location?.longitude
   );
   const [refreshing, setRefreshing] = useState(false);
-
+  const [mapType, setMapType] = useState<MapType>("hybrid");  
+  const [selectedVote, setSelectedVote] = useState<"up" | "down" | null>(null);
+  
   useEffect(() => {
     fetchUserId();
   }, []);
@@ -102,6 +104,8 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
 
   const handleVote = async (type: "up" | "down") => {
     if (!location || !report || !currentUserId) return;
+ 
+    setSelectedVote(type);
   
     try {
       const payload = {
@@ -124,13 +128,15 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       }
   
       const result = await response.json();
-   
+  
       setVotes({
         upVotes: result.updatedVotes.upVotes,
         downVotes: result.updatedVotes.downVotes,
       });
+  
     } catch (error) {
       Alert.alert("Erreur", error.message || "Une erreur est survenue");
+      setSelectedVote(null);  
     }
   };
 
@@ -175,6 +181,11 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
       setRefreshing(false);  
     }
   };
+
+
+  const toggleMapType = () => {
+    setMapType((prev) => (prev === "hybrid" ? "standard" : "hybrid"));
+  };
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.header}>
@@ -185,9 +196,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <Icon name="arrow-back-outline" size={28} color="#F7F2DE" />
         </TouchableOpacity>
         <View style={styles.typeBadge}>
-          <Image source={getTypeIcon(report.type)} style={styles.icon} />
           <Text style={styles.headerTitle}>{report.type.toUpperCase()}</Text>
-          <Image source={getTypeIcon(report.type)} style={styles.icon} />
         </View>
         <TouchableOpacity
           onPress={() => navigation.navigate("NotificationsScreen")}
@@ -211,96 +220,68 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           />
         }
       >
-        <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            mapType="hybrid"
-            onMapReady={() => {
-              if (mapRef.current) {
-                const camera = {
-                  center: {
-                    latitude: report.latitude,
-                    longitude: report.longitude,
-                  },
-                  pitch: 5,
-                  heading: 0,
-                  zoom: 15,
-                  altitude: 100,
-                };
-                mapRef.current.setCamera(camera);
-              }
-            }}
-          >
-            {/* Marqueur pour la position actuelle */}
-            <Marker
-              coordinate={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-              }}
-              title="Votre position"
-              pinColor="red"
-            />
-
-            {/* Marqueur pour le signalement */}
-            <Marker
-              coordinate={{
+  <View style={styles.mapContainer}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        mapType={mapType} 
+        onMapReady={() => {
+          if (mapRef.current) {
+            const camera = {
+              center: {
                 latitude: report.latitude,
                 longitude: report.longitude,
-              }}
-              title={report.title}
-            >
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Image
-                  source={getTypeIcon(report.type)}
-                  style={{ width: 40, height: 40, resizeMode: "contain" }}
-                />
-              </View>
-            </Marker>
+              },
+              pitch: 5,
+              heading: 0,
+              zoom: 15,
+              altitude: 300,
+            };
+            mapRef.current.setCamera(camera);
+          }
+        }}
+      >
+        {/* Marqueur pour la position actuelle */}
+        <Marker
+          coordinate={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }}
+          title="Votre position"
+          pinColor="red"
+        />
 
-            {/* Ligne de tracé */}
-            {routeCoords.length > 0 && (
-              <Polyline
-                coordinates={routeCoords}
-                strokeColor="#357DED"
-                strokeWidth={5}
-              />
-            )}
-          </MapView>
-
-          {/* Titre superposé */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleTextMap}>
-              Avez-vous vu cet événement ?
-            </Text>
+        {/* Marqueur pour le signalement */}
+        <Marker
+          coordinate={{
+            latitude: report.latitude,
+            longitude: report.longitude,
+          }}
+          title={report.title}
+        >
+          <View style={styles.markerContainer}>
+            <Image source={getTypeIcon(report.type)} style={styles.markerIcon} />
           </View>
+        </Marker>
 
-          {/* Boutons superposés */}
-          <View style={styles.buttonsContainer}>
-            <TouchableOpacity
-              onPress={() => handleVote("up")}
-              style={[styles.voteButton, styles.upVoteButton]}
-            >
-              <Ionicons name="thumbs-up" size={28} color="#57A773" />
-              <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
-            </TouchableOpacity>
+        {/* Ligne de tracé */}
+        {routeCoords.length > 0 && (
+          <Polyline coordinates={routeCoords} strokeColor="#357DED" strokeWidth={5} />
+        )}
+      </MapView>
 
-            <TouchableOpacity
-              onPress={() => handleVote("down")}
-              style={[styles.voteButton, styles.downVoteButton]}
-            >
-              <Ionicons name="thumbs-down" size={28} color="#ff4d4f" />
-              <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* Titre superposé */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.titleTextMap}>Avez-vous vu cet événement ?</Text>
+      </View>
+
+      {/* Bouton pour changer le type de carte */}
+      <TouchableOpacity onPress={toggleMapType} style={styles.switchButton}>
+        <Text style={styles.switchButtonText}>
+          {mapType === "hybrid" ? "Vue Plan" : "Vue Satellite"}
+        </Text>
+      </TouchableOpacity>
+    </View>
 
         <View style={styles.separator}>
           <Text style={styles.separatorText}></Text>
@@ -411,6 +392,24 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <CommentsSection key={report.id} report={report} />
         </View>
       </ScrollView>
+         {/* Boutons superposés */}
+         <View style={styles.buttonsContainer}>
+            <TouchableOpacity
+              onPress={() => handleVote("up")}
+              style={[styles.voteButton, styles.upVoteButton]}
+            >
+              <Ionicons name="thumbs-up-outline" size={40} color="#093A3E" />
+              <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleVote("down")}
+              style={[styles.voteButton, styles.downVoteButton]}
+            >
+              <Ionicons name="thumbs-down-outline" size={40} color="#093A3E" />
+              <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
+            </TouchableOpacity>
+          </View>
     </View>
   );
 }

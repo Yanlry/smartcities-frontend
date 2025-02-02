@@ -85,7 +85,6 @@ export default function NotificationsScreen({ navigation }) {
         }
 
         const data: Notification[] = await response.json();
-        console.log("Notifications reçues :", data);
 
         setNotifications(
           data.sort(
@@ -149,7 +148,6 @@ export default function NotificationsScreen({ navigation }) {
       }
 
       const data: Notification[] = await response.json();
-      console.log("Notifications reçues :", data);
 
       setNotifications(
         data.sort(

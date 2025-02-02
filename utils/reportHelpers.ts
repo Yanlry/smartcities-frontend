@@ -20,6 +20,14 @@ export const typeLabels: { [key: string]: string } = {
     pollution: '#32CD32',
     reparation: '#1E90FF',
   };
+
+  export const chartColors: { [key: string]: string } = {
+    danger: '#FF4C4C',
+    travaux: '#FFA500',
+    nuisance: '#B4A0E5',
+    pollution: '#32CD32',
+    réparation: '#1E90FF',
+  };
   
   export const categoryDescriptions: { [key: string]: string } = {
     danger: "Signale une situation présentant un risque immédiat pour les habitants.",

@@ -57,7 +57,7 @@ export default function SocialScreen({ handleScroll }) {
   };
 
   const filters = [
-    { label: "Toutes les villes", value: false },
+    { label: "Toutes la communauté Smarters", value: false },
     { label: "Publications de ma ville", value: true },
   ];
 

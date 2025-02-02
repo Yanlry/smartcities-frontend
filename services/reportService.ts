@@ -27,12 +27,15 @@ export interface Report {
 
 export interface Event {
   id: number;
-  name: string;
+  location: string;
+  title: string;
   description: string;
   latitude: number;
   longitude: number;
-  startDate: string;
+  createdAt: string;
   endDate: string;
+  distance?: number;
+
 }
 
 export const fetchAllEventsInRegion = async (
@@ -54,8 +57,7 @@ export const fetchAllEventsInRegion = async (
     throw new Error("Impossible de récupérer les événements.");
   }
 };
- 
-// 🔍 Vérification des signalements renvoyés
+  
 export const fetchReports = async (
   latitude: number,
   longitude: number,
@@ -70,7 +72,6 @@ export const fetchReports = async (
       params: { latitude, longitude, radiusKm },
     });
 
-    console.log("✅ Signalements reçus :", response.data.length);
     return response.data;
   } catch (error: any) {
     console.error(
@@ -122,24 +123,20 @@ export const createReport = async (data: any): Promise<any> => {
 const distanceCache = new Map<string, number[]>();  
  
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
  
-// 🛠 Correction sur processReports (ajout de logs et vérification des données)
 export const processReports = async (
   latitude: number,
   longitude: number,
-  category?: string,  // 👈 On met un ? pour le rendre optionnel
+  category?: string,   
   city?: string
 ): Promise<Report[]> => {
   try {
     let reports = await fetchAllReportsInRegion(latitude, longitude, 2000);
-
-    // ✅ Filtrer par catégorie SEULEMENT si elle est définie
+ 
     if (category) {
       reports = reports.filter(report => report.type.toLowerCase() === category.toLowerCase());
     }
-
-    // ✅ Filtrer par ville si `city` est défini
+ 
     if (city) {
       reports = reports.filter(report => report.city.toLowerCase().includes(city.toLowerCase()));
     }
@@ -236,8 +233,6 @@ export const fetchAllReportsInRegion = async (
       return [];
     }
 
-    console.log("📌 Tous les signalements avant enrichissement :", rawReports);
-
     const destinations: [number, number][] = rawReports.map((report) => [
       report.longitude,
       report.latitude,
@@ -250,10 +245,8 @@ export const fetchAllReportsInRegion = async (
 
     const enrichedReports = rawReports.map((report, index) => ({
       ...report,
-      distance: distances[index] / 1000 || Infinity, // Convertir en km
+      distance: distances[index] / 1000 || Infinity,  
     }));
-
-    console.log("📌 Signalements après enrichissement :", enrichedReports);
 
     return enrichedReports.sort((a, b) => a.distance - b.distance);
   } catch (error: any) {

@@ -7,11 +7,12 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { BarChart } from "react-native-chart-kit";
+import { BarChart, PieChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation";
+import { chartColors } from "../utils/reportHelpers";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -42,8 +43,10 @@ const Chart: React.FC<ChartProps> = ({
   controlStatsVisibility,
 }) => {
   const [isStatsVisible, setStatsVisible] = useState(true);
+  const [chartType, setChartType] = useState<"BarChart" | "PieChart">(
+    "BarChart"
+  );
 
-  const barColors = ["#e74c3c", "#f1c40f", "#9b59b6", "#3498db", "#2ecc71"];
   const capitalize = (text: string) => {
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
@@ -55,6 +58,10 @@ const Chart: React.FC<ChartProps> = ({
       setStatsVisible(controlStatsVisibility);
     }
   }, [controlStatsVisibility]);
+
+  const toggleChart = () => {
+    setChartType((prev) => (prev === "BarChart" ? "PieChart" : "BarChart"));
+  };
 
   if (loading) {
     return (
@@ -82,11 +89,11 @@ const Chart: React.FC<ChartProps> = ({
 
   const generateSummary = () => {
     const navigation = useNavigation<CategoryReportsScreenNavigationProp>();
-  
+
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
-      const color = barColors[index % barColors.length];
-  
+      const color = chartColors[label.toLowerCase()] || "#CCCCCC";  
+
       return (
         <TouchableOpacity
           key={label}
@@ -94,16 +101,18 @@ const Chart: React.FC<ChartProps> = ({
           onPress={() => {
             const removeAccents = (str: string) =>
               str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  
+
             const normalizedCategory = removeAccents(
               label.trim().toLowerCase()
             );
-  
-            console.log(`📌 Navigation vers CategoryReportsScreen avec : ${normalizedCategory}, Ville: ${nomCommune}`);
-  
+
+            console.log(
+              `📌 Navigation vers CategoryReportsScreen avec : ${normalizedCategory}, Ville: ${nomCommune}`
+            );
+
             navigation.navigate("CategoryReportsScreen", {
               category: normalizedCategory,
-              city: nomCommune, 
+              city: nomCommune,
             });
           }}
         >
@@ -146,32 +155,59 @@ const Chart: React.FC<ChartProps> = ({
             </Text>
           ) : (
             <>
-              {/* Graphique */}
-              <BarChart
-                data={{
-                  labels: data.labels,
-                  datasets: [
-                    {
-                      data: validatedData,
-                      colors: validatedData.map(
-                        (_, index) => () => barColors[index % barColors.length]
-                      ),
-                    },
-                  ],
-                }}
-                width={screenWidth}
-                height={290}
-                chartConfig={chartConfig}
-                yAxisLabel=""
-                yAxisSuffix=""
-                fromZero={true}
-                segments={Math.max(1, maxValue)}
-                showBarTops={false}
-                withCustomBarColorFromData={true}
-                flatColor={true}
-                style={styles.chart}
-              />
-
+              {/* Affichage du Graphique */}
+              {chartType === "BarChart" ? (
+                <BarChart
+                  data={{
+                    labels: data.labels,
+                    datasets: [
+                      {
+                        data: validatedData,
+                        colors: data.labels.map(
+                          (label) => () =>
+                            chartColors[label.toLowerCase()] || "#CCCCCC"
+                        ),
+                      },
+                    ],
+                  }}
+                  width={screenWidth}
+                  height={290}
+                  chartConfig={chartConfig}
+                  fromZero={true}
+                  segments={Math.max(1, maxValue)}
+                  withCustomBarColorFromData={true}
+                  flatColor={true}
+                  style={styles.chart}
+                  yAxisLabel=""
+                  yAxisSuffix=""
+                />
+              ) : (
+                <PieChart
+                  data={data.labels.map((label, index) => ({
+                    name: "",  
+                    population: validatedData[index] || 0,
+                    color: chartColors[label.toLowerCase()] || "#CCCCCC",
+                  }))}
+                  width={screenWidth}
+                  height={250}
+                  chartConfig={chartConfig}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft="50"  
+                  absolute={false}  
+                />
+              )}
+              {/* Bouton pour changer d'affichage */}
+              <TouchableOpacity
+                style={styles.switchButton}
+                onPress={toggleChart}
+              >
+                <Text style={styles.switchButtonText}>
+                  {chartType === "BarChart"
+                    ? "Afficher un diagramme circulaire"
+                    : "Afficher un diagramme en barres"}
+                </Text>
+              </TouchableOpacity>
               {/* Résumé des signalements */}
               <View style={styles.summaryContainer}>
                 <Text style={styles.summaryTitle}>
@@ -200,6 +236,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 16,
     marginLeft: -20,
+  },
+  switchButton: {
+    marginBottom: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  switchButtonText: {
+    color: "#093A3E",
+    fontWeight: "bold",
   },
   subtitle: {
     fontSize: 14,

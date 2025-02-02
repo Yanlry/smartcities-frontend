@@ -116,6 +116,11 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
   const [modalLikeVisible, setModalLikeVisible] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("Tous");
+
+  const filteredReports = reports.filter((report) =>
+    selectedCategory === "Tous" ? true : report.type === selectedCategory
+  );
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -217,14 +222,15 @@ export default function HomeScreen({ navigation, handleScroll }) {
             const reports = await processReports(
               location.latitude,
               location.longitude,
-              ""  
+              ""
             );
-        
-            console.log("📌 Signalements reçus dans HomeScreen :", reports);  
-        
+
             setReports(reports);
           } catch (error) {
-            console.error("❌ Erreur lors du chargement des signalements :", error);
+            console.error(
+              "❌ Erreur lors du chargement des signalements :",
+              error
+            );
           } finally {
             setLoadingReports(false);
           }
@@ -444,6 +450,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
     setShowFollowing((prev) => !prev);
     setShowFollowers(false);
   };
+
   const handlePressPhoneNumber = () => {
     Linking.openURL("tel:0320440251");
   };
@@ -541,12 +548,20 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return (
       <View style={styles.containerFollower}>
         <Text style={styles.title}>Mes abonnés</Text>
-        <FlatList
-          data={user?.followers || []}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderFollower}
-          contentContainerStyle={styles.followerList}
-        />
+        {user?.followers && user.followers.length > 0 ? (
+          <FlatList
+            data={user.followers}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderFollower}
+            contentContainerStyle={styles.followerList}
+          />
+        ) : (
+          <View style={styles.noFollowersContainer}>
+            <Text style={styles.noFollowersText}>
+              Aucun abonné pour le moment
+            </Text>
+          </View>
+        )}
         <TouchableOpacity
           style={styles.backButton}
           onPress={toggleFollowersList}
@@ -561,12 +576,20 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return (
       <View style={styles.containerFollower}>
         <Text style={styles.title}>Mes abonnements</Text>
-        <FlatList
-          data={user?.following || []}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderFollowing}
-          contentContainerStyle={styles.followerList}
-        />
+        {user?.following && user.following.length > 0 ? (
+          <FlatList
+            data={user.following}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderFollowing}
+            contentContainerStyle={styles.followerList}
+          />
+        ) : (
+          <View style={styles.noFollowingContainer}>
+            <Text style={styles.noFollowingText}>
+              Vous n'êtes abonné(e) à personne pour le moment
+            </Text>
+          </View>
+        )}
         <TouchableOpacity
           style={styles.backButton}
           onPress={toggleFollowingList}
@@ -753,7 +776,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
       };
     } else if (votes >= 100) {
       return {
-        title: "Ambassadeur citoyen",
+        title: "Ambassadeur du quartier",
         backgroundColor: "#E1E1E1",
         textColor: "#6A6A6A",
         starsColor: "#919191",
@@ -1080,7 +1103,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                         votes: 250,
                       },
                       {
-                        name: "Ambassadeur citoyen",
+                        name: "Ambassadeur du quartier",
                         description: "100 à 249 votes",
                         votes: 100,
                       },
@@ -1221,7 +1244,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                       <Text style={styles.instructionText}>
                         Vous pouvez{" "}
                         <Text style={styles.highlight}>
-                        voter dans toutes les villes
+                          voter dans toutes les villes
                         </Text>
                         , pas seulement la vôtre ! Plus vous participez, plus
                         vous gagnez de points citoyens.
@@ -1350,131 +1373,121 @@ export default function HomeScreen({ navigation, handleScroll }) {
         <Text style={styles.arrow}>{isReportsVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
-      {/* Contenu de la section */}
+      {/* Filtre par catégorie */}
       {isReportsVisible && (
-        <>
-          <View style={styles.sectionContent}>
-            {reports.length === 0 ? (
-              <View style={styles.emptyStateContainer}>
-                <Text style={styles.noReportsText}>
-                  Aucun signalement pour l'instant.
-                </Text>
-              </View>
-            ) : (
-              <ScrollView
-                contentContainerStyle={styles.timelineContainer}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContainer}
+        >
+          {[
+            "Tous",
+            "danger",
+            "reparation",
+            "travaux",
+            "pollution",
+            "nuisance",
+          ].map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.filterButton,
+                selectedCategory === category && styles.activeFilterButton,
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedCategory === category && styles.activeFilterText,
+                ]}
               >
-                {reports.map((report, index) => (
-                  <View key={report.id} style={styles.timelinePointContainer}>
-                    {/* Étiquette au-dessus de la timeline */}
-                    <View
-                      style={[
-                        styles.timelineLabel,
-                        {
-                          backgroundColor: typeColors[report.type] || "#F5F5F5",
-                        },
-                      ]}
-                    >
-                      <Text style={styles.labelText}>
-                        {getTypeLabel(report.type)} à{" "}
-                        {report.distance ? report.distance.toFixed(2) : "N/A"}{" "}
-                        km
+                {category === "Tous" ? "🔍 Tous" : getTypeLabel(category)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Contenu des signalements */}
+      {isReportsVisible && (
+        <View style={styles.sectionContent}>
+          {filteredReports.length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.noReportsText}>
+                Aucun signalement dans cette catégorie.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              contentContainerStyle={styles.timelineContainer}
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+            >
+              {filteredReports.map((report) => (
+                <View key={report.id} style={styles.timelinePointContainer}>
+                  {/* Étiquette */}
+                  <View
+                    style={[
+                      styles.timelineLabel,
+                      {
+                        backgroundColor: typeColors[report.type] || "#F5F5F5",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.labelText}>
+                      {getTypeLabel(report.type)} à{" "}
+                      {report.distance ? report.distance.toFixed(2) : "N/A"} km
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.timelineBlock,
+                      {
+                        backgroundColor: hexToRgba(
+                          typeColors[report.type] || "#F5F5F5",
+                          calculateOpacity(report.createdAt, 0.2)
+                        ),
+                      },
+                    ]}
+                    onPress={() => handlePressReport(report.id)}
+                    activeOpacity={0.9}
+                  >
+                    <Text numberOfLines={1} style={styles.reportTitle}>
+                      {report.title}
+                    </Text>
+                    <View style={styles.photoContainer}>
+                      {report.photos &&
+                      Array.isArray(report.photos) &&
+                      report.photos.length > 0 ? (
+                        <Image
+                          source={{ uri: report.photos[0].url }}
+                          style={styles.fullWidthPhoto}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.noPhotoContainer}>
+                          <Text style={styles.noPhotoText}>
+                            Aucune photo disponible
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.reportDetails}>
+                      {formatCity(report.city)}
+                    </Text>
+                    <View style={styles.dateContainer}>
+                      <Text style={styles.createdAt}>
+                        {formatTime(report.createdAt)}
                       </Text>
                     </View>
-
-                    {/* Bloc signalement */}
-                    <TouchableOpacity
-                      style={[
-                        styles.timelineBlock,
-                        {
-                          backgroundColor: hexToRgba(
-                            typeColors[report.type] || "#F5F5F5",
-                            calculateOpacity(report.createdAt, 0.2)
-                          ),
-                        },
-                      ]}
-                      onPress={() => handlePressReport(report.id)}
-                      activeOpacity={0.9}
-                    >
-                      <Text numberOfLines={1} style={styles.reportTitle}>
-                        {report.title}
-                      </Text>
-
-                      {/* Photos */}
-                      <View style={styles.photoContainer}>
-                        {report.photos && report.photos.length > 0 ? (
-                          report.photos.length === 1 ? (
-                            <Image
-                              key={report.photos[0].id}
-                              source={{ uri: report.photos[0].url }}
-                              style={styles.singlePhoto}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            report.photos
-                              .slice(0, 2)
-                              .map((photo) => (
-                                <Image
-                                  key={photo.id}
-                                  source={{ uri: photo.url }}
-                                  style={styles.multiPhoto}
-                                  resizeMode="cover"
-                                />
-                              ))
-                          )
-                        ) : (
-                          <View style={styles.noPhotoContainer}>
-                            <Text style={styles.noPhotoText}>
-                              Aucune photo disponible
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <Text style={styles.reportDetails}>
-                        {formatCity(report.city)}
-                      </Text>
-                      <View style={styles.voteSummaryReport}>
-                        <View style={styles.voteButtonsContainer}>
-                          {/* Affichage des votes positifs */}
-                          <View style={styles.voteButtonReport}>
-                            <Ionicons
-                              name="thumbs-up-outline"
-                              size={16}
-                              color="#418074"
-                            />
-                            <Text style={styles.voteCountReports}>
-                              {report.upVotes || 0}{" "}
-                              {/* Affiche 0 si upVotes est indéfini */}
-                            </Text>
-                          </View>
-                          {/* Affichage des votes négatifs */}
-                          <View style={styles.voteButtonReport}>
-                            <Ionicons
-                              name="thumbs-down-outline"
-                              size={16}
-                              color="#A73830"
-                            />
-                            <Text style={styles.voteCountReports}>
-                              {report.downVotes || 0}{" "}
-                              {/* Affiche 0 si downVotes est indéfini */}
-                            </Text>
-                          </View>
-                        </View>
-                        {/* Affichage de la date */}
-                        <Text style={styles.reportTime}>
-                          {formatTime(report.createdAt)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       )}
 
       <TouchableOpacity
