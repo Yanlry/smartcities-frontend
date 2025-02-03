@@ -11,7 +11,7 @@ import {
   RefreshControl,
   Modal,
   Switch,
-  Vibration
+  Vibration,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
@@ -33,11 +33,12 @@ interface Notification {
 }
 
 export default function NotificationsScreen({ navigation }) {
+  const { getToken } = useToken();
+  const { unreadCount } = useNotification();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getToken } = useToken();
-  const { unreadCount } = useNotification();
   const [refreshing, setRefreshing] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
   const defaultPreferences = {
@@ -52,11 +53,6 @@ export default function NotificationsScreen({ navigation }) {
     NEW_POST: true,
   };
   const [preferences, setPreferences] = useState(defaultPreferences);
-  const [tempPreferences, setTempPreferences] = useState({});
-
-  const [isEnabled, setIsEnabled] = useState(false);
-
-  const toggleSwitch = () => setIsEnabled((prevState) => !prevState);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -129,6 +125,10 @@ export default function NotificationsScreen({ navigation }) {
     loadPreferences();
   }, []);
 
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
   const fetchNotifications = async () => {
     try {
       setLoading(true);
@@ -172,19 +172,6 @@ export default function NotificationsScreen({ navigation }) {
     await fetchNotifications();
     setRefreshing(false);
   };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  useEffect(() => {
-    if (isModalVisible) {
-      console.log("Ouverture du modal : synchronisation des préférences");
-      setTempPreferences(preferences);
-    }
-  }, [isModalVisible, preferences]);
-
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   const markNotificationAsRead = async (notificationId: number) => {
     try {
@@ -460,12 +447,6 @@ export default function NotificationsScreen({ navigation }) {
     );
   };
 
-  const filteredNotifications = useMemo(
-    () =>
-      notifications.filter((notification) => preferences[notification.type]),
-    [notifications, preferences]
-  );
-
   const NotificationPreferencesModal = () => {
     const [tempPreferences, setTempPreferences] = useState(preferences);
 
@@ -553,10 +534,10 @@ export default function NotificationsScreen({ navigation }) {
                     <View key={item.type} style={styles.preferenceItem}>
                       <Text style={styles.preferenceLabel}>{item.label}</Text>
                       <Switch
-                        value={tempPreferences[item.type]} 
-                        onValueChange={() => toggleTempPreference(item.type)} 
-                        trackColor={{ false: "#d3d3d3", true: "#093A3E" }} 
-                        ios_backgroundColor="#3e3e3e" 
+                        value={tempPreferences[item.type]}
+                        onValueChange={() => toggleTempPreference(item.type)}
+                        trackColor={{ false: "#d3d3d3", true: "#235562" }}
+                        ios_backgroundColor="#3e3e3e"
                       />
                     </View>
                   ))}
@@ -590,6 +571,14 @@ export default function NotificationsScreen({ navigation }) {
     );
   };
 
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  const filteredNotifications = useMemo(
+    () =>
+      notifications.filter((notification) => preferences[notification.type]),
+    [notifications, preferences]
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -606,7 +595,7 @@ export default function NotificationsScreen({ navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -624,7 +613,7 @@ export default function NotificationsScreen({ navigation }) {
             <Icon
               name="notifications"
               size={24}
-              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -639,21 +628,21 @@ export default function NotificationsScreen({ navigation }) {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       <TouchableOpacity
-      style={styles.filterButton}
-      onPress={() => {
-        Vibration.vibrate(); 
-        console.log("Ouverture du modal");
-        setModalVisible(true);
-      }}
-    >
-      <Ionicons
-        name="options"
-        size={20}
-        color="#555"
-        style={styles.iconStyle}
-      />
-      <Text style={styles.filterButtonText}>Filtre</Text>
-    </TouchableOpacity>
+        style={styles.filterButton}
+        onPress={() => {
+          Vibration.vibrate();
+          console.log("Ouverture du modal");
+          setModalVisible(true);
+        }}
+      >
+        <Ionicons
+          name="options"
+          size={20}
+          color="#555"
+          style={styles.iconStyle}
+        />
+        <Text style={styles.filterButtonText}>Filtre</Text>
+      </TouchableOpacity>
 
       <FlatList
         data={filteredNotifications}
@@ -699,7 +688,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -709,8 +698,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E",
-    backgroundColor: "#F7F2DE",
+    color: "#FFFFFC",
     letterSpacing: 2,
     fontWeight: "bold",
     fontFamily: "Insanibc",
@@ -798,7 +786,7 @@ const styles = StyleSheet.create({
   },
 
   markAllButtonText: {
-    color: "#093A3E",
+    color: "#235562",
     fontSize: 12,
     textTransform: "uppercase",
   },
@@ -883,7 +871,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 30,
     textAlign: "center",
-    color: "#093A3E",
+    color: "#235562",
   },
   categorySection: {
     marginBottom: 20,
@@ -905,7 +893,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   saveButton: {
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     padding: 10,
     borderRadius: 30,
   },

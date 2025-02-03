@@ -9,7 +9,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -19,7 +19,7 @@ export default StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#F7F2DE",
+    color: "#FFFFFC",
 
     letterSpacing: 2,
     fontWeight: "bold",
@@ -150,7 +150,7 @@ export default StyleSheet.create({
     width: 100,
     borderRadius: 150,
     borderWidth: 5,
-    borderColor: "#093A3E",
+    borderColor: "#235562",
     backgroundColor: "#FAFAFA",
   },
   upVoteButton: {
@@ -161,14 +161,14 @@ export default StyleSheet.create({
   },
   voteTextUp: {
     marginTop: 5,
-    color: "#093A3E",
+    color: "#235562",
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 8,
   },
   voteTextDown: {
     marginTop: 5,
-    color: "#093A3E",
+    color: "#235562",
     fontWeight: "bold",
     fontSize: 16,
     marginLeft: 8,

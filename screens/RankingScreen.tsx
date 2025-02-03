@@ -16,18 +16,20 @@ import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/Sidebar";
 import { Ionicons } from "@expo/vector-icons";
 
-const RankingScreen = ({ navigation }) => {
-  interface User {
-    id: number;
-    ranking: number;
-    photo?: string;
-    useFullName?: boolean;
-    firstName?: string;
-    lastName?: string;
-    username?: string;
-    nomCommune?: string;
-    voteCount?: number;
-  }
+interface User {
+  id: number;
+  ranking: number;
+  photo?: string;
+  useFullName?: boolean;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  nomCommune?: string;
+  voteCount?: number;
+}
+
+export default function RankingScreen({ navigation }) {
+  const { unreadCount } = useNotification();
 
   const [rankingData, setRankingData] = useState<User[]>([]);
   const [userRanking, setUserRanking] = useState<number | null>(null);
@@ -36,7 +38,6 @@ const RankingScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { unreadCount } = useNotification();  
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -44,7 +45,7 @@ const RankingScreen = ({ navigation }) => {
       setError(null);
 
       try {
-        const userId = await getUserIdFromToken();  
+        const userId = await getUserIdFromToken();
         if (!userId) {
           throw new Error("Impossible de récupérer l'ID utilisateur.");
         }
@@ -84,11 +85,14 @@ const RankingScreen = ({ navigation }) => {
     fetchRanking();
   }, []);
 
-  
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#093A3E" />
+        <ActivityIndicator size="large" color="#235562" />
       </View>
     );
   }
@@ -101,162 +105,163 @@ const RankingScreen = ({ navigation }) => {
     );
   }
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
-
   return (
-<View style={styles.container}>
-  <View style={styles.headerNav}>
-    {/* Bouton pour ouvrir le menu */}
-    <TouchableOpacity onPress={toggleSidebar}>
-      <Icon
-        name="menu"
-        size={24}
-        color="#F7F2DE"
-        style={{ marginLeft: 10 }}
-      />
-    </TouchableOpacity>
+    <View style={styles.container}>
+      <View style={styles.headerNav}>
+        {/* Bouton pour ouvrir le menu */}
+        <TouchableOpacity onPress={toggleSidebar}>
+          <Icon
+            name="menu"
+            size={24}
+            color="#FFFFFC"
+            style={{ marginLeft: 10 }}
+          />
+        </TouchableOpacity>
 
-    {/* Titre de la page */}
-    <View style={styles.typeBadgeNav}>
-      <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
-    </View>
+        {/* Titre de la page */}
+        <View style={styles.typeBadgeNav}>
+          <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
+        </View>
 
-    {/* Bouton de notifications avec compteur */}
-    <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
-      <View>
-        <Icon
-          name="notifications"
-          size={24}
-          color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
-          style={{ marginRight: 10 }}
-        />
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadCount}</Text>
+        {/* Bouton de notifications avec compteur */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("NotificationsScreen")}
+        >
+          <View>
+            <Icon
+              name="notifications"
+              size={24}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
+              style={{ marginRight: 10 }}
+            />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
           </View>
-        )}
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
-  </View>
 
-  {/* FlatList avec le message de bienvenue inclus */}
-  <FlatList
-  data={rankingData}
-  keyExtractor={(item) => item.id.toString()}
-  ListHeaderComponent={(
-    <View style={styles.header}>
-    {/* Icône de bienvenue */}
-    <View style={styles.iconContainer}>
-      <Ionicons name="location-outline" size={40} color="#418074" />
+      {/* FlatList avec le message de bienvenue inclus */}
+      <FlatList
+        data={rankingData}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            {/* Icône de bienvenue */}
+            <View style={styles.iconContainer}>
+              <Ionicons name="location-outline" size={40} color="#418074" />
+            </View>
+
+            {/* Texte de bienvenue */}
+            <Text style={styles.welcomeText}>Bienvenue à</Text>
+
+            {/* Nom de la ville */}
+            <View style={styles.cityContainer}>
+              <Text style={styles.cityName}>
+                {cityName || "Ville inconnue"}
+              </Text>
+            </View>
+
+            {/* Classement utilisateur */}
+            <View style={styles.rankingContainer}>
+              <Text style={styles.rankingText}>
+                Vous êtes classé{" "}
+                <Text style={styles.rankingNumber}>
+                  #{userRanking || "N/A"}
+                </Text>{" "}
+                parmi{" "}
+                <Text style={styles.totalUsers}>{totalUsers || "N/A"}</Text>{" "}
+                utilisateurs
+              </Text>
+              <Text style={styles.rankingText}></Text>
+            </View>
+
+            {/* Barre de séparation */}
+            <View style={styles.separator} />
+          </View>
+        }
+        renderItem={({ item, index }) => {
+          const isTopThree = item.ranking <= 3;
+          const badgeColor =
+            item.ranking === 1
+              ? "#FFD700"
+              : item.ranking === 2
+              ? "#C0C0C0"
+              : "#CD7F32";
+          const borderColor =
+            item.ranking === 1
+              ? "#FFD700"
+              : item.ranking === 2
+              ? "#C0C0C0"
+              : "#CD7F32";
+
+          return (
+            <TouchableOpacity
+              style={[
+                styles.rankingItem,
+                isTopThree && { borderColor: borderColor, borderWidth: 3 },
+                index === rankingData.length - 1 && { marginBottom: 50 },
+              ]}
+              onPress={() =>
+                navigation.navigate("UserProfileScreen", { userId: item.id })
+              }
+            >
+              {/* Badge pour les 3 premiers */}
+              {isTopThree ? (
+                <View
+                  style={[styles.badgeMedal, { backgroundColor: badgeColor }]}
+                >
+                  <Text style={styles.badgeTextMedal}>
+                    {item.ranking === 1
+                      ? "🥇"
+                      : item.ranking === 2
+                      ? "🥈"
+                      : "🥉"}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.rankingNumberContainer}>
+                  <Text style={styles.rankingNumber}>{`#${item.ranking}`}</Text>
+                </View>
+              )}
+
+              {/* Photo de profil */}
+              <Image
+                source={{
+                  uri: item.photo || "https://via.placeholder.com/150",
+                }}
+                style={[styles.userImage, isTopThree && styles.topThreeImage]}
+              />
+
+              {/* Informations utilisateur */}
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>
+                  {item.useFullName
+                    ? `${item.firstName} ${item.lastName}`
+                    : item.username || "Utilisateur inconnu"}
+                </Text>
+              </View>
+
+              {/* Points et score */}
+              {!isTopThree && (
+                <View style={styles.scoreContainer}>
+                  <Text
+                    style={styles.scoreText}
+                  >{`${item.voteCount} points`}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        }}
+      />
+
+      {/* Sidebar */}
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
-
-    {/* Texte de bienvenue */}
-    <Text style={styles.welcomeText}>Bienvenue à</Text>
-
-    {/* Nom de la ville */}
-    <View style={styles.cityContainer}>
-      <Text style={styles.cityName}>{cityName || "Ville inconnue"}</Text>
-    </View>
-
-    {/* Classement utilisateur */}
-    <View style={styles.rankingContainer}>
-      <Text style={styles.rankingText}>
-        Vous êtes classé <Text style={styles.rankingNumber}>#{userRanking || "N/A"}</Text> parmi <Text style={styles.totalUsers}>{totalUsers || "N/A"}</Text> utilisateurs
-
-      </Text>
-      <Text style={styles.rankingText}>
-      </Text>
-    </View>
-
-    {/* Barre de séparation */}
-    <View style={styles.separator} />
-  </View>
-  )}
-  renderItem={({ item, index }) => {
-    const isTopThree = item.ranking <= 3;
-    const badgeColor =
-      item.ranking === 1
-        ? "#FFD700"
-        : item.ranking === 2
-        ? "#C0C0C0"
-        : "#CD7F32";
-    const borderColor =
-      item.ranking === 1
-        ? "#FFD700"
-        : item.ranking === 2
-        ? "#C0C0C0"
-        : "#CD7F32";
-
-    return (
-      <TouchableOpacity
-  style={[
-    styles.rankingItem,
-    isTopThree && { borderColor: borderColor, borderWidth: 3 },
-    index === rankingData.length - 1 && { marginBottom: 50 },
-  ]}
-  onPress={() =>
-    navigation.navigate("UserProfileScreen", { userId: item.id })
-  }
->
-  {/* Badge pour les 3 premiers */}
-  {isTopThree ? (
-    <View style={[styles.badgeMedal, { backgroundColor: badgeColor }]}>
-      <Text style={styles.badgeTextMedal}>
-        {item.ranking === 1
-          ? "🥇"
-          : item.ranking === 2
-          ? "🥈"
-          : "🥉"}
-      </Text>
-    </View>
-  ) : ( 
-    <View style={styles.rankingNumberContainer}>
-      <Text style={styles.rankingNumber}>{`#${item.ranking}`}</Text>
-    </View>
-  )}
-
-  {/* Photo de profil */}
-  <Image
-    source={{
-      uri: item.photo || "https://via.placeholder.com/150",
-    }}
-    style={[
-      styles.userImage,
-      isTopThree && styles.topThreeImage,
-    ]}
-  />
-
-  {/* Informations utilisateur */}
-  <View
-    style={styles.userInfo}
-  >
-    <Text style={styles.userName}>
-      {item.useFullName
-        ? `${item.firstName} ${item.lastName}`
-        : item.username || "Utilisateur inconnu"}
-    </Text>
-  </View>
-
-  {/* Points et score */}
-  {!isTopThree && (
-    <View style={styles.scoreContainer}>
-      <Text style={styles.scoreText}>{`${item.voteCount} points`}</Text>
-    </View>
-  )}
-</TouchableOpacity>
-    );
-  }}
-/>
-
-  {/* Sidebar */}
-  <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-</View>
   );
-};
-
-export default RankingScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -267,7 +272,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -277,11 +282,10 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E',  
-    backgroundColor: '#F7F2DE',
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc',  
+    color: "#FFFFFC",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc",
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -423,7 +427,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -3,
     right: 1,
-    fontSize:50,
+    fontSize: 50,
     fontWeight: "bold",
     color: "#fff",
   },
@@ -460,7 +464,7 @@ const styles = StyleSheet.create({
     color: "#418074",
   },
   topThreeImage: {
-    width: 70,  
+    width: 70,
     height: 70,
     borderRadius: 35,
   },

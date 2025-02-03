@@ -47,6 +47,7 @@ type User = {
 export default function UserProfileScreen({ route, navigation }) {
   const { getToken, getUserId } = useToken();
   const { userId } = route.params;
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +141,7 @@ export default function UserProfileScreen({ route, navigation }) {
       }
 
       setIsFollowing(true);
- 
+
       setUser((prevUser) =>
         prevUser
           ? {
@@ -150,7 +151,7 @@ export default function UserProfileScreen({ route, navigation }) {
                 {
                   id: currentUserId,
                   username: "Vous",
-                  profilePhoto: undefined,  
+                  profilePhoto: undefined,
                 },
               ],
             }
@@ -162,10 +163,6 @@ export default function UserProfileScreen({ route, navigation }) {
       setIsSubmitting(false);
     }
   };
-
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
-
-  const openReportModal = () => setReportModalVisible(true);
 
   const closeReportModal = () => {
     setReportModalVisible(false);
@@ -179,14 +176,14 @@ export default function UserProfileScreen({ route, navigation }) {
     }
 
     try {
-      const reporterId = await getUserId();  
+      const reporterId = await getUserId();
 
       console.log({
         to: "yannleroy23@gmail.com",
         subject: "Signalement d'un profil utilisateur",
-        userId,  
-        reporterId,  
-        reportReason,  
+        userId,
+        reporterId,
+        reportReason,
       });
 
       const response = await fetch(`${API_URL}/mails/send`, {
@@ -211,7 +208,7 @@ export default function UserProfileScreen({ route, navigation }) {
       const result = await response.json();
       console.log("Signalement envoyé :", result);
       Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
-      closeReportModal();  
+      closeReportModal();
     } catch (error) {
       console.error("Erreur lors de l'envoi du signalement :", error.message);
       Alert.alert(
@@ -219,7 +216,7 @@ export default function UserProfileScreen({ route, navigation }) {
         "Une erreur s'est produite lors de l'envoi du signalement."
       );
     }
-  }; 
+  };
 
   const handleUnfollow = async () => {
     if (!currentUserId) return;
@@ -237,7 +234,7 @@ export default function UserProfileScreen({ route, navigation }) {
       }
 
       setIsFollowing(false);
- 
+
       setUser((prevUser) =>
         prevUser
           ? {
@@ -255,10 +252,100 @@ export default function UserProfileScreen({ route, navigation }) {
     }
   };
 
+  const getBadgeStyles = (votes: number) => {
+    if (votes >= 1000) {
+      return {
+        title: "Légende urbaine",
+        backgroundColor: "#997BBA",
+        textColor: "#fff",
+        borderColor: "#5B3F78",
+        shadowColor: "#997BBA",
+        starsColor: "#5B3F78",
+        stars: 6,
+        icon: null,
+      };
+    } else if (votes >= 500) {
+      return {
+        title: "Icône locale",
+        backgroundColor: "#70B3B1",
+        textColor: "#fff",
+        borderColor: "#044745",
+        shadowColor: "#70B3B1",
+        starsColor: "#044745",
+        stars: 5,
+        icon: null,
+      };
+    } else if (votes >= 250) {
+      return {
+        title: "Héros du quotidien",
+        backgroundColor: "#FAF3E3",
+        textColor: "#856404",
+        borderColor: "#856404",
+        shadowColor: "#D4AF37",
+        starsColor: "#D4AF37",
+        stars: 4,
+        icon: null,
+      };
+    } else if (votes >= 100) {
+      return {
+        title: "Ambassadeur du quartier",
+        backgroundColor: "#E1E1E1",
+        textColor: "#6A6A6A",
+        starsColor: "#919191",
+        shadowColor: "#6A6A6A",
+        borderColor: "#919191",
+        stars: 3,
+        icon: null,
+      };
+    } else if (votes >= 50) {
+      return {
+        title: "Citoyen de confiance",
+        backgroundColor: "#CEA992",
+        textColor: "#853104",
+        starsColor: "#853104",
+        shadowColor: "#853104",
+        borderColor: "#D47637",
+        stars: 2,
+        icon: null,
+      };
+    } else if (votes >= 5) {
+      return {
+        title: "Apprenti citoyen",
+        backgroundColor: "#9BD4A2",
+        textColor: "#25562A",
+        starsColor: "#54B65F",
+        borderColor: "#54B65F",
+        shadowColor: "#54B65F",
+
+        stars: 1,
+        icon: null,
+      };
+    } else {
+      return {
+        title: "Premiers pas",
+        backgroundColor: "#235562",
+        textColor: "#fff",
+        borderColor: "#fff",
+        shadowColor: "#235562",
+        starsColor: "#0AAEA8",
+        stars: 0,
+        icon: <Ionicons name="school" size={24} color="#0AAEA8" />,
+      };
+    }
+  };
+
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  const openReportModal = () => setReportModalVisible(true);
+
+  const displayName = user?.useFullName
+    ? `${user.firstName} ${user.lastName}`
+    : user?.username;
+
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#093A3E" />
+        <ActivityIndicator size="large" color="#235562" />
         <Text>Chargement du profil utilisateur...</Text>
       </View>
     );
@@ -272,92 +359,6 @@ export default function UserProfileScreen({ route, navigation }) {
     );
   }
 
-  const displayName = user?.useFullName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.username;
-
-  const getBadgeStyles = (votes: number) => {
-    if (votes >= 1000) {
-      return {
-        title: "Légende urbaine",
-        backgroundColor: "#70B3B1",  
-        textColor: "#fff",
-        borderColor: "#044745",
-        shadowColor: "#70B3B1",
-        starsColor: "#044745",
-        stars: 6,
-        icon: null,
-      };
-    } else if (votes >= 500) {
-      return {
-        title: "Icône locale",
-        backgroundColor: "#FAF3E3",  
-        textColor: "#856404",
-        borderColor: "#856404",
-        shadowColor: "#D4AF37",
-        starsColor: "#D4AF37",
-        stars: 5,
-        icon: null,
-      };
-    } else if (votes >= 250) {
-      return {
-        title: "Pilier de la communauté",
-        backgroundColor: "#E1E1E1",  
-        textColor: "#6A6A6A",
-        borderColor: "#919191",
-        shadowColor: "#6A6A6A",
-        starsColor: "#919191",
-        stars: 4,
-        icon: null,
-      };
-    } else if (votes >= 100) {
-      return {
-        title: "Ambassadeur citoyen",
-        backgroundColor: "#E1E1E1",  
-        textColor: "#6A6A6A",
-        starsColor: "#919191",
-        shadowColor: "#6A6A6A",
-        borderColor: "#919191",
-        stars: 3,
-        icon: null,
-      };
-    } else if (votes >= 50) {
-      return {
-        title: "Citoyen de confiance",
-        backgroundColor: "#CEA992",  
-        textColor: "#853104",
-        starsColor: "#853104",
-        shadowColor: "#853104",
-        borderColor: "#D47637",
-        stars: 2,
-        icon: null,
-      };
-    } else if (votes >= 5) {
-      return {
-        title: "Apprenti citoyen",
-        backgroundColor: "#CEA992",  
-        textColor: "#853104",
-        starsColor: "#853104",
-        borderColor: "#D47637",
-        shadowColor: "#853104",
-
-        stars: 1,
-        icon: null,
-      };
-    } else {
-      return {
-        title: "Premiers pas",
-        backgroundColor: "#093A3E", 
-        textColor: "#fff",
-        borderColor: "#fff",
-        shadowColor: "#093A3E",
-        starsColor: "#0AAEA8",
-        stars: 0,
-        icon: <Ionicons name="school" size={24} color="#fff" />,
-      };
-    }
-  };
-
   return (
     <View>
       <View style={styles.header}>
@@ -366,7 +367,7 @@ export default function UserProfileScreen({ route, navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" 
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -381,7 +382,7 @@ export default function UserProfileScreen({ route, navigation }) {
           <Icon
             name="error"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
@@ -433,7 +434,7 @@ export default function UserProfileScreen({ route, navigation }) {
                 ? styles.silverBorder
                 : user?.ranking === 3
                 ? styles.bronzeBorder
-                : null,  
+                : null,
             ]}
           >
             {user?.profilePhoto?.url ? (
@@ -507,7 +508,7 @@ export default function UserProfileScreen({ route, navigation }) {
           </Pressable>
         </View>
 
-        {/* Modal */}
+        {/* MODAL DES PALIER */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -516,8 +517,27 @@ export default function UserProfileScreen({ route, navigation }) {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
+              {/* Icône informative */}
+              <Ionicons
+                name="medal-outline"
+                size={60}
+                color="#418074"
+                style={styles.icon}
+              />
+
               {/* Titre principal */}
-              <Text style={styles.modalTitle}>Paliers</Text>
+              <Text style={styles.modalTitle}>Découvrez les paliers</Text>
+
+              {/* Description */}
+              <Text style={styles.modalDescription}>
+                Chaque badge symbolise votre engagement citoyen. Plus vous
+                participez en votant sur les signalements, plus vous progressez
+                et débloquez de nouveaux paliers.
+                {"\n"}
+                {"\n"}
+                💡 Bon à savoir : Vous pouvez voter dans n’importe quelle ville,
+                alors n’attendez plus ! 🚀
+              </Text>
 
               {/* Corps scrollable */}
               <ScrollView contentContainerStyle={styles.modalBody}>
@@ -525,77 +545,83 @@ export default function UserProfileScreen({ route, navigation }) {
                   {
                     name: "Légende urbaine",
                     description: "Plus de 1000 votes",
-                    stars: 6,
-                    starsColor: "#70B3B1",
+                    votes: 1000,
                   },
                   {
                     name: "Icône locale",
                     description: "500 à 999 votes",
-                    stars: 5,
-                    starsColor: "#D4AF37",
+                    votes: 500,
                   },
                   {
-                    name: "Pilier de la communauté",
+                    name: "Héros du quotidien",
                     description: "250 à 499 votes",
-                    stars: 4,
-                    starsColor: "#919191",
+                    votes: 250,
                   },
                   {
-                    name: "Ambassadeur citoyen",
+                    name: "Ambassadeur du quartier",
                     description: "100 à 249 votes",
-                    stars: 3,
-                    starsColor: "#919191",
+                    votes: 100,
                   },
                   {
                     name: "Citoyen de confiance",
                     description: "50 à 99 votes",
-                    stars: 2,
-                    starsColor: "#853104",
+                    votes: 50,
                   },
                   {
                     name: "Apprenti citoyen",
                     description: "5 à 49 votes",
-                    stars: 1,
-                    starsColor: "#853104",
+                    votes: 5,
                   },
                   {
                     name: "Premiers pas",
                     description: "Moins de 5 votes",
-                    stars: 0,
-                    starsColor: "#6A6A6A",
+                    votes: 0,
                   },
-                ].map((tier, index) => (
-                  <View key={index} style={styles.tierCard}>
-                    {/* Étoiles */}
-                    <View style={styles.starsContainer}>
-                      {Array.from({ length: tier.stars }).map((_, i) => (
-                        <Ionicons
-                          key={i}
-                          name="star"
-                          size={20}
-                          color={tier.starsColor}
-                        />
-                      ))}
-                      {tier.stars === 0 && (
-                        <Ionicons
-                          name="school"
-                          size={24}
-                          color={tier.starsColor}
-                        />
-                      )}
-                    </View>
-                    {/* Titre */}
-                    <Text
-                      style={[styles.tierTitle, { color: tier.starsColor }]}
+                ].map((tier, index) => {
+                  const badgeStyles = getBadgeStyles(tier.votes);
+
+                  return (
+                    <View
+                      key={index}
+                      style={[
+                        styles.tierCard,
+                        { borderColor: badgeStyles.borderColor },
+                      ]}
                     >
-                      {tier.name}
-                    </Text>
-                    {/* Description */}
-                    <Text style={styles.tierDescription}>
-                      {tier.description}
-                    </Text>
-                  </View>
-                ))}
+                      {/* Étoiles */}
+                      <View style={styles.starsContainer}>
+                        {Array.from({ length: badgeStyles.stars }).map(
+                          (_, i) => (
+                            <Ionicons
+                              key={i}
+                              name="star"
+                              size={20}
+                              color={badgeStyles.starsColor}
+                            />
+                          )
+                        )}
+                        {badgeStyles.stars === 0 && badgeStyles.icon}
+                      </View>
+                      {/* Titre avec le même fond et la même bordure que le badge */}
+                      <Text
+                        style={[
+                          styles.tierTitle,
+                          {
+                            backgroundColor: badgeStyles.backgroundColor,
+                            borderColor: badgeStyles.borderColor,
+                            color: badgeStyles.textColor,
+                          },
+                        ]}
+                      >
+                        {tier.name}
+                      </Text>
+                      {/* Description */}
+                      <Text style={styles.tierDescription}>
+                        {tier.description}
+                      </Text>
+                    </View>
+                  );
+                })}
               </ScrollView>
 
               {/* Bouton de fermeture */}
@@ -650,7 +676,7 @@ export default function UserProfileScreen({ route, navigation }) {
                 { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
               ]}
               onPress={isFollowing ? handleUnfollow : handleFollow}
-              disabled={isSubmitting}  
+              disabled={isSubmitting}
             >
               <Text style={styles.followButtonText}>
                 {isFollowing ? "Se désabonner" : "S'abonner"}
@@ -804,7 +830,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -814,11 +840,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E",  
-    backgroundColor: "#F7F2DE",
+    color: "#235562",
+    backgroundColor: "#FFFFFC",
     letterSpacing: 2,
     fontWeight: "bold",
-    fontFamily: "Insanibc",  
+    fontFamily: "Insanibc",
   },
   typeBadge: {
     flexDirection: "row",
@@ -827,14 +853,14 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     position: "absolute",
-    top: 0, 
+    top: 0,
     left: 0,
     right: 0,
-    bottom: 0, 
-    backgroundColor: "rgba(0, 0, 0, 0.5)",  
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,  
+    zIndex: 1000,
   },
   modalContainer: {
     width: "90%",
@@ -846,31 +872,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 10,  
+    elevation: 10,
   },
   textInput: {
     borderWidth: 1,
     height: 90,
     width: "100%",
-    borderColor: "#ccc",  
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
     marginTop: 10,
-    backgroundColor: "#F2F4F7",  
+    backgroundColor: "#F2F4F7",
     marginBottom: 20,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",  
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     width: "90%",
-    height: "80%",  
-    backgroundColor: "#FFF",  
-    borderRadius: 10,
+    height: "90%",
+    backgroundColor: "#FFF",
+    borderRadius: 20,
     padding: 20,
     alignItems: "center",
     elevation: 5,
@@ -882,30 +908,35 @@ const styles = StyleSheet.create({
     color: "#333",
     textAlign: "center",
   },
+  modalDescription: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#666",
+    marginBottom: 20,
+  },
   modalBody: {
     width: "100%",
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   tierCard: {
     width: 280,
-    marginBottom: 15,
-    padding: 20,
-    borderRadius: 150,
-    backgroundColor: "#F9F9F9",  
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#DDD",
+    padding: 10,
+    borderRadius: 30,
     alignItems: "center",
   },
   tierTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "bold",
     marginBottom: 5,
     textAlign: "center",
+    padding: 15,
+    width: "100%",
+    borderWidth: 2,
+    borderRadius: 30,
+  },
+  badgeImage: {
+    width: 400,
+    marginBottom: 10,
   },
   tierDescription: {
     fontSize: 14,
@@ -915,32 +946,39 @@ const styles = StyleSheet.create({
   starsContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: -8,
+    zIndex: 1,
   },
+
   closeButton: {
+    backgroundColor: "#418074",
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 25,
     marginTop: 20,
-    backgroundColor: "#FF4500",  
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#FFF",
+    alignItems: "center",
+    width: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
   },
   closeButtonText: {
     fontSize: 16,
-    color: "#FFF",
-    fontWeight: "600",
+    color: "#fff",
+    fontWeight: "bold",
     textAlign: "center",
   },
 
   badgeWrapper: {
-    alignItems: "center",  
+    alignItems: "center",
   },
   iconsContainer: {
-    flexDirection: "row",  
+    flexDirection: "row",
     justifyContent: "center",
-    zIndex: 1,  
-    marginBottom: -17,  
+    zIndex: 1,
+    marginBottom: -17,
   },
   badgeContainer: {
     marginTop: 5,
@@ -970,7 +1008,7 @@ const styles = StyleSheet.create({
   },
   sendChat: {
     width: "80%",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -1022,16 +1060,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   profileImageContainer: {
-    width: 150,  
+    width: 150,
     height: 150,
-    borderRadius: 90,  
+    borderRadius: 90,
     justifyContent: "center",
     alignItems: "center",
   },
   profileImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 90,  
+    borderRadius: 90,
   },
   noProfileImageText: {
     fontSize: 14,
@@ -1039,26 +1077,26 @@ const styles = StyleSheet.create({
   },
   goldBorder: {
     borderWidth: 5,
-    borderColor: "#FFD700",  
+    borderColor: "#FFD700",
   },
   silverBorder: {
     borderWidth: 5,
-    borderColor: "#C0C0C0",  
+    borderColor: "#C0C0C0",
   },
   bronzeBorder: {
     borderWidth: 5,
-    borderColor: "#CD7F32",  
+    borderColor: "#CD7F32",
   },
   medalContainer: {
     position: "absolute",
-    top: -20,  
-    zIndex: 2,  
+    top: -20,
+    zIndex: 2,
     padding: 5,
     borderRadius: 50,
-    elevation: 3,  
+    elevation: 3,
   },
   medalText: {
-    fontSize: 65,  
+    fontSize: 65,
   },
 
   followButtonContainer: {
@@ -1068,7 +1106,7 @@ const styles = StyleSheet.create({
   },
   followButton: {
     width: "80%",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -1104,17 +1142,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#555",
-    marginRight: 5, 
+    marginRight: 5,
   },
   infoValueName: {
     fontSize: 17,
     color: "#333",
-    fontWeight: "600", 
+    fontWeight: "600",
   },
   infoValueEmail: {
     fontSize: 17,
     color: "#333",
-    fontWeight: "600", 
+    fontWeight: "600",
   },
   placeholderValue: {
     fontSize: 14,
@@ -1123,7 +1161,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 10,
-    color: "#093A3E",
+    color: "#235562",
   },
   cardHeader: {
     fontSize: 18,
@@ -1158,23 +1196,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statItem: {
-    justifyContent: "center",  
-    alignItems: "center",  
-    padding: 10, 
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
   },
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    textAlign: "center",  
-    marginBottom: 5,  
-    color: "#093A3E",  
+    textAlign: "center",
+    marginBottom: 5,
+    color: "#235562",
   },
   statLabel: {
-    textAlign: "center", 
+    textAlign: "center",
     fontSize: 14,
-    color: "#555",  
-    fontWeight: "bold",  
-    lineHeight: 20,  
+    color: "#555",
+    fontWeight: "bold",
+    lineHeight: 20,
   },
   field: {
     fontSize: 14,

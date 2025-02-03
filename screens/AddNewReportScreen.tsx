@@ -24,6 +24,9 @@ import PhotoManager from '../components/PhotoManager';
 import { API_URL , OPEN_CAGE_API_KEY } from '@env';
 
 export default function AddNewReportScreen({navigation}) {
+  const listRef = useRef<FlatList>(null);
+  const mapRef = useRef<MapView>(null);
+  const { location, loading } = useLocation();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -31,7 +34,6 @@ export default function AddNewReportScreen({navigation}) {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const { location, loading } = useLocation();
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [step, setStep] = useState(1);
@@ -40,17 +42,16 @@ export default function AddNewReportScreen({navigation}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null); 
-  const listRef = useRef<FlatList>(null);
+
   const screenWidth = Dimensions.get('window').width;
   const expandedWidth = screenWidth * 0.4;
-  const mapRef = useRef<MapView>(null);
 
   const steps = [
     { label: "Préparation des fichiers", progress: 0.2 },
     { label: "Téléchargement en cours", progress: 0.7 },
     { label: "Finalisation, veuillez patientez", progress: 1.0 },
   ];
-
+  
   useEffect(() => {
     listRef.current?.scrollToOffset({
       offset: categories.length * expandedWidth,
@@ -194,7 +195,6 @@ export default function AddNewReportScreen({navigation}) {
     setQuery(formattedAddress); 
     setModalVisible(false); 
   };
-  
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -295,6 +295,8 @@ export default function AddNewReportScreen({navigation}) {
     setExpandedCategory(prev => (prev === value ? null : value));
   };
 
+
+
   return (
     <KeyboardAwareScrollView
       contentContainerStyle={styles.container}
@@ -394,7 +396,7 @@ export default function AddNewReportScreen({navigation}) {
                 </TouchableOpacity>
               </View>
               {loading ? (
-                <ActivityIndicator size="large" color="#093A3E" />
+                <ActivityIndicator size="large" color="#235562" />
               ) : (
                 <View style={{  height: 450, marginVertical: 20 }}>
                   <MapView
@@ -449,7 +451,7 @@ export default function AddNewReportScreen({navigation}) {
               </Modal>
               <View style={styles.submitButtonContainer}>
           {isSubmitting ? (
-            <ActivityIndicator size="large" color="#093A3E" />
+            <ActivityIndicator size="large" color="#235562" />
           ) : (
             <View style={styles.submitButton}>
               <TouchableOpacity

@@ -8,7 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Platform
+  Platform,
 } from "react-native";
 import * as Location from "expo-location";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
@@ -45,49 +45,63 @@ export default function CategoryReportsScreen() {
   const route = useRoute<CategoryReportsScreenRouteProp>();
   const navigation = useNavigation<CategoryReportsScreenNavigationProp>();
   const { category } = route.params;
+
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
-  const opacity = reports.length > 0 ? calculateOpacity(reports[0].createdAt) : 0.6;  
-  const categoryColor = hexToRgba(typeColors[category.toLowerCase()] ?? "#CCCCCC", opacity);
-  const categoryDescription = categoryDescriptions[category.toLowerCase()] ?? "Aucune information disponible.";
 
-useEffect(() => {
-  const fetchLocationAndReports = async () => {
-    setLoading(true);
-    try {
-      const { category, city } = route.params;  
+  useEffect(() => {
+    const fetchLocationAndReports = async () => {
+      setLoading(true);
+      try {
+        const { category, city } = route.params;
 
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Erreur",
-          "La localisation est nécessaire pour trier les signalements."
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Erreur",
+            "La localisation est nécessaire pour trier les signalements."
+          );
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = location.coords;
+
+        const enrichedReports = await processReports(
+          latitude,
+          longitude,
+          category,
+          city
         );
-        return;
+
+        setReports(enrichedReports);
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement des signalements :", error);
+        Alert.alert("Erreur", "Impossible de charger les signalements.");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
- 
-      const enrichedReports = await processReports(latitude, longitude, category, city);
+    fetchLocationAndReports();
+  }, [category]);
 
-      console.log("📌 Rapports filtrés :", enrichedReports);
-      setReports(enrichedReports);
-    } catch (error) {
-      console.error("❌ Erreur lors du chargement des signalements :", error);
-      Alert.alert("Erreur", "Impossible de charger les signalements.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const opacity =
+    reports.length > 0 ? calculateOpacity(reports[0].createdAt) : 0.6;
 
-  fetchLocationAndReports();
-}, [category]);
+  const categoryColor = hexToRgba(
+    typeColors[category.toLowerCase()] ?? "#CCCCCC",
+    opacity
+  );
+
+  const categoryDescription =
+    categoryDescriptions[category.toLowerCase()] ??
+    "Aucune information disponible.";
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#093A3E" />
+        <ActivityIndicator size="large" color="#235562" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
@@ -95,9 +109,14 @@ useEffect(() => {
 
   return (
     <View style={styles.container}>
-  <View style={[styles.categoryContainer, { backgroundColor: categoryColor }]}>
+      <View
+        style={[styles.categoryContainer, { backgroundColor: categoryColor }]}
+      >
         {/* Bouton Retour avec Icône */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back-outline" size={26} color="#FFF" />
         </TouchableOpacity>
 
@@ -205,7 +224,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 45,
     left: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.15)", 
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     padding: 10,
     borderRadius: 50,
     shadowColor: "#000",
@@ -240,9 +259,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-
-
 
   scrollView: {
     flex: 1,

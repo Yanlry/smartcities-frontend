@@ -23,19 +23,29 @@ import MapView from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
+type Report = {
+  id: number;
+  title: string;
+  description: string;
+  city: string;
+  createdAt: string;
+  updatedAt?: string;  
+  photos?: { url: string }[];  
+};
+
 export default function ReportScreen({ navigation }) {
   const { unreadCount } = useNotification();
-  const [reports, setReports] = useState<
-    { id: number; title: string; description: string; createdAt: string }[]
-  >([]);
+  const { location, loading } = useLocation();
+  const mapRef = useRef<MapView>(null);
+
   const { getUserId } = useToken();
+
+  const [reports, setReports] = useState<{ id: number; title: string; description: string; createdAt: string }[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentReport, setCurrentReport] = useState<Report | null>(null);
-  const { location, loading } = useLocation();
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const mapRef = useRef<MapView>(null);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
 
   useEffect(() => {
@@ -53,7 +63,6 @@ export default function ReportScreen({ navigation }) {
           throw new Error(`Erreur HTTP ! statut : ${response.status}`);
         }
         const data = await response.json();
-        console.log("Données des rapports récupérées :", data);
         setReports(data);
       } catch (error) {
         console.error("Erreur lors de la récupération des rapports :", error);
@@ -62,16 +71,6 @@ export default function ReportScreen({ navigation }) {
 
     fetchUserReports();
   }, [currentReport]);  
-
-  type Report = {
-    id: number;
-    title: string;
-    description: string;
-    city: string;
-    createdAt: string;
-    updatedAt?: string;  
-    photos?: { url: string }[];  
-  };
 
   const renderItem = ({ item }) => (
     <View style={styles.reportCard}>
@@ -344,7 +343,7 @@ export default function ReportScreen({ navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE"  
+            color="#FFFFFC"  
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -362,7 +361,7 @@ export default function ReportScreen({ navigation }) {
             <Icon
               name="notifications"
               size={24}
-              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -541,7 +540,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E",  
+    backgroundColor: "#235562",  
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -551,8 +550,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E',  
-    backgroundColor: '#F7F2DE',
+    color: "#FFFFFC", 
     letterSpacing:2,
     fontWeight: 'bold',
     fontFamily: 'Insanibc',  
@@ -577,13 +575,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     fontWeight: "bold",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#CBCBCB",
-    textAlign: "center",
-    marginBottom: 10,
   },
   reportsList: {
     paddingVertical: 10,

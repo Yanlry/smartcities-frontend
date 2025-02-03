@@ -31,10 +31,12 @@ type UserProfileScreenNavigationProp = StackNavigationProp<
 >;
 
 export default function SocialScreen({ handleScroll }) {
+  const navigation = useNavigation<UserProfileScreenNavigationProp>();
+  const { getUserId } = useToken();
+
   const [posts, setPosts] = useState<any[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { getUserId } = useToken();
   const [commentInputs, setCommentInputs] = useState({});
   const [visibleComments, setVisibleComments] = useState({});
   const [userId, setUserId] = useState<number | null>(null);
@@ -49,17 +51,6 @@ export default function SocialScreen({ handleScroll }) {
   const [visibleCommentSection, setVisibleCommentSection] = useState({});
   const [isCityFilterEnabled, setIsCityFilterEnabled] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const navigation = useNavigation<UserProfileScreenNavigationProp>();
-  const [likedComments, setLikedComments] = useState({});
-
-  const handleNavigate = (userId: number) => {
-    navigation.navigate("UserProfileScreen", { userId: userId.toString() });
-  };
-
-  const filters = [
-    { label: "Toutes la communauté Smarters", value: false },
-    { label: "Publications de ma ville", value: true },
-  ];
 
   useEffect(() => {
     const initialize = async () => {
@@ -140,8 +131,8 @@ export default function SocialScreen({ handleScroll }) {
           ...post,
           comments: post.comments.map((comment) => ({
             ...comment,
-            likedByUser: comment.likedByUser || false,  
-            likesCount: comment.likesCount || 0,  
+            likedByUser: comment.likedByUser || false,
+            likesCount: comment.likesCount || 0,
           })),
         }))
         .sort(
@@ -227,7 +218,7 @@ export default function SocialScreen({ handleScroll }) {
 
       const data = await response.json();
       console.log("🔄 Réponse API Like :", data);
- 
+
       setPosts((prevPosts) =>
         prevPosts.map((post) => ({
           ...post,
@@ -235,8 +226,8 @@ export default function SocialScreen({ handleScroll }) {
             comment.id === commentId
               ? {
                   ...comment,
-                  likedByUser: data.liked,  
-                  likesCount: data.likesCount, 
+                  likedByUser: data.liked,
+                  likesCount: data.likesCount,
                 }
               : comment
           ),
@@ -622,14 +613,14 @@ export default function SocialScreen({ handleScroll }) {
                     : "thumbs-up-outline"
                 }
                 size={22}
-                color={likedPosts.includes(item.id) ? "#007bff" : "#656765"}
+                color={likedPosts.includes(item.id) ? "#3B90A5" : "#656765"}
                 style={styles.likeIcon}
               />
               <Text
                 style={[
                   styles.likeButtonText,
                   {
-                    color: likedPosts.includes(item.id) ? "#007bff" : "#656765",
+                    color: likedPosts.includes(item.id) ? "#3B90A5" : "#656765",
                   },
                 ]}
               >
@@ -655,14 +646,14 @@ export default function SocialScreen({ handleScroll }) {
                   visibleComments[item.id] ? "chatbubble" : "chatbubble-outline"
                 }
                 size={22}
-                color={visibleComments[item.id] ? "#007BFF" : "#656765"}
+                color={visibleComments[item.id] ? "#3B90A5" : "#656765"}
               />
 
               {/* Nombre de commentaires */}
               <Text
                 style={[
                   styles.commentCountText,
-                  visibleComments[item.id] && { color: "#007BFF" },
+                  visibleComments[item.id] && { color: "#3B90A5" },
                 ]}
               >
                 {item.comments?.length || 0}
@@ -733,7 +724,7 @@ export default function SocialScreen({ handleScroll }) {
                   >
                     <View style={styles.likeCommentButton}>
                       <Icon
-                        name={comment.likedByUser ? "heart" : "heart-outline"}  
+                        name={comment.likedByUser ? "heart" : "heart-outline"}
                         size={20}
                         color={comment.likedByUser ? "#FF0000" : "#656765"}
                       />
@@ -748,7 +739,7 @@ export default function SocialScreen({ handleScroll }) {
                     </View>
                   </TouchableOpacity>
                 </View>
-                
+
                 {/* Champ de réponse conditionnel */}
                 {replyToCommentId === comment.id && (
                   <View style={styles.replyContainer}>
@@ -975,9 +966,9 @@ export default function SocialScreen({ handleScroll }) {
     }
   };
 
-  const selectedFilter = filters.find(
-    (filter) => filter.value === isCityFilterEnabled
-  )?.label;
+  const handleNavigate = (userId: number) => {
+    navigation.navigate("UserProfileScreen", { userId: userId.toString() });
+  };
 
   const handleFilterSelect = (filterValue) => {
     setIsCityFilterEnabled(filterValue);
@@ -985,6 +976,15 @@ export default function SocialScreen({ handleScroll }) {
     fetchPosts(filterValue);
     setModalVisible(false);
   };
+  
+  const filters = [
+    { label: "Toutes la communauté Smarters", value: false },
+    { label: "Publications de ma ville", value: true },
+  ];
+
+  const selectedFilter = filters.find(
+    (filter) => filter.value === isCityFilterEnabled
+  )?.label;
 
   return (
     <View style={styles.container}>
@@ -1009,7 +1009,7 @@ export default function SocialScreen({ handleScroll }) {
                   style={styles.iconButton}
                   onPress={handlePickImage}
                 >
-                  <Icon name="image" size={24} color="#4CAF93" />
+                  <Icon name="image" size={24} color="#3B90A5" />
                 </TouchableOpacity>
               </View>
 
@@ -1442,7 +1442,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   activeFilter: {
-    backgroundColor: "#4CAF93",
+    backgroundColor: "#3B90A5",
     borderRadius: 8,
   },
   filterOptionText: {
@@ -1480,7 +1480,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#3B90A5",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -1509,7 +1509,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   publishButton: {
-    backgroundColor: "#4CAF93",
+    backgroundColor: "#3B90A5",
     padding: 10,
     borderRadius: 10,
     alignItems: "center",
@@ -1536,7 +1536,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   showMoreTextReply: {
-    color: "#007bff",
+    color: "#3B90A5",
     fontWeight: "bold",
     fontSize: 14,
     marginLeft: 55,
@@ -1591,10 +1591,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#eef6ff",
     borderRadius: 20,
     borderLeftWidth: 2,
-    borderLeftColor: "#007bff",
+    borderLeftColor: "#3B90A5",
   },
   addReplyButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#3B90A5",
     borderRadius: 5,
     padding: 8,
     marginTop: 1,

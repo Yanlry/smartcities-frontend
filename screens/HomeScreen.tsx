@@ -73,38 +73,24 @@ interface Event {
 }
 
 export default function HomeScreen({ navigation, handleScroll }) {
+  
   const { location, loading: locationLoading } = useLocation();
+
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const isLoading = locationLoading || loadingReports || loadingUsers;
-  const [smarterData, setSmarterData] = useState<
-    {
-      id: string;
-      username: string;
-      displayName: string;
-      image: { uri: string };
-    }[]
-  >([]);
+  const [smarterData, setSmarterData] = useState<{ id: string; username: string; displayName: string; image: { uri: string }}[]>([]);
   const [showFollowers, setShowFollowers] = useState(false);
   const [ranking, setRanking] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
-  const [featuredEvents, setFeaturedEvents] = useState<
-    { id: string; title: string; image: string }[]
-  >([]);
+  const [featuredEvents, setFeaturedEvents] = useState<{ id: string; title: string; image: string }[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [modalNameVisible, setModalNameVisible] = useState(false);
-  const nomCommune = user?.nomCommune || "";
-  const { data } = useFetchStatistics(
-    `${API_URL}/reports/statistics`,
-    nomCommune
-  );
-  const userCity = user?.nomCommune || "Commune non définie";
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isSectionVisible, setSectionVisible] = useState(true);
   const [isReportsVisible, setReportsVisible] = useState(true);
@@ -118,10 +104,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
   const [showFollowing, setShowFollowing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
 
-  const filteredReports = reports.filter((report) =>
-    selectedCategory === "Tous" ? true : report.type === selectedCategory
-  );
-
+  const nomCommune = user?.nomCommune || "";
+  const { data } = useFetchStatistics(`${API_URL}/reports/statistics`, nomCommune);
+  const userCity = user?.nomCommune || "Commune non définie";
+  
   useEffect(() => {
     const fetchRanking = async () => {
       setLoading(true);
@@ -340,51 +326,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
       .trim();
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#102542" />
-        <Text style={styles.loadingText}>Chargement en cours...</Text>
-      </View>
-    );
-  }
-
-  if (!location) {
-    console.error("Localisation non disponible");
-    return (
-      <Modal transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Partagez votre position</Text>
-          <Text style={styles.modalText}>
-            La permission de localisation est nécessaire pour utiliser
-            l'application.
-          </Text>
-          <TouchableOpacity style={styles.button} onPress={() => useLocation()}>
-            <Text style={styles.buttonText}>Réessayer</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-    );
-  }
-
-  if (loadingReports) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#102542" />
-        <Text style={{ color: "#102542" }}>Chargement en cours...</Text>
-      </View>
-    );
-  }
-
-  if (!stats || !stats.votes) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#102542" />
-        <Text style={styles.loadingText}>Chargement des votes...</Text>
-      </View>
-    );
-  }
-
   const fetchEventsByDate = async (date: string): Promise<void> => {
     try {
       const response = await axios.get<
@@ -491,10 +432,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
     return rank === 1 ? "er" : "ème";
   };
 
-  const displayName = user?.useFullName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.username;
-
   const handleOptionChange = async (option: "fullName" | "username") => {
     setModalNameVisible(false);
 
@@ -544,95 +481,6 @@ export default function HomeScreen({ navigation, handleScroll }) {
     }
   };
 
-  if (showFollowers) {
-    return (
-      <View style={styles.containerFollower}>
-        <Text style={styles.title}>Mes abonnés</Text>
-        {user?.followers && user.followers.length > 0 ? (
-          <FlatList
-            data={user.followers}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderFollower}
-            contentContainerStyle={styles.followerList}
-          />
-        ) : (
-          <View style={styles.noFollowersContainer}>
-            <Text style={styles.noFollowersText}>
-              Aucun abonné pour le moment
-            </Text>
-          </View>
-        )}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={toggleFollowersList}
-        >
-          <Text style={styles.backButtonText}>Retour</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (showFollowing) {
-    return (
-      <View style={styles.containerFollower}>
-        <Text style={styles.title}>Mes abonnements</Text>
-        {user?.following && user.following.length > 0 ? (
-          <FlatList
-            data={user.following}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderFollowing}
-            contentContainerStyle={styles.followerList}
-          />
-        ) : (
-          <View style={styles.noFollowingContainer}>
-            <Text style={styles.noFollowingText}>
-              Vous n'êtes abonné(e) à personne pour le moment
-            </Text>
-          </View>
-        )}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={toggleFollowingList}
-        >
-          <Text style={styles.backButtonText}>Retour</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const categories = [
-    {
-      name: "danger",
-      label: "Danger",
-      icon: "alert-circle-outline",
-      color: "#FF4C4C",
-    },
-    {
-      name: "travaux",
-      label: "Travaux",
-      icon: "construct-outline",
-      color: "#FFA500",
-    },
-    {
-      name: "nuisance",
-      label: "Nuisance",
-      icon: "volume-high-outline",
-      color: "#B4A0E5",
-    },
-    {
-      name: "reparation",
-      label: "Réparation",
-      icon: "hammer-outline",
-      color: "#33C2FF",
-    },
-    {
-      name: "pollution",
-      label: "Pollution",
-      icon: "leaf-outline",
-      color: "#32CD32",
-    },
-  ];
-
   const onRefresh = async () => {
     setRefreshing(true);
 
@@ -645,63 +493,50 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
   const handleProfileImageClick = async () => {
     try {
-      setIsSubmitting(true);
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 1,
         aspect: [1, 1],
       });
-
-      if (result.canceled) {
-        setIsSubmitting(false);
-        return;
-      }
-
+  
+      if (result.canceled) return;
+  
       const photoUri = result.assets?.[0]?.uri;
-
-      if (!photoUri) {
-        throw new Error("Aucune image sélectionnée");
-      }
-
+      if (!photoUri) throw new Error("Aucune image sélectionnée");
+  
       const formData = new FormData();
       formData.append("profileImage", {
         uri: photoUri,
         type: "image/jpeg",
         name: "profile.jpg",
       } as any);
-
+  
       console.log("FormData clé et valeur:", formData);
-
+  
       const userId = await getUserIdFromToken();
       if (!userId) throw new Error("ID utilisateur non trouvé");
-
-      const responsePost = await fetch(
-        `${API_URL}/users/${userId}/profile-image`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+  
+      const responsePost = await fetch(`${API_URL}/users/${userId}/profile-image`, {
+        method: "POST",
+        body: formData,
+      });
+  
       console.log("Response status:", responsePost.status);
-
+  
       if (!responsePost.ok) {
         const errorBody = await responsePost.text();
         console.error("Response body:", errorBody);
         throw new Error("Échec de la mise à jour de la photo de profil");
       }
-
+  
       const updatedUser = await responsePost.json();
       console.log("Response body:", updatedUser);
-
+  
       navigation.replace("Main");
     } catch (err: any) {
       console.error("Erreur lors de l'upload :", err.message);
       setError(err.message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -811,10 +646,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else {
       return {
         title: "Premiers pas",
-        backgroundColor: "#093A3E",
+        backgroundColor: "#235562",
         textColor: "#fff",
         borderColor: "#fff",
-        shadowColor: "#093A3E",
+        shadowColor: "#235562",
         starsColor: "#0AAEA8",
         stars: 0,
         icon: <Ionicons name="school" size={24} color="#0AAEA8" />,
@@ -833,9 +668,147 @@ export default function HomeScreen({ navigation, handleScroll }) {
     );
   };
 
-  const voteSummary = stats?.votes
-    ? calculateVoteSummary(stats.votes)
-    : { up: 0, down: 0 };
+  const categories = [
+    {
+      name: "danger",
+      label: "Danger",
+      icon: "alert-circle-outline",
+      color: "#FF4C4C",
+    },
+    {
+      name: "travaux",
+      label: "Travaux",
+      icon: "construct-outline",
+      color: "#FFA500",
+    },
+    {
+      name: "nuisance",
+      label: "Nuisance",
+      icon: "volume-high-outline",
+      color: "#B4A0E5",
+    },
+    {
+      name: "reparation",
+      label: "Réparation",
+      icon: "hammer-outline",
+      color: "#33C2FF",
+    },
+    {
+      name: "pollution",
+      label: "Pollution",
+      icon: "leaf-outline",
+      color: "#32CD32",
+    },
+  ];
+  
+  const voteSummary = stats?.votes ? calculateVoteSummary(stats.votes) : { up: 0, down: 0 };
+
+  const displayName = user?.useFullName ? `${user.firstName} ${user.lastName}` : user?.username;
+
+  const filteredReports = reports.filter((report) =>
+    selectedCategory === "Tous" ? true : report.type === selectedCategory
+  );
+
+  if (showFollowers) {
+    return (
+      <View style={styles.containerFollower}>
+        <Text style={styles.title}>Mes abonnés</Text>
+        {user?.followers && user.followers.length > 0 ? (
+          <FlatList
+            data={user.followers}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderFollower}
+            contentContainerStyle={styles.followerList}
+          />
+        ) : (
+          <View style={styles.noFollowersContainer}>
+            <Text style={styles.noFollowersText}>
+              Aucun abonné pour le moment
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={toggleFollowersList}
+        >
+          <Text style={styles.backButtonText}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (showFollowing) {
+    return (
+      <View style={styles.containerFollower}>
+        <Text style={styles.title}>Mes abonnements</Text>
+        {user?.following && user.following.length > 0 ? (
+          <FlatList
+            data={user.following}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderFollowing}
+            contentContainerStyle={styles.followerList}
+          />
+        ) : (
+          <View style={styles.noFollowingContainer}>
+            <Text style={styles.noFollowingText}>
+              Vous n'êtes abonné(e) à personne pour le moment
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={toggleFollowingList}
+        >
+          <Text style={styles.backButtonText}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#102542" />
+        <Text style={styles.loadingText}>Chargement en cours...</Text>
+      </View>
+    );
+  }
+
+  if (!location) {
+    console.error("Localisation non disponible");
+    return (
+      <Modal transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Partagez votre position</Text>
+          <Text style={styles.modalText}>
+            La permission de localisation est nécessaire pour utiliser
+            l'application.
+          </Text>
+          <TouchableOpacity style={styles.button} onPress={() => useLocation()}>
+            <Text style={styles.buttonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    );
+  }
+
+  if (loadingReports) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#102542" />
+        <Text style={{ color: "#102542" }}>Chargement en cours...</Text>
+      </View>
+    );
+  }
+
+  if (!stats || !stats.votes) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#102542" />
+        <Text style={styles.loadingText}>Chargement des votes...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -1375,38 +1348,42 @@ export default function HomeScreen({ navigation, handleScroll }) {
 
       {/* Filtre par catégorie */}
       {isReportsVisible && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContainer}
-        >
-          {[
-            "Tous",
-            "danger",
-            "reparation",
-            "travaux",
-            "pollution",
-            "nuisance",
-          ].map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.filterButton,
-                selectedCategory === category && styles.activeFilterButton,
-              ]}
-              onPress={() => setSelectedCategory(category)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedCategory === category && styles.activeFilterText,
-                ]}
-              >
-                {category === "Tous" ? "🔍 Tous" : getTypeLabel(category)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+       <ScrollView
+       horizontal
+       showsHorizontalScrollIndicator={false}
+       contentContainerStyle={styles.filterContainer}
+     >
+       {[
+         "Tous",
+         "danger",
+         "reparation",
+         "travaux",
+         "pollution",
+         "nuisance",
+       ].map((category) => {
+         const isSelected = selectedCategory === category;
+         const backgroundColor = isSelected
+           ? typeColors[category] || "#235562"  
+           : "#FFFFFF";  
+     
+         const textColor = isSelected ? "#FFFFFF" : "#000"; 
+     
+         return (
+           <TouchableOpacity
+             key={category}
+             style={[
+               styles.filterButton,
+               isSelected && { backgroundColor },  
+             ]}
+             onPress={() => setSelectedCategory(category)}
+           >
+             <Text style={[styles.filterText, { color: textColor }]}>
+               {category === "Tous" ? "🔍 Tous" : getTypeLabel(category)}
+             </Text>
+           </TouchableOpacity>
+         );
+       })}
+     </ScrollView>
       )}
 
       {/* Contenu des signalements */}

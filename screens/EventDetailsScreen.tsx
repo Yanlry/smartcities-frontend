@@ -24,37 +24,36 @@ import Sidebar from "../components/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 
+interface Event {
+  photos: { url: string }[];
+  title: string;
+  description: string;
+  location: string;
+  date: string;
+  attendees: { user: Participant }[];
+  organizer: Participant; 
+  useFullName: boolean;
+}
+
+interface Participant {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  photos: { url: string }[];
+  useFullName: boolean;
+}
+
 export default function EventDetails({ route }) {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { eventId } = route.params;
-  const [isRegistered, setIsRegistered] = useState(false);
-  const { getUserId } = useToken(); 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { unreadCount } = useNotification(); 
+  const { getUserId } = useToken(); 
+
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0); 
-
-  interface Event {
-    photos: { url: string }[];
-    title: string;
-    description: string;
-    location: string;
-    date: string;
-    attendees: { user: Participant }[];
-    organizer: Participant; 
-    useFullName: boolean;
-  }
-
-  interface Participant {
-    id: number;
-    firstName: string;
-    lastName: string;
-    username: string;
-    photos: { url: string }[];
-    useFullName: boolean;
-  }
-
   const [event, setEvent] = useState<Event | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); 
 
@@ -268,7 +267,7 @@ export default function EventDetails({ route }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" 
+            color="#FFFFFC" 
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -284,7 +283,7 @@ export default function EventDetails({ route }) {
             <Icon
               name="notifications"
               size={24}
-              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -300,7 +299,7 @@ export default function EventDetails({ route }) {
           {isLoading && (
             <ActivityIndicator
               size="large"
-              color="#093A3E"
+              color="#235562"
               style={styles.loader}
             />
           )}
@@ -487,13 +486,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeIndicator: {
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
   },
   headerNav: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -503,8 +502,8 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', 
-    backgroundColor: '#F7F2DE',
+    color: '#235562', 
+    backgroundColor: '#FFFFFC',
     letterSpacing:2,
     fontWeight: 'bold',
     fontFamily: 'Insanibc', 
@@ -626,7 +625,6 @@ const styles = StyleSheet.create({
 
 
   infoContainer: {
-    marginBottom: 20,
     padding: 10,
     backgroundColor: "#fff",
     borderRadius: 8,

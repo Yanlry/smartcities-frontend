@@ -41,20 +41,52 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function MapScreen() {
   const { location, loading } = useLocation();
+  const mapRef = useRef<MapView>(null);
+  const navigation = useNavigation<MapScreenNavigationProp>();
+  const translateY = useSharedValue(0);
+
   const [reports, setReports] = useState<Report[]>([]);
   const [events, setEvents] = useState<ReportEvent[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
-  const [mapType, setMapType] = useState<
-    "standard" | "satellite" | "hybrid" | "terrain"
-  >("standard");
-  const [filter, setFilter] = useState<"all" | "reports" | "events">("all");
-  const mapRef = useRef<MapView>(null);
-  const navigation = useNavigation<MapScreenNavigationProp>();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<
     Report | ReportEvent | null
   >(null);
+  const [mapType, setMapType] = useState<
+    "standard" | "satellite" | "hybrid" | "terrain"
+  >("standard");
+  const [selectedFilter, setSelectedFilter] = useState<
+    "all" | "reports" | "events"
+  >("all");
+
+  useEffect(() => {
+    if (location) {
+      const initialRegion = {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+
+      console.log("📍 Initialisation de la carte :", initialRegion);
+      setMapRegion(initialRegion);
+
+      mapRef.current?.animateCamera(
+        { center: location, zoom: 16 },
+        { duration: 2000 }
+      );
+
+      fetchDataInRegion(initialRegion);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (selectedReport) {
+      translateY.value = withTiming(0, { duration: 200 });
+    }
+  }, [selectedReport]);
 
   const fetchDataInRegion = async (region?: Region) => {
     const regionToUse =
@@ -106,35 +138,6 @@ export default function MapScreen() {
     }
   };
 
-  useEffect(() => {
-    if (location) {
-      const initialRegion = {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      };
-
-      console.log("📍 Initialisation de la carte :", initialRegion);
-      setMapRegion(initialRegion);
-
-      mapRef.current?.animateCamera(
-        { center: location, zoom: 16 },
-        { duration: 2000 }
-      );
-
-      fetchDataInRegion(initialRegion);
-    }
-  }, [location]);
-
-  useEffect(() => {
-    if (selectedReport) {
-      translateY.value = withTiming(0, { duration: 200 });
-    }
-  }, [selectedReport]);
-
-  const translateY = useSharedValue(0);
-
   const handleGesture = (event) => {
     if (event.nativeEvent.translationY > 50) {
       translateY.value = withTiming(0, { duration: 100 });
@@ -145,23 +148,26 @@ export default function MapScreen() {
     }
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  if (loading || !isReady) {
-    console.log("⏳ En attente du chargement...");
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#093A3E" />
-      </View>
-    );
-  }
-
   const filteredMarkers = (): (Report | ReportEvent)[] => {
-    if (filter === "reports") return reports;
-    if (filter === "events") return events;
-    return [...reports, ...events];
+    let markers: (Report | ReportEvent)[] = [];
+
+    if (selectedFilter === "reports") {
+      markers = reports;
+    } else if (selectedFilter === "events") {
+      markers = events;
+    } else {
+      markers = [...reports, ...events];
+    }
+ 
+    if (selectedCategory) {
+      markers = markers.filter((item) =>
+        isReport(item)
+          ? item.type === selectedCategory
+          : selectedFilter === "events"
+      );
+    }
+
+    return markers;
   };
 
   const toggleMapType = () => {
@@ -173,10 +179,28 @@ export default function MapScreen() {
   const isReport = (item: Report | ReportEvent): item is Report =>
     (item as Report).type !== undefined;
 
+
+  const formatType = (type: string): string => {
+    return TYPE_LABELS[type] || "Type inconnu";
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  if (loading || !isReady) {
+    console.log("⏳ En attente du chargement...");
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#235562" />
+      </View>
+    );
+  }
+
   if (loading || loadingReports) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#093A3E" />
+        <ActivityIndicator size="large" color="#235562" />
       </View>
     );
   }
@@ -192,11 +216,7 @@ export default function MapScreen() {
       </View>
     );
   }
-
-  const formatType = (type: string): string => {
-    return TYPE_LABELS[type] || "Type inconnu";
-  };
-
+  
   return (
     <View style={styles.container}>
       <MapView
@@ -259,11 +279,62 @@ export default function MapScreen() {
       </MapView>
 
       <View style={styles.legendContainer}>
+        {/* 🔹 Bouton "Tout afficher" */}
+        <TouchableOpacity
+          style={[
+            styles.legendItem,
+            selectedFilter === "all" && styles.activeLegendItem,
+          ]}
+          onPress={() => {
+            setSelectedFilter("all");
+            setSelectedCategory(null);
+          }}
+        >
+          <MaterialCommunityIcons
+            style={styles.iconLegend}
+            name="view-grid"
+            size={20}
+            color="#235562"
+          />
+          <Text style={styles.legendText}>Tout</Text>
+        </TouchableOpacity>
+
+        {/* 🔹 Bouton "Événements" */}
+        <TouchableOpacity
+          style={[
+            styles.legendItem,
+            selectedFilter === "events" && styles.activeLegendItem,
+          ]}
+          onPress={() => {
+            setSelectedFilter("events");
+            setSelectedCategory(null);
+          }}
+        >
+          <MaterialCommunityIcons
+            style={styles.iconLegend}
+            name="calendar"
+            size={20}
+            color="#235562"
+          />
+          <Text style={styles.legendText}>Événements</Text>
+        </TouchableOpacity>
+
+        {/* 🔹 Catégories des reports */}
         {Object.keys(typeIcons).map((key) => (
-          <View key={key} style={styles.legendItem}>
+          <TouchableOpacity
+            key={key}
+            style={[
+              styles.legendItem,
+              selectedCategory === key && styles.activeLegendItem,
+            ]}
+            onPress={() => {
+              setSelectedFilter("reports");  
+              setSelectedCategory(selectedCategory === key ? null : key);
+            }}
+          >
             <Image source={typeIcons[key].icon} style={styles.legendIcon} />
             <Text style={styles.legendText}>{typeIcons[key].label}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
 
@@ -286,47 +357,6 @@ export default function MapScreen() {
           onPress={() => fetchDataInRegion(mapRegion || undefined)}
         >
           <MaterialCommunityIcons name="magnify" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, filter === "all" && styles.activeFilter]}
-          onPress={() => setFilter("all")}
-        >
-          <MaterialCommunityIcons
-            name="format-list-bulleted"
-            size={16}
-            color={filter === "all" ? "#093A3E" : "white"}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "reports" && styles.activeFilter,
-          ]}
-          onPress={() => setFilter("reports")}
-        >
-          <MaterialCommunityIcons
-            name="alert-circle-outline"
-            size={16}
-            color={filter === "reports" ? "#093A3E" : "white"}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "events" && styles.activeFilter,
-          ]}
-          onPress={() => setFilter("events")}
-        >
-          <MaterialCommunityIcons
-            name="calendar"
-            size={16}
-            color={filter === "events" ? "#093A3E" : "white"}
-          />
         </TouchableOpacity>
       </View>
 
@@ -471,6 +501,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 5,
   },
+  activeLegendItem: {
+    backgroundColor: "#BCF0D7",
+    borderRadius: 8,
+    padding: 5,
+  },
+  iconLegend: {
+    marginLeft: 3,
+    marginRight: 8,
+  },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -521,7 +560,7 @@ const styles = StyleSheet.create({
     left: "50%",
     transform: [{ translateX: -100 }],
     width: 200,
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     borderRadius: 30,
     padding: 10,
     alignItems: "center",
@@ -530,31 +569,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-
-  filterContainer: {
-    position: "absolute",
-    top: 100,
-    right: 10,
-    flexDirection: "column",
-    backgroundColor: "white",
-    padding: 8,
-    borderRadius: 25,
-    elevation: 5,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 25,
-    marginBottom: 5,
-    backgroundColor: "#093A3E",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  activeFilter: {
-    backgroundColor: "white",
-    borderColor: "#093A3E",
-    borderWidth: 2,
-  },
   floatingButtonContainer: {
     position: "absolute",
     bottom: 80,
@@ -562,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   floatingButtonView: {
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -654,7 +668,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   detailsButton: {
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",

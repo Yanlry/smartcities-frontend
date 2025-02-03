@@ -26,6 +26,11 @@ interface ChartProps {
   controlStatsVisibility?: boolean;
 }
 
+type CategoryReportsScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "CategoryReportsScreen"
+>;
+
 const chartConfig = {
   backgroundGradientFrom: "#fff",
   backgroundGradientTo: "#fff",
@@ -36,22 +41,13 @@ const chartConfig = {
   propsForBackgroundLines: { strokeWidth: 1, stroke: "#e3e3e3" },
 };
 
-const Chart: React.FC<ChartProps> = ({
-  data,
-  loading,
-  nomCommune,
-  controlStatsVisibility,
-}) => {
+export default function Chart({data, loading, nomCommune, controlStatsVisibility}: ChartProps) {
+  const navigation = useNavigation<CategoryReportsScreenNavigationProp>();
+
   const [isStatsVisible, setStatsVisible] = useState(true);
   const [chartType, setChartType] = useState<"BarChart" | "PieChart">(
     "BarChart"
   );
-
-  const capitalize = (text: string) => {
-    if (!text) return "";
-    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-  };
-  const formattedCommune = capitalize(nomCommune);
 
   useEffect(() => {
     if (controlStatsVisibility !== undefined) {
@@ -63,36 +59,14 @@ const Chart: React.FC<ChartProps> = ({
     setChartType((prev) => (prev === "BarChart" ? "PieChart" : "BarChart"));
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#3498db" />
-        <Text style={styles.title}>Chargement des statistiques...</Text>
-      </View>
-    );
-  }
-
-  const validatedData = data.datasets[0].data.map((value) =>
-    typeof value === "number" && !isNaN(value) ? value : 0
-  );
-
-  const maxValue = validatedData.length > 0 ? Math.max(...validatedData) : 1;
-
   const toggleStats = () => {
     setStatsVisible((prevState) => !prevState);
   };
 
-  type CategoryReportsScreenNavigationProp = StackNavigationProp<
-    RootStackParamList,
-    "CategoryReportsScreen"
-  >;
-
   const generateSummary = () => {
-    const navigation = useNavigation<CategoryReportsScreenNavigationProp>();
-
     return data.labels.map((label, index) => {
       const count = validatedData[index] || 0;
-      const color = chartColors[label.toLowerCase()] || "#CCCCCC";  
+      const color = chartColors[label.toLowerCase()] || "#CCCCCC";
 
       return (
         <TouchableOpacity
@@ -127,6 +101,28 @@ const Chart: React.FC<ChartProps> = ({
       );
     });
   };
+
+  const capitalize = (text: string) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
+
+  const formattedCommune = capitalize(nomCommune);
+
+  const validatedData = data.datasets[0].data.map((value) =>
+    typeof value === "number" && !isNaN(value) ? value : 0
+  );
+
+  const maxValue = validatedData.length > 0 ? Math.max(...validatedData) : 1;
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#3498db" />
+        <Text style={styles.title}>Chargement des statistiques...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -184,7 +180,7 @@ const Chart: React.FC<ChartProps> = ({
               ) : (
                 <PieChart
                   data={data.labels.map((label, index) => ({
-                    name: "",  
+                    name: "",
                     population: validatedData[index] || 0,
                     color: chartColors[label.toLowerCase()] || "#CCCCCC",
                   }))}
@@ -193,8 +189,8 @@ const Chart: React.FC<ChartProps> = ({
                   chartConfig={chartConfig}
                   accessor="population"
                   backgroundColor="transparent"
-                  paddingLeft="50"  
-                  absolute={false}  
+                  paddingLeft="50"
+                  absolute={false}
                 />
               )}
               {/* Bouton pour changer d'affichage */}
@@ -221,7 +217,7 @@ const Chart: React.FC<ChartProps> = ({
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -230,7 +226,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
   },
   chart: {
     marginTop: 10,
@@ -243,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   switchButtonText: {
-    color: "#093A3E",
+    color: "#235562",
     fontWeight: "bold",
   },
   subtitle: {
@@ -317,5 +313,3 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
 });
-
-export default Chart;

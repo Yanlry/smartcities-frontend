@@ -14,7 +14,6 @@ import {
   Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-
 import { useRoute } from "@react-navigation/native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -34,7 +33,7 @@ interface Post {
   content?: string;
   likesCount?: number;
   comments?: Comment[];
-  photos?: string[];  
+  photos?: string[];
 }
 
 interface Comment {
@@ -45,18 +44,17 @@ interface Comment {
   text: string;
   parentId?: string | null;
   userId?: string;
-  replies?: Comment[];  
+  replies?: Comment[];
 }
 
-export default function PostDetailsScreen({ navigation }) {
-  type PostDetailsRouteProp = RouteProp<
-    { params: { postId: string } },
-    "params"
-  >;
+type PostDetailsRouteProp = RouteProp<{ params: { postId: string } }, "params">;
 
+export default function PostDetailsScreen({ navigation }) {
+  const { unreadCount } = useNotification();
   const route = useRoute<PostDetailsRouteProp>();
   const { postId } = route.params;
   const { getUserId } = useToken();
+  const scaleValue = useRef(new Animated.Value(1)).current;
 
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,23 +63,21 @@ export default function PostDetailsScreen({ navigation }) {
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyVisibility, setReplyVisibility] = useState({});
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { unreadCount } = useNotification();  
   const [userId, setUserId] = useState<number | null>(null);
-  const scaleValue = useRef(new Animated.Value(1)).current;
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);  
- 
+  const [activeIndex, setActiveIndex] = useState(0);
+
   useEffect(() => {
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(scaleValue, {
-          toValue: 1.2,  
+          toValue: 1.2,
           duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(scaleValue, {
-          toValue: 1,  
+          toValue: 1,
           duration: 800,
           useNativeDriver: true,
         }),
@@ -89,15 +85,24 @@ export default function PostDetailsScreen({ navigation }) {
     );
     pulseAnimation.start();
 
-    return () => pulseAnimation.stop(); 
+    return () => pulseAnimation.stop();
   }, [scaleValue]);
 
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setUserId(id);
+    };
+    fetchUserId();
+    fetchPostDetails();
+  }, [postId]);
+
   const fetchPostDetails = async () => {
-    setLoading(true);  
+    setLoading(true);
 
     try {
-      const { getToken } = useToken();  
-      const token = await getToken(); 
+      const { getToken } = useToken();
+      const token = await getToken();
 
       if (!token) {
         throw new Error("Token JWT introuvable. Veuillez vous reconnecter.");
@@ -106,50 +111,39 @@ export default function PostDetailsScreen({ navigation }) {
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,  
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
         console.error(`Erreur HTTP: ${response.status}`);
-        setPost(null);   
+        setPost(null);
         return;
       }
 
       const data = await response.json();
       console.log("Données récupérées :", data);
- 
+
       if (!data || Object.keys(data).length === 0) {
-        setPost(null);  
-      } else { 
+        setPost(null);
+      } else {
         const formattedPost = {
           ...data,
-          photos: data.photos || [],  
-          authorName: data.authorName || "Utilisateur inconnu",  
-          profilePhoto: data.profilePhoto || "https://via.placeholder.com/150", 
+          photos: data.photos || [],
+          authorName: data.authorName || "Utilisateur inconnu",
+          profilePhoto: data.profilePhoto || "https://via.placeholder.com/150",
         };
 
-        setPost(formattedPost);  
+        setPost(formattedPost);
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du post :", error.message);
-      setPost(null);  
+      setPost(null);
     } finally {
-      setLoading(false);  
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    const fetchUserId = async () => {
-      const id = await getUserId();
-      setUserId(id); 
-    };
-    fetchUserId();
-    fetchPostDetails();
-  }, [postId]);
-
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   const handleLike = async (postId) => {
     try {
@@ -238,24 +232,24 @@ export default function PostDetailsScreen({ navigation }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId: post?.id,  
-          userId,  
-          text: replyInputs[parentId],  
-          parentId,  
+          postId: post?.id,
+          userId,
+          text: replyInputs[parentId],
+          parentId,
         }),
       });
 
       if (!response.ok) {
         throw new Error("Erreur lors de l'ajout de la réponse");
       }
- 
+
       setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-      setReplyToCommentId(null);   
- 
+      setReplyToCommentId(null);
+
       const newReply = await response.json();
       setPost((prevPost) => {
         if (!prevPost || !prevPost.comments) return prevPost;
- 
+
         const updatedComments = prevPost.comments.map((comment) => {
           if (comment.id === parentId) {
             return {
@@ -268,7 +262,7 @@ export default function PostDetailsScreen({ navigation }) {
 
         return { ...prevPost, comments: updatedComments };
       });
- 
+
       fetchPostDetails();
     } catch (error) {
       Alert.alert(
@@ -302,7 +296,7 @@ export default function PostDetailsScreen({ navigation }) {
               if (!response.ok) {
                 throw new Error("Erreur lors de la suppression de la réponse");
               }
-              fetchPostDetails();  
+              fetchPostDetails();
             } catch (error) {
               Alert.alert(
                 "Erreur",
@@ -343,7 +337,7 @@ export default function PostDetailsScreen({ navigation }) {
                 );
               }
 
-              fetchPostDetails();  
+              fetchPostDetails();
             } catch (error) {
               Alert.alert(
                 "Erreur",
@@ -378,8 +372,8 @@ export default function PostDetailsScreen({ navigation }) {
                 throw new Error(
                   "Erreur lors de la suppression de la publication"
                 );
-              } 
-              fetchPostDetails();  
+              }
+              fetchPostDetails();
             } catch (error) {
               Alert.alert(
                 "Erreur",
@@ -481,10 +475,10 @@ export default function PostDetailsScreen({ navigation }) {
               onPress={() =>
                 setReplyVisibility((prev) => ({
                   ...prev,
-                  [comment.id]: !prev[comment.id],  
+                  [comment.id]: !prev[comment.id],
                 }))
               }
-              style={styles.showMoreButton} 
+              style={styles.showMoreButton}
             >
               <Text style={styles.showMoreText}>
                 {replyVisibility[comment.id]
@@ -547,6 +541,43 @@ export default function PostDetailsScreen({ navigation }) {
     </View>
   );
 
+  const handlePhotoPress = (photo) => {
+    console.log("Photo pressée :", photo);
+    setSelectedPhoto(photo);
+    setIsModalVisible(true);
+  };
+
+  const handleScrollImage = (event) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const screenWidth = Dimensions.get("window").width;
+    const index = Math.round(contentOffsetX / screenWidth);
+    setActiveIndex(index);
+  };
+
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message:
+          "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123",
+        title: "Partager ce post",
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("Partagé via :", result.activityType);
+        } else {
+          console.log("Partage réussi !");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("Partage annulé");
+      }
+    } catch (error) {
+      console.error("Erreur lors du partage :", error.message);
+    }
+  };
+
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
   if (loading) {
     return <ActivityIndicator style={styles.loader} />;
   }
@@ -555,7 +586,7 @@ export default function PostDetailsScreen({ navigation }) {
     return (
       <View style={styles.container}>
         <Image
-          source={require("../assets/images/sad.png")} 
+          source={require("../assets/images/sad.png")}
           style={styles.image}
         />
         <Text style={styles.text}>
@@ -571,7 +602,7 @@ export default function PostDetailsScreen({ navigation }) {
         >
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.goBack()}  
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.buttonText}>Retour</Text>
           </TouchableOpacity>
@@ -579,41 +610,6 @@ export default function PostDetailsScreen({ navigation }) {
       </View>
     );
   }
-
-  const handlePhotoPress = (photo) => {
-    console.log("Photo pressée :", photo);  
-    setSelectedPhoto(photo);  
-    setIsModalVisible(true);  
-  };
-
-  const handleScrollImage = (event) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const screenWidth = Dimensions.get("window").width;
-    const index = Math.round(contentOffsetX / screenWidth);
-    setActiveIndex(index);
-  };
-
-  const handleShare = async () => {
-    try {
-      const result = await Share.share({
-        message:
-          "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123", 
-        title: "Partager ce post",  
-      });
- 
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.log("Partagé via :", result.activityType);
-        } else {
-          console.log("Partage réussi !");
-        }
-      } else if (result.action === Share.dismissedAction) {
-        console.log("Partage annulé");
-      }
-    } catch (error) {
-      console.error("Erreur lors du partage :", error.message);
-    }
-  };
 
   return (
     <View>
@@ -623,7 +619,7 @@ export default function PostDetailsScreen({ navigation }) {
           <Icon
             name="menu"
             size={28}
-            color="#F7F2DE"  
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -641,7 +637,7 @@ export default function PostDetailsScreen({ navigation }) {
             <Icon
               name="notifications"
               size={28}
-              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -702,14 +698,14 @@ export default function PostDetailsScreen({ navigation }) {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onScroll={handleScrollImage}  
+                onScroll={handleScrollImage}
                 scrollEventThrottle={16}
                 contentContainerStyle={{ margin: 0, padding: 0 }}
               >
                 {post.photos.map((photo, index) => (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => handlePhotoPress(photo)}  
+                    onPress={() => handlePhotoPress(photo)}
                   >
                     <Image
                       source={{ uri: photo }}
@@ -722,19 +718,19 @@ export default function PostDetailsScreen({ navigation }) {
                 visible={isModalVisible}
                 transparent={true}
                 animationType="fade"
-                onRequestClose={() => setIsModalVisible(false)}  
+                onRequestClose={() => setIsModalVisible(false)}
               >
                 <View style={styles.modalBackground}>
                   <TouchableOpacity
                     style={styles.closeButton}
-                    onPress={() => setIsModalVisible(false)} 
+                    onPress={() => setIsModalVisible(false)}
                   >
                     <Text style={styles.closeText}>X</Text>
                   </TouchableOpacity>
                   {selectedPhoto && (
                     <Image
                       source={{ uri: selectedPhoto }}
-                      style={styles.fullscreenPhoto}  
+                      style={styles.fullscreenPhoto}
                     />
                   )}
                 </View>
@@ -764,13 +760,13 @@ export default function PostDetailsScreen({ navigation }) {
                 <Icon
                   name={post.likedByUser ? "thumbs-up" : "thumbs-up-outline"}
                   size={22}
-                  color={post.likedByUser ? "#007bff" : "#656765"}  
+                  color={post.likedByUser ? "#007bff" : "#656765"}
                   style={styles.likeIcon}
                 />
                 <Text
                   style={[
                     styles.likeButtonText,
-                    { color: post.likedByUser ? "#007bff" : "#656765" },  
+                    { color: post.likedByUser ? "#007bff" : "#656765" },
                   ]}
                 >
                   {post.likesCount || 0} {/* Nombre de likes */}
@@ -825,8 +821,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   photoCarouselItem: {
-    width: Dimensions.get("window").width, 
-    height: 200,  
+    width: Dimensions.get("window").width,
+    height: 200,
     resizeMode: "cover",
   },
   indicatorsContainer: {
@@ -843,13 +839,13 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   activeIndicator: {
-    backgroundColor: "#000",  
+    backgroundColor: "#000",
   },
   loader: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
   },
   photosContainer: {
     flexDirection: "row",
@@ -867,7 +863,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -889,11 +885,10 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E",  
-    backgroundColor: "#F7F2DE",
+    color: "#FFFFFC",
     letterSpacing: 2,
     fontWeight: "bold",
-    fontFamily: "Insanibc",  
+    fontFamily: "Insanibc",
   },
   typeBadge: {
     flexDirection: "row",
@@ -923,7 +918,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
     padding: 5,
-    zIndex: 10,  
+    zIndex: 10,
   },
   postHeader: {
     flexDirection: "row",
@@ -982,14 +977,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   postInfo: {
-    flex: 1,  
+    flex: 1,
   },
   likeButtonContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   likeIcon: {
-    marginRight: 3,  
+    marginRight: 3,
   },
   likeButtonText: {
     color: "#fff",
@@ -1018,7 +1013,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addCommentButton: {
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 30,
@@ -1072,7 +1067,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   commentContainer: {
-    flexDirection: "column",  
+    flexDirection: "column",
     alignItems: "flex-start",
     padding: 10,
     borderRadius: 8,
@@ -1081,8 +1076,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginTop: 10,
-    width: "100%",  
-    maxWidth: "100%",  
+    width: "100%",
+    maxWidth: "100%",
     padding: 10,
     paddingVertical: 15,
     backgroundColor: "#eef6ff",
@@ -1090,7 +1085,7 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     borderLeftWidth: 2,
     borderLeftColor: "#007bff",
-    overflow: "hidden",  
+    overflow: "hidden",
   },
   commentAvatar: {
     width: 40,
@@ -1100,9 +1095,9 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   commentContent: {
-    width: "100%",  
-    flexShrink: 1,  
-    overflow: "hidden",  
+    width: "100%",
+    flexShrink: 1,
+    overflow: "hidden",
   },
   commentVisible: {
     backgroundColor: "#f7f7f7",
@@ -1112,7 +1107,7 @@ const styles = StyleSheet.create({
   userNameComment: {
     fontWeight: "bold",
     fontSize: 14,
-    paddingLeft:5,
+    paddingLeft: 5,
     color: "#333",
   },
   timestampComment: {
@@ -1120,15 +1115,13 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 2,
     marginBottom: 5,
-    paddingLeft:5,
-
+    paddingLeft: 5,
   },
   commentText: {
     fontSize: 14,
     color: "#444",
     lineHeight: 20,
-    paddingLeft:5,
-
+    paddingLeft: 5,
   },
   deleteIconReply: {
     position: "absolute",
@@ -1160,11 +1153,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   button: {
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 50,
-    shadowColor: "#093A3E",
+    shadowColor: "#235562",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.8,
     shadowRadius: 10,
@@ -1185,13 +1178,13 @@ const styles = StyleSheet.create({
   fullscreenPhoto: {
     width: "90%",
     height: "70%",
-    resizeMode: "contain",  
+    resizeMode: "contain",
     borderRadius: 10,
   },
 
   modalBackground: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",  
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1209,7 +1202,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   photoInGrid: {
-    width: "48%",  
+    width: "48%",
     aspectRatio: 1,
     borderRadius: 8,
     marginBottom: 10,

@@ -14,6 +14,7 @@ import MairieInfoCard from "../components/MairieInfoCard";
 
 export default function CityScreen({ navigation }) {
   const { unreadCount } = useNotification();
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -31,7 +32,7 @@ export default function CityScreen({ navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -49,7 +50,7 @@ export default function CityScreen({ navigation }) {
             <Icon
               name="notifications"
               size={24}
-              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -88,8 +89,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E",
-    backgroundColor: "#F7F2DE",
+    color: "#FFFFFC", 
     letterSpacing: 2,
     fontWeight: "bold",
     fontFamily: "Insanibc",

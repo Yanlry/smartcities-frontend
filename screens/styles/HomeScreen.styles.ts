@@ -11,7 +11,7 @@ export default StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
   },
   sectionHeader: {
     flexDirection: "row",
@@ -54,7 +54,7 @@ export default StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
   },
 
   // ------------------------------------------------  MODAL PALIER
@@ -301,7 +301,7 @@ borderColor: "#ddd",
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -313,7 +313,7 @@ borderColor: "#ddd",
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     borderRadius: 30,
   },
   backButtonText: {
@@ -397,7 +397,7 @@ borderColor: "#ddd",
   userName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     marginRight: 5,
   },
   dropdownButton: {
@@ -496,7 +496,7 @@ borderColor: "#ddd",
     textAlign: "center",
   },
   cityNameUser: {
-    color: "#093A3E",
+    color: "#235562",
     fontWeight: "bold",
   },
   userDetails: {
@@ -568,7 +568,7 @@ borderColor: "#ddd",
   statNumber: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
   },
   statLabel: {
     fontSize: 12,
@@ -628,7 +628,7 @@ borderColor: "#ddd",
   rankingTitle: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     textAlign: "center",
   },
   titleModal: {
@@ -692,7 +692,7 @@ borderColor: "#ddd",
     alignSelf: "center",
     marginTop: 20,
     marginBottom: 10,
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 15,
     paddingHorizontal: 50,
     borderRadius: 30,
@@ -723,7 +723,7 @@ borderColor: "#ddd",
   sectionTitleTop10: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
   },
   smarterItem: {
     alignItems: "center",
@@ -766,7 +766,7 @@ borderColor: "#ddd",
   bar: {
     position: "absolute",
     padding: 10,
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
   },
   horizontalBar: {
     width: 100,
@@ -926,7 +926,7 @@ borderColor: "#ddd",
   voteCountReports: {
     fontSize: 10,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     marginLeft: 3,
   },
   reportTime: {
@@ -1022,7 +1022,7 @@ borderColor: "#ddd",
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#093A3E",
+    color: "#235562",
   },
   eventDetails: {
     fontSize: 14,
@@ -1078,7 +1078,7 @@ borderColor: "#ddd",
   infoTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -1122,7 +1122,7 @@ borderColor: "#ddd",
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     marginBottom: 5,
   },
   mayorName: {
@@ -1179,7 +1179,7 @@ borderColor: "#ddd",
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
   },
   officeContact: {
     fontSize: 14,
@@ -1216,16 +1216,16 @@ borderColor: "#ddd",
   filterButton: {
     paddingVertical: 8,
     paddingHorizontal: 15,
-    marginRight: 10,
     borderRadius: 20,
-    backgroundColor: "#E0E0E0",
+    marginRight: 8,
+    alignItems: "center",
+    backgroundColor: "#ccc", 
+  },
+  filterText: {
+    fontWeight: "bold",
   },
   activeFilterButton: {
     backgroundColor: "#007AFF",
-  },
-  filterText: {
-    fontSize: 14,
-    color: "#333",
   },
   activeFilterText: {
     color: "#FFF",

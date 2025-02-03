@@ -1,5 +1,5 @@
-first: 535353
-F7F2DE
-second : CBCBCB
+Ancienne couleur principale : 093A3E
+Ancienne couleur secondaire : F7F2DE
 
-093A3E
+Couleur principal : 235562
+Couleur secondaire : FFFFFC

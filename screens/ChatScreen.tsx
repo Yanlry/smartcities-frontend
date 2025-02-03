@@ -41,22 +41,106 @@ type Message = {
   isRead: boolean;
 };
 
-const ChatScreen = ({ route, navigation }: any) => {
-  const { getToken } = useToken();
-
+export default function ChatScreen ({ route, navigation }: any){
   const { receiverId, senderId, onConversationRead } = route.params;
+  const { getToken } = useToken();
+  const flatListRef = useRef<FlatList>(null);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const flatListRef = useRef<FlatList>(null);
   const [lastSentMessage, setLastSentMessage] = useState<Message | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
+  const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState("");
   const [userDetails, setUserDetails] = useState<{
     id: string;
     name: string;
     profilePhoto: string | null;
   }>({ id: "", name: "Utilisateur inconnu", profilePhoto: null });
-  const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState("");
+
+  useEffect(() => {
+    const messagesRef = collection(db, "messages");
+    const q = query(
+      messagesRef,
+      where("senderId", "in", [senderId, receiverId]),
+      where("receiverId", "in", [receiverId, senderId]),
+      orderBy("timestamp", "asc")
+    );
+  
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const fetchedMessages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Message[];
+  
+      setMessages(fetchedMessages);
+  
+      setLastSentMessage(
+        fetchedMessages.filter((msg) => msg.senderId === senderId).pop() || null
+      );
+  
+      flatListRef.current?.scrollToEnd({ animated: true });
+  
+      const unreadMessages = snapshot.docs.filter(
+        (doc) => doc.data().receiverId === senderId && !doc.data().isRead
+      );
+  
+      if (unreadMessages.length > 0) {
+        try {
+          await Promise.all(
+            unreadMessages.map((doc) => updateDoc(doc.ref, { isRead: true }))
+          );
+          console.log("📩 Messages non lus mis à jour !");
+        } catch (error) {
+          console.error("❌ Erreur lors de la mise à jour des messages :", error);
+        }
+      }
+    });
+  
+    return () => unsubscribe();
+  }, [receiverId, senderId]);
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const userDetails = await fetchUserDetails(receiverId);
+      const currentUser = await fetchCurrentUserDetails(senderId);
+  
+      setUserDetails(userDetails);
+      setCurrentUserProfilePhoto(currentUser.profilePhoto);
+    };
+  
+    fetchUserData();
+  }, [receiverId, senderId]);
+  
+  useEffect(() => {
+    if (!route.params?.receiverId) return;
+  
+    const { receiverId } = route.params;
+  
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {userDetails.profilePhoto && (
+            <Image
+              source={{ uri: userDetails.profilePhoto }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                marginRight: 10,
+              }}
+            />
+          )}
+          <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff" }}>
+            {userDetails.name}
+          </Text>
+        </View>
+      ),
+      onConversationRead: () => {
+        onConversationRead?.(receiverId);
+      },
+    });
+  }, [navigation, route.params, userDetails]);
 
   const fetchUserDetails = async (
     userId: number
@@ -101,134 +185,6 @@ const ChatScreen = ({ route, navigation }: any) => {
       return { id: "", name: "Utilisateur inconnu", profilePhoto: null };
     }
   };
-
-  useEffect(() => {
-    const messagesRef = collection(db, "messages");
-    const q = query(
-      messagesRef,
-      where("senderId", "in", [senderId, receiverId]),
-      where("receiverId", "in", [receiverId, senderId]),
-      orderBy("timestamp", "asc")
-    );
-
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const fetchedMessages = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Message[];
-
-      setMessages(fetchedMessages);
-
-      const lastMessageSent = fetchedMessages
-        .filter((msg) => msg.senderId === senderId)
-        .pop(); 
-      setLastSentMessage(lastMessageSent || null);
-
-      if (flatListRef.current) {
-        flatListRef.current.scrollToEnd({ animated: true });
-      }
-
-      const unreadMessages = snapshot.docs.filter(
-        (doc) => doc.data().receiverId === senderId && !doc.data().isRead
-      );
-
-      console.log("Messages non lus détectés :", unreadMessages.length);
-
-      if (unreadMessages.length > 0) {
-        try {
-          await Promise.all(
-            unreadMessages.map((doc) => updateDoc(doc.ref, { isRead: true }))
-          );
-
-          setMessages((prevMessages) =>
-            prevMessages.map((msg) =>
-              unreadMessages.find((unread) => unread.id === msg.id)
-                ? { ...msg, isRead: true }
-                : msg
-            )
-          );
-
-          console.log("Mise à jour locale des messages non lus réussie.");
-        } catch (error) {
-          console.error("Erreur lors de la mise à jour des messages :", error);
-        }
-      }
-    });
-
-    return () => unsubscribe();
-  }, [receiverId, senderId]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      markMessagesAsRead();
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    const fetchDetails = async () => {
-      const details = await fetchUserDetails(receiverId);
-      setUserDetails(details);
-    };
-
-    fetchDetails();
-  }, [receiverId]);
-
-  useEffect(() => {
-    if (route.params && route.params.receiverId) {
-      const { receiverId } = route.params;
-
-      navigation.setOptions({
-        headerTitle: () => (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {userDetails.profilePhoto && (
-              <Image
-                source={{ uri: userDetails.profilePhoto }}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  marginRight: 10,
-                }}
-              />
-            )}
-            <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff" }}>
-              {userDetails.name}
-            </Text>
-          </View>
-        ),
-        onConversationRead: () => {
-          console.log(`Marquer la conversation avec ${receiverId} comme lue`);
-          if (onConversationRead) {
-            onConversationRead(receiverId);
-          }
-        },
-      });
-    }
-  }, [navigation, route.params, userDetails]);
-
-  useEffect(() => {
-    if (route.params && route.params.receiverId) {
-      const { receiverId } = route.params;
-
-      navigation.setOptions({
-        onConversationRead: () => {
-          console.log(`Marquer la conversation avec ${receiverId} comme lue`);
-          if (onConversationRead) {
-            onConversationRead(receiverId);
-          }
-        },
-      });
-    }
-  }, [navigation, route.params]);
-
-  useEffect(() => {
-    const fetchCurrentUserProfilePhoto = async () => {
-      const currentUserDetails = await fetchCurrentUserDetails(senderId);
-      setCurrentUserProfilePhoto(currentUserDetails.profilePhoto);
-    };
-
-    fetchCurrentUserProfilePhoto();
-  }, []);
 
   const sendMessage = async () => {
     if (newMessage.trim().length === 0) {
@@ -400,12 +356,12 @@ const ChatScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const openReportModal = () => setReportModalVisible(true);
-
   const closeReportModal = () => {
     setReportModalVisible(false);
     setReportReason("");
   };
+
+  const openReportModal = () => setReportModalVisible(true);
 
   return (
     <View style={styles.container}>
@@ -415,7 +371,7 @@ const ChatScreen = ({ route, navigation }: any) => {
           <Icon
             name="arrow-back"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -434,7 +390,7 @@ const ChatScreen = ({ route, navigation }: any) => {
           <Icon
             name="error"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
             style={{ marginRight: 10 }}
           />
         </TouchableOpacity>
@@ -621,7 +577,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -631,8 +587,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#093A3E', 
-    backgroundColor: '#F7F2DE',
+    color: '#FFFFFC', 
     letterSpacing:2,
     fontWeight: 'bold',
     fontFamily: 'Insanibc',
@@ -810,4 +765,4 @@ const styles = StyleSheet.create({
   sendButtonText: { color: "#fff", fontWeight: "bold" },
 });
 
-export default ChatScreen;
+

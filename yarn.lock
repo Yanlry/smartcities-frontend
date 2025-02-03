@@ -8363,14 +8363,15 @@ react-native-geolocation-service@^5.3.1:
   resolved "https://registry.npmjs.org/react-native-geolocation-service/-/react-native-geolocation-service-5.3.1.tgz"
   integrity sha512-LTXPtPNmrdhx+yeWG47sAaCgQc3nG1z+HLLHlhK/5YfOgfLcAb9HAkhREPjQKPZOUx8pKZMIpdGFUGfJYtimXQ==
 
-react-native-gesture-handler@^2.22.1:
-  version "2.22.1"
-  resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-2.22.1.tgz#869d2b5ffd8b19e44a36780b99cbd88826323353"
-  integrity sha512-E0C9D+Ia2UZYevoSV9rTKjhFWEVdR/3l4Z3TUoQrI/wewgzDlmJOrYvGW5aMlPUuQF2vHQOdFfAWhVEqFu4tWw==
+react-native-gesture-handler@~2.20.2:
+  version "2.20.2"
+  resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-2.20.2.tgz#73844c8e9c417459c2f2981bc4d8f66ba8a5ee66"
+  integrity sha512-HqzFpFczV4qCnwKlvSAvpzEXisL+Z9fsR08YV5LfJDkzuArMhBu2sOoSPUF/K62PCoAb+ObGlTC83TKHfUd0vg==
   dependencies:
     "@egjs/hammerjs" "^2.0.17"
     hoist-non-react-statics "^3.3.0"
     invariant "^2.2.4"
+    prop-types "^15.7.2"
 
 react-native-get-random-values@^1.11.0:
   version "1.11.0"
@@ -8501,10 +8502,10 @@ react-native-stack@^1.0.0-alpha11:
     tiny-invariant "^1.0.4"
     tiny-warning "^1.0.2"
 
-react-native-svg@^15.11.1:
-  version "15.11.1"
-  resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-15.11.1.tgz#8152459a7a4d40b02e9ac8270f9b0692b3216715"
-  integrity sha512-Qmwx/yJKt+AHUr4zjxx/Q69qwKtRfr1+uIfFMQoq3WFRhqU76aL9db1DyvPiY632DAsVGba1pHf92OZPkpjrdQ==
+react-native-svg@15.8.0:
+  version "15.8.0"
+  resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-15.8.0.tgz#9b5fd4f5cf5675197b3f4cbfcc77c215de2b9502"
+  integrity sha512-KHJzKpgOjwj1qeZzsBjxNdoIgv2zNCO9fVcoq2TEhTRsVV5DGTZ9JzUZwybd7q4giT/H3RdtqC3u44dWdO0Ffw==
   dependencies:
     css-select "^5.1.0"
     css-tree "^1.1.3"

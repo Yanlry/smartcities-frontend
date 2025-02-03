@@ -25,25 +25,25 @@ import { OPEN_CAGE_API_KEY, API_URL } from "@env";
 import styles from "./styles/AddNewEventScreen.styles";
 
 export default function CreateEvent({ navigation }) {
+  const mapRef = useRef<MapView>(null);
+  const { location, loading } = useLocation();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
   const [query, setQuery] = useState("");
-  const { location, loading } = useLocation();
   const [modalVisible, setModalVisible] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const mapRef = useRef<MapView>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photos, setPhotos] = useState<any[]>([]);
   const [progressModalVisible, setProgressModalVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const steps = [
     { label: "Préparation des fichiers", progress: 0.2 },
@@ -74,7 +74,7 @@ export default function CreateEvent({ navigation }) {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        allowsMultipleSelection: true, 
+        allowsMultipleSelection: true,
         allowsEditing: false,
         quality: 1,
       });
@@ -102,7 +102,7 @@ export default function CreateEvent({ navigation }) {
             "Limite atteinte",
             "Vous pouvez sélectionner jusqu'à 7 photos maximum."
           );
-          newPhotos.splice(7); 
+          newPhotos.splice(7);
         }
 
         setPhotos(newPhotos);
@@ -115,8 +115,8 @@ export default function CreateEvent({ navigation }) {
   };
 
   const handleRemovePhoto = (index: number) => {
-    const updatedPhotos = photos.filter((_, i) => i !== index); 
-    setPhotos(updatedPhotos); 
+    const updatedPhotos = photos.filter((_, i) => i !== index);
+    setPhotos(updatedPhotos);
   };
 
   const handleMapPress = async (event: any) => {
@@ -152,7 +152,7 @@ export default function CreateEvent({ navigation }) {
       Alert.alert("Chargement", "Position GPS en cours de récupération...");
       return;
     }
-  
+
     if (!location) {
       Alert.alert(
         "Erreur",
@@ -160,18 +160,18 @@ export default function CreateEvent({ navigation }) {
       );
       return;
     }
-  
+
     setSelectedLocation(location);
-  
+
     try {
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
-  
+
       if (data.results.length > 0) {
         let address = data.results[0].formatted;
-        address = address.replace(/unnamed road/gi, 'Route inconnue'); 
-  
+        address = address.replace(/unnamed road/gi, "Route inconnue");
+
         setQuery(address);
         Alert.alert("Position actuelle sélectionnée", `${address}`);
       } else {
@@ -185,7 +185,6 @@ export default function CreateEvent({ navigation }) {
       );
     }
   };
-  
 
   const handleAddressSearch = async () => {
     if (!query.trim()) {
@@ -206,11 +205,11 @@ export default function CreateEvent({ navigation }) {
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB; 
+          return postalA - postalB;
         });
 
-        setSuggestions(sortedSuggestions); 
-        setModalVisible(true); 
+        setSuggestions(sortedSuggestions);
+        setModalVisible(true);
       } else {
         setSuggestions([]);
         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -221,23 +220,25 @@ export default function CreateEvent({ navigation }) {
     }
   };
 
-const handleSuggestionSelect = (item: any) => {
-  const { lat, lng } = item.geometry;
+  const handleSuggestionSelect = (item: any) => {
+    const { lat, lng } = item.geometry;
 
-  const formattedAddress = item.formatted.replace(/Unnamed Road/gi, 'Route inconnue');
+    const formattedAddress = item.formatted.replace(
+      /Unnamed Road/gi,
+      "Route inconnue"
+    );
 
-  setSelectedLocation({ latitude: lat, longitude: lng });
-  setQuery(formattedAddress); 
-  setModalVisible(false);
+    setSelectedLocation({ latitude: lat, longitude: lng });
+    setQuery(formattedAddress);
+    setModalVisible(false);
 
-  mapRef.current?.animateToRegion({
-    latitude: lat,
-    longitude: lng,
-    latitudeDelta: 0.005,
-    longitudeDelta: 0.005,
-  });
-};
-
+    mapRef.current?.animateToRegion({
+      latitude: lat,
+      longitude: lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    });
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -270,7 +271,7 @@ const handleSuggestionSelect = (item: any) => {
     try {
       setProgress(steps[0].progress);
       console.log("Préparation des fichiers...");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); 
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const userId = await getUserIdFromToken();
       if (!userId) {
@@ -291,14 +292,11 @@ const handleSuggestionSelect = (item: any) => {
           throw new Error("Une ou plusieurs photos ne sont pas valides.");
         }
 
-        formData.append(
-          "photos",
-          {
-            uri: photo.uri,
-            name: photo.uri.split("/").pop(),
-            type: photo.type || "image/jpeg",
-          } as any 
-        );
+        formData.append("photos", {
+          uri: photo.uri,
+          name: photo.uri.split("/").pop(),
+          type: photo.type || "image/jpeg",
+        } as any);
       });
 
       setProgress(steps[1].progress);
@@ -314,7 +312,7 @@ const handleSuggestionSelect = (item: any) => {
 
       setProgress(steps[2].progress);
       console.log("Finalisation...");
-      await new Promise((resolve) => setTimeout(resolve, 500)); 
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const data = await response.json();
       Alert.alert("Succès", "L'événement a étais créé avec succès !");
@@ -331,13 +329,13 @@ const handleSuggestionSelect = (item: any) => {
       setQuery("");
       setSelectedLocation(null);
       setPhotos([]);
-      navigation.navigate('Main')
+      navigation.navigate("Main");
     }
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); 
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; 
+    const postalCodeMatch = address.match(/\b\d{5}\b/);
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
   };
 
   return (
@@ -358,7 +356,7 @@ const handleSuggestionSelect = (item: any) => {
               <View key={index} style={styles.photoWrapper}>
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => handleRemovePhoto(index)} 
+                  onPress={() => handleRemovePhoto(index)}
                 >
                   <Ionicons name="close-circle" size={24} color="red" />
                 </TouchableOpacity>
@@ -367,9 +365,12 @@ const handleSuggestionSelect = (item: any) => {
               </View>
             ))}
           </ScrollView>
-          <TouchableOpacity style={styles.buttonPhoto} onPress={handleSelectPhotos}>
-        <Text style={styles.buttonTextPhoto}>Ajouter des photos</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.buttonPhoto}
+            onPress={handleSelectPhotos}
+          >
+            <Text style={styles.buttonTextPhoto}>Ajouter des photos</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.label}>Titre</Text>
         <TextInput
@@ -384,13 +385,13 @@ const handleSuggestionSelect = (item: any) => {
           style={[
             styles.input,
             { height: 100, maxHeight: 200, paddingHorizontal: 20 },
-          ]} 
+          ]}
           value={description}
           onChangeText={setDescription}
           placeholder="Description"
-          multiline={true} 
-          scrollEnabled={true} 
-          textAlignVertical="top" 
+          multiline={true}
+          scrollEnabled={true}
+          textAlignVertical="top"
           placeholderTextColor={"#ccc"}
         />
         <Text style={styles.label}>Date</Text>
@@ -439,10 +440,10 @@ const handleSuggestionSelect = (item: any) => {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#093A3E" />
+          <ActivityIndicator size="large" color="#235562" />
         ) : (
           <TouchableOpacity
-            onPress={() => setIsMapExpanded(true)} 
+            onPress={() => setIsMapExpanded(true)}
             activeOpacity={1}
           >
             <View
@@ -452,7 +453,7 @@ const handleSuggestionSelect = (item: any) => {
               <MapView
                 ref={mapRef}
                 style={{
-                  height: isMapExpanded ? 300 : 100, 
+                  height: isMapExpanded ? 300 : 100,
                   borderRadius: 30,
                 }}
                 initialRegion={{
@@ -461,9 +462,9 @@ const handleSuggestionSelect = (item: any) => {
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
-                scrollEnabled={isMapExpanded} 
-                zoomEnabled={isMapExpanded} 
-                onPress={isMapExpanded ? handleMapPress : undefined} 
+                scrollEnabled={isMapExpanded}
+                zoomEnabled={isMapExpanded}
+                onPress={isMapExpanded ? handleMapPress : undefined}
               >
                 {selectedLocation && (
                   <Marker
@@ -485,7 +486,7 @@ const handleSuggestionSelect = (item: any) => {
                     bottom: 0,
                     justifyContent: "center",
                     alignItems: "center",
-                    backgroundColor: "rgba(0, 0, 0, 0.5)", 
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
                     borderRadius: 30,
                   }}
                 >
@@ -526,16 +527,13 @@ const handleSuggestionSelect = (item: any) => {
 
         <View style={styles.submitButtonContainer}>
           {isSubmitting ? (
-            <ActivityIndicator size="large" color="#093A3E" />
+            <ActivityIndicator size="large" color="#235562" />
           ) : (
             <View style={styles.submitButton}>
               <TouchableOpacity
-                style={[
-                  styles.button, 
-                  isSubmitting && styles.buttonDisabled, 
-                ]}
+                style={[styles.button, isSubmitting && styles.buttonDisabled]}
                 onPress={handleSubmit}
-                disabled={isSubmitting} 
+                disabled={isSubmitting}
               >
                 <Text style={styles.buttonText}>
                   {isSubmitting ? "Envoi en cours..." : "Créer l'événement"}
@@ -545,9 +543,6 @@ const handleSuggestionSelect = (item: any) => {
           )}
         </View>
 
-
-
-        
         <Modal visible={progressModalVisible} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
@@ -569,4 +564,3 @@ const handleSuggestionSelect = (item: any) => {
     </ScrollView>
   );
 }
-

@@ -53,13 +53,38 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 export default function App() {
+  const { getToken } = useToken();
+  const previousOffset = useRef(0);
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { getToken } = useToken();
-  const previousOffset = useRef(0);
+
   const threshold = 10;
   const headerTranslateY = useSharedValue(0);
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        const token = await getToken();
+        if (token) {
+          setIsLoggedIn(true);
+          console.log("Session restaurée, utilisateur connecté.");
+        } else {
+          console.log("Aucun token valide trouvé, utilisateur non connecté.");
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la vérification de l'état de connexion :",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   const handleScroll = (event) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
@@ -94,29 +119,6 @@ export default function App() {
     console.log("Clés après suppression :", remainingKeys);
   };
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        const token = await getToken();
-        if (token) {
-          setIsLoggedIn(true);
-          console.log("Session restaurée, utilisateur connecté.");
-        } else {
-          console.log("Aucun token valide trouvé, utilisateur non connecté.");
-        }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la vérification de l'état de connexion :",
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeApp();
-  }, []);
-
   const handleLogout = async () => {
     try {
       await clearAllTokens();
@@ -143,7 +145,7 @@ export default function App() {
             <Icon
               name="menu"
               size={24}
-              color="#F7F2DE"
+              color="#FFFFFC"
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
@@ -152,7 +154,7 @@ export default function App() {
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
             <View>
-              <Icon name="notifications" size={24} color="#F7F2DE" />
+              <Icon name="notifications" size={24} color="#FFFFFC" />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -168,14 +170,6 @@ export default function App() {
   const EmptyScreen = () => {
     return null;
   };
-
-  const [fontsLoaded] = useFonts({
-    Insanibc: require("../frontend/assets/fonts/Insanibc.ttf"),
-  });
-
-  if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
 
   const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
@@ -213,7 +207,7 @@ export default function App() {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#093A3E" />
+          <ActivityIndicator size="large" color="#235562" />
         </View>
       );
     }
@@ -268,7 +262,7 @@ export default function App() {
                   <Icon
                     name={iconName}
                     size={focused ? size + 15 : size}
-                    color={focused ? "#F7F2DE" : "#F7F2DE"}
+                    color={focused ? "#FFFFFC" : "#FFFFFC"}
                     style={{
                       fontWeight: focused ? "bold" : "normal",
                     }}
@@ -281,7 +275,7 @@ export default function App() {
               height: 70,
               paddingTop: 10,
               paddingHorizontal: 10,
-              backgroundColor: "#093A3E",
+              backgroundColor: "#235562",
               position: "absolute",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -5 },
@@ -379,6 +373,14 @@ export default function App() {
     );
   };
 
+  const [fontsLoaded] = useFonts({
+    Insanibc: require("../frontend/assets/fonts/Insanibc.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -421,11 +423,10 @@ export default function App() {
                 ) : (
                   <>
                     <Stack.Screen name="Main" component={TabNavigator} />
-                    <Stack.Screen name="ProfileScreen">
-                      {(props) => (
-                        <ProfileScreen {...props} onLogout={handleLogout} />
-                      )}
-                    </Stack.Screen>
+                    <Stack.Screen
+                      name="ProfileScreen"
+                      component={ProfileScreen}
+                    />
                     <Stack.Screen
                       name="UserProfileScreen"
                       component={UserProfileScreen}
@@ -520,7 +521,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingTop: 40,
     paddingHorizontal: 20,
     height: 90,
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#F7F2DE",
+    color: "#FFFFFC",
     letterSpacing: 4,
     fontWeight: "bold",
     fontFamily: "Insanibc",

@@ -30,48 +30,24 @@ const getDocs = (unreadMessagesQuery: Query<DocumentData>) => {
   return firebaseGetDocs(unreadMessagesQuery);
 };
 
-const ConversationsScreen = ({ navigation, route }: any) => {
-  const userId = route.params?.userId;
-  console.log("UserId reçu dans ConversationsScreen :", userId);
+interface Conversation {
+  id: string;
+  participants: number[];
+  lastMessage: string;
+  otherParticipantName?: string;
+  lastMessageTimestamp?: string | null;
+  unreadCount?: number;
+  profilePhoto?: string | null;
+}
 
-  interface Conversation {
-    id: string;
-    participants: number[];
-    lastMessage: string;
-    otherParticipantName?: string;
-    lastMessageTimestamp?: string | null;
-    unreadCount?: number;
-    profilePhoto?: string | null;
-  }
+export default function ConversationsScreen ({ navigation, route }: any){
+  const userId = route.params?.userId;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [hiddenConversations, setHiddenConversations] = useState<string[]>([]);
   const [showHiddenConversations, setShowHiddenConversations] = useState(false);
   const [allConversations, setAllConversations] = useState<Conversation[]>([]);
-
-  const fetchUserDetails = async (
-    userId: number
-  ): Promise<{ name: string; profilePhoto: string | null }> => {
-    try {
-      const response = await axios.get(`${API_URL}/users/${userId}`);
-      const user = response.data;
-
-      const name = user.useFullName
-        ? `${user.firstName} ${user.lastName}`
-        : user.username || "Utilisateur inconnu";
-
-      const profilePhoto = user.profilePhoto?.url || null;
-
-      return { name, profilePhoto };
-    } catch (error) {
-      console.error(
-        `Erreur lors de la récupération des détails pour l'utilisateur ${userId} :`,
-        error
-      );
-      return { name: "Utilisateur inconnu", profilePhoto: null };
-    }
-  };
 
   useEffect(() => {
     if (!userId) {
@@ -203,6 +179,29 @@ const ConversationsScreen = ({ navigation, route }: any) => {
 
     saveHiddenConversations();
   }, [hiddenConversations]);
+
+  const fetchUserDetails = async (
+    userId: number
+  ): Promise<{ name: string; profilePhoto: string | null }> => {
+    try {
+      const response = await axios.get(`${API_URL}/users/${userId}`);
+      const user = response.data;
+
+      const name = user.useFullName
+        ? `${user.firstName} ${user.lastName}`
+        : user.username || "Utilisateur inconnu";
+
+      const profilePhoto = user.profilePhoto?.url || null;
+
+      return { name, profilePhoto };
+    } catch (error) {
+      console.error(
+        `Erreur lors de la récupération des détails pour l'utilisateur ${userId} :`,
+        error
+      );
+      return { name: "Utilisateur inconnu", profilePhoto: null };
+    }
+  };
 
   const hideConversation = (conversationId: string) => {
     setHiddenConversations((prev) => {
@@ -360,7 +359,6 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     });
   };
 
-
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
@@ -370,7 +368,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
           style={styles.showHiddenButton}
           onPress={() => setShowHiddenConversations(!showHiddenConversations)}
         >
-          <Ionicons name="settings-outline" size={24} color="#093A3E" style={styles.icon} />
+          <Ionicons name="settings-outline" size={24} color="#235562" style={styles.icon} />
         </TouchableOpacity>
       </View>
   
@@ -426,7 +424,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   
       {/* Liste principale */}
       {loading ? (
-        <ActivityIndicator size="large" color="#093A3E" />
+        <ActivityIndicator size="large" color="#235562" />
       ) : conversations.length > 0 ? (
         <FlatList
           data={conversations}
@@ -481,7 +479,7 @@ const styles = StyleSheet.create({
   titleConversations: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#093A3E",
+    color: "#235562",
     marginLeft: 10,
   },
   conversationDetails: {
@@ -518,7 +516,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",  
   },
   tooltip: {
-    color: "#093A3E", 
+    color: "#235562", 
     fontSize: 14,
     marginTop: 5,
     textAlign: "center",
@@ -575,7 +573,7 @@ const styles = StyleSheet.create({
   },
   hiddenConversation: {
     fontSize: 12,
-    color: "#093A3E",
+    color: "#235562",
     marginRight: 10,
     fontWeight: "bold",
   },
@@ -606,4 +604,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ConversationsScreen;
+

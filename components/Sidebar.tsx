@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <MaterialCommunityIcons
             name="view-dashboard-outline"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
           />
           <Text style={styles.sidebarText}>Tableau de bord</Text>
         </TouchableOpacity>
@@ -71,14 +71,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           style={styles.sidebarItem}
           onPress={() => handleNavigation("CityScreen")}
         >
-          <Ionicons name="earth-outline" size={24} color="#F7F2DE" />
+          <Ionicons name="earth-outline" size={24} color="#FFFFFC" />
           <Text style={styles.sidebarText}>Tout sur ma ville</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.sidebarItem}
           onPress={() => handleNavigation("RankingScreen")}
         >
-          <Ionicons name="trophy-outline" size={24} color="#F7F2DE" />
+          <Ionicons name="trophy-outline" size={24} color="#FFFFFC" />
           <Text style={styles.sidebarText}>Classement général</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -88,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <MaterialCommunityIcons
             name="account-circle-outline"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
           />
           <Text style={styles.sidebarText}>Informations personnelles</Text>
         </TouchableOpacity>
@@ -99,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <MaterialCommunityIcons
             name="alert-octagon-outline"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
           />
           <Text style={styles.sidebarText}>Mes signalements</Text>
         </TouchableOpacity>
@@ -110,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <MaterialCommunityIcons
             name="calendar-star"
             size={24}
-            color="#F7F2DE"
+            color="#FFFFFC"
           />
           <Text style={styles.sidebarText}>Mes événements</Text>
         </TouchableOpacity>
@@ -118,22 +118,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         {/* Section supplémentaire */}
         <View style={styles.footerSection}>
           <TouchableOpacity style={styles.sidebarItem}>
-            <Ionicons name="settings-outline" size={24} color="#F7F2DE" />
+            <Ionicons name="settings-outline" size={24} color="#FFFFFC" />
             <Text style={styles.sidebarText}>Préférences</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.sidebarItem}>
-            <Ionicons name="help-circle-outline" size={24} color="#F7F2DE" />
+            <Ionicons name="help-circle-outline" size={24} color="#FFFFFC" />
             <Text style={styles.sidebarText}>F.A.Q</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.sidebarItem}>
-            <Ionicons name="document-text-outline" size={24} color="#F7F2DE" />
+            <Ionicons name="document-text-outline" size={24} color="#FFFFFC" />
             <Text style={styles.sidebarText}>Conditions d'utilisation</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.sidebarItem}>
             <Ionicons
               name="shield-checkmark-outline"
               size={24}
-              color="#F7F2DE"
+              color="#FFFFFC"
             />
             <Text style={styles.sidebarText}>Confidentialité</Text>
           </TouchableOpacity>
@@ -164,13 +164,13 @@ const styles = StyleSheet.create({
     left: 0,
     width: 300,
     height: Dimensions.get("window").height,
-    backgroundColor: "#093A3E",
+    backgroundColor: "#235562",
     paddingVertical: 20,
     paddingHorizontal: 20,
     zIndex: 2,
   },
   sidebarTitle: {
-    color: "#F7F2DE",
+    color: "#FFFFFC",
     fontSize: 28,
     marginTop: 30,
     marginBottom: 20,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     bottom: 40,
     left: 20,
     right: 20,
-    backgroundColor: "#F7F2DE",
+    backgroundColor: "#FFFFFC",
     borderRadius: 60,
     paddingVertical: 15,
     alignItems: "center",

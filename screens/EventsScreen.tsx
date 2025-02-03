@@ -27,7 +27,23 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 
 export default function EventsScreen({ navigation }) {
   const { unreadCount } = useNotification();
+  const { location, loading } = useLocation();
+  const { getUserId } = useToken();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<{
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    location: string;
+    photos: { url: string }[];
+  } | null>(null);
   const [events, setEvents] = useState<
     {
       id: number;
@@ -37,23 +53,7 @@ export default function EventsScreen({ navigation }) {
       photos: { url: string }[];
     }[]
   >([]);
-  const { getUserId } = useToken();
-  const { location, loading } = useLocation();
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const mapRef = useRef<MapView>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentEvent, setCurrentEvent] = useState<{
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    location: string;
-    photos: { url: string }[];
-  } | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isAddressValidated, setIsAddressValidated] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-
+  
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
@@ -101,7 +101,7 @@ export default function EventsScreen({ navigation }) {
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         photos: photos.map((photo) => ({
-          url: photo.uri || photo.url, 
+          url: photo.uri || photo.url,
         })),
       };
 
@@ -137,7 +137,7 @@ export default function EventsScreen({ navigation }) {
   const openModal = (event) => {
     setCurrentEvent({
       ...event,
-      photos: event.photos || [], 
+      photos: event.photos || [],
     });
     setIsModalVisible(true);
   };
@@ -150,7 +150,7 @@ export default function EventsScreen({ navigation }) {
   const renderItem = ({ item }) => {
     const imageUrl =
       item.photos?.length > 0
-        ? item.photos[0].url 
+        ? item.photos[0].url
         : "https://via.placeholder.com/150";
 
     const eventDate = item.date
@@ -194,13 +194,13 @@ export default function EventsScreen({ navigation }) {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => openModal(item)} 
+            onPress={() => openModal(item)}
           >
             <Text style={styles.editButtonText}>Modifier</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => confirmDelete(item.id)} 
+            onPress={() => confirmDelete(item.id)}
           >
             <Icon name="delete" size={24} color="#FF3B30" />
           </TouchableOpacity>
@@ -226,7 +226,7 @@ export default function EventsScreen({ navigation }) {
 
   const deleteEvent = async (eventId) => {
     try {
-      const userId = await getUserId(); 
+      const userId = await getUserId();
       if (!userId) {
         console.error("Impossible de récupérer l'ID utilisateur.");
         return;
@@ -277,8 +277,8 @@ export default function EventsScreen({ navigation }) {
 
         console.log("Adresse récupérée depuis OpenCage Data :", address);
 
-        setSuggestions(data.results); 
-        setModalVisible(true); 
+        setSuggestions(data.results);
+        setModalVisible(true);
       } else {
         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
       }
@@ -310,11 +310,11 @@ export default function EventsScreen({ navigation }) {
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB; 
+          return postalA - postalB;
         });
 
-        setSuggestions(sortedSuggestions); 
-        setModalVisible(true); 
+        setSuggestions(sortedSuggestions);
+        setModalVisible(true);
       } else {
         setSuggestions([]);
         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -326,8 +326,8 @@ export default function EventsScreen({ navigation }) {
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); 
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity; 
+    const postalCodeMatch = address.match(/\b\d{5}\b/);
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
   };
 
   const handleSuggestionSelect = (item: any) => {
@@ -343,13 +343,11 @@ export default function EventsScreen({ navigation }) {
         if (!prevEvent) return prevEvent;
         return {
           ...prevEvent,
-          location: formattedLocation, 
+          location: formattedLocation,
           latitude: lat,
           longitude: lng,
         };
       });
-
-      setIsAddressValidated(true);
 
       setModalVisible(false);
     }
@@ -362,7 +360,7 @@ export default function EventsScreen({ navigation }) {
           <Icon
             name="menu"
             size={24}
-            color="#F7F2DE" 
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -380,7 +378,7 @@ export default function EventsScreen({ navigation }) {
             <Icon
               name="notifications"
               size={24}
-              color={unreadCount > 0 ? "#F7F2DE" : "#F7F2DE"}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
               style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
@@ -473,20 +471,18 @@ export default function EventsScreen({ navigation }) {
                 <TextInput
                   style={styles.inputSearch}
                   placeholder="Rechercher une adresse"
-                  value={currentEvent?.location || ""} 
+                  value={currentEvent?.location || ""}
                   placeholderTextColor="#c7c7c7"
                   onChangeText={(text) => {
                     setCurrentEvent((prev) =>
                       prev ? { ...prev, location: text } : null
                     );
-                    setIsAddressValidated(false); 
                   }}
                 />
                 <TouchableOpacity
                   style={styles.searchButton}
-                  onPress={
-                    () =>
-                      currentEvent && handleAddressSearch(currentEvent.location) 
+                  onPress={() =>
+                    currentEvent && handleAddressSearch(currentEvent.location)
                   }
                 >
                   <Ionicons name="search-sharp" size={18} color="#fff" />
@@ -576,7 +572,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#093A3E", 
+    backgroundColor: "#235562",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -586,11 +582,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#093A3E", 
-    backgroundColor: "#F7F2DE",
+    color: "#FFFFFC",
+
     letterSpacing: 2,
     fontWeight: "bold",
-    fontFamily: "Insanibc", 
+    fontFamily: "Insanibc",
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -626,14 +622,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
-    elevation: 4, 
+    elevation: 4,
     borderWidth: 1,
-    borderColor: "#E8E8E8", 
+    borderColor: "#E8E8E8",
   },
   eventTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333333", 
+    color: "#333333",
     marginBottom: 5,
   },
   eventDescription: {
@@ -642,10 +638,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   eventImage: {
-    width: "100%", 
-    height: 150, 
-    borderRadius: 8, 
-    marginBottom: 10, 
+    width: "100%",
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   eventFooter: {
     flexDirection: "row",
@@ -654,11 +650,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E8E8E8",
     paddingTop: 10,
-    marginBottom: 5, 
+    marginBottom: 5,
   },
   eventDate: {
     fontSize: 12,
-    color: "#999999", 
+    color: "#999999",
   },
   noEventsContainer: {
     flex: 1,
@@ -671,13 +667,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   actionButtons: {
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    alignItems: "center", 
-    marginTop: 10, 
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
   },
   editButton: {
-    backgroundColor: "#2196F3", 
+    backgroundColor: "#2196F3",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -726,28 +722,28 @@ const styles = StyleSheet.create({
   },
   inputTitle: {
     width: "100%",
-    height: 50, 
-    maxHeight: 50, 
+    height: 50,
+    maxHeight: 50,
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingHorizontal: 15,
     paddingLeft: 30,
-    marginBottom: 25, 
+    marginBottom: 25,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", 
+    overflow: "hidden",
   },
   input: {
     width: "100%",
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
-    paddingVertical: 10, 
+    paddingVertical: 10,
     paddingHorizontal: 15,
     paddingLeft: 25,
     paddingTop: 20,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", 
+    overflow: "hidden",
   },
   textArea: {
     height: 100,
@@ -802,15 +798,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputSearch: {
-    height: 50, 
-    textAlignVertical: "center", 
-    paddingHorizontal: 10, 
-    paddingLeft: 20, 
+    height: 50,
+    textAlignVertical: "center",
+    paddingHorizontal: 10,
+    paddingLeft: 20,
 
     backgroundColor: "#f5f5f5",
     width: "65%",
-    borderRadius: 30, 
-    fontSize: 16, 
+    borderRadius: 30,
+    fontSize: 16,
     color: "#333",
     marginTop: 10,
   },
@@ -821,7 +817,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#34495E",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, 
+    marginLeft: 10,
     marginTop: 10,
   },
   rowButtonLocation: {
@@ -831,15 +827,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDAE49",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, 
+    marginLeft: 10,
     marginTop: 10,
   },
   modalOverlay: {
     flex: 1,
     paddingVertical: 50,
-    justifyContent: "center", 
-    alignItems: "center", 
-    backgroundColor: "rgba(0, 0, 0, 0.5)", 
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   suggestionItem: {
     padding: 10,
