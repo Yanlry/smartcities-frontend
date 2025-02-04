@@ -609,6 +609,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
+
+  
   eventsList: {
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -656,6 +658,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999999",
   },
+
   noEventsContainer: {
     flex: 1,
     justifyContent: "center",
@@ -666,6 +669,8 @@ const styles = StyleSheet.create({
     color: "#888888",
     textAlign: "center",
   },
+
+
   actionButtons: {
     flexDirection: "row",
     justifyContent: "space-between",

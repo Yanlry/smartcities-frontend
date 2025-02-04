@@ -478,6 +478,7 @@ export default function NotificationsScreen({ navigation }) {
         console.error("Erreur lors de la sauvegarde des préférences :", error);
       }
     }, [tempPreferences]);
+    
     const groupedNotificationTypes = [
       {
         category: "Activités sur mes signalements",

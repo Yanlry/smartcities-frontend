@@ -576,6 +576,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
+
   reportsList: {
     paddingVertical: 10,
   },
@@ -608,6 +609,8 @@ const styles = StyleSheet.create({
     color: "#7A7A7A",
     marginBottom: 10,
   },
+
+
   reportFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -636,6 +639,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
+
+
   noReportsContainer: {
     flex: 1,
     justifyContent: "center",
@@ -645,6 +650,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#000",
   },
+
   deleteButton: {
     backgroundColor: "#FFF5F5",
     padding: 8,

@@ -33,7 +33,7 @@
     "babel-plugin-dotenv": "^0.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
-    "expo": "~52.0.28",
+    "expo": "~52.0.29",
     "expo-app-loading": "^2.1.1",
     "expo-blur": "~14.0.3",
     "expo-font": "~13.0.3",

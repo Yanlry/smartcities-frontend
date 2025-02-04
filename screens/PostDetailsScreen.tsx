@@ -67,6 +67,8 @@ export default function PostDetailsScreen({ navigation }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const initialPosts: Post[] = []; // Define initialPosts as an empty array of Post
+  const [posts, setPosts] = useState(initialPosts);
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -99,7 +101,6 @@ export default function PostDetailsScreen({ navigation }) {
 
   const fetchPostDetails = async () => {
     setLoading(true);
-
     try {
       const { getToken } = useToken();
       const token = await getToken();
@@ -128,11 +129,21 @@ export default function PostDetailsScreen({ navigation }) {
       if (!data || Object.keys(data).length === 0) {
         setPost(null);
       } else {
+        // Transformation des commentaires pour définir des valeurs par défaut
+        const formattedComments = data.comments
+          ? data.comments.map((comment) => ({
+              ...comment,
+              likedByUser: comment.likedByUser || false,
+              likesCount: comment.likesCount || 0,
+            }))
+          : [];
+
         const formattedPost = {
           ...data,
           photos: data.photos || [],
           authorName: data.authorName || "Utilisateur inconnu",
           profilePhoto: data.profilePhoto || "https://via.placeholder.com/150",
+          comments: formattedComments,
         };
 
         setPost(formattedPost);
@@ -165,6 +176,62 @@ export default function PostDetailsScreen({ navigation }) {
       Alert.alert(
         "Erreur",
         error.message || "Impossible d'aimer la publication."
+      );
+    }
+  };
+
+  const handleLikeComment = async (commentId) => {
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        console.error("Impossible de récupérer l'ID utilisateur.");
+        return;
+      }
+
+      console.log(
+        `🔄 Tentative de like du commentaire ${commentId} par l'utilisateur ${userId}`
+      );
+
+      const response = await fetch(
+        `${API_URL}/posts/comments/${commentId}/like`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du like du commentaire");
+      }
+
+      const data = await response.json();
+      console.log("🔄 Réponse API Like :", data);
+
+      // Option 1 : Mise à jour locale
+      setPost((prevPost) => {
+        if (!prevPost || !prevPost.comments) return prevPost;
+
+        const updatedComments = prevPost.comments.map((comment) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                likesCount: data.likesCount,
+                likedByUser: data.likedByUser,
+              }
+            : comment
+        );
+
+        return { ...prevPost, comments: updatedComments };
+      });
+
+      // Option 2 (recommandée pour la persistance) : Recharger les détails depuis le serveur
+      fetchPostDetails();
+    } catch (error) {
+      console.error("Erreur :", error.message);
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible d'aimer le commentaire."
       );
     }
   };
@@ -425,24 +492,23 @@ export default function PostDetailsScreen({ navigation }) {
           </View>
           {/* Bouton Répondre */}
           <View style={styles.actionButton}>
-            <TouchableOpacity
-              onPress={() =>
-                setReplyToCommentId((prev) =>
-                  prev === comment.id ? null : comment.id
-                )
-              }
-            >
-              <Text style={styles.replyButtonText}>J'aime</Text>
-            </TouchableOpacity>
-            {/* Bouton Répondre */}
-            <TouchableOpacity
-              onPress={() =>
-                setReplyToCommentId((prev) =>
-                  prev === comment.id ? null : comment.id
-                )
-              }
-            >
-              <Text style={styles.replyButtonText}>Répondre</Text>
+            <TouchableOpacity onPress={() => handleLikeComment(comment.id)}>
+              <View style={styles.likeCommentButton}>
+                <Icon
+                  name={comment.likedByUser ? "heart" : "heart-outline"}
+                  size={20}
+                  color={comment.likedByUser ? "#FF0000" : "#656765"}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  style={[
+                    styles.likeCommentText,
+                    comment.likedByUser && { color: "#FF0000" },
+                  ]}
+                >
+                  {comment.likesCount}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -1069,7 +1135,7 @@ const styles = StyleSheet.create({
   commentContainer: {
     flexDirection: "column",
     alignItems: "flex-start",
-    padding: 10,
+    padding: 5,
     borderRadius: 8,
   },
   replyContainer: {
@@ -1206,5 +1272,17 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 8,
     marginBottom: 10,
+  },
+  likeCommentButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 5,
+    marginTop: 5,
+  },
+  likeCommentText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: "#656765",
+    fontWeight: "bold",
   },
 });

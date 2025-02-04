@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
   Pressable,
+  FlatList,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -20,7 +21,7 @@ import { Linking } from "react-native";
 import { useToken } from "../hooks/useToken";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/Sidebar";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type User = {
   id: string;
@@ -44,6 +45,21 @@ type User = {
   votes: any[];
 };
 
+interface Post {
+  id: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  likesCount: number;
+  likedByUser: boolean;
+  authorId: number;
+  authorName: string;
+  profilePhoto: string | null;
+  nomCommune: string;
+  photos: string[];
+  comments: any[];
+}
+
 export default function UserProfileScreen({ route, navigation }) {
   const { getToken, getUserId } = useToken();
   const { userId } = route.params;
@@ -59,6 +75,31 @@ export default function UserProfileScreen({ route, navigation }) {
   const [reportReason, setReportReason] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [commentsVisible, setCommentsVisible] = useState<{ [key: number]: boolean }>({});
+  const [reports, setReports] = useState<
+    {
+      id: number;
+      title: string;
+      description: string;
+      createdAt: string;
+      photos?: { url: string }[];
+      city: string;
+      type: string;
+    }[]
+  >([]);
+  const [events, setEvents] = useState<
+    {
+      id: number;
+      title: string;
+      description: string;
+      createdAt: string;
+      photos: { url: string }[];
+    }[]
+  >([]);
+  const [selectedTab, setSelectedTab] = useState<
+    "info" | "publications" | "signalement" | "evenement"
+  >("info");
 
   useEffect(() => {
     async function fetchData() {
@@ -123,6 +164,73 @@ export default function UserProfileScreen({ route, navigation }) {
     };
 
     fetchStats();
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchUserReports = async () => {
+      try {
+        if (!userId) {
+          console.error("Impossible de récupérer l'ID utilisateur.");
+          return;
+        }
+
+        console.log("ID utilisateur récupéré :", userId);
+        const response = await fetch(`${API_URL}/reports?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ! statut : ${response.status}`);
+        }
+        const data = await response.json();
+        setReports(data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des rapports :", error);
+      }
+    };
+
+    fetchUserReports();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserEvents = async () => {
+      try {
+        if (!userId) {
+          console.error("Impossible de récupérer l'ID utilisateur.");
+          return;
+        }
+
+        console.log("ID utilisateur récupéré :", userId);
+        const response = await fetch(`${API_URL}/events?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ! statut : ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Données des événements récupérées :", data);
+        setEvents(data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des événements :", error);
+      }
+    };
+
+    fetchUserEvents();
+  }, []);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get<Post[]>(
+          `${API_URL}/posts/author/${userId}`
+        );
+        setPosts(response.data);
+      } catch (err: any) {
+        setError(
+          err.message || "Erreur lors de la récupération des publications"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
   }, [userId]);
 
   const handleFollow = async () => {
@@ -333,6 +441,13 @@ export default function UserProfileScreen({ route, navigation }) {
       };
     }
   };
+  
+  const toggleComments = (postId: number) => {
+    setCommentsVisible(prevState => ({
+      ...prevState,
+      [postId]: !prevState[postId],
+    }));
+  };
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
@@ -387,41 +502,38 @@ export default function UserProfileScreen({ route, navigation }) {
           />
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Modal pour le signalement */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isReportModalVisible}
-          onRequestClose={closeReportModal}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Signaler ce profil</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Indiquez la raison ainsi que le maximum d'informations (ex: profil douteux, dates, etc...)"
-                value={reportReason}
-                placeholderTextColor="#777777"
-                onChangeText={setReportReason}
-                multiline={true}
-              />
-              <TouchableOpacity
-                onPress={sendReport}
-                style={styles.confirmButton}
-              >
-                <Text style={styles.confirmButtonText}>Envoyer</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={closeReportModal}
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelButtonText}>Annuler</Text>
-              </TouchableOpacity>
-            </View>
+      {/* Modal pour le signalement */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isReportModalVisible}
+        onRequestClose={closeReportModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Signaler ce profil</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Indiquez la raison ainsi que le maximum d'informations (ex: profil douteux, dates, etc...)"
+              value={reportReason}
+              placeholderTextColor="#777777"
+              onChangeText={setReportReason}
+              multiline={true}
+            />
+            <TouchableOpacity onPress={sendReport} style={styles.confirmButton}>
+              <Text style={styles.confirmButtonText}>Envoyer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={closeReportModal}
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
+        </View>
+      </Modal>
 
+      <ScrollView contentContainerStyle={styles.container}>
         {/* Image de profil avec style basé sur le classement */}
         <View style={styles.profileContainer}>
           {/* Image avec bordure conditionnelle */}
@@ -635,176 +747,490 @@ export default function UserProfileScreen({ route, navigation }) {
           </View>
         </Modal>
 
-        {/* Informations de base */}
-        <View style={styles.infoCardContainer}>
-          <Text style={styles.infoCardHeader}>Informations personnelles</Text>
-
-          {/* Nom d'utilisateur */}
-          <View style={styles.infoItem}>
-            <Icon name="person" size={22} style={styles.icon} />
-            <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
-            <Text style={styles.infoValueName}>
-              {displayName || (
-                <Text style={styles.placeholderValue}>Non renseigné</Text>
-              )}
-            </Text>
-          </View>
-
-          {/* Email */}
-
-          <View style={styles.infoItem}>
-            <Icon name="drafts" size={22} style={styles.icon} />
-            <Text style={styles.infoLabel}>Email :</Text>
-            {user?.showEmail ? (
-              <Text
-                style={styles.infoValueEmail}
-                onPress={() => Linking.openURL(`mailto:${user.email}`)}
-              >
-                {user.email}
-              </Text>
-            ) : (
-              <Text style={styles.placeholderValue}>
-                {displayName} n'est pas joignable
-              </Text>
-            )}
-          </View>
-          {/* Bouton de suivi */}
-          <View style={styles.followButtonContainer}>
-            <TouchableOpacity
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContainer}
+        >
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "info" && styles.activeTab,
+            ]}
+            onPress={() => setSelectedTab("info")}
+          >
+            <Text
               style={[
-                styles.followButton,
-                { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
+                styles.tabText,
+                selectedTab === "info" && styles.activeTabText,
               ]}
-              onPress={isFollowing ? handleUnfollow : handleFollow}
-              disabled={isSubmitting}
             >
-              <Text style={styles.followButtonText}>
-                {isFollowing ? "Se désabonner" : "S'abonner"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {/* Nom d'utilisateur */}
-          {currentUserId && userId && (
-            <View style={styles.sendChatContainer}>
-              <TouchableOpacity
-                style={styles.sendChat}
-                onPress={() =>
-                  navigation.navigate("ChatScreen", {
-                    receiverId: userId,
-                    senderId: currentUserId,
-                  })
-                }
-              >
-                <Text style={styles.sendChatText}>Envoyer un message</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+              Info & Statistique
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "signalement" && styles.activeTab,
+            ]}
+            onPress={() => setSelectedTab("signalement")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "signalement" && styles.activeTabText,
+              ]}
+            >
+              Signalement
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "publications" && styles.activeTab,
+            ]}
+            onPress={() => setSelectedTab("publications")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "publications" && styles.activeTabText,
+              ]}
+            >
+              Publications
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "evenement" && styles.activeTab,
+            ]}
+            onPress={() => setSelectedTab("evenement")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "evenement" && styles.activeTabText,
+              ]}
+            >
+              Événement
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
 
-        <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Ville de référence</Text>
+        {/* Informations & statistiques */}
+        {selectedTab === "info" && (
+          <>
+            <View style={styles.infoCardContainer}>
+              <Text style={styles.infoCardHeader}>
+                Informations personnelles
+              </Text>
 
-          {/* Affichage de la ville actuelle */}
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.nomCommune || "Non disponible"}
-              </Text>
-              <Text style={styles.statLabel}>Ville</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.codePostal || "Non disponible"}
-              </Text>
-              <Text style={styles.statLabel}>Code postal</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>
-            Statistiques de signalements
-          </Text>
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {stats?.numberOfComments || 0}
-              </Text>
-              <Text style={styles.statLabel}>Commentaires</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
-              <Text style={styles.statLabel}>Votes</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {stats?.numberOfReports || 0}
-              </Text>
-              <Text style={styles.statLabel}>Signalements</Text>
-            </View>
-          </View>
-        </View>
+              {/* Nom d'utilisateur */}
+              <View style={styles.infoItem}>
+                <Icon name="person" size={22} style={styles.icon} />
+                <Text style={styles.infoLabel}>Nom d'utilisateur :</Text>
+                <Text style={styles.infoValueName}>
+                  {displayName || (
+                    <Text style={styles.placeholderValue}>Non renseigné</Text>
+                  )}
+                </Text>
+              </View>
 
-        <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Relations</Text>
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.followers?.length || 0}
-              </Text>
-              <Text style={styles.statLabel}>Abonnées</Text>
+              {/* Email */}
+              <View style={styles.infoItem}>
+                <Icon name="drafts" size={22} style={styles.icon} />
+                <Text style={styles.infoLabel}>Email :</Text>
+                {user?.showEmail ? (
+                  <Text
+                    style={styles.infoValueEmail}
+                    onPress={() => Linking.openURL(`mailto:${user.email}`)}
+                  >
+                    {user.email}
+                  </Text>
+                ) : (
+                  <Text style={styles.placeholderValue}>
+                    {displayName} ne partage pas son email
+                  </Text>
+                )}
+              </View>
+              {/* Bouton de suivi */}
+              <View style={styles.followButtonContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.followButton,
+                    { backgroundColor: isFollowing ? "#EE6352" : "#57A773" },
+                  ]}
+                  onPress={isFollowing ? handleUnfollow : handleFollow}
+                  disabled={isSubmitting}
+                >
+                  <Text style={styles.followButtonText}>
+                    {isFollowing ? "Se désabonner" : "S'abonner"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {/* Nom d'utilisateur */}
+              {currentUserId && userId && (
+                <View style={styles.sendChatContainer}>
+                  <TouchableOpacity
+                    style={styles.sendChat}
+                    onPress={() =>
+                      navigation.navigate("ChatScreen", {
+                        receiverId: userId,
+                        senderId: currentUserId,
+                      })
+                    }
+                  >
+                    <Text style={styles.sendChatText}>Envoyer un message</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.following?.length || 0}
-              </Text>
-              <Text style={styles.statLabel}>Abonnements</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Social</Text>
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats?.numberOfPosts || 0}</Text>
-              <Text style={styles.statLabel}>Publications{"\n"}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {stats?.numberOfEventsCreated || 0}
-              </Text>
-              <Text style={styles.statLabel}>Événements{"\n"}crées</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {stats?.numberOfEventsAttended || 0}
-              </Text>
-              <Text style={styles.statLabel}>
-                Participation{"\n"}aux événements
-              </Text>
-            </View>
-          </View>
-        </View>
+            <View style={styles.cardContainerCity}>
+              <Text style={styles.infoCardHeaderCity}>Ville de référence</Text>
 
-        <View style={styles.cardContainer}>
-          <Text style={styles.infoCardHeader}>Options</Text>
-          <View style={styles.cardContent}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.isSubscribed ? "Oui" : "Non"}
-              </Text>
-              <Text style={styles.statLabel}> SMART+</Text>
+              {/* Affichage de la ville actuelle */}
+              <View style={styles.cardContent}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {user?.nomCommune || "Non disponible"}
+                  </Text>
+                  <Text style={styles.statLabel}>Ville</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {user?.codePostal || "Non disponible"}
+                  </Text>
+                  <Text style={styles.statLabel}>Code postal</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {user?.isSubscribed ? "Oui" : "Non"}
+
+            <View style={styles.cardContainer}>
+              <Text style={styles.infoCardHeader}>
+                Statistiques de signalements
               </Text>
-              <Text style={styles.statLabel}>Affiliation mairie</Text>
+              <View style={styles.cardContent}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {stats?.numberOfComments || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Commentaires</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {stats?.numberOfVotes || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Votes</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {stats?.numberOfReports || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Signalements</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.cardContainer}>
+              <Text style={styles.infoCardHeader}>Relations</Text>
+              <View style={styles.cardContent}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {user?.followers?.length || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Abonnées</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {user?.following?.length || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Abonnements</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.cardContainer}>
+              <Text style={styles.infoCardHeader}>Social</Text>
+              <View style={styles.cardContent}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {stats?.numberOfPosts || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Publications{"\n"}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {stats?.numberOfEventsCreated || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Événements{"\n"}crées</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {stats?.numberOfEventsAttended || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>
+                    Participation{"\n"}aux événements
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.cardContainer}>
+              <Text style={styles.infoCardHeader}>Options</Text>
+              <View style={styles.cardContent}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {user?.isSubscribed ? "Oui" : "Non"}
+                  </Text>
+                  <Text style={styles.statLabel}> SMART+</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>
+                    {user?.isSubscribed ? "Oui" : "Non"}
+                  </Text>
+                  <Text style={styles.statLabel}>Affiliation mairie</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.separator}></View>
+          </>
+        )}
+
+        {/* Signalements */}
+        {selectedTab === "signalement" && (
+          <>
+            {reports.length === 0 ? (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>
+                  Aucun signalement trouvé.
+                </Text>
+              </View>
+            ) : (
+              <View>
+                {reports.map((item) => (
+                  <View key={item.id.toString()} style={styles.reportCard}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("ReportDetailsScreen", {
+                          reportId: item.id,
+                        })
+                      }
+                    >
+                      <View style={styles.reportTypeContainer}>
+                        <Text style={styles.reportType}>{item.type}</Text>
+                      </View>
+                      <Text style={styles.reportTitle}>{item.title}</Text>
+
+                      {/* Affichage de l'image */}
+                      {Array.isArray(item.photos) && item.photos.length > 0 && (
+                        <Image
+                          source={{ uri: item.photos[0].url }}
+                          style={styles.reportImage}
+                        />
+                      )}
+
+                      {/* Description */}
+                      <Text style={styles.reportDescription} numberOfLines={2}>
+                        {item.description}
+                      </Text>
+                      <Text style={styles.reportCity}>{item.city}</Text>
+                      <Text style={styles.reportDate}>
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <View style={styles.separator}></View>
+              </View>
+            )}
+          </>
+        )}
+
+        {selectedTab === "publications" && (
+          <>
+            {posts.length === 0 ? (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>
+                  Aucune publication trouvée.
+                </Text>
+              </View>
+            ) : (
+              <View>
+                {posts.map((item) => (
+                  <TouchableOpacity
+                  key={item.id.toString()}
+                  onPress={() =>
+                    navigation.navigate("PostDetailsScreen", { postId: item.id })
+                  }
+                >
+                  <View key={item.id.toString()} style={styles.postCard}>
+                    {/* En-tête du post : informations sur l'auteur */}
+                    <View style={styles.postHeader}>
+                      <Image
+                        source={{
+                          uri:
+                            item.profilePhoto ||
+                            "https://via.placeholder.com/150",
+                        }}
+                        style={styles.profilePhoto}
+                      />
+                      <View style={styles.authorInfo}>
+                        <Text style={styles.authorName}>{item.authorName}</Text>
+                        <Text style={styles.postDate}>
+                          Publié le{" "}
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Contenu du post */}
+                    <Text style={styles.postContent}>{item.content}</Text>
+
+                    {/* Affichage des photos si disponibles */}
+                    {item.photos && item.photos.length > 0 && (
+                      <View style={styles.photosContainer}>
+                        {item.photos.map((photo, index) => (
+                          <Image
+                            key={index.toString()}
+                            source={{ uri: photo }}
+                            style={styles.photo}
+                          />
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Métadonnées : date de création et likes */}
+                    <View style={styles.metaInfo}>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <MaterialCommunityIcons
+                          name="thumb-up"
+                          size={14}
+                          color="#555"
+                          style={{ marginRight: 5 }} // marge à droite de l'icône
+                        />
+                        <Text style={styles.likesCount}>
+                          {item.likesCount} personnes ont liké
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Section des commentaires */}
+                 {/* Bouton pour afficher/masquer les commentaires */}
+                    <TouchableOpacity onPress={() => toggleComments(item.id)}>
+                      <Text style={styles.toggleCommentsButton}>
+                        {commentsVisible[item.id]
+                          ? "Masquer les commentaires"
+                          : "Afficher les commentaires"}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Section commentaires */}
+                    {commentsVisible[item.id] && (
+  <View style={styles.commentsContainer}>
+    {item.comments && item.comments.length > 0 ? (
+      <>
+        <Text style={styles.commentsHeader}>Commentaires :</Text>
+        {item.comments.map((comment) => (
+          <View key={comment.id.toString()} style={styles.comment}>
+            <Image
+              source={{ uri: comment.userProfilePhoto }}
+              style={styles.commentProfilePhoto}
+            />
+            <View style={styles.commentContent}>
+              <Text style={styles.commentUserName}>
+                {comment.userName}
+              </Text>
+              <Text style={styles.commentDate}>
+                Publié le {new Date(comment.createdAt).toLocaleDateString()}
+              </Text>
+              <Text style={styles.commentText}>
+                {comment.text}
+              </Text>
             </View>
           </View>
-        </View>
-        <View style={styles.separator}></View>
+        ))}
+      </>
+    ) : (
+      <Text style={styles.noCommentText}>Aucun commentaire pour le moment</Text>
+    )}
+  </View>
+)}
+                  </View>
+                  </TouchableOpacity>
+                ))}
+                <View style={styles.separator}></View>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* Événement */}
+        {selectedTab === "evenement" && (
+          <>
+            {events.length === 0 ? (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>Aucun événement trouvé.</Text>
+              </View>
+            ) : (
+              <View>
+                {events.map((item) => {
+                  const eventDate = item.createdAt
+                    ? new Date(item.createdAt).toLocaleDateString()
+                    : "Date non disponible";
+                  return (
+                    <View key={item.id.toString()} style={styles.eventCard}>
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate("EventDetailsScreen", {
+                            eventId: item.id,
+                          })
+                        }
+                      >
+                        {/* Image de l'événement */}
+                        <Image
+                          source={{
+                            uri:
+                              item.photos?.[0]?.url ||
+                              "https://via.placeholder.com/150",
+                          }}
+                          style={styles.eventImage}
+                          resizeMode="cover"
+                        />
+
+                        {/* Titre et description */}
+                        <Text style={styles.eventTitle}>
+                          {item.title || "Titre non disponible"}
+                        </Text>
+                        <Text style={styles.eventDescription} numberOfLines={2}>
+                          {item.description || "Aucune description disponible"}
+                        </Text>
+
+                        {/* Pied de carte avec la date */}
+                        <View style={styles.eventFooter}>
+                          <Text style={styles.eventDate}>
+                            L'événement est prévu pour le {eventDate}
+                          </Text>
+                          <Icon
+                            name="chevron-right"
+                            size={24}
+                            color="#CBCBCB"
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+                <View style={styles.separator}></View>
+              </View>
+            )}
+          </>
+        )}
       </ScrollView>
+
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
   );
@@ -840,8 +1266,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#235562",
-    backgroundColor: "#FFFFFC",
+    color: "#FFFFFC",
     letterSpacing: 2,
     fontWeight: "bold",
     fontFamily: "Insanibc",
@@ -1006,19 +1431,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 5,
   },
-  sendChat: {
-    width: "80%",
-    backgroundColor: "#235562",
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-  },
-  sendChatText: {
-    color: "#FFF",
-    textAlign: "center",
-    fontWeight: "600",
-    fontSize: 16,
-  },
+
   confirmButton: {
     backgroundColor: "#ff4d4f",
     paddingVertical: 12,
@@ -1124,9 +1537,11 @@ const styles = StyleSheet.create({
   },
   infoCardContainer: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -1163,13 +1578,31 @@ const styles = StyleSheet.create({
     marginRight: 10,
     color: "#235562",
   },
-  cardHeader: {
+  sendChat: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#235562",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+  },
+  sendChatText: {
+    color: "#235562",
+    textAlign: "center",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  infoCardHeaderCity: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 10,
+    textAlign: "center",
+    marginBottom: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+    paddingBottom: 20,
   },
-
   infoCardHeader: {
     fontSize: 18,
     fontWeight: "bold",
@@ -1178,6 +1611,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#EFEFEF",
     paddingBottom: 20,
+  },
+  cardContainerCity: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   cardContainer: {
     backgroundColor: "#FFFFFF",
@@ -1190,10 +1631,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 2,
   },
+
   cardContent: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
+    flexWrap: "wrap",
+    paddingHorizontal: 10,
   },
   statItem: {
     justifyContent: "center",
@@ -1214,6 +1658,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     lineHeight: 20,
   },
+
+  cardHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
   field: {
     fontSize: 14,
     color: "#555",
@@ -1222,5 +1673,330 @@ const styles = StyleSheet.create({
   },
   separator: {
     marginBottom: 70,
+  },
+
+  personalInfoContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    // Ombres pour iOS et Android
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  personalInfoHeader: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333333",
+    marginBottom: 15,
+  },
+  personalInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  personalInfoIcon: {
+    marginRight: 10,
+    color: "#57A773",
+  },
+  personalInfoLabel: {
+    fontSize: 16,
+    color: "#555555",
+    width: 140,
+  },
+  personalInfoValue: {
+    fontSize: 16,
+    color: "#333333",
+  },
+  personalInfoPlaceholder: {
+    fontSize: 16,
+    color: "#999999",
+    fontStyle: "italic",
+  },
+  personalInfoEmail: {
+    fontSize: 16,
+    color: "#333333",
+    textDecorationLine: "underline",
+  },
+  followBtnContainer: {
+    alignItems: "center",
+    marginVertical: 15,
+  },
+  followBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    alignItems: "center",
+  },
+  followBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  chatBtnContainer: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  chatBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#57A773",
+    borderRadius: 25,
+  },
+  chatBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#57A773",
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    gap: 20,
+  },
+  tabButton: {
+    paddingVertical: 10,
+  },
+  tabText: {
+    fontSize: 16,
+    color: "#555",
+  },
+  activeTab: {
+    borderBottomWidth: 3,
+    borderBottomColor: "#57A773",
+  },
+  activeTabText: {
+    color: "#57A773",
+    fontWeight: "600",
+  },
+  reportCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  reportImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  reportTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#666666",
+    marginBottom: 10,
+  },
+  reportType: {
+    fontSize: 18,
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#666666",
+  },
+  reportTypeContainer: {
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 10,
+  },
+  reportDescription: {
+    fontSize: 14,
+    color: "#7A7A7A",
+    marginBottom: 10,
+  },
+  reportCity: {
+    fontSize: 10,
+    color: "#666666",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  reportDate: {
+    fontSize: 10,
+    color: "#666666",
+    fontWeight: "bold",
+  },
+  eventCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333333",
+    marginBottom: 5,
+  },
+  eventDescription: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 10,
+  },
+  eventImage: {
+    width: "100%",
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  eventFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#E8E8E8",
+    paddingTop: 10,
+  },
+  eventDate: {
+    fontSize: 12,
+    color: "#999999",
+  },
+  noDataContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  noDataText: {
+    fontSize: 16,
+    color: '#999',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  postCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  postHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  profilePhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  authorInfo: {
+    marginLeft: 10,
+  },
+  authorName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  authorCity: {
+    fontSize: 14,
+    color: "#777",
+  },
+  postContent: {
+    fontSize: 16,
+    color: "#444",
+    marginBottom: 15,
+  },
+  photosContainer: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  photo: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  metaInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  postDate: {
+    marginTop: 3,
+    fontSize: 12,
+    color: "#777",
+  },
+  likesCount: {
+    fontSize: 14,
+    color: "#777",
+  },
+  commentsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingTop: 12,
+  },
+  commentsHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#333",
+  },
+  comment: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginVertical: 8,
+    borderBottomWidth: 1,
+    paddingBottom: 10,
+    borderBottomColor: "#eee",
+  },
+  commentProfilePhoto: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  commentContent: {
+    marginLeft: 8,
+    flex: 1,
+  },
+  commentUserName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  commentText: {
+    fontSize: 18,
+    color: "#555",
+    
+  },
+  commentDate: {
+    marginVertical: 2,
+    fontSize: 12,
+    color: "#999",
+  },
+  toggleCommentsButton: {
+    fontSize: 14,
+    color: '#57A773',
+    marginTop: 5,
+  },
+  noCommentText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 8,
   },
 });

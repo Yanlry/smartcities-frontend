@@ -639,7 +639,6 @@ export default function SocialScreen({ handleScroll }) {
             style={styles.commentButton}
           >
             <View style={styles.commentButtonContent}>
-              {/* Icône de commentaire qui change selon l'état */}
               <Icon
                 style={styles.commentIcon}
                 name={
@@ -648,8 +647,6 @@ export default function SocialScreen({ handleScroll }) {
                 size={22}
                 color={visibleComments[item.id] ? "#3B90A5" : "#656765"}
               />
-
-              {/* Nombre de commentaires */}
               <Text
                 style={[
                   styles.commentCountText,

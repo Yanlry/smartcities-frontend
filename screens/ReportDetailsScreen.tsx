@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 // @ts-ignore
 import { API_URL } from "@env";
 import CommentsSection from "../components/CommentsSection";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type Photo = {
   id: string;
@@ -286,11 +287,16 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           </View>
 
           {/* Bouton pour changer le type de carte */}
-          <TouchableOpacity onPress={toggleMapType} style={styles.switchButton}>
-            <Text style={styles.switchButtonText}>
-              {mapType === "hybrid" ? "Vue Plan" : "Vue Satellite"}
-            </Text>
-          </TouchableOpacity>
+          <TouchableOpacity
+          style={styles.floatingButtonView}
+          onPress={toggleMapType}
+        >
+          <MaterialCommunityIcons
+            name={mapType === "standard" ? "satellite-variant" : "map-outline"}
+            size={24}
+            color="white"
+          />
+        </TouchableOpacity>
         </View>
 
         <View style={styles.separator}>
