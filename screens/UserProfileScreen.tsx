@@ -1110,7 +1110,7 @@ export default function UserProfileScreen({ route, navigation }) {
                           name="thumb-up"
                           size={14}
                           color="#555"
-                          style={{ marginRight: 5 }} // marge à droite de l'icône
+                          style={{ marginRight: 5 }} 
                         />
                         <Text style={styles.likesCount}>
                           {item.likesCount} personnes ont liké
@@ -1359,10 +1359,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 30,
   },
-  badgeImage: {
-    width: 400,
-    marginBottom: 10,
-  },
+
   tierDescription: {
     fontSize: 14,
     color: "#666",
@@ -1469,7 +1466,7 @@ const styles = StyleSheet.create({
   profileContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 10,
   },
   profileImageContainer: {
@@ -1680,7 +1677,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    // Ombres pour iOS et Android
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

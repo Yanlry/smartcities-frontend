@@ -127,18 +127,26 @@ export default function SocialScreen({ handleScroll }) {
       const data = await response.json();
 
       const sortedData = data
-        .map((post) => ({
-          ...post,
-          comments: post.comments.map((comment) => ({
-            ...comment,
-            likedByUser: comment.likedByUser || false,
-            likesCount: comment.likesCount || 0,
-          })),
-        }))
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+  .map((post) => ({
+    ...post,
+    comments: post.comments
+      .map((comment) => ({
+        ...comment,
+        likedByUser: comment.likedByUser || false,
+        likesCount: comment.likesCount || 0,
+        replies: comment.replies
+          ? comment.replies.sort(
+              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            )
+          : [],
+      }))
+      .sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      ),
+  }))
+  .sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
       setPosts(sortedData);
 

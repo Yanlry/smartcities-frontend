@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     position: "absolute",
-    top: 100,
+    top: 50,
     left: 10,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 10,

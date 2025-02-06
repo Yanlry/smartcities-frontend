@@ -67,8 +67,6 @@ export default function PostDetailsScreen({ navigation }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const initialPosts: Post[] = []; // Define initialPosts as an empty array of Post
-  const [posts, setPosts] = useState(initialPosts);
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -104,11 +102,7 @@ export default function PostDetailsScreen({ navigation }) {
     try {
       const { getToken } = useToken();
       const token = await getToken();
-
-      if (!token) {
-        throw new Error("Token JWT introuvable. Veuillez vous reconnecter.");
-      }
-
+  
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "GET",
         headers: {
@@ -116,46 +110,23 @@ export default function PostDetailsScreen({ navigation }) {
           "Content-Type": "application/json",
         },
       });
-
-      if (!response.ok) {
-        console.error(`Erreur HTTP: ${response.status}`);
-        setPost(null);
-        return;
-      }
-
-      const data = await response.json();
-      console.log("Données récupérées :", data);
-
-      if (!data || Object.keys(data).length === 0) {
-        setPost(null);
-      } else {
-        // Transformation des commentaires pour définir des valeurs par défaut
-        const formattedComments = data.comments
-          ? data.comments.map((comment) => ({
-              ...comment,
-              likedByUser: comment.likedByUser || false,
-              likesCount: comment.likesCount || 0,
-            }))
-          : [];
-
-        const formattedPost = {
-          ...data,
-          photos: data.photos || [],
-          authorName: data.authorName || "Utilisateur inconnu",
-          profilePhoto: data.profilePhoto || "https://via.placeholder.com/150",
-          comments: formattedComments,
-        };
-
-        setPost(formattedPost);
-      }
+      const postData = await response.json();
+  
+      const sortedComments = postData.comments.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+  
+      setPost({
+        ...postData,
+        comments: sortedComments,
+      });
     } catch (error) {
-      console.error("Erreur lors de la récupération du post :", error.message);
+      console.error("Erreur :", error.message);
       setPost(null);
     } finally {
       setLoading(false);
     }
   };
-
   const handleLike = async (postId) => {
     try {
       const userId = await getUserId();
@@ -208,7 +179,6 @@ export default function PostDetailsScreen({ navigation }) {
       const data = await response.json();
       console.log("🔄 Réponse API Like :", data);
 
-      // Option 1 : Mise à jour locale
       setPost((prevPost) => {
         if (!prevPost || !prevPost.comments) return prevPost;
 
@@ -222,10 +192,13 @@ export default function PostDetailsScreen({ navigation }) {
             : comment
         );
 
-        return { ...prevPost, comments: updatedComments };
+        const sortedComments = updatedComments.sort(
+          (a, b) =>
+            new Date(a.createdAt || 0).getTime() -
+            new Date(b.createdAt || 0).getTime()
+        );
+        return { ...prevPost, comments: sortedComments };
       });
-
-      // Option 2 (recommandée pour la persistance) : Recharger les détails depuis le serveur
       fetchPostDetails();
     } catch (error) {
       console.error("Erreur :", error.message);
@@ -453,8 +426,14 @@ export default function PostDetailsScreen({ navigation }) {
     );
   };
 
-  const renderComment = (comment) => (
-    <View key={comment.id} style={styles.commentContainer}>
+  const renderComment = (comment, isLastComment) => (
+    <View
+      key={comment.id}
+      style={[
+        styles.commentContainer,
+        isLastComment && styles.lastCommentContainer,  
+      ]}
+    >
       {/* Avatar et contenu du commentaire principal */}
       <View style={styles.commentBloc}>
         <Image
@@ -511,7 +490,7 @@ export default function PostDetailsScreen({ navigation }) {
               </View>
             </TouchableOpacity>
           </View>
-
+  
           {/* Champ de réponse conditionnel */}
           {replyToCommentId === comment.id && (
             <View style={styles.replyContainer}>
@@ -534,7 +513,7 @@ export default function PostDetailsScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           )}
-
+  
           {/* Bouton pour afficher/masquer les réponses */}
           {comment.replies && comment.replies.length > 0 && (
             <TouchableOpacity
@@ -555,7 +534,7 @@ export default function PostDetailsScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
           )}
-
+  
           {/* Affichage des réponses imbriquées si visible */}
           {replyVisibility[comment.id] &&
             comment.replies &&
@@ -587,7 +566,7 @@ export default function PostDetailsScreen({ navigation }) {
                           : "Date inconnue"}
                       </Text>
                       <Text style={styles.commentText}>{reply.text}</Text>
-
+  
                       {/* Bouton Supprimer pour les réponses de l'utilisateur connecté */}
                       {reply.userId === userId && (
                         <TouchableOpacity
@@ -867,7 +846,7 @@ export default function PostDetailsScreen({ navigation }) {
             <View style={styles.commentsSection}>
               {post.comments
                 .filter((comment) => comment.parentId === null)
-                .map((comment) => renderComment(comment))}
+                .map((comment, index, array) => renderComment(comment, index === array.length - 1))}
             </View>
           ) : (
             <Text style={styles.noPost}>Aucun commentaire pour le moment</Text>
@@ -1068,6 +1047,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 15,
     paddingHorizontal: 15,
+    marginBottom: 10,
   },
   addCommentInput: {
     flex: 1,
@@ -1247,7 +1227,9 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     borderRadius: 10,
   },
-
+  lastCommentContainer: {
+    marginBottom: 20,  
+  },
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
