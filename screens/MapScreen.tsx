@@ -158,7 +158,7 @@ export default function MapScreen() {
     } else {
       markers = [...reports, ...events];
     }
- 
+
     if (selectedCategory) {
       markers = markers.filter((item) =>
         isReport(item)
@@ -178,7 +178,6 @@ export default function MapScreen() {
 
   const isReport = (item: Report | ReportEvent): item is Report =>
     (item as Report).type !== undefined;
-
 
   const formatType = (type: string): string => {
     return TYPE_LABELS[type] || "Type inconnu";
@@ -216,7 +215,7 @@ export default function MapScreen() {
       </View>
     );
   }
-  
+
   return (
     <View style={styles.container}>
       <MapView
@@ -328,7 +327,7 @@ export default function MapScreen() {
               selectedCategory === key && styles.activeLegendItem,
             ]}
             onPress={() => {
-              setSelectedFilter("reports");  
+              setSelectedFilter("reports");
               setSelectedCategory(selectedCategory === key ? null : key);
             }}
           >
@@ -401,25 +400,26 @@ export default function MapScreen() {
             </View>
 
             {/* 📷 Image du report (si disponible) */}
-            {isReport(selectedReport) && selectedReport.photos?.length > 0 && (
-              <Image
-                source={{ uri: selectedReport.photos[0].url }}
-                style={styles.previewImageLarge}
-                resizeMode="cover"
-              />
-            )}
+            {"photos" in selectedReport &&
+              selectedReport.photos?.length > 0 && (
+                <Image
+                  source={{ uri: selectedReport.photos[0].url }}
+                  style={styles.previewImageLarge}
+                  resizeMode="cover"
+                />
+              )}
 
             {/* Informations */}
             <View style={styles.previewInfo}>
-              <MaterialCommunityIcons name="calendar" size={16} color="#666" />
-              <Text style={styles.previewText}>
-                {isReport(selectedReport) && selectedReport.createdAt
-                  ? formatDate(selectedReport.createdAt)
-                  : !isReport(selectedReport) && selectedReport.createdAt
-                  ? formatDate(selectedReport.createdAt)
-                  : "Date inconnue"}
-              </Text>
-            </View>
+  <MaterialCommunityIcons name="calendar" size={16} color="#666" />
+  <Text style={styles.previewText}>
+    {isReport(selectedReport) && selectedReport.createdAt
+      ? formatDate(selectedReport.createdAt)
+      : !isReport(selectedReport) && selectedReport.date
+      ? formatDate(selectedReport.date)
+      : "Date inconnue"}
+  </Text>
+</View>
 
             <View style={styles.previewInfo}>
               <MaterialCommunityIcons
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     position: "absolute",
-    top: 50,
+    top: 100,
     left: 10,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 10,

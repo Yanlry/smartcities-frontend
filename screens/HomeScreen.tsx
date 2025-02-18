@@ -28,6 +28,7 @@ import { useFetchStatistics } from "../hooks/useFetchStatistics";
 import { API_URL } from "@env";
 import { Linking } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 type User = {
   id: string;
@@ -1247,6 +1248,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </View>
       </View>
 
+      {/* Boutton ouvrir / fermer sections */}
       <TouchableOpacity
         style={styles.globalToggleButton}
         onPress={toggleAllSections}
@@ -1259,6 +1261,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </Text>
       </TouchableOpacity>
 
+      {/* TOP 10 */}
       <TouchableOpacity
         style={[
           styles.sectionHeader,
@@ -1267,11 +1270,13 @@ export default function HomeScreen({ navigation, handleScroll }) {
         onPress={toggleSection}
         activeOpacity={0.8}
       >
-        <Text style={[styles.sectionTitleTop10]}>🏆 Top 10 des Smarter</Text>
+        <Text style={styles.sectionTitleTop10}>
+          🏆 Top 10 des Smarter
+      </Text>
         <Text style={styles.arrow}>{isSectionVisible ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
-      {/* Contenu de la section */}
+      {/* Voir tout les classement */}
       {isSectionVisible && (
         <View style={styles.sectionContent}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -1334,6 +1339,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
         </View>
       )}
 
+      {/* Signalement a proximité */}
       <TouchableOpacity
         style={[
           styles.sectionHeader,

@@ -32,10 +32,10 @@ export interface Event {
   description: string;
   latitude: number;
   longitude: number;
+  date: string;  
   createdAt: string;
   endDate: string;
   distance?: number;
-
 }
 
 export const fetchAllEventsInRegion = async (
