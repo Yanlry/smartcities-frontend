@@ -369,14 +369,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#235562",
+    color: "#062C41",
     marginBottom: 10,
     textAlign: "center",
   },
  
   subtitle: {
     fontSize: 18,
-    color: "#235562",
+    color: "#062C41",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -434,8 +434,8 @@ const styles = StyleSheet.create({
   loginButton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#235562",  
-    shadowColor: "#235562",
+    backgroundColor: "#062C41",  
+    shadowColor: "#062C41",
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   registerText: {
     marginTop: 15,
     fontSize: 16,
-    color: "#235562",
+    color: "#062C41",
   },
  
   registerButton: {
@@ -467,10 +467,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 2,
-    borderColor: "#235562",
+    borderColor: "#062C41",
   },
   passwordText: {
-    color: "#235562",
+    color: "#062C41",
     fontSize: 16,
     textAlign: "center",
     width: "100%",
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   },
 
   registerButtonText: {
-    color: "#235562",
+    color: "#062C41",
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -504,15 +504,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#235562",
+    color: "#062C41",
   },
   modalText: {
-    color: "#235562",
+    color: "#062C41",
     marginBottom: 20,
   },
   modalButton: {
     padding: 15,
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     borderRadius: 30,
     marginTop: 10,
     width: "100%",

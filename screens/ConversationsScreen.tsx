@@ -368,7 +368,7 @@ export default function ConversationsScreen ({ navigation, route }: any){
           style={styles.showHiddenButton}
           onPress={() => setShowHiddenConversations(!showHiddenConversations)}
         >
-          <Ionicons name="settings-outline" size={24} color="#235562" style={styles.icon} />
+          <Ionicons name="settings-outline" size={24} color="#062C41" style={styles.icon} />
         </TouchableOpacity>
       </View>
   
@@ -424,7 +424,7 @@ export default function ConversationsScreen ({ navigation, route }: any){
   
       {/* Liste principale */}
       {loading ? (
-        <ActivityIndicator size="large" color="#235562" />
+        <ActivityIndicator size="large" color="#062C41" />
       ) : conversations.length > 0 ? (
         <FlatList
           data={conversations}
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
   titleConversations: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#235562",
+    color: "#062C41",
     marginLeft: 10,
   },
   conversationDetails: {
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",  
   },
   tooltip: {
-    color: "#235562", 
+    color: "#062C41", 
     fontSize: 14,
     marginTop: 5,
     textAlign: "center",
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   },
   hiddenConversation: {
     fontSize: 12,
-    color: "#235562",
+    color: "#062C41",
     marginRight: 10,
     fontWeight: "bold",
   },

@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#235562",
+    color: "#062C41",
   },
   chart: {
     marginTop: 10,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   switchButtonText: {
-    color: "#235562",
+    color: "#062C41",
     fontWeight: "bold",
   },
   subtitle: {

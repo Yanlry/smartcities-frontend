@@ -299,7 +299,7 @@ export default function EventDetails({ route }) {
           {isLoading && (
             <ActivityIndicator
               size="large"
-              color="#235562"
+              color="#062C41"
               style={styles.loader}
             />
           )}
@@ -486,13 +486,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeIndicator: {
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
   },
   headerNav: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#235562", 
+    backgroundColor: "#062C41", 
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#235562', 
+    color: '#062C41', 
     backgroundColor: '#FFFFFC',
     letterSpacing:2,
     fontWeight: 'bold',

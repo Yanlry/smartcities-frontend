@@ -537,7 +537,7 @@ export default function NotificationsScreen({ navigation }) {
                       <Switch
                         value={tempPreferences[item.type]}
                         onValueChange={() => toggleTempPreference(item.type)}
-                        trackColor={{ false: "#d3d3d3", true: "#235562" }}
+                        trackColor={{ false: "#d3d3d3", true: "#062C41" }}
                         ios_backgroundColor="#3e3e3e"
                       />
                     </View>
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
   },
 
   markAllButtonText: {
-    color: "#235562",
+    color: "#062C41",
     fontSize: 12,
     textTransform: "uppercase",
   },
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 30,
     textAlign: "center",
-    color: "#235562",
+    color: "#062C41",
   },
   categorySection: {
     marginBottom: 20,
@@ -894,7 +894,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   saveButton: {
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     padding: 10,
     borderRadius: 30,
   },

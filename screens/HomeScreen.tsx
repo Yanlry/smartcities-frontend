@@ -647,10 +647,10 @@ export default function HomeScreen({ navigation, handleScroll }) {
     } else {
       return {
         title: "Premiers pas",
-        backgroundColor: "#235562",
+        backgroundColor: "#062C41",
         textColor: "#fff",
         borderColor: "#fff",
-        shadowColor: "#235562",
+        shadowColor: "#062C41",
         starsColor: "#0AAEA8",
         stars: 0,
         icon: <Ionicons name="school" size={24} color="#0AAEA8" />,
@@ -910,7 +910,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
               style={styles.bandeUp}
             >
               <View style={styles.voteContainer}>
-                <Ionicons name="thumbs-up-outline" size={23} color="#418074" />
+                <Ionicons name="thumbs-up-outline" size={23} color="#062C41" />
                 <Text style={styles.voteCount}>{voteSummary.up}</Text>
               </View>
             </TouchableOpacity>
@@ -1040,7 +1040,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                   <Ionicons
                     name="medal-outline"
                     size={60}
-                    color="#418074"
+                    color="#062C41"
                     style={styles.icon}
                   />
 
@@ -1166,7 +1166,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                   <Ionicons
                     name="information-circle-outline"
                     size={60}
-                    color="#418074"
+                    color="#062C41"
                     style={styles.icon}
                   />
 
@@ -1188,7 +1188,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
                       <Ionicons
                         name="thumbs-up-outline"
                         size={24}
-                        color="#418074"
+                        color="#062C41"
                       />
                       <Text style={styles.instructionText}>
                         Votez <Text style={styles.highlight}>"Oui"</Text> si le
@@ -1369,7 +1369,7 @@ export default function HomeScreen({ navigation, handleScroll }) {
        ].map((category) => {
          const isSelected = selectedCategory === category;
          const backgroundColor = isSelected
-           ? typeColors[category] || "#235562"  
+           ? typeColors[category] || "#062C41"  
            : "#FFFFFF";  
      
          const textColor = isSelected ? "#FFFFFF" : "#000"; 

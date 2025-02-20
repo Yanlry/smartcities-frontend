@@ -207,7 +207,7 @@ export default function App() {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#235562" />
+          <ActivityIndicator size="large" color="#062C41" />
         </View>
       );
     }
@@ -275,12 +275,13 @@ export default function App() {
               height: 70,
               paddingTop: 10,
               paddingHorizontal: 10,
-              backgroundColor: "#235562",
+              backgroundColor: "#062C41",
               position: "absolute",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -5 },
               shadowOpacity: 0.1,
               shadowRadius: 10,
+              borderRadius: 30,
               elevation: 10,
             },
           })}
@@ -304,9 +305,8 @@ export default function App() {
           </Tab.Screen>
 
           <Tab.Screen
-            name="Conversations"
-            component={ConversationsScreen}
-            initialParams={{ userId }}
+            name="Carte"
+            component={MapScreen}
             listeners={{
               focus: () => {
                 headerTranslateY.value = withTiming(0, { duration: 200 });
@@ -341,16 +341,19 @@ export default function App() {
             }}
           </Tab.Screen>
 
-          <Tab.Screen
-            name="Carte"
-            component={MapScreen}
+           <Tab.Screen
+            name="Conversations"
+            component={ConversationsScreen}
+            initialParams={{ userId }}
             listeners={{
               focus: () => {
                 headerTranslateY.value = withTiming(0, { duration: 200 });
               },
             }}
           />
+
         </Tab.Navigator>
+        
 
         <ActionSheet
           ref={(o) => (actionSheetRef.current = o)}
@@ -521,9 +524,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     paddingTop: 40,
     paddingHorizontal: 20,
+    borderRadius: 30,
     height: 90,
   },
   headerTitle: {

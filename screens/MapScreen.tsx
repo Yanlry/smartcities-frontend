@@ -191,7 +191,7 @@ export default function MapScreen() {
     console.log("⏳ En attente du chargement...");
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#235562" />
+        <ActivityIndicator size="large" color="#062C41" />
       </View>
     );
   }
@@ -199,7 +199,7 @@ export default function MapScreen() {
   if (loading || loadingReports) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#235562" />
+        <ActivityIndicator size="large" color="#062C41" />
       </View>
     );
   }
@@ -293,7 +293,7 @@ export default function MapScreen() {
             style={styles.iconLegend}
             name="view-grid"
             size={20}
-            color="#235562"
+            color="#062C41"
           />
           <Text style={styles.legendText}>Tout</Text>
         </TouchableOpacity>
@@ -313,7 +313,7 @@ export default function MapScreen() {
             style={styles.iconLegend}
             name="calendar"
             size={20}
-            color="#235562"
+            color="#062C41"
           />
           <Text style={styles.legendText}>Événements</Text>
         </TouchableOpacity>
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     left: "50%",
     transform: [{ translateX: -100 }],
     width: 200,
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     borderRadius: 30,
     padding: 10,
     alignItems: "center",
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   floatingButtonView: {
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   detailsButton: {
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",

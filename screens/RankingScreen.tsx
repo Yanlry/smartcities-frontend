@@ -92,7 +92,7 @@ export default function RankingScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#235562" />
+        <ActivityIndicator size="large" color="#062C41" />
       </View>
     );
   }
@@ -151,7 +151,7 @@ export default function RankingScreen({ navigation }) {
           <View style={styles.header}>
             {/* Icône de bienvenue */}
             <View style={styles.iconContainer}>
-              <Ionicons name="location-outline" size={40} color="#418074" />
+              <Ionicons name="location-outline" size={40} color="#062C41" />
             </View>
 
             {/* Texte de bienvenue */}
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cityContainer: {
-    backgroundColor: "#418074",
+    backgroundColor: "#062C41",
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 20,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   rankingNumber: {
     fontWeight: "bold",
-    color: "#418074",
+    color: "#062C41",
     fontSize: 18,
   },
   totalUsers: {
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#418074",
+    color: "#062C41",
   },
   topThreeImage: {
     width: 70,

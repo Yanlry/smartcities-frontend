@@ -431,10 +431,10 @@ export default function UserProfileScreen({ route, navigation }) {
     } else {
       return {
         title: "Premiers pas",
-        backgroundColor: "#235562",
+        backgroundColor: "#062C41",
         textColor: "#fff",
         borderColor: "#fff",
-        shadowColor: "#235562",
+        shadowColor: "#062C41",
         starsColor: "#0AAEA8",
         stars: 0,
         icon: <Ionicons name="school" size={24} color="#0AAEA8" />,
@@ -460,7 +460,7 @@ export default function UserProfileScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#235562" />
+        <ActivityIndicator size="large" color="#062C41" />
         <Text>Chargement du profil utilisateur...</Text>
       </View>
     );
@@ -633,7 +633,7 @@ export default function UserProfileScreen({ route, navigation }) {
               <Ionicons
                 name="medal-outline"
                 size={60}
-                color="#418074"
+                color="#062C41"
                 style={styles.icon}
               />
 
@@ -1256,7 +1256,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -1373,7 +1373,7 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    backgroundColor: "#418074",
+    backgroundColor: "#062C41",
     borderRadius: 20,
     paddingVertical: 14,
     paddingHorizontal: 25,
@@ -1516,7 +1516,7 @@ const styles = StyleSheet.create({
   },
   followButton: {
     width: "80%",
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -1573,19 +1573,19 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 10,
-    color: "#235562",
+    color: "#062C41",
   },
   sendChat: {
     width: "80%",
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#235562",
+    borderColor: "#062C41",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
   },
   sendChatText: {
-    color: "#235562",
+    color: "#062C41",
     textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
@@ -1646,7 +1646,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5,
-    color: "#235562",
+    color: "#062C41",
   },
   statLabel: {
     textAlign: "center",

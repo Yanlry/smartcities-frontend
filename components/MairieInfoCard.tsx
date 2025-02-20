@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 15,
-    color: "#235562",
+    color: "#062C41",
   },
 
   // ------------------------------------------------ SIGNALEMENT RESOLUS
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#235562",
+    color: "#062C41",
     marginBottom: 10,
     marginTop: 15,
   },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   mayorInfo: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#235562",
+    color: "#062C41",
     marginBottom: 5,
   },
   mayorName: {
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   Address: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#235562",
+    color: "#062C41",
   },
   officeContact: {
     fontSize: 14,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#235562",
+    color: "#062C41",
   },
   smarterItem: {
     alignItems: "center",
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     zIndex: 1, 
   },
   seeAllButton: {
-    backgroundColor: "#235562",
+    backgroundColor: "#062C41",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 50,

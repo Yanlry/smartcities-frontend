@@ -429,8 +429,8 @@ export default function ProfileScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#235562" />
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#235562" }}>
+        <ActivityIndicator size="large" color="#062C41" />
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#062C41" }}>
           Chargement des informations..
         </Text>
       </View>

@@ -172,7 +172,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
   if (loading || !location) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#235562" />
+        <ActivityIndicator size="large" color="#062C41" />
         <Text style={styles.loadingText}>Chargement en cours...</Text>
       </View>
     );
@@ -217,8 +217,8 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#235562"]}
-            tintColor="#235562"
+            colors={["#062C41"]}
+            tintColor="#062C41"
           />
         }
       >
@@ -414,7 +414,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           onPress={() => handleVote("up")}
           style={[styles.voteButton, styles.upVoteButton]}
         >
-          <Ionicons name="thumbs-up-outline" size={40} color="#235562" />
+          <Ionicons name="thumbs-up-outline" size={40} color="#062C41" />
           <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
         </TouchableOpacity>
 
@@ -422,7 +422,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           onPress={() => handleVote("down")}
           style={[styles.voteButton, styles.downVoteButton]}
         >
-          <Ionicons name="thumbs-down-outline" size={40} color="#235562" />
+          <Ionicons name="thumbs-down-outline" size={40} color="#062C41" />
           <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
         </TouchableOpacity>
       </View>
