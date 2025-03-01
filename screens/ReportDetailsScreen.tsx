@@ -299,6 +299,40 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
         </TouchableOpacity>
         </View>
 
+        <View style={styles.voteContainer}>
+  <TouchableOpacity
+    onPress={() => handleVote("up")}
+    style={[styles.voteButton, styles.upVoteButton]}
+    activeOpacity={0.7}
+  >
+    <View style={styles.iconContainer}>
+      <Ionicons name="thumbs-up-outline" size={24} color="#fff" />
+    </View>
+    <View style={styles.textContainer}>
+      <Text style={styles.voteCount}>{votes.upVotes}</Text>
+      <Text style={styles.voteLabel}>
+        {votes.upVotes > 1 ? "Confirmations" : "Confirmation"}
+      </Text>
+    </View>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={() => handleVote("down")}
+    style={[styles.voteButton, styles.downVoteButton]}
+    activeOpacity={0.7}
+  >
+    <View style={styles.iconContainer}>
+      <Ionicons name="thumbs-down-outline" size={24} color="#fff" />
+    </View>
+    <View style={styles.textContainer}>
+      <Text style={styles.voteCount}>{votes.downVotes}</Text>
+      <Text style={styles.voteLabel}>
+        {votes.downVotes > 1 ? "Contestations" : "Contestation"}
+      </Text>
+    </View>
+  </TouchableOpacity>
+</View>
+
         <View style={styles.separator}>
           <Text style={styles.separatorText}></Text>
         </View>
@@ -408,24 +442,7 @@ export default function ReportDetailsScreen({ route, navigation }: any) {
           <CommentsSection key={report.id} report={report} />
         </View>
       </ScrollView>
-      {/* Boutons superposés */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          onPress={() => handleVote("up")}
-          style={[styles.voteButton, styles.upVoteButton]}
-        >
-          <Ionicons name="thumbs-up-outline" size={40} color="#062C41" />
-          <Text style={styles.voteTextUp}>{votes.upVotes}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => handleVote("down")}
-          style={[styles.voteButton, styles.downVoteButton]}
-        >
-          <Ionicons name="thumbs-down-outline" size={40} color="#062C41" />
-          <Text style={styles.voteTextDown}>{votes.downVotes}</Text>
-        </TouchableOpacity>
-      </View>
+     
     </View>
   );
 }

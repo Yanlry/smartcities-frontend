@@ -88,13 +88,18 @@ export default function App() {
 
   const handleScroll = (event) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
-
+  
+    // ✅ Ne rien faire si l'utilisateur est déjà en haut
+    if (currentOffset <= 0) return;
+  
     if (currentOffset - previousOffset.current > threshold) {
+      // Scroll vers le bas -> cache la barre
       headerTranslateY.value = withTiming(-100, { duration: 200 });
     } else if (previousOffset.current - currentOffset > threshold) {
+      // Scroll vers le haut -> montre la barre
       headerTranslateY.value = withTiming(0, { duration: 200 });
     }
-
+  
     previousOffset.current = currentOffset;
   };
 
@@ -149,7 +154,7 @@ export default function App() {
               style={{ marginLeft: 10 }}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>SMARTCities</Text>
+          <Text style={styles.headerTitle}>SmartCities</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
@@ -525,7 +530,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#062C41",
-    paddingTop: 40,
+    paddingTop: 30,
     paddingHorizontal: 20,
     borderRadius: 30,
     height: 90,

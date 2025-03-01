@@ -139,25 +139,52 @@ export default StyleSheet.create({
   },
   voteContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 16,
+    marginVertical: 5,
+    paddingHorizontal: 10,
   },
   voteButton: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    height: 100,
-    width: 100,
-    borderRadius: 150,
-    borderWidth: 5,
-    borderColor: "#062C41",
-    backgroundColor: "#FAFAFA",
+    justifyContent: "flex-start",
+    width: "48%",
+    height: 60,
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   upVoteButton: {
-    marginRight: 10,
+    backgroundColor: "#4CAF50", // ✅ Vert clair pour meilleure visibilité
   },
   downVoteButton: {
-    marginLeft: 10,
+    backgroundColor: "#E53935", // ✅ Rouge vif pour bien contraster
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  voteCount: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#FFF", // ✅ Texte blanc pour bien ressortir
+  },
+  voteLabel: {
+    fontSize: 14,
+    color: "#FFF",
+    opacity: 0.9, // ✅ Texte légèrement plus lisible
   },
   voteTextUp: {
     marginTop: 5,

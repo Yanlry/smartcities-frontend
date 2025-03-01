@@ -1,4 +1,8 @@
 export const typeIcons = {
+  events: {
+    icon: require("../assets/icons/event.png"), // ✅ Ajout de l'image pour "events"
+    label: "Événements",
+  },
   danger: {
     icon: require("../assets/icons/danger.png"),
     label: "Danger",
@@ -19,6 +23,7 @@ export const typeIcons = {
     icon: require("../assets/icons/reparation.png"),
     label: "Réparation",
   },
+  
 };
 
 export const getTypeIcon = (type: string) => {

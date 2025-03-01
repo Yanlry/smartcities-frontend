@@ -157,7 +157,7 @@ export default function LoginScreen({ navigation, onLogin }: any) {
     <View style={styles.container}>
       {/* Image d'arrière-plan */}
       <ImageBackground
-        source={require("../../assets/images/1.jpg")}
+        source={require("../../assets/images/2.jpg")}
         style={styles.background}
       >
         {/* Section floue au centre */}

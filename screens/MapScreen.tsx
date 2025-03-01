@@ -278,64 +278,61 @@ export default function MapScreen() {
       </MapView>
 
       <View style={styles.legendContainer}>
-        {/* 🔹 Bouton "Tout afficher" */}
-        <TouchableOpacity
-          style={[
-            styles.legendItem,
-            selectedFilter === "all" && styles.activeLegendItem,
-          ]}
-          onPress={() => {
-            setSelectedFilter("all");
-            setSelectedCategory(null);
-          }}
-        >
-          <MaterialCommunityIcons
-            style={styles.iconLegend}
-            name="view-grid"
-            size={20}
-            color="#062C41"
-          />
-          <Text style={styles.legendText}>Tout</Text>
-        </TouchableOpacity>
+  {/* 🔹 Bouton "Tout afficher" */}
+  <TouchableOpacity
+    style={[
+      styles.legendItem,
+      selectedFilter === "all" && styles.activeLegendItem,
+    ]}
+    onPress={() => {
+      setSelectedFilter("all");
+      setSelectedCategory(null);
+    }}
+  >
+    <MaterialCommunityIcons
+      style={styles.iconLegend}
+      name="view-grid"
+      size={22}
+      color="#062C41"
+    />
+    <Text style={styles.legendText}>Tout</Text>
+  </TouchableOpacity>
 
-        {/* 🔹 Bouton "Événements" */}
-        <TouchableOpacity
-          style={[
-            styles.legendItem,
-            selectedFilter === "events" && styles.activeLegendItem,
-          ]}
-          onPress={() => {
-            setSelectedFilter("events");
-            setSelectedCategory(null);
-          }}
-        >
-          <MaterialCommunityIcons
-            style={styles.iconLegend}
-            name="calendar"
-            size={20}
-            color="#062C41"
-          />
-          <Text style={styles.legendText}>Événements</Text>
-        </TouchableOpacity>
+  {/* 🔹 Bouton "Événements" - Géré manuellement */}
+  <TouchableOpacity
+    style={[
+      styles.legendItem,
+      selectedFilter === "events" && styles.activeLegendItem,
+    ]}
+    onPress={() => {
+      setSelectedFilter("events");
+      setSelectedCategory(null);
+    }}
+  >
+    <Image source={typeIcons.events.icon} style={styles.legendIcon} />
+    <Text style={styles.legendText}>{typeIcons.events.label}</Text>
+  </TouchableOpacity>
 
-        {/* 🔹 Catégories des reports */}
-        {Object.keys(typeIcons).map((key) => (
-          <TouchableOpacity
-            key={key}
-            style={[
-              styles.legendItem,
-              selectedCategory === key && styles.activeLegendItem,
-            ]}
-            onPress={() => {
-              setSelectedFilter("reports");
-              setSelectedCategory(selectedCategory === key ? null : key);
-            }}
-          >
-            <Image source={typeIcons[key].icon} style={styles.legendIcon} />
-            <Text style={styles.legendText}>{typeIcons[key].label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+  {/* 🔹 Catégories des reports (exclut "events" pour éviter le doublon) */}
+  {Object.keys(typeIcons)
+    .filter((key) => key !== "events") // ✅ Exclut events du mapping
+    .map((key) => (
+      <TouchableOpacity
+        key={key}
+        style={[
+          styles.legendItem,
+          selectedCategory === key && styles.activeLegendItem,
+        ]}
+        onPress={() => {
+          setSelectedFilter("reports"); // ✅ S'assure que c'est bien un report
+          setSelectedCategory(selectedCategory === key ? null : key);
+        }}
+      >
+        <Image source={typeIcons[key].icon} style={styles.legendIcon} />
+        <Text style={styles.legendText}>{typeIcons[key].label}</Text>
+      </TouchableOpacity>
+    ))}
+</View>
 
       <View style={styles.floatingButtonContainer}>
         {/* Bouton basculer le type de carte */}
@@ -411,15 +408,15 @@ export default function MapScreen() {
 
             {/* Informations */}
             <View style={styles.previewInfo}>
-  <MaterialCommunityIcons name="calendar" size={16} color="#666" />
-  <Text style={styles.previewText}>
-    {isReport(selectedReport) && selectedReport.createdAt
-      ? formatDate(selectedReport.createdAt)
-      : !isReport(selectedReport) && selectedReport.date
-      ? formatDate(selectedReport.date)
-      : "Date inconnue"}
-  </Text>
-</View>
+              <MaterialCommunityIcons name="calendar" size={16} color="#666" />
+              <Text style={styles.previewText}>
+                {isReport(selectedReport) && selectedReport.createdAt
+                  ? formatDate(selectedReport.createdAt)
+                  : !isReport(selectedReport) && selectedReport.date
+                  ? formatDate(selectedReport.date)
+                  : "Date inconnue"}
+              </Text>
+            </View>
 
             <View style={styles.previewInfo}>
               <MaterialCommunityIcons
@@ -502,12 +499,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   activeLegendItem: {
-    backgroundColor: "#BCF0D7",
+    backgroundColor: "#A1D9F7",
     borderRadius: 8,
     padding: 5,
   },
   iconLegend: {
-    marginLeft: 3,
+    marginLeft: 1,
     marginRight: 8,
   },
   legendItem: {
@@ -655,7 +652,7 @@ const styles = StyleSheet.create({
   previewInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 5,
+    marginVertical: 5,
   },
   previewText: {
     fontSize: 14,
@@ -665,12 +662,13 @@ const styles = StyleSheet.create({
   previewDescription: {
     fontSize: 14,
     color: "#444",
-    marginVertical: 10,
+    marginVertical: 5,
+    marginBottom: 20,
   },
   detailsButton: {
     backgroundColor: "#062C41",
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 50,
     alignItems: "center",
   },
   detailsButtonText: {
