@@ -15,12 +15,12 @@ import axios from "axios";
 import { Share } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
-import { useToken } from "../hooks/useToken";
+import { useToken } from "../hooks/auth/useToken";
 import { RootStackParamList } from "../types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 

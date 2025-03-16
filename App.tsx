@@ -1,3 +1,5 @@
+// Chemin : frontend/App.tsx
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
@@ -13,7 +15,8 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ActionSheet from "react-native-actionsheet";
-import KeyboardWrapper from "./components/KeyboardWrapper";
+import { LinearGradient } from "expo-linear-gradient"; // Nouvelle importation
+import KeyboardWrapper from "./components/common/KeyboardWrapper";
 import HomeScreen from "./screens/HomeScreen";
 import EventsScreen from "./screens/EventsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
@@ -21,13 +24,13 @@ import ReportScreen from "./screens/ReportScreen";
 import MapScreen from "./screens/MapScreen";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import RegisterScreen from "./screens/Auth/RegisterScreen";
-import AddNewReportScreen from "./screens/AddNewReportScreen";
+import CreateReportScreen from "./screens/CreateReportScreen";
 import ReportDetailsScreen from "./screens/ReportDetailsScreen";
 import CategoryReportsScreen from "./screens/CategoryReportsScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
-import AddNewEventScreen from "./screens/AddNewEventScreen";
+import CreateEventScreen from "./screens/CreateEventScreen";
 import UserProfileScreen from "./screens/UserProfileScreen";
-import Sidebar from "./components/Sidebar";
+import Sidebar from "./components/common/Sidebar";
 import { StatusBar } from "react-native";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import {
@@ -40,14 +43,23 @@ import RankingScreen from "./screens/RankingScreen";
 import ConversationsScreen from "./screens/ConversationsScreen";
 import SocialScreen from "./screens/SocialScreen";
 import CityScreen from "./screens/CityScreen";
-import { useToken } from "./hooks/useToken";
+import { useToken } from "./hooks/auth/useToken";
 import PostDetailsScreen from "./screens/PostDetailsScreen";
 import Animated, {
   useSharedValue,
-  useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
 import { useFonts } from "expo-font";
+
+// Définition des couleurs principales pour l'application
+const COLORS = {
+  primary: {
+    start: "#062C41",
+    end: "#0b3e5a",
+  },
+  text: "#FFFFFC",
+  accent: "red",
+};
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -88,15 +100,11 @@ export default function App() {
 
   const handleScroll = (event) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
-  
-    // ✅ Ne rien faire si l'utilisateur est déjà en haut
     if (currentOffset <= 0) return;
   
     if (currentOffset - previousOffset.current > threshold) {
-      // Scroll vers le bas -> cache la barre
       headerTranslateY.value = withTiming(-100, { duration: 200 });
     } else if (previousOffset.current - currentOffset > threshold) {
-      // Scroll vers le haut -> montre la barre
       headerTranslateY.value = withTiming(0, { duration: 200 });
     }
   
@@ -135,6 +143,7 @@ export default function App() {
     }
   };
 
+  // Composant Header modifié avec le dégradé
   const CustomHeader = ({ navigation, headerTranslateY }) => {
     const { unreadCount } = useNotification();
 
@@ -145,29 +154,36 @@ export default function App() {
           { transform: [{ translateY: headerTranslateY }] },
         ]}
       >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={toggleSidebar}>
-            <Icon
-              name="menu"
-              size={24}
-              color="#FFFFFC"
-              style={{ marginLeft: 10 }}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>SmartCities</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("NotificationsScreen")}
-          >
-            <View>
-              <Icon name="notifications" size={24} color="#FFFFFC" />
-              {unreadCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{unreadCount}</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        </View>
+        <LinearGradient
+          colors={[COLORS.primary.start, COLORS.primary.end]}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={toggleSidebar}>
+              <Icon
+                name="menu"
+                size={24}
+                color={COLORS.text}
+                style={{ marginLeft: 10 }}
+              />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>SmartCities</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("NotificationsScreen")}
+            >
+              <View>
+                <Icon name="notifications" size={24} color={COLORS.text} />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </Animated.View>
     );
   };
@@ -212,7 +228,7 @@ export default function App() {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#062C41" />
+          <ActivityIndicator size="large" color={COLORS.primary.start} />
         </View>
       );
     }
@@ -227,6 +243,73 @@ export default function App() {
       );
     }
 
+    // Ajout du composant pour le TabBar avec dégradé
+    const TabBar = ({ state, descriptors, navigation }) => {
+      return (
+        <LinearGradient
+          colors={[COLORS.primary.start, COLORS.primary.end]}
+          style={styles.tabBarGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={styles.tabBarContainer}>
+            {state.routes.map((route, index) => {
+              const { options } = descriptors[route.key];
+              const isFocused = state.index === index;
+
+              const onPress = () => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
+
+                if (!isFocused && !event.defaultPrevented) {
+                  if (route.name === 'Ajouter') {
+                    actionSheetRef.current?.show();
+                  } else {
+                    navigation.navigate(route.name);
+                  }
+                }
+              };
+
+              let iconName = "";
+              if (route.name === "Accueil") {
+                iconName = isFocused ? "home" : "home-outline";
+              } else if (route.name === "Conversations") {
+                iconName = isFocused
+                  ? "chatbubble-ellipses"
+                  : "chatbubble-ellipses-outline";
+              } else if (route.name === "Social") {
+                iconName = isFocused ? "people" : "people-outline";
+              } else if (route.name === "Carte") {
+                iconName = isFocused ? "map" : "map-outline";
+              } else if (route.name === "Ajouter") {
+                iconName = "add-circle-outline";
+              }
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={onPress}
+                  style={styles.tabButton}
+                >
+                  <Icon
+                    name={iconName}
+                    size={isFocused ? 35 : 24}
+                    color={COLORS.text}
+                    style={{
+                      fontWeight: isFocused ? "bold" : "normal",
+                    }}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </LinearGradient>
+      );
+    };
+
     return (
       <>
         <Tab.Navigator
@@ -237,59 +320,9 @@ export default function App() {
                 headerTranslateY={headerTranslateY}
               />
             ),
-            tabBarIcon: ({ color, size, focused }) => {
-              let iconName = "";
-
-              if (route.name === "Accueil") {
-                iconName = focused ? "home" : "home-outline";
-              } else if (route.name === "Conversations") {
-                iconName = focused
-                  ? "chatbubble-ellipses"
-                  : "chatbubble-ellipses-outline";
-              } else if (route.name === "Social") {
-                iconName = focused ? "people" : "people-outline";
-              } else if (route.name === "Carte") {
-                iconName = focused ? "map" : "map-outline";
-              } else if (route.name === "Ajouter") {
-                iconName = "add-circle-outline";
-              }
-
-              return (
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 25,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Icon
-                    name={iconName}
-                    size={focused ? size + 15 : size}
-                    color={focused ? "#FFFFFC" : "#FFFFFC"}
-                    style={{
-                      fontWeight: focused ? "bold" : "normal",
-                    }}
-                  />
-                </View>
-              );
-            },
             tabBarShowLabel: false,
-            tabBarStyle: {
-              height: 70,
-              paddingTop: 10,
-              paddingHorizontal: 10,
-              backgroundColor: "#062C41",
-              position: "absolute",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: -5 },
-              shadowOpacity: 0.1,
-              shadowRadius: 10,
-              borderRadius: 30,
-              elevation: 10,
-            },
           })}
+          tabBar={(props) => <TabBar {...props} />}
         >
           <Tab.Screen name="Accueil">
             {({ navigation }) => {
@@ -359,7 +392,6 @@ export default function App() {
 
         </Tab.Navigator>
         
-
         <ActionSheet
           ref={(o) => (actionSheetRef.current = o)}
           title="Que souhaitez-vous ajouter ?"
@@ -371,9 +403,9 @@ export default function App() {
           cancelButtonIndex={2}
           onPress={(index) => {
             if (index === 0) {
-              navigation.navigate("AddNewReportScreen");
+              navigation.navigate("CreateReportScreen");
             } else if (index === 1) {
-              navigation.navigate("AddNewEventScreen");
+              navigation.navigate("CreateEventScreen");
             }
           }}
         />
@@ -386,13 +418,13 @@ export default function App() {
   });
 
   if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <ActivityIndicator size="large" color={COLORS.primary.start} />;
   }
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color={COLORS.primary.start} />
       </View>
     );
   }
@@ -400,7 +432,7 @@ export default function App() {
   return (
     <AuthProvider handleLogout={handleLogout}>
       <NotificationProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#111" />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary.start} />
         <NavigationContainer>
           <KeyboardWrapper>
             <>
@@ -460,12 +492,12 @@ export default function App() {
                       component={CategoryReportsScreen}
                     />
                     <Stack.Screen
-                      name="AddNewEventScreen"
-                      component={AddNewEventScreen}
+                      name="CreateEventScreen"
+                      component={CreateEventScreen}
                     />
                     <Stack.Screen
-                      name="AddNewReportScreen"
-                      component={AddNewReportScreen}
+                      name="CreateReportScreen"
+                      component={CreateReportScreen}
                     />
                     <Stack.Screen
                       name="NotificationsScreen"
@@ -513,26 +545,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    backgroundColor: "#fff",
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
+  headerGradient: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   header: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#062C41",
     paddingTop: 30,
     paddingHorizontal: 20,
-    borderRadius: 30,
     height: 90,
   },
   headerTitle: {
@@ -560,5 +588,34 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 11,
     fontWeight: "bold",
+  },
+  // Styles pour la TabBar personnalisée
+  tabBarGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  tabBarContainer: {
+    flexDirection: 'row',
+    height: 70,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tabButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

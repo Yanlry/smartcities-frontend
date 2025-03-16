@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import MapView, { Marker, Camera, Region } from "react-native-maps";
-import { useLocation } from "../hooks/useLocation";
+import { useLocation } from "../hooks/location/useLocation";
 import {
   fetchAllReportsInRegion,
   Report,

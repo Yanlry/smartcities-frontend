@@ -14,11 +14,11 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 // @ts-ignore
 import { API_URL, OPEN_CAGE_API_KEY } from "@env";
-import { useToken } from "../hooks/useToken";
+import { useToken } from "../hooks/auth/useToken";
 import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/Sidebar";
-import PhotoManager from "../components/PhotoManager";
-import { useLocation } from "../hooks/useLocation";
+import Sidebar from "../components/common/Sidebar";
+import PhotoManager from "../components/interactions/PhotoManager";
+import { useLocation } from "../hooks/location/useLocation";
 import MapView from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
@@ -489,7 +489,7 @@ export default function ReportScreen({ navigation }) {
                   setCurrentReport({
                     ...currentReport,
                     photos: newPhotos.map((photo) => ({ 
-                      url: photo.uri || photo.url,
+                      url: photo.uri || photo.uri,
                     })),
                   } as Report);
                 }}

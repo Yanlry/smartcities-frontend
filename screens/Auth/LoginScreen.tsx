@@ -9,7 +9,7 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/auth/useAuth";
 import { BlurView } from "expo-blur";
 // @ts-ignore
 import { API_URL } from "@env";

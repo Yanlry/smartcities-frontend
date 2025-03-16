@@ -15,7 +15,7 @@ import {
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
-import { useToken } from "../hooks/useToken";
+import { useToken } from "../hooks/auth/useToken";
 import * as ImagePicker from "expo-image-picker";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Share } from "react-native";

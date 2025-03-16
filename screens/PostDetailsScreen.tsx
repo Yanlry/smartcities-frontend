@@ -19,8 +19,8 @@ import { useRoute } from "@react-navigation/native";
 import { API_URL } from "@env";
 import { RouteProp } from "@react-navigation/native";
 import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/Sidebar";
-import { useToken } from "../hooks/useToken";
+import Sidebar from "../components/common/Sidebar";
+import { useToken } from "../hooks/auth/useToken";
 import { Share } from "react-native";
 
 interface Post {

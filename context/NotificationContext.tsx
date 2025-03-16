@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useToken } from "../hooks/useToken"; 
+import { useToken } from "../hooks/auth/useToken"; 
 // @ts-ignore
 import { API_URL } from "@env";
 

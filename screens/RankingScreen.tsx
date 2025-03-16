@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+// Chemin : screens/RankingScreen.tsx
+
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,15 +9,35 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  StatusBar,
+  Animated,
+  RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 // @ts-ignore
 import { API_URL } from "@env";
 import { getUserIdFromToken } from "../utils/tokenUtils";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/Sidebar";
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import Sidebar from "../components/common/Sidebar";
+import UserCard from "../components/ranking/UserCard";
+import RankingHeader from "../components/ranking/RankingHeader";
+import TopUsersSection from "../components/ranking/TopUsersSection";
+import { Feather, Ionicons } from "@expo/vector-icons";
 
+// Color palette
+const COLORS = {
+  primary: {
+    start: "#062C41",
+    end: "#0b3e5a",
+  },
+  text: "#FFFFFC",
+  accent: "red",
+};
+
+/**
+ * User data interface for ranking display
+ */
 interface User {
   id: number;
   ranking: number;
@@ -28,444 +50,409 @@ interface User {
   voteCount?: number;
 }
 
-export default function RankingScreen({ navigation }) {
+/**
+ * API response interface for ranking data
+ */
+interface RankingResponse {
+  users: User[];
+  ranking: number;
+  totalUsers: number;
+}
+
+/**
+ * RankingScreen component displays user rankings within their city
+ * Shows leaderboard with top users highlighted and user's own ranking
+ */
+const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { unreadCount } = useNotification();
-
+  
+  // State management
   const [rankingData, setRankingData] = useState<User[]>([]);
+  const [topUsers, setTopUsers] = useState<User[]>([]);
+  const [otherUsers, setOtherUsers] = useState<User[]>([]);
   const [userRanking, setUserRanking] = useState<number | null>(null);
-  const [totalUsers, setTotalUsers] = useState(null);
+  const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [cityName, setCityName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  
+  // Animation values
+  const scrollY = new Animated.Value(0);
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.9],
+    extrapolate: 'clamp',
+  });
 
-  useEffect(() => {
-    const fetchRanking = async () => {
+  /**
+   * Fetches ranking data from API
+   */
+  const fetchRankingData = useCallback(async (isRefreshing = false) => {
+    if (isRefreshing) {
+      setRefreshing(true);
+    } else {
       setLoading(true);
-      setError(null);
+    }
+    setError(null);
 
-      try {
-        const userId = await getUserIdFromToken();
-        if (!userId) {
-          throw new Error("Impossible de récupérer l'ID utilisateur.");
-        }
-
-        const userResponse = await fetch(`${API_URL}/users/${userId}`);
-        if (!userResponse.ok) {
-          throw new Error("Impossible de récupérer les données utilisateur.");
-        }
-        const userData = await userResponse.json();
-
-        const cityName = userData.nomCommune;
-        if (!cityName) {
-          throw new Error("La ville de l'utilisateur est introuvable.");
-        }
-        setCityName(userData.nomCommune);
-        const rankingResponse = await fetch(
-          `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(
-            cityName
-          )}`
-        );
-        if (!rankingResponse.ok) {
-          throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
-        }
-
-        const rankingData = await rankingResponse.json();
-        setRankingData(rankingData.users);
-        setUserRanking(rankingData.ranking);
-        setTotalUsers(rankingData.totalUsers);
-      } catch (error) {
-        console.error("Erreur lors de la récupération du classement :", error);
-        setError(error.message || "Erreur inconnue.");
-      } finally {
-        setLoading(false);
+    try {
+      const userId = await getUserIdFromToken();
+      if (!userId) {
+        throw new Error("Impossible de récupérer l'ID utilisateur.");
       }
-    };
 
-    fetchRanking();
+      const userResponse = await fetch(`${API_URL}/users/${userId}`);
+      if (!userResponse.ok) {
+        throw new Error("Impossible de récupérer les données utilisateur.");
+      }
+      
+      const userData = await userResponse.json();
+      const cityName = userData.nomCommune;
+      
+      if (!cityName) {
+        throw new Error("La ville de l'utilisateur est introuvable.");
+      }
+      
+      setCityName(cityName);
+      
+      const rankingResponse = await fetch(
+        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
+      );
+      
+      if (!rankingResponse.ok) {
+        throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
+      }
+
+      const data: RankingResponse = await rankingResponse.json();
+      
+      // Process and organize data
+      const allUsers = data.users;
+      const top3 = allUsers.filter(user => user.ranking <= 3);
+      const remainingUsers = allUsers.filter(user => user.ranking > 3);
+      
+      setRankingData(allUsers);
+      setTopUsers(top3);
+      setOtherUsers(remainingUsers);
+      setUserRanking(data.ranking);
+      setTotalUsers(data.totalUsers);
+    } catch (error) {
+      console.error("Erreur lors de la récupération du classement :", error);
+      setError(error.message || "Erreur inconnue.");
+    } finally {
+      setLoading(false);
+      if (isRefreshing) {
+        setRefreshing(false);
+      }
+    }
   }, []);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
+  // Initial data load
+  useEffect(() => {
+    fetchRankingData();
+  }, [fetchRankingData]);
 
-  if (loading) {
+  // Pull to refresh handler
+  const onRefresh = useCallback(() => {
+    fetchRankingData(true);
+  }, [fetchRankingData]);
+
+  // Sidebar toggle
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
+  }, []);
+
+  // Navigation to notifications
+  const navigateToNotifications = useCallback(() => {
+    navigation.navigate("NotificationsScreen");
+  }, [navigation]);
+
+  // Navigate to user profile
+  const navigateToUserProfile = useCallback((userId: number) => {
+    navigation.navigate("UserProfileScreen", { userId });
+  }, [navigation]);
+
+  // Loading state
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#062C41" />
+        <LinearGradient
+          colors={[COLORS.primary.start, COLORS.primary.end]}
+          style={styles.loadingGradient}
+        >
+          <ActivityIndicator size="large" color={COLORS.text} />
+          <Text style={styles.loadingText}>Chargement du classement...</Text>
+        </LinearGradient>
       </View>
     );
   }
 
+  // Error state
   if (error) {
     return (
       <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle-outline" size={60} color="#e74c3c" />
+        <Text style={styles.errorTitle}>Oops!</Text>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={() => fetchRankingData()}
+        >
+          <Text style={styles.retryButtonText}>Réessayer</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerNav}>
-        {/* Bouton pour ouvrir le menu */}
-        <TouchableOpacity onPress={toggleSidebar}>
-          <Icon
-            name="menu"
-            size={24}
-            color="#FFFFFC"
-            style={{ marginLeft: 10 }}
-          />
-        </TouchableOpacity>
-
-        {/* Titre de la page */}
-        <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>CLASSEMENT</Text>
-        </View>
-
-        {/* Bouton de notifications avec compteur */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("NotificationsScreen")}
-        >
-          <View>
-            <Icon
-              name="notifications"
-              size={24}
-              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
-              style={{ marginRight: 10 }}
-            />
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* FlatList avec le message de bienvenue inclus */}
-      <FlatList
-        data={rankingData}
-        keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            {/* Icône de bienvenue */}
-            <View style={styles.iconContainer}>
-              <Ionicons name="location-outline" size={40} color="#062C41" />
+    <SafeAreaView style={styles.safeAreaContainer} edges={['right', 'left']}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.container}>
+        {/* Header */}
+        <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
+          <LinearGradient
+            colors={[COLORS.primary.start, COLORS.primary.end]}
+            style={styles.headerGradient}
+          >
+            <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
+              <Feather name="menu" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+            
+            <View style={styles.titleContainer}>
+              <Text style={styles.headerTitle}>CLASSEMENT</Text>
             </View>
-
-            {/* Texte de bienvenue */}
-            <Text style={styles.welcomeText}>Bienvenue à</Text>
-
-            {/* Nom de la ville */}
-            <View style={styles.cityContainer}>
-              <Text style={styles.cityName}>
-                {cityName || "Ville inconnue"}
-              </Text>
-            </View>
-
-            {/* Classement utilisateur */}
-            <View style={styles.rankingContainer}>
-              <Text style={styles.rankingText}>
-                Vous êtes classé{" "}
-                <Text style={styles.rankingNumber}>
-                  #{userRanking || "N/A"}
-                </Text>{" "}
-                parmi{" "}
-                <Text style={styles.totalUsers}>{totalUsers || "N/A"}</Text>{" "}
-                utilisateurs
-              </Text>
-              <Text style={styles.rankingText}></Text>
-            </View>
-
-            {/* Barre de séparation */}
-            <View style={styles.separator} />
-          </View>
-        }
-        renderItem={({ item, index }) => {
-          const isTopThree = item.ranking <= 3;
-          const badgeColor =
-            item.ranking === 1
-              ? "#FFD700"
-              : item.ranking === 2
-              ? "#C0C0C0"
-              : "#CD7F32";
-          const borderColor =
-            item.ranking === 1
-              ? "#FFD700"
-              : item.ranking === 2
-              ? "#C0C0C0"
-              : "#CD7F32";
-
-          return (
-            <TouchableOpacity
-              style={[
-                styles.rankingItem,
-                isTopThree && { borderColor: borderColor, borderWidth: 3 },
-                index === rankingData.length - 1 && { marginBottom: 50 },
-              ]}
-              onPress={() =>
-                navigation.navigate("UserProfileScreen", { userId: item.id })
-              }
+            
+            <TouchableOpacity 
+              onPress={navigateToNotifications} 
+              style={styles.notificationButton}
             >
-              {/* Badge pour les 3 premiers */}
-              {isTopThree ? (
-                <View
-                  style={[styles.badgeMedal, { backgroundColor: badgeColor }]}
-                >
-                  <Text style={styles.badgeTextMedal}>
-                    {item.ranking === 1
-                      ? "🥇"
-                      : item.ranking === 2
-                      ? "🥈"
-                      : "🥉"}
+              <Feather name="bell" size={24} color={COLORS.text} />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
-                </View>
-              ) : (
-                <View style={styles.rankingNumberContainer}>
-                  <Text style={styles.rankingNumber}>{`#${item.ranking}`}</Text>
-                </View>
-              )}
-
-              {/* Photo de profil */}
-              <Image
-                source={{
-                  uri: item.photo || "https://via.placeholder.com/150",
-                }}
-                style={[styles.userImage, isTopThree && styles.topThreeImage]}
-              />
-
-              {/* Informations utilisateur */}
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>
-                  {item.useFullName
-                    ? `${item.firstName} ${item.lastName}`
-                    : item.username || "Utilisateur inconnu"}
-                </Text>
-              </View>
-
-              {/* Points et score */}
-              {!isTopThree && (
-                <View style={styles.scoreContainer}>
-                  <Text
-                    style={styles.scoreText}
-                  >{`${item.voteCount} points`}</Text>
                 </View>
               )}
             </TouchableOpacity>
-          );
-        }}
-      />
+          </LinearGradient>
+        </Animated.View>
 
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-    </View>
+        {/* Main Content */}
+        <Animated.FlatList
+          data={otherUsers}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContent}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#3498db']}
+              tintColor="#3498db"
+            />
+          }
+          ListHeaderComponent={
+            <>
+              {/* User's Current Ranking */}
+              <RankingHeader 
+                userRanking={userRanking} 
+                totalUsers={totalUsers} 
+                cityName={cityName} 
+              />
+              
+              {/* Top 3 Users */}
+              {topUsers.length > 0 && (
+                <TopUsersSection 
+                  topUsers={topUsers} 
+                  onUserPress={navigateToUserProfile} 
+                />
+              )}
+              
+              {/* Other Users Title */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Classement général</Text>
+                <View style={styles.sectionDivider} />
+              </View>
+            </>
+          }
+          renderItem={({ item }) => (
+            <UserCard 
+              user={item} 
+              onPress={() => navigateToUserProfile(item.id)}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={60} color="#bdc3c7" />
+              <Text style={styles.emptyText}>
+                Aucun utilisateur trouvé dans votre ville
+              </Text>
+            </View>
+          }
+          ListFooterComponent={<View style={styles.footer} />}
+        />
+        
+        {/* Sidebar */}
+        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: COLORS.primary.start,
+    paddingTop:30,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: '#f5f7fa',
   },
-  headerNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#062C41",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    paddingTop: 45,
+  header: {
+    width: '100%',
+    elevation: 5,
   },
-  headerTitleNav: {
+  headerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
+    alignItems: 'center',
+  },
+  headerTitle: {
     fontSize: 20,
-    padding: 5,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    color: "#FFFFFC",
-    letterSpacing: 2,
-    fontWeight: "bold",
-    fontFamily: "Insanibc",
+    fontWeight: 'bold',
+    color: COLORS.text,
+    letterSpacing: 1,
   },
-  typeBadgeNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  cityIndicator: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   badge: {
-    position: "absolute",
-    top: -7,
-    right: 2,
-    backgroundColor: "red",
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: COLORS.accent,
     borderRadius: 10,
-    width: 15,
-    height: 15,
-    justifyContent: "center",
-    alignItems: "center",
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
   badgeText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: COLORS.text,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  sectionHeader: {
+    paddingHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  sectionDivider: {
+    height: 2,
+    width: 60,
+    backgroundColor: '#3498db',
+    borderRadius: 1,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f7fa',
+  },
+  loadingGradient: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: '500',
   },
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#f5f7fa',
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#e74c3c',
+    marginTop: 16,
+    marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: "#FF0000",
-    textAlign: "center",
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginBottom: 24,
   },
-  header: {
-    padding: 20,
-    backgroundColor: "#f9f9f9",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-    alignItems: "center",
+  retryButton: {
+    backgroundColor: COLORS.primary.start,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
   },
-  iconContainer: {
-    backgroundColor: "#E8F5E9",
-    padding: 10,
-    borderRadius: 50,
-    marginBottom: 10,
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  cityContainer: {
-    backgroundColor: "#062C41",
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginBottom: 8,
-  },
-  cityName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-  },
-  rankingContainer: {
-    alignItems: "center",
-    marginTop: 10,
-  },
-  rankingText: {
+  retryButtonText: {
+    color: COLORS.text,
     fontSize: 16,
-    color: "#555",
+    fontWeight: 'bold',
   },
-  rankingNumber: {
-    fontWeight: "bold",
-    color: "#062C41",
-    fontSize: 18,
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  totalUsers: {
-    fontWeight: "bold",
-    color: "#A73830",
-    fontSize: 18,
-  },
-  separator: {
-    marginTop: 20,
-    width: "90%",
-    height: 1,
-    backgroundColor: "#ddd",
-  },
-  subtitle: {
+  emptyText: {
     fontSize: 16,
-    color: "#333",
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 16,
   },
-  rankingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    marginVertical:5,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  rankingNumberContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    marginRight: 10,
-    borderWidth: 2,
-    borderColor: "#ddd",
-  },
-  badgeMedal: {
-    position: "absolute",
-    right: 10,
-    width: 50,
-    height: 50,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  badgeTextMedal: {
-    position: "absolute",
-    top: -3,
-    right: 1,
-    fontSize: 50,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  userImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: "#ddd",
-    marginRight: 15,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  userRanking: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 5,
-  },
-  scoreContainer: {
-    backgroundColor: "#E8F5E9",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  scoreText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#062C41",
-  },
-  topThreeImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  footer: {
+    height: 80,
   },
 });
+
+export default RankingScreen;

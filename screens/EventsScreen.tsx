@@ -15,13 +15,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/Sidebar";
-import { useToken } from "../hooks/useToken";
+import Sidebar from "../components/common/Sidebar";
+import { useToken } from "../hooks/auth/useToken";
 // @ts-ignore
 import { API_URL, OPEN_CAGE_API_KEY } from "@env";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import PhotoManager from "../components/PhotoManager";
-import { useLocation } from "../hooks/useLocation";
+import PhotoManager from "../components/interactions/PhotoManager";
+import { useLocation } from "../hooks/location/useLocation";
 import MapView from "react-native-maps";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
@@ -70,7 +70,6 @@ export default function EventsScreen({ navigation }) {
         }
 
         const data = await response.json();
-        console.log("Données des événements récupérées :", data);
         setEvents(data);
       } catch (error) {
         console.error("Erreur lors de la récupération des événements :", error);
@@ -533,7 +532,7 @@ export default function EventsScreen({ navigation }) {
                       ? {
                           ...prev,
                           photos: newPhotos.map((photo) => ({
-                            url: photo.uri || photo.url,
+                            url: photo.uri || photo.uri,
                           })),
                         }
                       : null

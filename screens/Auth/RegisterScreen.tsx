@@ -11,8 +11,8 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../hooks/useAuth";
-import PhotoManager from "../../components/PhotoManager";
+import { useAuth } from "../../hooks/auth/useAuth";
+import PhotoManager from "../../components/interactions/PhotoManager";
 import { BlurView } from "expo-blur";
 import franceCitiesRaw from "../../assets/france.json";
 

@@ -8,9 +8,9 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/common/Sidebar";
 import { Linking } from "react-native";
-import MairieInfoCard from "../components/MairieInfoCard";
+import MayorInfoCard from '../components/home/MayorInfoSection/MayorInfoCard';
 
 export default function CityScreen({ navigation }) {
   const { unreadCount } = useNotification();
@@ -63,7 +63,7 @@ export default function CityScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.containerInfo}>
-        <MairieInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
+        <MayorInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
       </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>

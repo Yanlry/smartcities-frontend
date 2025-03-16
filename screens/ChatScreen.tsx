@@ -27,7 +27,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useToken } from "../hooks/useToken";
+import { useToken } from "../hooks/auth/useToken";
 // @ts-ignore
 import { API_URL } from "@env";
 import axios from "axios";

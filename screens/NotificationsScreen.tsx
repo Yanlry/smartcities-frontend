@@ -14,8 +14,8 @@ import {
   Vibration,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import Sidebar from "../components/Sidebar";
-import { useToken } from "../hooks/useToken";
+import Sidebar from "../components/common/Sidebar";
+import { useToken } from "../hooks/auth/useToken";
 import { Swipeable } from "react-native-gesture-handler";
 // @ts-ignore
 import { API_URL } from "@env";
