@@ -1,3 +1,4 @@
+// ChatScreen.tsx - Design moderne et optimisé pour l'expérience utilisateur
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -11,6 +12,11 @@ import {
   Keyboard,
   Modal,
   Image,
+  StatusBar,
+  Animated,
+  ActivityIndicator,
+  Platform,
+  Dimensions,
 } from "react-native";
 import {
   collection,
@@ -32,6 +38,7 @@ import { useToken } from "../hooks/auth/useToken";
 import { API_URL } from "@env";
 import axios from "axios";
 
+// Types et interfaces
 type Message = {
   id: string;
   senderId: string;
@@ -41,7 +48,9 @@ type Message = {
   isRead: boolean;
 };
 
-export default function ChatScreen ({ route, navigation }: any){
+const { width } = Dimensions.get("window");
+
+export default function ChatScreen({ route, navigation }: any) {
   const { receiverId, senderId, onConversationRead } = route.params;
   const { getToken } = useToken();
   const flatListRef = useRef<FlatList>(null);
@@ -57,7 +66,15 @@ export default function ChatScreen ({ route, navigation }: any){
     name: string;
     profilePhoto: string | null;
   }>({ id: "", name: "Utilisateur inconnu", profilePhoto: null });
+  const [isSending, setIsSending] = useState(false);
 
+  // Animation pour les nouveaux messages
+  const messageAnimation = useRef(new Animated.Value(0)).current;
+  const inputContainerAnim = useRef(new Animated.Value(1)).current;
+  
+  // Animation pour le modal de rapport
+  const reportModalAnim = useRef(new Animated.Value(0)).current;
+  
   useEffect(() => {
     const messagesRef = collection(db, "messages");
     const q = query(
@@ -142,6 +159,7 @@ export default function ChatScreen ({ route, navigation }: any){
     });
   }, [navigation, route.params, userDetails]);
 
+  // Méthodes de récupération des données utilisateur (inchangées)
   const fetchUserDetails = async (
     userId: number
   ): Promise<{ id: string; name: string; profilePhoto: string | null }> => {
@@ -186,11 +204,14 @@ export default function ChatScreen ({ route, navigation }: any){
     }
   };
 
+  // Gestion de l'envoi des messages
   const sendMessage = async () => {
     if (newMessage.trim().length === 0) {
       console.warn("Message vide, envoi annulé.");
       return;
     }
+    
+    setIsSending(true);
   
     try {
       const messagesRef = collection(db, "messages");
@@ -226,6 +247,20 @@ export default function ChatScreen ({ route, navigation }: any){
       }
   
       setNewMessage("");
+      
+      // Animation du message envoyé
+      Animated.sequence([
+        Animated.timing(messageAnimation, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(messageAnimation, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
   
       if (flatListRef.current) {
         flatListRef.current.scrollToEnd({ animated: true });
@@ -277,6 +312,12 @@ export default function ChatScreen ({ route, navigation }: any){
       }
     } catch (error) {
       console.error("Erreur lors du processus d'envoi du message :", error);
+      Alert.alert(
+        "Erreur",
+        "Impossible d'envoyer le message. Veuillez réessayer."
+      );
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -357,83 +398,124 @@ export default function ChatScreen ({ route, navigation }: any){
   };
 
   const closeReportModal = () => {
-    setReportModalVisible(false);
-    setReportReason("");
+    // Animation de fermeture du modal
+    Animated.timing(reportModalAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setReportModalVisible(false);
+      setReportReason("");
+    });
   };
 
-  const openReportModal = () => setReportModalVisible(true);
+  const openReportModal = () => {
+    setReportModalVisible(true);
+    Animated.timing(reportModalAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Fonctions pour la gestion du clavier
+  const handleInputFocus = () => {
+    Animated.timing(inputContainerAnim, {
+      toValue: 1.02,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    flatListRef.current?.scrollToEnd({ animated: true });
+  };
+  
+  const handleInputBlur = () => {
+    Animated.timing(inputContainerAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Formatage des dates pour l'affichage
+  const formatMessageDate = (timestamp: any): string => {
+    if (!timestamp) return '';
+    
+    const date = timestamp.seconds 
+      ? new Date(timestamp.seconds * 1000) 
+      : new Date();
+      
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return "Aujourd'hui";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Hier";
+    } else {
+      return date.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      <StatusBar
+        backgroundColor={styles.header.backgroundColor}
+        barStyle="light-content"
+      />
+      
+      {/* Header personnalisé */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon
-            name="arrow-back"
-            size={24}
-            color="#FFFFFC"
-            style={{ marginLeft: 10 }}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("UserProfileScreen", { userId: userDetails.id })
-          }
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         >
-          <View style={styles.typeBadge}>
-            <Text style={styles.headerTitle}>{userDetails.name}</Text>
+          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.profileContainer}
+          onPress={() => navigation.navigate("UserProfileScreen", { userId: userDetails.id })}
+        >
+          {userDetails.profilePhoto ? (
+            <Image
+              source={{ uri: userDetails.profilePhoto }}
+              style={styles.headerAvatar}
+            />
+          ) : (
+            <View style={[styles.headerAvatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>
+                {userDetails.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          
+          <View style={styles.userInfoContainer}>
+            <Text style={styles.headerName}>{userDetails.name}</Text>
+            <Text style={styles.userStatus}>
+              {messages.length > 0 ? "En ligne" : "Hors ligne"}
+            </Text>
           </View>
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={openReportModal}>
-          <Icon
-            name="error"
-            size={24}
-            color="#FFFFFC"
-            style={{ marginRight: 10 }}
-          />
+        
+        <TouchableOpacity 
+          style={styles.reportButton}
+          onPress={openReportModal}
+        >
+          <Icon name="more-vert" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isReportModalVisible}
-        onRequestClose={closeReportModal}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Signaler ce profil</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Indiquez la raison ainsi que le maximum d'informations (ex: heures, dates, etc...)"
-                value={reportReason}
-                placeholderTextColor="#777777" 
-                onChangeText={setReportReason}
-                multiline={true}
-              />
-              <TouchableOpacity
-                onPress={reportConversation}
-                style={styles.confirmButton}
-              >
-                <Text style={styles.confirmButtonText}>Envoyer</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={closeReportModal}
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelButtonText}>Annuler</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
+      {/* Liste des messages */}
       <FlatList
         ref={flatListRef}
-        style={{ padding: 10 }}
+        style={styles.messagesList}
+        contentContainerStyle={styles.messagesContainer}
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => {
@@ -452,22 +534,22 @@ export default function ChatScreen ({ route, navigation }: any){
               previousMessageDate.toDateString();
 
           const isSentByCurrentUser = item.senderId === senderId;
+          
+          // Vérifier si c'est un message consécutif du même expéditeur
+          const isConsecutive = index > 0 && 
+            messages[index - 1].senderId === item.senderId && 
+            !shouldShowDateHeader;
 
           return (
-            <View>
+            <>
               {shouldShowDateHeader && (
-                <Text style={styles.dateHeader}>
-                  {currentMessageDate.toLocaleDateString("fr-FR", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year:
-                      currentMessageDate.getFullYear() !==
-                      new Date().getFullYear()
-                        ? "numeric"
-                        : undefined,
-                  })}
-                </Text>
+                <View style={styles.dateHeaderContainer}>
+                  <View style={styles.dateHeaderLine} />
+                  <Text style={styles.dateHeader}>
+                    {formatMessageDate(item.timestamp)}
+                  </Text>
+                  <View style={styles.dateHeaderLine} />
+                </View>
               )}
 
               <View
@@ -476,9 +558,12 @@ export default function ChatScreen ({ route, navigation }: any){
                   isSentByCurrentUser
                     ? styles.sentMessageContainer
                     : styles.receivedMessageContainer,
+                  isConsecutive && (isSentByCurrentUser 
+                    ? styles.consecutiveSentMessage 
+                    : styles.consecutiveReceivedMessage)
                 ]}
               >
-                {!isSentByCurrentUser && userDetails.profilePhoto && (
+                {!isSentByCurrentUser && !isConsecutive && userDetails.profilePhoto && (
                   <TouchableOpacity
                     onPress={() =>
                       navigation.navigate("UserProfileScreen", {
@@ -488,9 +573,22 @@ export default function ChatScreen ({ route, navigation }: any){
                   >
                     <Image
                       source={{ uri: userDetails.profilePhoto }}
-                      style={styles.profilePhoto}
+                      style={styles.messageAvatar}
                     />
                   </TouchableOpacity>
+                )}
+                
+                {!isSentByCurrentUser && !isConsecutive && !userDetails.profilePhoto && (
+                  <View style={[styles.messageAvatar, styles.avatarPlaceholder]}>
+                    <Text style={styles.avatarInitial}>
+                      {userDetails.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Espace réservé pour l'avatar sur les messages consécutifs reçus */}
+                {!isSentByCurrentUser && isConsecutive && (
+                  <View style={styles.avatarSpaceholder} />
                 )}
 
                 <View
@@ -499,255 +597,284 @@ export default function ChatScreen ({ route, navigation }: any){
                     isSentByCurrentUser
                       ? styles.sentMessage
                       : styles.receivedMessage,
+                    isConsecutive && (isSentByCurrentUser 
+                      ? styles.consecutiveSentBubble 
+                      : styles.consecutiveReceivedBubble)
                   ]}
                 >
-                  <Text
-                    style={
-                      isSentByCurrentUser
-                        ? styles.sentMessageText
-                        : styles.receivedMessageText
-                    }
-                  >
+                  <Text style={styles.messageText}>
                     {item.message}
                   </Text>
 
-                  <View
-                    style={[
-                      styles.infoMessage,
-                      isSentByCurrentUser
-                        ? styles.sentInfoMessage
-                        : styles.receivedInfoMessage,
-                    ]}
-                  >
-                    {lastSentMessage && item.id === lastSentMessage.id && (
-                      <Text style={styles.messageStatus}>
-                        {lastSentMessage.isRead ? "Lu - " : "Non lu - "}
-                      </Text>
-                    )}
+                  <View style={styles.messageFooter}>
                     <Text style={styles.timestamp}>
                       {currentMessageDate.toLocaleTimeString("fr-FR", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                     </Text>
+                    
+                    {isSentByCurrentUser && lastSentMessage && item.id === lastSentMessage.id && (
+                      <View style={styles.readStatusContainer}>
+                        <Icon 
+                          name={lastSentMessage.isRead ? "done-all" : "done"} 
+                          size={14} 
+                          color={lastSentMessage.isRead ? "#4CAF50" : "#9E9E9E"} 
+                          style={styles.readIcon}
+                        />
+                      </View>
+                    )}
                   </View>
                 </View>
 
-                {isSentByCurrentUser && currentUserProfilePhoto && (
+                {isSentByCurrentUser && !isConsecutive && currentUserProfilePhoto && (
                   <Image
                     source={{ uri: currentUserProfilePhoto }}
-                    style={styles.profilePhoto}
+                    style={styles.messageAvatar}
                   />
                 )}
+                
+                {isSentByCurrentUser && !isConsecutive && !currentUserProfilePhoto && (
+                  <View style={[styles.messageAvatar, styles.avatarPlaceholder]}>
+                    <Text style={styles.avatarInitial}>M</Text>
+                  </View>
+                )}
+                
+                {/* Espace réservé pour l'avatar sur les messages consécutifs envoyés */}
+                {isSentByCurrentUser && isConsecutive && (
+                  <View style={styles.avatarSpaceholder} />
+                )}
               </View>
-            </View>
+            </>
           );
         }}
         onContentSizeChange={() => {
-          if (flatListRef.current) {
-            flatListRef.current.scrollToEnd({ animated: true });
-          }
+          flatListRef.current?.scrollToEnd({ animated: true });
         }}
         onLayout={() => {
-          if (flatListRef.current) {
-            flatListRef.current.scrollToEnd({ animated: true });
-          }
+          flatListRef.current?.scrollToEnd({ animated: true });
         }}
       />
 
-      {/* Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Tapez un message..."
-          value={newMessage}
-          onChangeText={setNewMessage}
-        />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <Text style={styles.sendButtonText}>Envoyer</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Input pour saisir un message */}
+      <Animated.View 
+        style={[
+          styles.inputContainer,
+          { transform: [{ scale: inputContainerAnim }] }
+        ]}
+      >
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Votre message..."
+            placeholderTextColor="#A0A0A0"
+            value={newMessage}
+            onChangeText={setNewMessage}
+            multiline
+            maxLength={500}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+          />
+          <TouchableOpacity 
+            style={[
+              styles.sendButton, 
+              !newMessage.trim() && styles.sendButtonDisabled
+            ]}
+            onPress={sendMessage}
+            disabled={!newMessage.trim() || isSending}
+          >
+            {isSending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Icon name="send" size={22} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      {/* Modal de signalement */}
+      <Modal
+        animationType="none"
+        transparent={true}
+        visible={isReportModalVisible}
+        onRequestClose={closeReportModal}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalBackdrop}>
+            <Animated.View 
+              style={[
+                styles.modalContainer,
+                {
+                  opacity: reportModalAnim,
+                  transform: [{
+                    translateY: reportModalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0]
+                    })
+                  }]
+                }
+              ]}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Signaler cette conversation</Text>
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={closeReportModal}
+                >
+                  <Icon name="close" size={24} color="#757575" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalBody}>
+                <Text style={styles.modalDescription}>
+                  Veuillez expliquer la raison de votre signalement. Notre équipe examinera votre signalement dans les plus brefs délais.
+                </Text>
+                
+                <TextInput
+                  style={styles.reportInput}
+                  placeholder="Décrivez le problème..."
+                  placeholderTextColor="#A0A0A0"
+                  value={reportReason}
+                  onChangeText={setReportReason}
+                  multiline
+                  numberOfLines={5}
+                  textAlignVertical="top"
+                />
+              </View>
+              
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={closeReportModal}
+                >
+                  <Text style={styles.cancelButtonText}>Annuler</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[
+                    styles.confirmButton,
+                    !reportReason.trim() && styles.confirmButtonDisabled
+                  ]}
+                  onPress={reportConversation}
+                  disabled={!reportReason.trim()}
+                >
+                  <Text style={styles.confirmButtonText}>Envoyer</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
-};
+}
 
+// Styles modernisés et optimisés pour une meilleure expérience utilisateur
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#062C41", 
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    paddingTop: 45,
-  },
-  headerTitle: {
-    fontSize: 20,
-    padding: 5,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    color: '#FFFFFC', 
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc',
-  },
-  typeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalBackdrop: {
-    position: "absolute",
-    top: 0, 
-    left: 0,
-    right: 0,
-    bottom: 0, 
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000, 
-  },
-  modalContainer: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 10,
-  },
-  textInput: {
-    borderWidth: 1,
-    height: 90,
-    width: "100%",
-    borderColor: "#ccc", 
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    marginTop: 10,
-    backgroundColor: "#F2F4F7", 
-    marginBottom: 20,
-    color: "#333", 
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  confirmButton: {
-    backgroundColor: "#ff4d4f",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 30,
-    alignItems: "center",
-    marginBottom: 10,
-    width: "100%",
+    backgroundColor: "#3E64FF",
+    paddingTop: Platform.OS === 'ios' ? 50 : 38,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  confirmButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#ddd",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 30,
-    alignItems: "center",
-    width: "100%",
-    marginBottom: 20,
-  },
-  cancelButtonText: {
-    color: "#555",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-
-  messageBubble: { padding: 10, borderRadius: 10, marginVertical: 5 },
-  sentMessage: {
-    backgroundColor: "#e1ffc7",
-    alignSelf: "flex-end",
+  backButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    paddingHorizontal: 15,
-    marginLeft: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  receivedMessage: {
-    backgroundColor: "#f1f1f1",
-    alignSelf: "flex-start",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 50,
-  },
-  messageText: { fontSize: 18 },
-  infoMessage: {
-    flexDirection: "row", 
-    alignItems: "center",
-    marginTop: 5,
-  },
-  sentInfoMessage: {
-    justifyContent: "flex-end", 
-  },
-  receivedInfoMessage: {
-    justifyContent: "flex-start", 
-  },
-  timestamp: {
-    fontSize: 10,
-    color: "#888",
-  },
-  messageStatus: {
-    fontSize: 10,
-    color: "#888",
-    fontWeight: "bold",
-  },
-  sentMessageText: {
-    fontSize: 16,
-    color: "#000000", 
-  },
-  dateHeader: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  receivedMessageText: {
-    fontSize: 16,
-    color: "#000000", 
-  },
-  inputContainer: {
+  profileContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
-    marginBottom: 10,
+    marginLeft: 8,
   },
-  input: {
+  headerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  avatarPlaceholder: {
+    backgroundColor: "#C4C4C4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitial: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  userInfoContainer: {
+    marginLeft: 12,
+  },
+  headerName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.3,
+  },
+  userStatus: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 2,
+  },
+  reportButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Liste de messages
+  messagesList: {
     flex: 1,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 30,
-    padding: 10,
+    paddingHorizontal: 10,
   },
-  sendButton: {
-    backgroundColor: "#4BAB57",
-    padding: 10,
-    borderRadius: 30,
-    marginLeft: 10,
+  messagesContainer: {
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  dateHeaderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 16,
+    paddingHorizontal: 16,
+  },
+  dateHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
+  },
+  dateHeader: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#757575",
+    marginHorizontal: 8,
+    textAlign: "center",
   },
   messageContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    marginVertical: 5,
+    marginBottom: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   sentMessageContainer: {
     justifyContent: "flex-end",
@@ -755,14 +882,205 @@ const styles = StyleSheet.create({
   receivedMessageContainer: {
     justifyContent: "flex-start",
   },
-  profilePhoto: {
+  consecutiveSentMessage: {
+    marginTop: -2,
+    marginBottom: 2,
+  },
+  consecutiveReceivedMessage: {
+    marginTop: -2,
+    marginBottom: 2,
+  },
+  messageAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginHorizontal: 8,
+  },
+  avatarSpaceholder: {
+    width: 32,
+    marginHorizontal: 8,
+  },
+  messageBubble: {
+    maxWidth: "70%",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 18,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  sentMessage: {
+    backgroundColor: "#E6F2FF",
+    borderBottomRightRadius: 4,
+  },
+  receivedMessage: {
+    backgroundColor: "#FFFFFF",
+    borderBottomLeftRadius: 4,
+  },
+  consecutiveSentBubble: {
+    borderBottomRightRadius: 18,
+  },
+  consecutiveReceivedBubble: {
+    borderBottomLeftRadius: 18,
+  },
+  messageText: {
+    fontSize: 16,
+    color: "#333333",
+    lineHeight: 22,
+  },
+  messageFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  timestamp: {
+    fontSize: 11,
+    color: "#9E9E9E",
+  },
+  readStatusContainer: {
+    marginLeft: 6,
+  },
+  readIcon: {
+    marginTop: 1,
+  },
+  // Input container
+  inputContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#F8F9FA",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.08)",
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingLeft: 16,
+    paddingRight: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  input: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    fontSize: 16,
+    color: "#333333",
+    paddingVertical: 8,
+  },
+  sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginHorizontal: 10,
-    marginBottom: 10,
+    backgroundColor: "#3E64FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
   },
-  sendButtonText: { color: "#fff", fontWeight: "bold" },
+  sendButtonDisabled: {
+    backgroundColor: "#CACACA",
+  },
+  // Modal de signalement
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "90%",
+    maxWidth: 400,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.08)",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  reportInput: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    padding: 12,
+    fontSize: 16,
+    height: 120,
+    color: "#333333",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.08)",
+    padding: 16,
+  },
+  cancelButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: "#F8F9FA",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#757575",
+  },
+  confirmButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: "#FF5252",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  confirmButtonDisabled: {
+    backgroundColor: "#FFCDD2",
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
 });
-
-

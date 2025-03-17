@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,46 +12,129 @@ import {
   Dimensions,
   ScrollView,
   Modal,
+  RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import { useToken } from "../hooks/auth/useToken";
 import * as ImagePicker from "expo-image-picker";
 import Icon from "react-native-vector-icons/Ionicons";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Share } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+/**
+ * Type definitions for navigation
+ */
 type UserProfileScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   "UserProfileScreen"
 >;
 
-export default function SocialScreen({ handleScroll }) {
+/**
+ * Interface for SocialScreen props
+ */
+interface SocialScreenProps {
+  handleScroll: (event: any) => void;
+}
+
+/**
+ * Interface for Post
+ */
+interface Post {
+  id: number;
+  content: string;
+  createdAt: string;
+  authorId: number;
+  authorName: string;
+  profilePhoto: string | null;
+  likesCount: number;
+  likedByUser: boolean;
+  photos: string[];
+  comments: Comment[];
+}
+
+/**
+ * Interface for Comment
+ */
+interface Comment {
+  id: number;
+  text: string;
+  createdAt: string;
+  userId: number;
+  userName: string;
+  userProfilePhoto: string | null;
+  likedByUser: boolean;
+  likesCount: number;
+  replies: Reply[];
+}
+
+/**
+ * Interface for Reply (extends Comment)
+ */
+interface Reply {
+  id: number;
+  text: string;
+  createdAt: string;
+  userId: number;
+  userName: string;
+  userProfilePhoto: string | null;
+  parentId: number;
+}
+
+/**
+ * Interface for Filter
+ */
+interface Filter {
+  label: string;
+  value: boolean;
+}
+
+/**
+ * SocialScreen component
+ * Écran de fil d'actualité pour une application de réseau social
+ */
+export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   const navigation = useNavigation<UserProfileScreenNavigationProp>();
-  const { getUserId } = useToken();
+  const { getUserId, getToken } = useToken();
+  const insets = useSafeAreaInsets();
 
-  const [posts, setPosts] = useState<any[]>([]);
-  const [newPostContent, setNewPostContent] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [commentInputs, setCommentInputs] = useState({});
-  const [visibleComments, setVisibleComments] = useState({});
+  // State management
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [newPostContent, setNewPostContent] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [commentInputs, setCommentInputs] = useState<Record<number, string>>({});
+  const [visibleComments, setVisibleComments] = useState<Record<number, boolean>>({});
   const [userId, setUserId] = useState<number | null>(null);
-  const [replyInputs, setReplyInputs] = useState({});
-  const [replyToCommentId, setReplyToCommentId] = useState(null);
-  const [replyVisibility, setReplyVisibility] = useState({});
+  const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
+  const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null);
+  const [replyVisibility, setReplyVisibility] = useState<Record<number, boolean>>({});
   const [selectedImage, setSelectedImage] = useState<string[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const [likedPosts, setLikedPosts] = useState<number[]>([]);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [visibleCommentSection, setVisibleCommentSection] = useState({});
-  const [isCityFilterEnabled, setIsCityFilterEnabled] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [visibleCommentSection, setVisibleCommentSection] = useState<Record<number, boolean>>({});
+  const [isCityFilterEnabled, setIsCityFilterEnabled] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [expandedPostContent, setExpandedPostContent] = useState<Record<number, boolean>>({});
 
+  // Screen dimensions for responsive design
+  const { width: screenWidth } = Dimensions.get("window");
+
+  /**
+   * Initialize component on mount
+   */
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -64,18 +147,22 @@ export default function SocialScreen({ handleScroll }) {
 
         fetchPosts(filterEnabled);
       } catch (error) {
-        console.error("Erreur lors de l'initialisation :", error.message);
+        console.error(
+          "Erreur d'initialisation:",
+          error instanceof Error ? error.message : "Erreur inconnue"
+        );
       }
     };
 
     initialize();
   }, []);
 
+  /**
+   * Fetch posts from API with optional city filtering
+   */
   const fetchPosts = async (filterByCity = isCityFilterEnabled) => {
     setIsLoading(true);
     try {
-      const { getToken, getUserId } = useToken();
-
       const token = await getToken();
       const userId = await getUserId();
 
@@ -85,8 +172,7 @@ export default function SocialScreen({ handleScroll }) {
         );
       }
 
-      console.log("ID utilisateur récupéré :", userId);
-
+      // Get user data to determine city
       const userResponse = await fetch(`${API_URL}/users/${userId}`, {
         method: "GET",
         headers: {
@@ -96,22 +182,22 @@ export default function SocialScreen({ handleScroll }) {
       });
 
       if (!userResponse.ok) {
-        throw new Error(
-          "Impossible de récupérer les informations de l'utilisateur."
-        );
+        throw new Error("Impossible de récupérer les informations de l'utilisateur.");
       }
 
       const userData = await userResponse.json();
-
       const userCity = userData.nomCommune;
-      if (!userCity) {
+
+      if (!userCity && filterByCity) {
         throw new Error("Aucune commune associée à cet utilisateur.");
       }
 
+      // Build query for city filtering
       const query = filterByCity
         ? `?cityName=${encodeURIComponent(userCity)}`
         : "";
 
+      // Fetch posts
       const response = await fetch(`${API_URL}/posts${query}`, {
         method: "GET",
         headers: {
@@ -126,47 +212,57 @@ export default function SocialScreen({ handleScroll }) {
 
       const data = await response.json();
 
+      // Process and sort data
       const sortedData = data
-  .map((post) => ({
-    ...post,
-    comments: post.comments
-      .map((comment) => ({
-        ...comment,
-        likedByUser: comment.likedByUser || false,
-        likesCount: comment.likesCount || 0,
-        replies: comment.replies
-          ? comment.replies.sort(
-              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            )
-          : [],
-      }))
-      .sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      ),
-  }))
-  .sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+        .map((post: Post) => ({
+          ...post,
+          comments: post.comments
+            .map((comment) => ({
+              ...comment,
+              likedByUser: comment.likedByUser || false,
+              likesCount: comment.likesCount || 0,
+              replies: comment.replies
+                ? comment.replies.sort(
+                    (a, b) =>
+                      new Date(a.createdAt).getTime() -
+                      new Date(b.createdAt).getTime()
+                  )
+                : [],
+            }))
+            .sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            ),
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
       setPosts(sortedData);
 
+      // Update liked posts
       const userLikedPosts = sortedData
         .filter((post) => post.likedByUser)
         .map((post) => post.id);
 
       setLikedPosts(userLikedPosts);
     } catch (error) {
-      console.error("Erreur :", error.message);
       Alert.alert(
         "Erreur",
-        error.message || "Impossible de charger les publications."
+        error instanceof Error ? error.message : "Impossible de charger les publications."
       );
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleLike = async (postId) => {
+  /**
+   * Handle post like action
+   */
+  const handleLike = async (postId: number) => {
     try {
       const userId = await getUserId();
       if (!userId) {
@@ -184,32 +280,45 @@ export default function SocialScreen({ handleScroll }) {
         throw new Error("Erreur lors du like de la publication");
       }
 
+      // Update liked posts state for immediate UI feedback
       setLikedPosts((prevLikedPosts) =>
         prevLikedPosts.includes(postId)
           ? prevLikedPosts.filter((id) => id !== postId)
           : [...prevLikedPosts, postId]
       );
 
-      fetchPosts();
+      // Update posts with optimistic response
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            const isLiked = likedPosts.includes(postId);
+            return {
+              ...post,
+              likedByUser: !isLiked,
+              likesCount: isLiked ? post.likesCount - 1 : post.likesCount + 1,
+            };
+          }
+          return post;
+        })
+      );
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error.message || "Impossible d'aimer la publication."
+        error instanceof Error ? error.message : "Impossible d'aimer la publication."
       );
     }
   };
 
-  const handleLikeComment = async (commentId) => {
+  /**
+   * Handle comment like action
+   */
+  const handleLikeComment = async (commentId: number) => {
     try {
       const userId = await getUserId();
       if (!userId) {
         console.error("Impossible de récupérer l'ID utilisateur.");
         return;
       }
-
-      console.log(
-        `🔄 Tentative de like du commentaire ${commentId} par l'utilisateur ${userId}`
-      );
 
       const response = await fetch(
         `${API_URL}/posts/comments/${commentId}/like`,
@@ -221,12 +330,12 @@ export default function SocialScreen({ handleScroll }) {
       );
 
       if (!response.ok) {
-        throw new Error("é Erreur lors du like du commentaire");
+        throw new Error("Erreur lors du like du commentaire");
       }
 
       const data = await response.json();
-      console.log("🔄 Réponse API Like :", data);
 
+      // Update posts with like information
       setPosts((prevPosts) =>
         prevPosts.map((post) => ({
           ...post,
@@ -242,38 +351,33 @@ export default function SocialScreen({ handleScroll }) {
         }))
       );
     } catch (error) {
-      console.error("Erreur :", error.message);
       Alert.alert(
         "Erreur",
-        error.message || "Impossible d'aimer le commentaire."
+        error instanceof Error ? error.message : "Impossible d'aimer le commentaire."
       );
     }
   };
 
-  const handleAddComment = async (postId) => {
-    const userId = await getUserId();
-    console.log("Données envoyées au backend :", {
-      postId,
-      userId,
-      text: commentInputs[postId],
-    });
-
-    if (!userId || !commentInputs[postId]?.trim()) {
-      Alert.alert(
-        "Erreur",
-        "Le texte du commentaire est vide ou l'ID utilisateur est introuvable."
-      );
-      return;
-    }
-
+  /**
+   * Handle adding a new comment to a post
+   */
+  const handleAddComment = async (postId: number) => {
     try {
+      const userId = await getUserId();
+      const commentText = commentInputs[postId]?.trim();
+
+      if (!userId || !commentText) {
+        Alert.alert("Erreur", "Le texte du commentaire est vide ou l'ID utilisateur est introuvable.");
+        return;
+      }
+
       const response = await fetch(`${API_URL}/posts/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId,
           userId,
-          text: commentInputs[postId],
+          text: commentText,
         }),
       });
 
@@ -281,587 +385,393 @@ export default function SocialScreen({ handleScroll }) {
         throw new Error("Erreur lors de l'ajout du commentaire");
       }
 
+      // Clear input and refresh posts
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
-      fetchPosts();
+
+      // Get the new comment data
+      const newComment = await response.json();
+
+      // Update posts with optimistic response
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: [
+                ...post.comments,
+                {
+                  ...newComment,
+                  replies: [],
+                },
+              ],
+            };
+          }
+          return post;
+        })
+      );
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error.message || "Impossible d'ajouter le commentaire."
+        error instanceof Error ? error.message : "Impossible d'ajouter le commentaire."
       );
     }
   };
 
-  const toggleComments = (postId) => {
+  /**
+   * Toggle visibility of comments section
+   */
+  const toggleComments = (postId: number) => {
     setVisibleComments((prev) => ({
       ...prev,
       [postId]: !prev[postId],
     }));
   };
 
-  const toggleCommentsVisibility = (postId) => {
+  /**
+   * Toggle visibility of comment input section
+   */
+  const toggleCommentsVisibility = (postId: number) => {
     setVisibleCommentSection((prev) => ({
       ...prev,
       [postId]: !prev[postId],
     }));
   };
 
-  const toggleBothComments = (postId) => {
+  /**
+   * Toggle both comments and comment input section
+   */
+  const toggleBothComments = (postId: number) => {
     toggleComments(postId);
     toggleCommentsVisibility(postId);
   };
 
-  const renderItem = ({ item }) => {
-    const isExpanded = visibleComments[item.id];
-    const displayedComments = isExpanded ? item.comments : [];
+  /**
+   * Toggle expanded view for post content
+   */
+  const toggleExpandedContent = (postId: number) => {
+    setExpandedPostContent((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
+  };
 
-    const handleDeletePost = async (postId) => {
-      Alert.alert(
-        "Confirmation",
-        "Êtes-vous sûr de vouloir supprimer cette publication ?",
-        [
-          {
-            text: "Annuler",
-            style: "cancel",
-          },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const response = await fetch(`${API_URL}/posts/${postId}`, {
+  /**
+   * Delete a post
+   */
+  const handleDeletePost = async (postId: number) => {
+    Alert.alert("Confirmation", "Êtes-vous sûr de vouloir supprimer cette publication ?", [
+      {
+        text: "Annuler",
+        style: "cancel",
+      },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setIsLoading(true);
+            const response = await fetch(`${API_URL}/posts/${postId}`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+            });
+
+            if (!response.ok) {
+              throw new Error("Erreur lors de la suppression de la publication");
+            }
+
+            // Remove post from state
+            setPosts((prevPosts) =>
+              prevPosts.filter((post) => post.id !== postId)
+            );
+            setIsLoading(false);
+          } catch (error) {
+            setIsLoading(false);
+            Alert.alert(
+              "Erreur",
+              error instanceof Error ? error.message : "Impossible de supprimer la publication."
+            );
+          }
+        },
+      },
+    ]);
+  };
+
+  /**
+   * Delete a comment
+   */
+  const handleDeleteComment = async (commentId: number) => {
+    Alert.alert(
+      "Confirmation",
+      "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
+      [
+        {
+          text: "Annuler",
+          style: "cancel",
+        },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${API_URL}/posts/comments/${commentId}`,
+                {
                   method: "DELETE",
                   headers: { "Content-Type": "application/json" },
-                });
-                if (!response.ok) {
-                  throw new Error(
-                    "Erreur lors de la suppression de la publication"
-                  );
                 }
-                fetchPosts();
-              } catch (error) {
-                Alert.alert(
-                  "Erreur",
-                  error.message || "Impossible de supprimer la publication."
-                );
+              );
+
+              if (!response.ok) {
+                throw new Error("Erreur lors de la suppression du commentaire");
               }
-            },
+
+              // Remove comment from state
+              setPosts((prevPosts) =>
+                prevPosts.map((post) => ({
+                  ...post,
+                  comments: post.comments.filter(
+                    (comment) => comment.id !== commentId
+                  ),
+                }))
+              );
+            } catch (error) {
+              Alert.alert(
+                "Erreur",
+                error instanceof Error
+                  ? error.message
+                  : "Impossible de supprimer le commentaire."
+              );
+            }
           },
-        ]
-      );
-    };
-
-    const handleDeleteComment = async (commentId) => {
-      Alert.alert(
-        "Confirmation",
-        "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
-        [
-          {
-            text: "Annuler",
-            style: "cancel",
-          },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const response = await fetch(
-                  `${API_URL}/posts/comments/${commentId}`,
-                  {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                  }
-                );
-                if (!response.ok) {
-                  throw new Error(
-                    "Erreur lors de la suppression du commentaire"
-                  );
-                }
-                fetchPosts();
-              } catch (error) {
-                Alert.alert(
-                  "Erreur",
-                  error.message || "Impossible de supprimer le commentaire."
-                );
-              }
-            },
-          },
-        ]
-      );
-    };
-
-    const handleAddReply = async (parentId) => {
-      const userId = await getUserId();
-      console.log("Données envoyées au backend :", {
-        postId: item.id,
-        userId,
-        text: replyInputs[parentId],
-        parentId,
-      });
-
-      if (!userId || !replyInputs[parentId]?.trim()) {
-        Alert.alert(
-          "Erreur",
-          "Le texte de la réponse est vide ou l'ID utilisateur est introuvable."
-        );
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}/posts/comment`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            postId: item.id,
-            userId,
-            text: replyInputs[parentId],
-            parentId,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Erreur lors de l'ajout de la réponse");
-        }
-
-        setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-        setReplyToCommentId(null);
-
-        fetchPosts();
-      } catch (error) {
-        Alert.alert(
-          "Erreur",
-          error.message || "Impossible d'ajouter la réponse."
-        );
-      }
-    };
-
-    const handleDeleteReply = async (replyId) => {
-      Alert.alert(
-        "Confirmation",
-        "Êtes-vous sûr de vouloir supprimer cette réponse ?",
-        [
-          {
-            text: "Annuler",
-            style: "cancel",
-          },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const response = await fetch(
-                  `${API_URL}/posts/comments/${replyId}`,
-                  {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                  }
-                );
-                if (!response.ok) {
-                  throw new Error(
-                    "Erreur lors de la suppression de la réponse"
-                  );
-                }
-                fetchPosts();
-              } catch (error) {
-                Alert.alert(
-                  "Erreur",
-                  error.message || "Impossible de supprimer la réponse."
-                );
-              }
-            },
-          },
-        ]
-      );
-    };
-
-    const handlePhotoPress = (photo) => {
-      console.log("Photo pressée :", photo);
-      setSelectedPhoto(photo);
-      setIsModalVisible(true);
-    };
-
-    const handleShare = async () => {
-      try {
-        const result = await Share.share({
-          message:
-            "Je suis sur que ça peux t'interesser 😉 ! https://smartcities.com/post/123",
-          title: "Partager ce post",
-        });
-
-        if (result.action === Share.sharedAction) {
-          if (result.activityType) {
-            console.log("Partagé via :", result.activityType);
-          } else {
-            console.log("Partage réussi !");
-          }
-        } else if (result.action === Share.dismissedAction) {
-          console.log("Partage annulé");
-        }
-      } catch (error) {
-        console.error("Erreur lors du partage :", error.message);
-      }
-    };
-
-    return (
-      <View style={styles.postContainer}>
-        {/* En-tête du post */}
-        <TouchableOpacity onPress={() => handleNavigate(item.authorId)}>
-          <View style={styles.postHeader}>
-            <Image
-              source={{
-                uri: item.profilePhoto || "https://via.placeholder.com/150",
-              }}
-              style={styles.avatar}
-            />
-            <View>
-              <Text style={styles.userName}>
-                {item.authorName || "Utilisateur inconnu"}
-              </Text>
-              <Text style={styles.timestamp}>
-                {item.createdAt
-                  ? new Intl.DateTimeFormat("fr-FR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(new Date(item.createdAt))
-                  : "Date inconnue"}
-              </Text>
-            </View>
-            {/* Bouton de suppression */}
-            {item.authorId === userId && (
-              <TouchableOpacity
-                style={styles.deleteIcon}
-                onPress={() => handleDeletePost(item.id)}
-              >
-                <Icon name="trash" size={20} color="#656765" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </TouchableOpacity>
-        {/* Contenu du post */}
-        <Text style={styles.postText}>
-          {item.content || "Contenu indisponible"}
-        </Text>
-
-        {/* Carrousel d'images du post */}
-        {item.photos && item.photos.length > 0 && (
-          <View>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={handleScrollImage}
-              scrollEventThrottle={16}
-              contentContainerStyle={{ margin: 0, padding: 0 }}
-            >
-              {item.photos.map((photo, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handlePhotoPress(photo)}
-                  activeOpacity={1}
-                >
-                  <Image
-                    source={{ uri: photo }}
-                    style={styles.photoCarouselItem}
-                  />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Indicateurs dynamiques */}
-            <View style={styles.indicatorsContainer}>
-              {item.photos.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.indicator,
-                    activeIndex === index && styles.activeIndicator,
-                  ]}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-        <Modal
-          visible={isModalVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <View style={styles.modalBackground}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setIsModalVisible(false)}
-            >
-              <Text style={styles.closeText}>X</Text>
-            </TouchableOpacity>
-            {selectedPhoto && (
-              <Image
-                source={{ uri: selectedPhoto }}
-                style={styles.fullscreenPhoto}
-              />
-            )}
-          </View>
-        </Modal>
-        {/* Actions du post */}
-        <View style={styles.postActions}>
-          <TouchableOpacity
-            onPress={() => handleLike(item.id)}
-            style={[
-              styles.likeButton,
-              likedPosts.includes(item.id) && styles.likedButton,
-            ]}
-          >
-            <View style={styles.likeButtonContent}>
-              <Icon
-                name={
-                  likedPosts.includes(item.id)
-                    ? "thumbs-up"
-                    : "thumbs-up-outline"
-                }
-                size={22}
-                color={likedPosts.includes(item.id) ? "#3B90A5" : "#656765"}
-                style={styles.likeIcon}
-              />
-              <Text
-                style={[
-                  styles.likeButtonText,
-                  {
-                    color: likedPosts.includes(item.id) ? "#3B90A5" : "#656765",
-                  },
-                ]}
-              >
-                {likedPosts.includes(item.id)
-                  ? item.likesCount > 1
-                    ? `${item.likesCount}`
-                    : "1"
-                  : item.likesCount > 0
-                  ? `${item.likesCount}`
-                  : "0"}
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => toggleBothComments(item.id)}
-            style={styles.commentButton}
-          >
-            <View style={styles.commentButtonContent}>
-              <Icon
-                style={styles.commentIcon}
-                name={
-                  visibleComments[item.id] ? "chatbubble" : "chatbubble-outline"
-                }
-                size={22}
-                color={visibleComments[item.id] ? "#3B90A5" : "#656765"}
-              />
-              <Text
-                style={[
-                  styles.commentCountText,
-                  visibleComments[item.id] && { color: "#3B90A5" },
-                ]}
-              >
-                {item.comments?.length || 0}
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleShare}>
-            <Icon name="share-outline" size={22} style={styles.shareIcon} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Ajouter un commentaire */}
-        {visibleCommentSection[item.id] && (
-          <View style={styles.addCommentContainer}>
-            <TextInput
-              style={styles.addCommentInput}
-              placeholder="Écrivez un commentaire..."
-              value={commentInputs[item.id] || ""}
-              onChangeText={(text) =>
-                setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
-              }
-            />
-            <TouchableOpacity
-              onPress={() => handleAddComment(item.id)}
-              style={styles.addCommentButton}
-            >
-              <Text style={styles.addCommentButtonText}>Publier</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {/* Section des commentaires */}
-        {item.comments?.length > 0 && (
-          <View style={styles.commentsSection}>
-            {displayedComments.map((comment) => (
-              <View key={comment.id}>
-                <View style={styles.commentBloc}>
-                  {/* Avatar et contenu du commentaire principal */}
-                  <Image
-                    source={{
-                      uri:
-                        comment.userProfilePhoto ||
-                        "https://via.placeholder.com/150",
-                    }}
-                    style={styles.commentAvatar}
-                  />
-
-                  <View style={styles.commentContainer}>
-                    <Text style={styles.userNameComment}>
-                      {comment.userName || "Utilisateur inconnu"}
-                    </Text>
-                    <Text style={styles.timestampComment}>
-                      {comment.createdAt
-                        ? `${new Intl.DateTimeFormat("fr-FR", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }).format(new Date(comment.createdAt))}`
-                        : "Date inconnue"}
-                    </Text>
-                    <Text style={styles.commentText}>{comment.text}</Text>
-                  </View>
-                </View>
-                <View style={styles.actionButton}>
-                  <TouchableOpacity
-                    onPress={() => handleLikeComment(comment.id)}
-                  >
-                    <View style={styles.likeCommentButton}>
-                      <Icon
-                        name={comment.likedByUser ? "heart" : "heart-outline"}
-                        size={20}
-                        color={comment.likedByUser ? "#FF0000" : "#656765"}
-                      />
-                      <Text
-                        style={[
-                          styles.likeCommentText,
-                          comment.likedByUser && { color: "#FF0000" },
-                        ]}
-                      >
-                        {comment.likesCount} {/* 👈 Supprime "J'aime" */}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Champ de réponse conditionnel */}
-                {replyToCommentId === comment.id && (
-                  <View style={styles.replyContainer}>
-                    <TextInput
-                      style={styles.replyInput}
-                      placeholder="Écrivez une réponse..."
-                      value={replyInputs[comment.id] || ""}
-                      onChangeText={(text) =>
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [comment.id]: text,
-                        }))
-                      }
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleAddReply(comment.id)}
-                      style={styles.addReplyButton}
-                    >
-                      <Text style={styles.addReplyButtonText}>Publier</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Bouton pour afficher/masquer les réponses */}
-                {comment.replies && comment.replies.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() =>
-                      setReplyVisibility((prev) => ({
-                        ...prev,
-                        [comment.id]: !prev[comment.id],
-                      }))
-                    }
-                    style={[
-                      !replyVisibility[comment.id] &&
-                        styles.marginBottomWhenHidden,
-                    ]}
-                  >
-                    <Text style={styles.showMoreTextReply}>
-                      {replyVisibility[comment.id]
-                        ? `Masquer les réponses`
-                        : `Afficher ${comment.replies.length} réponse${
-                            comment.replies.length > 1 ? "s" : ""
-                          }`}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Bouton de suppression pour les commentaires appartenant à l'utilisateur */}
-                {comment.userId === userId && (
-                  <TouchableOpacity
-                    style={styles.deleteIconComment}
-                    onPress={() => handleDeleteComment(comment.id)}
-                  >
-                    <Icon name="trash" size={16} color="#656765" />
-                  </TouchableOpacity>
-                )}
-
-                {/* Afficher/Masquer les réponses */}
-                {replyVisibility[comment.id] &&
-                  comment.replies &&
-                  comment.replies.length > 0 && (
-                    <View style={styles.repliesSection}>
-                      {comment.replies.map((reply) => (
-                        <View key={reply.id} style={styles.replyContainer}>
-                          <Image
-                            source={{
-                              uri:
-                                reply.userProfilePhoto ||
-                                "https://via.placeholder.com/150",
-                            }}
-                            style={styles.commentAvatar}
-                          />
-                          <View style={styles.commentContent}>
-                            <Text style={styles.userNameComment}>
-                              {reply.userName || "Utilisateur inconnu"}
-                            </Text>
-                            <Text style={styles.timestampComment}>
-                              {reply.createdAt
-                                ? `${new Intl.DateTimeFormat("fr-FR", {
-                                    day: "numeric",
-                                    month: "long",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  }).format(new Date(reply.createdAt))}`
-                                : "Date inconnue"}
-                            </Text>
-                            <Text style={styles.commentText}>{reply.text}</Text>
-
-                            {/* Bouton de suppression pour les réponses */}
-                            {reply.userId === userId && (
-                              <TouchableOpacity
-                                style={styles.deleteIconReply}
-                                onPress={() => handleDeleteReply(reply.id)}
-                              >
-                                <Icon name="trash" size={16} color="#656765" />
-                              </TouchableOpacity>
-                            )}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+        },
+      ]
     );
   };
 
-  const handleRemovePhoto = (index) => {
+  /**
+   * Add a reply to a comment
+   */
+  const handleAddReply = async (parentId: number, postId: number) => {
+    try {
+      const userId = await getUserId();
+      const replyText = replyInputs[parentId]?.trim();
+
+      if (!userId || !replyText) {
+        Alert.alert("Erreur", "Le texte de la réponse est vide ou l'ID utilisateur est introuvable.");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/posts/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          userId,
+          text: replyText,
+          parentId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de l'ajout de la réponse");
+      }
+
+      // Clear input and update state
+      setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
+      setReplyToCommentId(null);
+
+      // Get the new reply data
+      const newReply = await response.json();
+
+      // Update posts with optimistic response
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: post.comments.map((comment) => {
+                if (comment.id === parentId) {
+                  return {
+                    ...comment,
+                    replies: [...comment.replies, newReply],
+                  };
+                }
+                return comment;
+              }),
+            };
+          }
+          return post;
+        })
+      );
+    } catch (error) {
+      Alert.alert(
+        "Erreur",
+        error instanceof Error ? error.message : "Impossible d'ajouter la réponse."
+      );
+    }
+  };
+
+  /**
+   * Delete a reply
+   */
+  const handleDeleteReply = async (replyId: number) => {
+    Alert.alert("Confirmation", "Êtes-vous sûr de vouloir supprimer cette réponse ?", [
+      {
+        text: "Annuler",
+        style: "cancel",
+      },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const response = await fetch(
+              `${API_URL}/posts/comments/${replyId}`,
+              {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Erreur lors de la suppression de la réponse");
+            }
+
+            // Remove reply from state
+            setPosts((prevPosts) =>
+              prevPosts.map((post) => ({
+                ...post,
+                comments: post.comments.map((comment) => ({
+                  ...comment,
+                  replies: comment.replies.filter(
+                    (reply) => reply.id !== replyId
+                  ),
+                })),
+              }))
+            );
+          } catch (error) {
+            Alert.alert(
+              "Erreur",
+              error instanceof Error ? error.message : "Impossible de supprimer la réponse."
+            );
+          }
+        },
+      },
+    ]);
+  };
+
+  /**
+   * Handle photo press to show full screen
+   */
+  const handlePhotoPress = (photo: string) => {
+    setSelectedPhoto(photo);
+    setIsModalVisible(true);
+  };
+
+  /**
+   * Share post functionality
+   */
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message:
+          "Découvrez cette publication intéressante ! https://smartcities.com/post/123",
+        title: "Partager cette publication",
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("Partagé via:", result.activityType);
+        } else {
+          console.log("Partage réussi !");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("Partage annulé");
+      }
+    } catch (error) {
+      console.error(
+        "Erreur lors du partage:",
+        error instanceof Error ? error.message : "Erreur inconnue"
+      );
+    }
+  };
+
+  /**
+   * Handle image selection for new post
+   */
+  const handlePickImage = async () => {
+    if (selectedImage.length >= 5) {
+      Alert.alert("Limite atteinte", "Vous ne pouvez pas sélectionner plus de 5 images.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage((prevImages) => [...prevImages, result.assets[0].uri]);
+    }
+  };
+
+  /**
+   * Remove selected photo at index
+   */
+  const handleRemovePhoto = (index: number) => {
     const updatedImages = [...selectedImage];
     updatedImages.splice(index, 1);
     setSelectedImage(updatedImages);
   };
 
+  /**
+   * Handle image carousel scroll
+   */
+  const handleScrollImage = (event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffsetX / screenWidth);
+    setActiveIndex(index);
+  };
+
+  /**
+   * Save user filter preference
+   */
+  const saveFilterPreference = async (filterByCity: boolean) => {
+    try {
+      await AsyncStorage.setItem(
+        "userFilterPreference",
+        filterByCity.toString()
+      );
+    } catch (error) {
+      console.error(
+        "Erreur lors de la sauvegarde des préférences:",
+        error instanceof Error ? error.message : "Erreur inconnue"
+      );
+    }
+  };
+
+  /**
+   * Navigate to user profile
+   */
+  const handleNavigate = (userId: number) => {
+    navigation.navigate("UserProfileScreen", { userId: userId.toString() });
+  };
+
+  /**
+   * Handle filter selection
+   */
+  const handleFilterSelect = (filterValue: boolean) => {
+    setIsCityFilterEnabled(filterValue);
+    saveFilterPreference(filterValue);
+    fetchPosts(filterValue);
+    setModalVisible(false);
+  };
+
+  /**
+   * Create a new post
+   */
   const handleAddPost = async () => {
     if (!newPostContent.trim()) {
       Alert.alert("Erreur", "Le contenu de la publication est vide.");
@@ -882,7 +792,7 @@ export default function SocialScreen({ handleScroll }) {
       formData.append("content", newPostContent);
       formData.append("authorId", userId.toString());
 
-      if (selectedImage) {
+      if (selectedImage.length > 0) {
         selectedImage.forEach((image) => {
           const filename = image.split("/").pop();
           const fileType = filename ? filename.split(".").pop() : "jpg";
@@ -904,194 +814,593 @@ export default function SocialScreen({ handleScroll }) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          error.message || "Erreur lors de la création de la publication"
-        );
+        throw new Error(error.message || "Erreur lors de la création de la publication");
       }
 
       const newPost = await response.json();
-      console.log("Publication créée :", newPost);
 
+      // Reset form
       setNewPostContent("");
       setSelectedImage([]);
 
-      fetchPosts();
+      // Add new post to state
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
 
       Alert.alert("Succès", "Votre publication a été créée avec succès !");
     } catch (error) {
-      console.error("Erreur lors de la création de la publication :", error);
       Alert.alert(
         "Erreur",
-        error.message || "Impossible de créer la publication."
+        error instanceof Error ? error.message : "Impossible de créer la publication."
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePickImage = async () => {
-    if (selectedImage.length >= 5) {
-      Alert.alert(
-        "Limite atteinte",
-        "Vous ne pouvez pas sélectionner plus de 5 images."
-      );
-      return;
-    }
+  /**
+   * Handle pull-to-refresh
+   */
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchPosts();
+  }, []);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  // Available filters
+  const filters: Filter[] = useMemo(
+    () => [
+      { label: "Toute la communauté Smarters", value: false },
+      { label: "Publications de ma ville", value: true },
+    ],
+    []
+  );
 
-    if (!result.canceled) {
-      setSelectedImage((prevImages) => [...prevImages, result.assets[0].uri]);
-    }
-  };
+  // Get selected filter label
+  const selectedFilter = useMemo(
+    () =>
+      filters.find((filter) => filter.value === isCityFilterEnabled)?.label ||
+      filters[0].label,
+    [filters, isCityFilterEnabled]
+  );
 
-  const handleScrollImage = (event) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const screenWidth = Dimensions.get("window").width;
-    const index = Math.round(contentOffsetX / screenWidth);
-    setActiveIndex(index);
-  };
+  /**
+   * Render post item
+   */
+  const renderItem = ({ item }: { item: Post }) => {
+    const isExpanded = visibleComments[item.id];
+    const displayedComments = isExpanded ? item.comments : [];
+    const isContentExpanded = expandedPostContent[item.id];
 
-  const saveFilterPreference = async (filterByCity) => {
-    try {
-      await AsyncStorage.setItem(
-        "userFilterPreference",
-        filterByCity.toString()
-      );
-    } catch (error) {
-      console.error(
-        "Erreur lors de la sauvegarde des préférences :",
-        error.message
-      );
-    }
-  };
+    // Function to format date
+    const formatDate = (dateString: string) => {
+      return new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(dateString));
+    };
 
-  const handleNavigate = (userId: number) => {
-    navigation.navigate("UserProfileScreen", { userId: userId.toString() });
-  };
+    // Check if post content is long enough to need expansion
+    const isLongContent = item.content && item.content.length > 150;
+    const displayContent =
+      isLongContent && !isContentExpanded
+        ? `${item.content.substring(0, 150)}...`
+        : item.content;
 
-  const handleFilterSelect = (filterValue) => {
-    setIsCityFilterEnabled(filterValue);
-    saveFilterPreference(filterValue);
-    fetchPosts(filterValue);
-    setModalVisible(false);
-  };
-  
-  const filters = [
-    { label: "Toutes la communauté Smarters", value: false },
-    { label: "Publications de ma ville", value: true },
-  ];
+    return (
+      <View style={styles.postContainer}>
+        {/* Post Header */}
+        <TouchableOpacity
+          onPress={() => handleNavigate(item.authorId)}
+          style={styles.postHeader}
+        >
+          <Image
+            source={{
+              uri: item.profilePhoto || "https://via.placeholder.com/150",
+            }}
+            style={styles.avatar}
+          />
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>
+              {item.authorName || "Utilisateur inconnu"}
+            </Text>
+            <Text style={styles.timestamp}>{formatDate(item.createdAt)}</Text>
+          </View>
 
-  const selectedFilter = filters.find(
-    (filter) => filter.value === isCityFilterEnabled
-  )?.label;
+          {/* Delete button (visible only to post author) */}
+          {item.authorId === userId && (
+            <TouchableOpacity
+              style={styles.deleteIcon}
+              onPress={() => handleDeletePost(item.id)}
+            >
+              <Icon name="trash-outline" size={20} color="#656765" />
+            </TouchableOpacity>
+          )}
+        </TouchableOpacity>
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        data={posts}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={
-          <View>
-            {/* Conteneur pour la publication */}
-            <View style={styles.newPostContainer}>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.newPostInput}
-                  placeholder="Quoi de neuf ?"
-                  value={newPostContent}
-                  onChangeText={setNewPostContent}
-                />
+        {/* Post Content */}
+        <View style={styles.postContent}>
+          <Text style={styles.postText}>{displayContent}</Text>
+
+          {isLongContent && (
+            <TouchableOpacity
+              onPress={() => toggleExpandedContent(item.id)}
+              style={styles.readMoreButton}
+            >
+              <Text style={styles.readMoreText}>
+                {isContentExpanded ? "Voir moins" : "Lire la suite"}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Image Carousel */}
+        {item.photos && item.photos.length > 0 && (
+          <View style={styles.carouselContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScrollImage}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.carouselContent}
+            >
+              {item.photos.map((photo, index) => (
                 <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={handlePickImage}
+                  key={index}
+                  onPress={() => handlePhotoPress(photo)}
+                  activeOpacity={0.9}
+                  style={styles.photoTouchable}
                 >
-                  <Icon name="image" size={24} color="#3B90A5" />
+                  <Image
+                    source={{ uri: photo }}
+                    style={styles.photoCarouselItem}
+                  />
                 </TouchableOpacity>
-              </View>
+              ))}
+            </ScrollView>
 
-              <View>
-                {selectedImage.length > 0 ? (
-                  <>
-                    <View style={styles.largeImageContainer}>
-                      <Image
-                        source={{ uri: selectedImage[0] }}
-                        style={styles.largeImage}
-                      />
+            {/* Pagination Indicators */}
+            {item.photos.length > 1 && (
+              <View style={styles.indicatorsContainer}>
+                {item.photos.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.indicator,
+                      activeIndex === index && styles.activeIndicator,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Full Screen Image Modal */}
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modalBackground}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsModalVisible(false)}
+            >
+              <Icon name="close" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            {selectedPhoto && (
+              <Image
+                source={{ uri: selectedPhoto }}
+                style={styles.fullscreenPhoto}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </Modal>
+
+        {/* Post Actions */}
+        <View style={styles.postActions}>
+          <TouchableOpacity
+            onPress={() => handleLike(item.id)}
+            style={styles.actionButton}
+          >
+            <View style={styles.actionButtonContent}>
+              <Icon
+                name={likedPosts.includes(item.id) ? "heart" : "heart-outline"}
+                size={22}
+                color={likedPosts.includes(item.id) ? "#E53935" : "#656765"}
+                style={styles.actionIcon}
+              />
+              <Text
+                style={[
+                  styles.actionText,
+                  likedPosts.includes(item.id) && styles.likedText,
+                ]}
+              >
+                {item.likesCount > 0 ? item.likesCount : ""}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => toggleBothComments(item.id)}
+            style={styles.actionButton}
+          >
+            <View style={styles.actionButtonContent}>
+              <Icon
+                name={
+                  visibleComments[item.id] ? "chatbubble" : "chatbubble-outline"
+                }
+                size={22}
+                color={visibleComments[item.id] ? "#1976D2" : "#656765"}
+                style={styles.actionIcon}
+              />
+              <Text
+                style={[
+                  styles.actionText,
+                  visibleComments[item.id] && styles.activeCommentText,
+                ]}
+              >
+                {item.comments?.length > 0 ? item.comments.length : ""}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleShare} style={styles.actionButton}>
+            <View style={styles.actionButtonContent}>
+              <Icon
+                name="share-social-outline"
+                size={22}
+                color="#656765"
+                style={styles.actionIcon}
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Add Comment Input */}
+        {visibleCommentSection[item.id] && (
+          <View style={styles.addCommentContainer}>
+            <Image
+              source={{
+                uri: "https://via.placeholder.com/150", // Replace with user's avatar
+              }}
+              style={styles.commentAvatar}
+            />
+            <TextInput
+              style={styles.addCommentInput}
+              placeholder="Écrivez un commentaire..."
+              placeholderTextColor="#999"
+              value={commentInputs[item.id] || ""}
+              onChangeText={(text) =>
+                setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
+              }
+            />
+            <TouchableOpacity
+              onPress={() => handleAddComment(item.id)}
+              style={[
+                styles.addCommentButton,
+                (!commentInputs[item.id] || !commentInputs[item.id].trim()) &&
+                  styles.disabledButton,
+              ]}
+              disabled={
+                !commentInputs[item.id] || !commentInputs[item.id].trim()
+              }
+            >
+              <Icon name="send" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Comments Section */}
+        {item.comments?.length > 0 && visibleComments[item.id] && (
+          <View style={styles.commentsSection}>
+            {displayedComments.map((comment) => (
+              <View key={comment.id} style={styles.commentWrapper}>
+                <View style={styles.commentBloc}>
+                  {/* Comment Avatar */}
+                  <TouchableOpacity
+                    onPress={() => handleNavigate(comment.userId)}
+                  >
+                    <Image
+                      source={{
+                        uri:
+                          comment.userProfilePhoto ||
+                          "https://via.placeholder.com/150",
+                      }}
+                      style={styles.commentAvatar}
+                    />
+                  </TouchableOpacity>
+
+                  {/* Comment Content */}
+                  <View style={styles.commentContainer}>
+                    <View style={styles.commentHeader}>
                       <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleRemovePhoto(0)}
+                        onPress={() => handleNavigate(comment.userId)}
                       >
-                        <Icon name="trash-outline" size={24} color="#FFF" />
+                        <Text style={styles.commentUserName}>
+                          {comment.userName || "Utilisateur inconnu"}
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={styles.commentTimestamp}>
+                        {formatDate(comment.createdAt)}
+                      </Text>
+                    </View>
+                    <Text style={styles.commentText}>{comment.text}</Text>
+
+                    {/* Comment Actions */}
+                    <View style={styles.commentActions}>
+                      <TouchableOpacity
+                        onPress={() => handleLikeComment(comment.id)}
+                        style={styles.commentAction}
+                      >
+                        <Icon
+                          name={comment.likedByUser ? "heart" : "heart-outline"}
+                          size={18}
+                          color={comment.likedByUser ? "#E53935" : "#656765"}
+                        />
+                        {comment.likesCount > 0 && (
+                          <Text
+                            style={[
+                              styles.commentActionText,
+                              comment.likedByUser && styles.likedText,
+                            ]}
+                          >
+                            {comment.likesCount}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() =>
+                          setReplyToCommentId(
+                            replyToCommentId === comment.id ? null : comment.id
+                          )
+                        }
+                        style={styles.commentAction}
+                      >
+                        <Text style={styles.replyActionText}>Répondre</Text>
                       </TouchableOpacity>
                     </View>
+                  </View>
 
-                    <View style={styles.smallImagesContainer}>
-                      {selectedImage.slice(1).map((uri, index) => (
-                        <View key={index} style={styles.smallImageWrapper}>
-                          <Image source={{ uri }} style={styles.smallImage} />
+                  {/* Delete Comment Button */}
+                  {comment.userId === userId && (
+                    <TouchableOpacity
+                      style={styles.deleteCommentIcon}
+                      onPress={() => handleDeleteComment(comment.id)}
+                    >
+                      <Icon name="trash-outline" size={16} color="#656765" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Reply Input */}
+                {replyToCommentId === comment.id && (
+                  <View style={styles.replyInputContainer}>
+                    <Image
+                      source={{
+                        uri: "https://via.placeholder.com/150", // Replace with user's avatar
+                      }}
+                      style={styles.replyAvatar}
+                    />
+                    <TextInput
+                      style={styles.replyInput}
+                      placeholder="Écrivez une réponse..."
+                      placeholderTextColor="#999"
+                      value={replyInputs[comment.id] || ""}
+                      onChangeText={(text) =>
+                        setReplyInputs((prev) => ({
+                          ...prev,
+                          [comment.id]: text,
+                        }))
+                      }
+                    />
+                    <TouchableOpacity
+                      onPress={() => handleAddReply(comment.id, item.id)}
+                      style={[
+                        styles.replyButton,
+                        (!replyInputs[comment.id] ||
+                          !replyInputs[comment.id].trim()) &&
+                          styles.disabledButton,
+                      ]}
+                      disabled={
+                        !replyInputs[comment.id] ||
+                        !replyInputs[comment.id].trim()
+                      }
+                    >
+                      <Icon name="send" size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Show/Hide Replies Toggle */}
+                {comment.replies && comment.replies.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setReplyVisibility((prev) => ({
+                        ...prev,
+                        [comment.id]: !prev[comment.id],
+                      }))
+                    }
+                    style={styles.showRepliesButton}
+                  >
+                    <Icon
+                      name={
+                        replyVisibility[comment.id]
+                          ? "chevron-up"
+                          : "chevron-down"
+                      }
+                      size={16}
+                      color="#1976D2"
+                    />
+                    <Text style={styles.showRepliesText}>
+                      {replyVisibility[comment.id]
+                        ? `Masquer les réponses`
+                        : `Voir ${comment.replies.length} ${
+                            comment.replies.length === 1 ? "réponse" : "réponses"
+                          }`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Replies */}
+                {replyVisibility[comment.id] &&
+                  comment.replies &&
+                  comment.replies.length > 0 && (
+                    <View style={styles.repliesSection}>
+                      {comment.replies.map((reply) => (
+                        <View key={reply.id} style={styles.replyWrapper}>
                           <TouchableOpacity
-                            style={styles.deleteButtonSmall}
-                            onPress={() => handleRemovePhoto(index + 1)}
+                            onPress={() => handleNavigate(reply.userId)}
                           >
-                            <Icon
-                              name="close-circle-outline"
-                              size={20}
-                              color="#FFF"
+                            <Image
+                              source={{
+                                uri:
+                                  reply.userProfilePhoto ||
+                                  "https://via.placeholder.com/150",
+                              }}
+                              style={styles.replyAvatar}
                             />
                           </TouchableOpacity>
+
+                          <View style={styles.replyContent}>
+                            <View style={styles.replyHeader}>
+                              <TouchableOpacity
+                                onPress={() => handleNavigate(reply.userId)}
+                              >
+                                <Text style={styles.replyUserName}>
+                                  {reply.userName || "Utilisateur inconnu"}
+                                </Text>
+                              </TouchableOpacity>
+                              <Text style={styles.replyTimestamp}>
+                                {formatDate(reply.createdAt)}
+                              </Text>
+                            </View>
+                            <Text style={styles.replyText}>{reply.text}</Text>
+
+                            {/* Delete Reply Button */}
+                            {reply.userId === userId && (
+                              <TouchableOpacity
+                                style={styles.deleteReplyIcon}
+                                onPress={() => handleDeleteReply(reply.id)}
+                              >
+                                <Icon
+                                  name="trash-outline"
+                                  size={14}
+                                  color="#656765"
+                                />
+                              </TouchableOpacity>
+                            )}
+                          </View>
                         </View>
                       ))}
                     </View>
-                  </>
-                ) : (
-                  <Text style={styles.noImageText}>
-                    Enrichissez votre post en sélectionnant jusqu'à 5 photos
-                  </Text>
-                )}
+                  )}
               </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
 
-              <TouchableOpacity
-                style={styles.publishButton}
-                onPress={handleAddPost}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <Text style={styles.publishButtonText}>Publier</Text>
-                )}
-              </TouchableOpacity>
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+    >
+      <StatusBar barStyle="dark-content" />
 
-              {isLoading && (
-                <View style={styles.overlay}>
-                  <ActivityIndicator size="large" color="#FFF" />
+      {/* Main Content */}
+      <FlatList
+        data={posts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.feedContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1976D2"]}
+            tintColor="#1976D2"
+          />
+        }
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            {/* Post Creation Card */}
+            <View style={styles.createPostContainer}>
+              <TextInput
+                style={styles.createPostInput}
+                placeholder="Quoi de neuf dans votre quartier ?"
+                placeholderTextColor="#999"
+                multiline
+                value={newPostContent}
+                onChangeText={setNewPostContent}
+              />
+              {selectedImage.length > 0 && (
+                <View style={styles.selectedImagesContainer}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.selectedImagesScroll}
+                  >
+                    {selectedImage.map((uri, index) => (
+                      <View key={index} style={styles.selectedImageWrapper}>
+                        <Image source={{ uri }} style={styles.selectedImage} />
+                        <TouchableOpacity
+                          style={styles.removeImageButton}
+                          onPress={() => handleRemovePhoto(index)}
+                        >
+                          <Icon name="close-circle" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
+
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={styles.mediaButton}
+                  onPress={handlePickImage}
+                >
+                  <Icon name="image-outline" size={22} color="#1976D2" />
+                  <Text style={styles.mediaButtonText}>Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.postButton,
+                    (!newPostContent.trim() && selectedImage.length === 0) &&
+                      styles.disabledButton
+                  ]}
+                  onPress={handleAddPost}
+                  disabled={!newPostContent.trim() && selectedImage.length === 0}
+                >
+                  <Text style={styles.postButtonText}>Publier</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Conteneur pour les filtres */}
+            {/* Filter Options */}
             <View style={styles.filterContainer}>
-              {/* Bouton principal */}
               <TouchableOpacity
                 style={styles.filterButton}
                 onPress={() => setModalVisible(true)}
               >
-                <Ionicons name="settings-outline" size={16} />
-                <Text style={styles.filterText}>
-                  Préférence d'affichage : {selectedFilter}
-                </Text>
+                <Icon name="filter-outline" size={16} color="#656765" />
+                <Text style={styles.filterText}>{selectedFilter}</Text>
+                <Icon name="chevron-down" size={16} color="#656765" />
               </TouchableOpacity>
 
-              {/* Modal pour le menu déroulant */}
+              {/* Filter Modal */}
               <Modal
                 visible={modalVisible}
                 transparent
@@ -1103,544 +1412,543 @@ export default function SocialScreen({ handleScroll }) {
                   activeOpacity={1}
                   onPress={() => setModalVisible(false)}
                 >
-                  <View style={styles.modalContent}>
-                    <FlatList
-                      data={filters}
-                      keyExtractor={(item) => item.label}
-                      renderItem={({ item }) => (
+                  <BlurView intensity={10} style={styles.blurView}>
+                    <View style={styles.modalContent}>
+                      {filters.map((filter, index) => (
                         <TouchableOpacity
+                          key={index}
                           style={[
                             styles.filterOption,
-                            isCityFilterEnabled === item.value &&
+                            isCityFilterEnabled === filter.value &&
                               styles.activeFilter,
                           ]}
-                          onPress={() => handleFilterSelect(item.value)}
+                          onPress={() => handleFilterSelect(filter.value)}
                         >
                           <Text
                             style={[
                               styles.filterOptionText,
-                              isCityFilterEnabled === item.value &&
-                                styles.activeFilterOptionText,
+                              isCityFilterEnabled === filter.value &&
+                                styles.activeFilterText,
                             ]}
                           >
-                            {item.label}
+                            {filter.label}
                           </Text>
+                          {isCityFilterEnabled === filter.value && (
+                            <Icon name="checkmark" size={20} color="#FFFFFF" />
+                          )}
                         </TouchableOpacity>
-                      )}
-                    />
-                  </View>
+                      ))}
+                    </View>
+                  </BlurView>
                 </TouchableOpacity>
               </Modal>
             </View>
           </View>
         }
-        contentContainerStyle={styles.postsList}
       />
-    </View>
+
+      {/* Loading Overlay */}
+      {isLoading && !refreshing && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1976D2" />
+        </View>
+      )}
+    </KeyboardAvoidingView>
   );
 }
 
+/**
+ * Component styles
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f2f5",
-    paddingBottom: 80,
+    backgroundColor: "#F5F7FA",
   },
-  marginBottomWhenHidden: {
-    marginBottom: 20,
+  headerContainer: {
+    paddingTop: 100, // Space for header
+    paddingBottom: 8,
   },
-  largeImageContainer: {
-    position: "relative",
-    width: "100%",
-    alignItems: "center",
+  feedContainer: {
+    paddingBottom: 80, // Space for bottom navigation
+  },
+  // Create Post Card
+  createPostContainer: {
+    padding: 16,
+    backgroundColor: "#ffffff",
+    marginHorizontal: 16,
     marginBottom: 10,
-    marginTop: 10,
-  },
-  likedButton: {},
-  largeImage: {
-    width: "100%",
-    height: 300,
-    resizeMode: "cover",
-    borderRadius: 10,
-  },
-  deleteButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    padding: 5,
-    borderRadius: 20,
-  },
-  smallImagesContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-  },
-  smallImageWrapper: {
-    position: "relative",
-  },
-  smallImage: {
-    width: 75,
-    height: 75,
-    resizeMode: "cover",
-    borderRadius: 10,
-  },
-  deleteButtonSmall: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    padding: 2,
-    borderRadius: 15,
-  },
-  photoCarouselItem: {
-    width: Dimensions.get("window").width,
-    aspectRatio: 1,
-    resizeMode: "contain",
-    marginTop: 15,
-  },
-  newPostContainer: {
-    padding: 20,
-    backgroundColor: "#fff",
-    marginTop: 100,
-  },
-  postHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  avatar: {
-    marginLeft: 15,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  userName: {
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  timestamp: {
-    fontSize: 12,
-    marginTop: 3,
-    color: "#666",
-  },
-  indicatorsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  indicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#D3D3D3",
-    marginHorizontal: 5,
-  },
-  activeIndicator: {
-    backgroundColor: "#333",
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  postContainer: {
-    backgroundColor: "#fff",
-    marginBottom: 10,
-    paddingTop: 15,
+    borderRadius: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  postText: {
-    fontSize: 16,
-    marginTop: 5,
-    marginLeft: 18,
-    fontWeight: "500",
-    color: "#444",
+  createPostInput: {
+    width: "100%",
+    backgroundColor: "#F5F7FA",
+    borderRadius: 24,
+    padding: 16,
+    fontSize: 15,
+    color: "#333",
+    marginBottom: 16,
+    minHeight: 48,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  postActions: {
-    padding: 10,
-    flexDirection: "row",
-  },
-  shareIcon: {
-    color: "#656765",
-    marginTop: 17,
-    marginLeft: 190,
-  },
-  commentButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 10,
-  },
-  commentButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  commentIcon: {
-    marginTop: 12,
-    marginLeft: 5,
-  },
-  commentCountText: {
-    fontWeight: "bold",
-    color: "#656765",
-    fontSize: 14,
-    marginTop: 12,
-    marginLeft: 5,
-  },
-  actionButton: {
-    flexDirection: "row",
-    gap: 10,
-    marginLeft: 55,
-    marginBottom: 15,
-  },
-  likeCommentButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 5,
-    marginTop: 5,
-  },
-  likeCommentText: {
-    marginLeft: 5,
-    fontSize: 14,
-    color: "#656765",
-    fontWeight: "bold",
-  },
-  replyCommentButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 10,
-    marginTop: 3,
-  },
-  replyCommentText: {
-    marginLeft: 5,
-    fontSize: 14,
-    color: "#656765",
-    fontWeight: "bold",
-  },
-  commentBloc: {
-    flexDirection: "row",
-  },
-  likeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  likeButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  imagePreviewContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 10,
-  },
-  fullscreenPhoto: {
-    width: "90%",
-    height: "70%",
-    resizeMode: "contain",
-    borderRadius: 10,
-  },
-
-  modalBackground: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 20,
-    padding: 10,
-  },
-  closeText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "black",
-  },
-  likeIcon: {
-    marginRight: 5,
-  },
-  likeButtonText: {
-    color: "#656765",
-    fontWeight: "bold",
-    fontSize: 14,
-    marginTop: 2,
-  },
-  commentsSection: {
-    paddingHorizontal: 10,
-  },
-  noImageText: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#999",
-    marginTop: 10,
-  },
-  addCommentContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  photosRowContainer: {
+  actionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    alignItems: "center",
+    marginTop: 8,
   },
-  photoRowItem: {
-    width: "100%",
-    aspectRatio: 1,
+  selectedImagesContainer: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  selectedImagesScroll: {
+    paddingRight: 16,
+  },
+  selectedImageWrapper: {
+    position: "relative",
+    marginRight: 12,
+  },
+  selectedImage: {
+    width: 100,
+    height: 100,
     borderRadius: 8,
-    resizeMode: "cover",
-    marginBottom: 10,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 12,
+    padding: 0,
+  },
+  mediaButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 8,
+  },
+  mediaButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#1976D2",
+  },
+  postButton: {
+    backgroundColor: "#1976D2",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  postButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 14,
   },
 
+  // Filter Section
   filterContainer: {
-    alignItems: "center",
-    margin: 10,
+    paddingHorizontal: 16,
+    marginBottom: 2,
   },
   filterButton: {
     flexDirection: "row",
-    borderRadius: 30,
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filterText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#555",
-    marginLeft: 5,
-    marginTop: 2,
+    fontSize: 13,
+    color: "#656765",
+    marginHorizontal: 8,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  blurView: {
+    width: "100%",
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     width: "80%",
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 5,
   },
   filterOption: {
-    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#F0F2F5",
   },
   activeFilter: {
-    backgroundColor: "#3B90A5",
-    borderRadius: 8,
+    backgroundColor: "#1976D2",
   },
   filterOptionText: {
     fontSize: 16,
     color: "#333",
   },
-  activeFilterOptionText: {
-    color: "#FFF",
-    fontWeight: "bold",
+  activeFilterText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 
-  morePhotosOverlay: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    width: "30%",
-    aspectRatio: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 8,
+  // Post Item
+  postContainer: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  morePhotosText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  addCommentInput: {
-    flex: 1,
-    backgroundColor: "#f7f7f7",
-    padding: 10,
-    paddingLeft: 15,
-    borderRadius: 38,
-    marginRight: 10,
-    fontSize: 14,
-  },
-  addCommentButton: {
-    backgroundColor: "#3B90A5",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  addCommentButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  inputRow: {
+  postHeader: {
     flexDirection: "row",
     alignItems: "center",
+    padding: 16,
   },
-  newPostInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 16,
-    marginRight: 10,
-  },
-  iconButton: {
-    padding: 5,
-  },
-  publishButton: {
-    backgroundColor: "#3B90A5",
-    padding: 10,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  publishButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  postsList: {
-    paddingBottom: 10,
-  },
-  showMoreTextComment: {
-    color: "#555",
-    fontWeight: "bold",
-    fontSize: 14,
-    marginLeft: 5,
-  },
-  showMoreButton: {
-    alignSelf: "flex-start",
-    padding: 5,
-    marginTop: 5,
-    borderRadius: 5,
-  },
-  showMoreTextReply: {
-    color: "#3B90A5",
-    fontWeight: "bold",
-    fontSize: 14,
-    marginLeft: 55,
-  },
-  deleteIcon: {
-    position: "absolute",
-    right: 24,
-    top: 5,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 10,
-  },
-  deleteIconComment: {
-    position: "absolute",
-    right: 15,
-    top: 10,
-  },
-  deleteIconReply: {
-    position: "absolute",
-    right: 8,
-  },
-  replyInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    width: "70%",
-    padding: 8,
-    fontSize: 14,
-    backgroundColor: "#fff",
-    marginBottom: 5,
-  },
-
-  commentContainer: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    width: "85%",
-    padding: 10,
-    paddingLeft: 15,
-    backgroundColor: "#f7f7f7",
-    borderRadius: 20,
-  },
-  repliesSection: {
-    marginTop: 10,
-  },
-  replyContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    marginLeft: 55,
-    paddingVertical: 15,
-    width: "85%",
-    padding: 10,
-    backgroundColor: "#eef6ff",
-    borderRadius: 20,
-    borderLeftWidth: 2,
-    borderLeftColor: "#3B90A5",
-  },
-  addReplyButton: {
-    backgroundColor: "#3B90A5",
-    borderRadius: 5,
-    padding: 8,
-    marginTop: 1,
-    marginLeft: 20,
-    alignItems: "center",
-  },
-  addReplyButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  commentAvatar: {
+  avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 10,
-    marginBottom: 5,
+    marginRight: 12,
   },
-  commentContent: {
+  userInfo: {
     flex: 1,
   },
-  userNameComment: {
-    fontWeight: "bold",
+  userName: {
+    fontWeight: "600",
+    fontSize: 15,
+    color: "#333",
+  },
+  timestamp: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+  },
+  deleteIcon: {
+    padding: 8,
+  },
+  postContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  postText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#333",
+  },
+  readMoreButton: {
+    marginTop: 4,
+  },
+  readMoreText: {
+    color: "#1976D2",
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  carouselContainer: {
+    width: "100%",
+  },
+  carouselContent: {
+    // No specific style needed
+  },
+  photoTouchable: {
+    width: Dimensions.get("window").width - 32, // Account for margins
+  },
+  photoCarouselItem: {
+    width: Dimensions.get("window").width - 32,
+    height: (Dimensions.get("window").width - 32) * 0.75, // 4:3 aspect ratio
+    borderRadius: 8,
+  },
+  indicatorsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E0E0E0",
+    marginHorizontal: 4,
+  },
+  activeIndicator: {
+    backgroundColor: "#1976D2",
+    width: 16,
+  },
+  postActions: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#F0F2F5",
+    paddingVertical: 8,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  actionButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionIcon: {
+    marginRight: 6,
+  },
+  actionText: {
+    fontSize: 14,
+    color: "#656765",
+  },
+  likedText: {
+    color: "#E53935",
+  },
+  activeCommentText: {
+    color: "#1976D2",
+  },
+
+  // Comments Section
+  addCommentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F2F5",
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  addCommentInput: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#F5F7FA",
+    borderRadius: 20,
+    fontSize: 14,
+    color: "#333",
+    marginRight: 8,
+  },
+  addCommentButton: {
+    backgroundColor: "#1976D2",
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  disabledButton: {
+    backgroundColor: "#BDBDBD",
+  },
+  commentsSection: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F2F5",
+  },
+  commentWrapper: {
+    marginTop: 12,
+  },
+  commentBloc: {
+    flexDirection: "row",
+  },
+  commentContainer: {
+    flex: 1,
+    backgroundColor: "#F5F7FA",
+    borderRadius: 16,
+    padding: 12,
+    marginLeft: 8,
+  },
+  commentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  commentUserName: {
+    fontWeight: "600",
     fontSize: 14,
     color: "#333",
   },
-  timestampComment: {
+  commentTimestamp: {
     fontSize: 10,
     color: "#888",
-    marginTop: 3,
-    marginBottom: 5,
   },
   commentText: {
     fontSize: 14,
-    color: "#444",
     lineHeight: 20,
+    color: "#333",
   },
-  replyButtonText: {
-    color: "#555",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginTop: 5,
+  commentActions: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+  commentAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  commentActionText: {
+    fontSize: 12,
+    color: "#656765",
+    marginLeft: 4,
+  },
+  replyActionText: {
+    fontSize: 12,
+    color: "#656765",
+    fontWeight: "500",
+  },
+  deleteCommentIcon: {
+    padding: 8,
+    alignSelf: "flex-start",
+  },
+
+  // Reply Section
+  replyInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginLeft: 40,
+  },
+  replyAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  replyInput: {
+    flex: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "#F5F7FA",
+    borderRadius: 16,
+    fontSize: 13,
+    color: "#333",
+    marginRight: 8,
+  },
+  replyButton: {
+    backgroundColor: "#1976D2",
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  showRepliesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 40,
+    marginTop: 8,
+    paddingVertical: 4,
+  },
+  showRepliesText: {
+    fontSize: 12,
+    color: "#1976D2",
+    fontWeight: "500",
+    marginLeft: 4,
+  },
+  repliesSection: {
+    marginLeft: 20,
+    marginTop: 8,
+  },
+  replyWrapper: {
+    flexDirection: "row",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  replyContent: {
+    flex: 1,
+    backgroundColor: "#F0F8FF",
+    borderRadius: 16,
+    padding: 10,
+    marginLeft: 8,
+  },
+  replyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  replyUserName: {
+    fontWeight: "600",
+    fontSize: 13,
+    color: "#333",
+  },
+  replyTimestamp: {
+    fontSize: 10,
+    color: "#888",
+  },
+  replyText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#333",
+  },
+  deleteReplyIcon: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+  },
+
+  // Modals and Overlays
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullscreenPhoto: {
+    width: "90%",
+    height: "70%",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
   },
 });
