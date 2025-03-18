@@ -1,21 +1,27 @@
 // components/interactions/CreateReport/LocationSelectionStep.tsx
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   View, 
   TextInput, 
   TouchableOpacity, 
   Text, 
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import { LocationCoordinates } from './types';
 import AddressSuggestionModal from './AddressSuggestionModal';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Constante pour le libellé de la position actuelle
 export const CURRENT_LOCATION_LABEL = "Ma position";
+
+const { width } = Dimensions.get('window');
 
 interface LocationSelectionStepProps {
   query: string;
@@ -54,99 +60,169 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   isSubmitting
 }) => {
   const mapRef = useRef<MapView>(null);
+  const [mapError, setMapError] = useState<boolean>(false);
   
   /**
    * Gère l'appui sur la carte
    */
   const handleMapPress = (event: any) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    onMapPress(latitude, longitude);
+    try {
+      const { latitude, longitude } = event.nativeEvent.coordinate;
+      onMapPress(latitude, longitude);
+    } catch (error) {
+      console.warn("Error handling map press:", error);
+    }
   };
 
   /**
    * Gère l'utilisation de la position actuelle
-   * Point d'entrée central pour la fonctionnalité "Ma position"
    */
   const handleUseCurrentLocation = () => {
-    // Ne pas mettre à jour la barre de recherche ici
-    // Laisser cette responsabilité au parent pour éviter les incohérences
-    
-    // Appeler le handler pour obtenir la position
     onUseCurrentLocation();
+  };
+
+  /**
+   * Gère les erreurs de chargement de la carte
+   */
+  const handleMapError = () => {
+    setMapError(true);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.pageTitle}>Étape 3 : Tapez une adresse ou ajouter un point</Text>
+      <View style={styles.header}>
+              <Text style={styles.pageTitle}>Localisation</Text>
+            </View>
+            <Text style={styles.pageSubtitle}>Indiquez où se situe le problème</Text>
       
-      <View style={styles.addressSearchContainer}>
-        <View style={styles.inputWithButton}>
-          <TextInput
-            style={styles.inputSearch}
-            placeholder="Rechercher une adresse"
-            value={query}
-            placeholderTextColor="#c7c7c7"
-            onChangeText={onQueryChange}
-          />
-          <TouchableOpacity style={styles.searchButton} onPress={onSearchAddress}>
-            <Ionicons name="search-sharp" size={18} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.locationButton} 
-            onPress={handleUseCurrentLocation}
-            accessibilityLabel="Utiliser ma position actuelle"
-          >
-            <Ionicons name="location-sharp" size={18} color="#fff" />
-          </TouchableOpacity>
+      <View style={styles.contentContainer}>
+        <View style={styles.searchCard}>
+          <View style={styles.inputContainer}>
+            <Ionicons name="search-outline" size={22} color="#8E8E93" style={styles.searchIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Rechercher une adresse..."
+              value={query}
+              placeholderTextColor="#8E8E93"
+              onChangeText={onQueryChange}
+              returnKeyType="search"
+              onSubmitEditing={onSearchAddress}
+            />
+          </View>
+          
+          <View style={styles.actionButtons}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={onSearchAddress}
+            >
+              <LinearGradient
+                colors={['#3498db', '#2980b9']}
+                style={styles.buttonGradient}
+              >
+                <Ionicons name="search" size={22} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.locationButton]}
+              onPress={handleUseCurrentLocation}
+              accessibilityLabel="Utiliser ma position actuelle"
+            >
+              <LinearGradient
+                colors={['#2ecc71', '#27ae60']}
+                style={styles.buttonGradient}
+              >
+                <Ionicons name="location" size={22} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-      
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#062C41" />
-        </View>
-      ) : (
-        <View style={styles.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={{
-              latitude: initialLocation?.latitude || 48.8566,
-              longitude: initialLocation?.longitude || 2.3522,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-            onPress={handleMapPress}
-          >
-            {selectedLocation && (
-              <Marker
-                coordinate={{
-                  latitude: selectedLocation.latitude,
-                  longitude: selectedLocation.longitude,
+        
+        <View style={styles.mapSection}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#062C41" />
+              <Text style={styles.loadingText}>Localisation en cours...</Text>
+            </View>
+          ) : mapError ? (
+            <View style={styles.mapErrorContainer}>
+              <Ionicons name="map-outline" size={48} color="#cbd5e1" />
+              <Text style={styles.mapErrorTitle}>Carte indisponible</Text>
+              <Text style={styles.mapErrorText}>
+                Vous pouvez toujours rechercher une adresse ou utiliser votre position actuelle
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.mapContainer}>
+              <MapView
+                ref={mapRef}
+                style={styles.map}
+                initialRegion={{
+                  latitude: initialLocation?.latitude || 48.8566,
+                  longitude: initialLocation?.longitude || 2.3522,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
                 }}
-                pinColor="red"
-                title="Position choisie"
-                description={query === CURRENT_LOCATION_LABEL ? "Votre position actuelle" : "Vous avez sélectionné cet endroit."}
-              />
-            )}
-          </MapView>
+                onPress={handleMapPress}
+              >
+                {selectedLocation && (
+                  <Marker
+                    coordinate={{
+                      latitude: selectedLocation.latitude,
+                      longitude: selectedLocation.longitude,
+                    }}
+                    pinColor="#d81b60"
+                    title="Position choisie"
+                    description={query === CURRENT_LOCATION_LABEL ? "Votre position actuelle" : "Vous avez sélectionné cet endroit."}
+                  />
+                )}
+              </MapView>
+              
+              <View style={styles.mapOverlay}>
+                <Text style={styles.mapInstructions}>
+                  Appuyez sur la carte pour sélectionner manuellement un emplacement
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
-      )}
-      
-      <View style={styles.submitButtonContainer}>
-        {isSubmitting ? (
-          <ActivityIndicator size="large" color="#062C41" />
-        ) : (
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.disabledButton]}
-            onPress={onSubmit}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? "Envoi en cours..." : "Signalez le problème"}
+        
+        <View style={styles.submitSection}>
+          {isSubmitting ? (
+            <View style={styles.loadingSubmitContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.loadingSubmitText}>Traitement en cours...</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[
+                styles.submitButton, 
+                (!selectedLocation || isSubmitting) && styles.disabledButton
+              ]}
+              onPress={onSubmit}
+              disabled={!selectedLocation || isSubmitting}
+            >
+              <LinearGradient
+                colors={['#1DB681', '#1DB681']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.submitGradient}
+              >
+                <Text style={styles.submitText}>
+                  Signaler le problème
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+          
+          {!selectedLocation && (
+            <Text style={styles.helpText}>
+              Veuillez sélectionner une localisation pour continuer
             </Text>
-          </TouchableOpacity>
-        )}
+          )}
+        </View>
       </View>
 
       <AddressSuggestionModal
@@ -162,74 +238,247 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    backgroundColor: '#3498db', // Couleur bleu vif et moderne
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3498db',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   pageTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
-  addressSearchContainer: {
-    marginBottom: 15,
-  },
-  inputWithButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inputSearch: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 13,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  locationButton: {
-    backgroundColor: '#2ecc71',
-    padding: 13,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  loadingContainer: {
-    height: 300,
+  stepIndicator: {
+    width: 40,
+    height: 24,
+    backgroundColor: '#062C41',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mapContainer: {
-    height: 350,
-    borderRadius: 10,
+  stepText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  pageSubtitle: {
+    fontSize: 15,
+    color: '#64748B',
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  searchCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  inputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+    paddingVertical: 10,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    marginLeft: 10,
+  },
+  actionButton: {
+    marginLeft: 8,
+    borderRadius: 8,
     overflow: 'hidden',
-    marginVertical: 10,
+  },
+  locationButton: {
+    marginLeft: 8,
+  },
+  buttonGradient: {
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapSection: {
+    flex: 1,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 12,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#062C41',
+  },
+  mapContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  mapErrorContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 12,
+  },
+  mapErrorTitle: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#334155',
+  },
+  mapErrorText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: width * 0.7,
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  submitButtonContainer: {
-    marginTop: 20,
+  mapOverlay: {
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  mapInstructions: {
+    backgroundColor: 'rgba(6, 44, 65, 0.8)',
+    color: '#fff',
+    padding: 8,
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    maxWidth: width * 0.8,
+    overflow: 'hidden',
+  },
+  submitSection: {
+    marginBottom: 24,
     alignItems: 'center',
   },
   submitButton: {
-    backgroundColor: '#d81b60',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
     width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#d81b60',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  submitGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  submitText: {
+    color: '#ffffff',
+    fontSize: 18,
     fontWeight: 'bold',
+    marginRight: 8,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  helpText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  loadingSubmitContainer: {
+    width: '100%',
+    backgroundColor: '#2ecc71',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingSubmitText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
 

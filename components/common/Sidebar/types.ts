@@ -9,4 +9,6 @@ export interface SidebarItemProps {
   icon: ReactNode;
   label: string;
   onPress: () => void;
+  isActive?: boolean;
+  isSecondary?: boolean; 
 }

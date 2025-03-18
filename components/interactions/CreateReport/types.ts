@@ -1,12 +1,16 @@
 /**
  * Types partagés pour le module de signalement
  */
+import { Ionicons } from '@expo/vector-icons';
 
 export interface ReportCategory {
-    name: string;
-    value: string;
-    icon: string;
-    description: string;
+  value: string;
+
+  name: string;
+
+  icon: keyof typeof Ionicons.glyphMap; // Restrict icon to valid Ionicons names
+
+  description: string;
   }
   
   export interface LocationCoordinates {

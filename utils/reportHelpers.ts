@@ -47,7 +47,7 @@ export const typeLabels: { [key: string]: string } = {
       icon: 'skull-outline' as const,
       value: 'danger',
       article: 'un danger',
-      description: `Signalez tout danger pouvant affecter la sécurité des habitants :
+      description: `Pouvant affecter la sécurité des habitants :
 
   - Objets dangereux sur la voie publique (ex. câbles tombés, verre brisé)
 
@@ -60,7 +60,7 @@ export const typeLabels: { [key: string]: string } = {
       icon: 'warning-outline' as const,
       value: 'travaux',
       article: 'des travaux',
-      description: `Informez sur les travaux publics ou privés susceptibles d'impacter la ville :
+      description: `Publics ou privés susceptibles d'impacter la ville :
 
   - Fermetures de routes ou rues (ex. travaux de réfection, pose de réseaux souterrains)
 
@@ -74,7 +74,7 @@ export const typeLabels: { [key: string]: string } = {
       value: 'nuisance',
       article: 'une nuisance',
 
-      description: `Rapportez toute nuisance perturbant la tranquillité de la ville :
+      description: `Gênes perturbant la tranquillité de la ville :
 
   - Bruit excessif (ex. travaux nocturnes, fêtes bruyantes)
 
@@ -100,7 +100,7 @@ export const typeLabels: { [key: string]: string } = {
       icon: 'construct-outline' as const,
       value: 'reparation',
       article: 'une réparation',
-      description: `Déclarez tout problème technique ou infrastructurel nécessitant une réparation ou une maintenance urgente :
+      description: `Infrastructure nécessitant une maintenance urgente :
 
   - Pannes d'éclairage public (ex. lampadaires non fonctionnels)
 
