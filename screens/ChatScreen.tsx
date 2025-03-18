@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#3E64FF",
+    backgroundColor: "#062C41",
     paddingTop: Platform.OS === 'ios' ? 50 : 38,
     paddingBottom: 16,
     paddingHorizontal: 16,

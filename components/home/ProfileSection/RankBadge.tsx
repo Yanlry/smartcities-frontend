@@ -113,17 +113,17 @@ const RankBadge: React.FC<RankBadgeProps> = ({
   // Définir les couleurs de la barre de progression en fonction du rang
   const getProgressColors = useMemo(() => {
     if (ranking === 1) return { 
-      barColor: "#FFD700", // Or
+      barColor: "#fff", // Or
       glowColor: "#FFD700",
       glowOpacity: 0.8
     };
     if (ranking === 2) return { 
-      barColor: "#C0C0C0", // Argent
+      barColor: "#fff", // Argent
       glowColor: "#C0C0C0",
       glowOpacity: 0.7
     };
     if (ranking === 3) return { 
-      barColor: "#CD7F32", // Bronze
+      barColor: "#ccc", // Bronze
       glowColor: "#CD7F32",
       glowOpacity: 0.6
     };
@@ -136,11 +136,15 @@ const RankBadge: React.FC<RankBadgeProps> = ({
 
   // Configuration des couleurs du gradient en fonction du classement
   const getGradientColors = useMemo((): [string, string, ...string[]] => {
-    if (ranking === 1) return ["#0F172A", "#1E3A8A", "#2563EB"];
-    if (ranking === 2) return ["#1E3A8A", "#1E40AF", "#3B82F6"];
-    if (ranking === 3) return ["#1E40AF", "#2563EB", "#3B82F6"];
-    if (ranking && ranking <= 10) return ["#2563EB", "#3B82F6", "#60A5FA"];
-    return ["#3B82F6", "#60A5FA", "#93C5FD"];
+    if (ranking === 1) return ["#FFD700", "#FFC107", "#FFB300"]; // dégradé or
+    if (ranking === 2) return ["#C0C0C0", "#D3D3D3", "#E5E4E2"]; // dégradé argent
+    if (ranking === 3) return ["#CD7F32", "#C88B35", "#B87333"]; // dégradé bronze
+    if (ranking && ranking <= 10) {
+      // Pour les rangs 4 à 10, utilisation d'un dégradé violet (modifiable selon vos préférences)
+      return ["#8A2BE2", "#9370DB", "#BA55D3"];
+    }
+    // Pour les rangs au-delà de 10, utilisation d'un dégradé teal
+    return ["#20B2AA", "#3CB371", "#2E8B57"];
   }, [ranking]);
 
   // Effet de lueur (shadow) statique basé sur le ranking
@@ -179,13 +183,16 @@ const RankBadge: React.FC<RankBadgeProps> = ({
 
   // Configuration de l'icône en fonction du classement
   const getTrophyIcon = useMemo(() => {
-      if (ranking === 1) return { name: "trophy" as const, color: "#FFD700", size: 16 };
-      if (ranking === 2) return { name: "trophy" as const, color: "#C0C0C0", size: 15 };
-      if (ranking === 3) return { name: "trophy" as const, color: "#CD7F32", size: 15 };
-      if (ranking && ranking <= 10)
-        return { name: "ribbon" as const, color: "#FFFFFF", size: 15 };
-      return { name: "stats-chart" as const, color: "#FFFFFF", size: 15 };
-    }, [ranking]);
+    if (ranking === 1)
+      return { name: "trophy" as const, color: "#FFD700", size: 24 };
+    if (ranking === 2)
+      return { name: "trophy" as const, color: "#C0C0C0", size: 22 };
+    if (ranking === 3)
+      return { name: "trophy" as const, color: "#CD7F32", size: 22 };
+    if (ranking && ranking <= 10)
+      return { name: "ribbon" as const, color: "#FFFFFF", size: 15 };
+    return { name: "stats-chart" as const, color: "#FFFFFF", size: 15 };
+  }, [ranking]);
 
   // Obtenir le label pour le classement
   const getRankLabel = useMemo((): string => {
@@ -195,14 +202,6 @@ const RankBadge: React.FC<RankBadgeProps> = ({
     if (ranking && ranking <= 10) return "TOP 10";
     if (ranking && ranking <= 50) return "TOP 50";
     return "Classement";
-  }, [ranking]);
-
-  // Calculer le style de la bordure en fonction du classement
-  const getBorderStyle = useMemo(() => {
-    if (ranking === 1) return styles.firstPlaceBorder;
-    if (ranking === 2) return styles.secondPlaceBorder;
-    if (ranking === 3) return styles.thirdPlaceBorder;
-    return {};
   }, [ranking]);
 
   // Effet pour créer et animer les particules avec batching pour améliorer les performances
@@ -640,7 +639,7 @@ const ExpandedContent = useCallback((): React.ReactNode => {
         ]}
       >
         <TouchableOpacity
-          style={[styles.container, getBorderStyle]}
+          style={styles.container}
           onPress={toggleExpand}
           activeOpacity={0.85}
           onLongPress={onNavigateToRanking}
@@ -657,20 +656,20 @@ const ExpandedContent = useCallback((): React.ReactNode => {
             <View style={styles.badgeContent}>
               {/* Icône et position */}
               <View style={styles.badgeHeader}>
-                <View
-                  style={[
-                    styles.trophyWrapper,
-                    ranking === 1 && styles.firstPlaceTrophy,
-                    ranking === 2 && styles.secondPlaceTrophy,
-                    ranking === 3 && styles.thirdPlaceTrophy,
-                  ]}
-                >
-                  <Ionicons
-                    name={getTrophyIcon.name}
-                    size={getTrophyIcon.size}
-                    color={getTrophyIcon.color}
-                  />
-                </View>
+              <View
+  style={[
+    styles.trophyWrapper,
+    ranking === 1 && styles.firstPlaceTrophy,
+    ranking === 2 && styles.secondPlaceTrophy,
+    ranking === 3 && styles.thirdPlaceTrophy,
+  ]}
+>
+  <Ionicons
+    name={getTrophyIcon.name}
+    size={getTrophyIcon.size}
+    color={getTrophyIcon.color}
+  />
+</View>
 
                 <View style={styles.rankInfo}>
                   <Text style={styles.rankLabel}>{getRankLabel}</Text>
@@ -714,18 +713,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
   },
-  firstPlaceBorder: {
-    borderWidth: 1.5,
-    borderColor: "#FFD700",
-  },
-  secondPlaceBorder: {
-    borderWidth: 1,
-    borderColor: "#C0C0C0",
-  },
-  thirdPlaceBorder: {
-    borderWidth: 1,
-    borderColor: "#CD7F32",
-  },
   gradient: {
     borderRadius: 16,
   },
@@ -735,10 +722,10 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: "absolute",
-    backgroundColor: "#FFD700",
+    backgroundColor: "#fff",
     borderRadius: 10,
     zIndex: 1,
-    shadowColor: "#FFD700",
+    shadowColor: "#fff",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 3,
@@ -752,19 +739,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
     marginLeft: 2,
+    marginTop: 3,
   },
   firstPlaceTrophy: {
-    backgroundColor: "rgba(255, 215, 0, 0.2)",
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "rgba(255, 215, 0, 0.6)",
   },
   secondPlaceTrophy: {
-    backgroundColor: "rgba(192, 192, 192, 0.2)",
+    backgroundColor: "#fff",
+
     borderWidth: 1,
     borderColor: "rgba(192, 192, 192, 0.5)",
   },
   thirdPlaceTrophy: {
-    backgroundColor: "rgba(205, 127, 50, 0.2)",
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "rgba(205, 127, 50, 0.5)",
   },
@@ -837,7 +826,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   percentileExplanation: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#fff',
     fontSize: 10,
     fontStyle: 'italic', 
     marginTop: 2,

@@ -66,6 +66,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
     const { getBadgeStyles } = useBadge();
     const badgeStyle = getBadgeStyles(stats?.votes?.length || 0);
 
+    const totalFeedback = voteSummary.up + voteSummary.down;
+    // Remplacez la déclaration des variables positiveFlex et negativeFlex par :
+    const positiveFlex = totalFeedback === 0 ? 0.5 : voteSummary.up;
+    const negativeFlex = totalFeedback === 0 ? 0.5 : voteSummary.down;
+
     // Format des données avec mémoïsation pour optimiser les performances
     const formattedData = useMemo(() => {
       const formatNumber = (num: number): string => {
@@ -90,18 +95,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
     }, [voteSummary, user?.followers?.length, user?.following?.length]);
 
     // Couleur dynamique basée sur le ratio de votes
+    // Modification de la variable ratingColor
     const ratingColor = useMemo(() => {
+      if (totalFeedback === 0) return "#4CAF50"; // Vert par défaut si aucun feedback
       if (formattedData.voteRatio >= 85) return "#4CAF50";
       if (formattedData.voteRatio >= 70) return "#8BC34A";
       if (formattedData.voteRatio >= 50) return "#FF9800";
       return "#F44336";
-    }, [formattedData.voteRatio]);
+    }, [formattedData.voteRatio, totalFeedback]);
 
     return (
       <View style={styles.container}>
         {/* Header avec fond dégradé */}
         <LinearGradient
-          colors={["#062C41", "#0b3e5a"]}
+          colors={["#062C41", "#041E2D"]}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -219,7 +226,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
                     style={[
                       styles.positiveProgressMini,
                       {
-                        flex: voteSummary.up || 0.1,
+                        flex: positiveFlex,
                         backgroundColor: ratingColor,
                       },
                     ]}
@@ -227,7 +234,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
                   <View
                     style={[
                       styles.negativeProgressMini,
-                      { flex: voteSummary.down || 0.1 },
+                      { flex: negativeFlex },
                     ]}
                   />
                 </View>
@@ -382,7 +389,6 @@ const styles = StyleSheet.create({
   memberInfo: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.8)",
-
   },
   // Nouveaux styles pour l'avis de la communauté intégré
   communityRatingContainer: {
@@ -425,7 +431,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   negativeProgressMini: {
-    backgroundColor: "rgba(244, 67, 54, 0.7)",
+    backgroundColor: "#F44336",
     height: "100%",
   },
   // Styles pour la nouvelle section d'engagement social
