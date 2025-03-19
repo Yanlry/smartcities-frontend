@@ -13,42 +13,31 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  DocumentData,
-  Query,
-  getDocs as firebaseGetDocs,
-} from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import axios from "axios";
-// @ts-ignore
-import { API_URL } from "@env";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useStorage } from "../hooks/messages/useStorage"; // Hook personnalisé pour AsyncStorage
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get("window");
-const getDocs = (unreadMessagesQuery: Query<DocumentData>) => {
-  return firebaseGetDocs(unreadMessagesQuery);
-};
+// Types
+import { 
+  Conversation, 
+  ConversationItemProps, 
+  ArchivedConversationItemProps 
+} from "../types/conversation.types";
 
-// Définition d'interfaces précises
-interface Conversation {
-  id: string;
-  participants: number[];
-  lastMessage: string;
-  otherParticipantName?: string;
-  lastMessageTimestamp?: string | null;
-  unreadCount?: number;
-  profilePhoto?: string | null;
-}
+// Constantes
+import { COLORS } from "../utils/colors";
+import { useConversations } from "../hooks/messages/useConversations";
+const { width } = Dimensions.get("window");
+
+
+// Préfixe pour les clés de stockage
+const STORAGE_KEY_PREFIX = "conversations";
+
+
 
 /**
- * Composant utilitaire pour encapsuler correctement les icônes Ionicons
- * Résout le problème "Text strings must be rendered within a <Text> component"
+ * Composant IconWrapper - Évite les re-rendus inutiles pour les icônes
  */
 const IconWrapper = memo(({ 
   name, 
@@ -62,45 +51,68 @@ const IconWrapper = memo(({
   style?: any 
 }) => (
   <View style={style}>
-    <Text>
-      <Ionicons name={name} size={size} color={color} />
-    </Text>
+    <Ionicons name={name} size={size} color={color} />
   </View>
 ));
 
 /**
- * Composant d'élément de conversation avec animations
- * Optimisé pour les performances avec mémoisation
+ * Composant ConversationItem - Affiche une conversation dans la liste
  */
 const ConversationItem = memo(({ 
   item, 
   index, 
   userId, 
-  updateUnreadCount, 
-  navigation, 
-  hideConversation,
-  formatLastMessageTime
-}: { 
-  item: Conversation; 
-  index: number; 
-  userId: string;
-  updateUnreadCount: (receiverId: number) => void;
-  navigation: any;
-  hideConversation: (id: string) => void;
-  formatLastMessageTime: (timestamp: string) => string;
-}) => {
-  // Animation refs
-  const itemFadeAnim = useRef(new Animated.Value(0)).current;
-  const itemSlideAnim = useRef(new Animated.Value(15)).current;
+  onItemPress,
+  onItemLongPress,
+  onPressIn,
+  onPressOut,
+  animatedValues
+}: ConversationItemProps) => {
+  // Extraction des valeurs animées
+  const { fadeAnim, slideAnim, scaleAnim } = animatedValues;
   
   // Computed properties
   const hasUnreadMessages = typeof item.unreadCount === 'number' && item.unreadCount > 0;
   const truncatedMessage = item.lastMessage && item.lastMessage.length > 100
     ? item.lastMessage.substring(0, 100) + "..."
     : item.lastMessage || "";
+  
+  // Formater l'horodatage du dernier message
+  const formatLastMessageTime = (timestamp: string) => {
+    const messageDate = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const isToday =
+      messageDate.getDate() === today.getDate() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getFullYear() === today.getFullYear();
+      
+    const isYesterday =
+      messageDate.getDate() === yesterday.getDate() &&
+      messageDate.getMonth() === yesterday.getMonth() &&
+      messageDate.getFullYear() === yesterday.getFullYear();
+
+    if (isToday) {
+      return messageDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else if (isYesterday) {
+      return "Hier";
+    } else {
+      return messageDate.toLocaleDateString([], {
+        day: "numeric",
+        month: "short",
+      });
+    }
+  };
+  
   const lastMessageTime = item.lastMessageTimestamp
     ? formatLastMessageTime(item.lastMessageTimestamp)
     : "N/A";
+    
   const avatarInitial = item.otherParticipantName 
     ? item.otherParticipantName.charAt(0).toUpperCase() 
     : "?";
@@ -110,12 +122,12 @@ const ConversationItem = memo(({
     const delay = index * 50;
     const animationTimeout = setTimeout(() => {
       Animated.parallel([
-        Animated.timing(itemFadeAnim, {
+        Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 300,
           useNativeDriver: true,
         }),
-        Animated.spring(itemSlideAnim, {
+        Animated.spring(slideAnim, {
           toValue: 0,
           speed: 15,
           bounciness: 3,
@@ -125,51 +137,26 @@ const ConversationItem = memo(({
     }, delay);
     
     return () => clearTimeout(animationTimeout);
-  }, [itemFadeAnim, itemSlideAnim, index]);
-    
-  // Handlers
-  const handlePress = useCallback(() => {
-    const receiverId = item.participants.find(
-      (id) => id !== Number(userId)
-    );
-    if (receiverId !== undefined) {
-      updateUnreadCount(receiverId);
-    }
-
-    navigation.navigate("ChatScreen", {
-      senderId: userId,
-      receiverId: item.participants.find((id) => id !== Number(userId)),
-    });
-  }, [item.participants, userId, updateUnreadCount, navigation]);
-  
-  const handleLongPress = useCallback(() => {
-    Alert.alert(
-      "Masquer la conversation",
-      "Voulez-vous vraiment masquer cette conversation ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Masquer",
-          onPress: () => hideConversation(item.id),  
-          style: "destructive",
-        },
-      ]
-    );
-  }, [item.id, hideConversation]);
+  }, [fadeAnim, slideAnim, index]);
 
   return (
     <Animated.View style={{
-      opacity: itemFadeAnim,
-      transform: [{ translateY: itemSlideAnim }]
+      opacity: fadeAnim,
+      transform: [
+        { translateY: slideAnim },
+        { scale: scaleAnim }
+      ]
     }}>
       <TouchableOpacity
         style={[
           styles.conversationItem,
-          hasUnreadMessages ? styles.unreadConversation : null
+          hasUnreadMessages && styles.unreadConversation
         ]}
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        activeOpacity={0.7}
+        onPress={() => onItemPress(item)}
+        onLongPress={() => onItemLongPress(item)}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        activeOpacity={1}
       >
         <View style={styles.avatarContainer}>
           {item.profilePhoto ? (
@@ -178,7 +165,10 @@ const ConversationItem = memo(({
               style={styles.profilePhoto}
             />
           ) : (
-            <View style={styles.defaultProfilePhoto}>
+            <View style={[
+              styles.defaultProfilePhoto,
+              hasUnreadMessages && styles.unreadDefaultPhoto
+            ]}>
               <Text style={styles.avatarText}>{avatarInitial}</Text>
             </View>
           )}
@@ -186,7 +176,7 @@ const ConversationItem = memo(({
           {hasUnreadMessages && (
             <View style={styles.unreadBadge}>
               <Text style={styles.unreadBadgeText}>
-                {String(item.unreadCount)}
+                {item.unreadCount && item.unreadCount > 99 ? '99+' : String(item.unreadCount)}
               </Text>
             </View>
           )}
@@ -194,16 +184,27 @@ const ConversationItem = memo(({
         
         <View style={styles.conversationDetails}>
           <View style={styles.headingRow}>
-            <Text style={styles.conversationTitle} numberOfLines={1}>
+            <Text 
+              style={[
+                styles.conversationTitle,
+                hasUnreadMessages && styles.unreadTitle
+              ]} 
+              numberOfLines={1}
+            >
               {item.otherParticipantName || "Nom inconnu"}
             </Text>
-            <Text style={styles.timestamp}>{lastMessageTime}</Text>
+            <Text style={[
+              styles.timestamp,
+              hasUnreadMessages && styles.unreadTimestamp
+            ]}>
+              {lastMessageTime}
+            </Text>
           </View>
           
           <Text 
             style={[
               styles.lastMessage,
-              hasUnreadMessages ? styles.unreadText : null
+              hasUnreadMessages && styles.unreadText
             ]} 
             numberOfLines={2}
           >
@@ -216,369 +217,288 @@ const ConversationItem = memo(({
 });
 
 /**
- * Composant pour afficher une conversation archivée
+ * Composant ArchivedConversationItem - Affiche une conversation archivée
  */
 const ArchivedConversationItem = memo(({ 
   item, 
-  recoverConversation 
-}: { 
-  item: Conversation; 
-  recoverConversation: (id: string) => void;
-}) => {
+  onRecover,
+  onPressIn,
+  onPressOut,
+  scaleAnim
+}: ArchivedConversationItemProps) => {
   const avatarInitial = item.otherParticipantName 
     ? item.otherParticipantName.charAt(0).toUpperCase() 
     : "?";
 
   return (
-    <View style={styles.hiddenConversationItem}>
-      <View style={styles.hiddenUserInfo}>
-        {item.profilePhoto ? (
-          <Image
-            source={{ uri: item.profilePhoto }}
-            style={styles.hiddenProfilePhoto}
-          />
-        ) : (
-          <View style={styles.hiddenDefaultPhoto}>
-            <Text style={styles.hiddenAvatarText}>{avatarInitial}</Text>
-          </View>
-        )}
+    <Animated.View style={{
+      transform: [{ scale: scaleAnim }]
+    }}>
+      <View style={styles.hiddenConversationItem}>
+        <View style={styles.hiddenUserInfo}>
+          {item.profilePhoto ? (
+            <Image
+              source={{ uri: item.profilePhoto }}
+              style={styles.hiddenProfilePhoto}
+            />
+          ) : (
+            <View style={styles.hiddenDefaultPhoto}>
+              <Text style={styles.hiddenAvatarText}>{avatarInitial}</Text>
+            </View>
+          )}
 
-        <Text style={styles.hiddenConversationName} numberOfLines={1}>
-          {item.otherParticipantName || "Nom inconnu"}
-        </Text>
+          <Text style={styles.hiddenConversationName} numberOfLines={1}>
+            {item.otherParticipantName || "Nom inconnu"}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.recoverButton}
+          onPress={() => onRecover(item.id)}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          activeOpacity={1}
+        >
+          <IconWrapper name="refresh-outline" size={16} color="#FFFFFF" />
+          <Text style={styles.recoverButtonText}>Récupérer</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.recoverButton}
-        onPress={() => recoverConversation(item.id)}
-      >
-        <IconWrapper name="refresh-outline" size={16} color="#FFFFFF" />
-        <Text style={styles.recoverButtonText}>Récupérer</Text>
-      </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 });
 
 /**
  * Écran principal des conversations
- * Fonctionnalité complète avec animations, archivage et restauration
  */
-export default function ConversationsScreen({ navigation, route }: any) {
+const ConversationsScreen = ({ navigation, route }: any) => {
   const userId = route.params?.userId;
   const insets = useSafeAreaInsets();
-
-  // État
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Hook personnalisé pour les conversations
+  const { 
+    conversations: allConversations, 
+    loading 
+  } = useConversations(userId, db);
+  
+  // États 
   const [hiddenConversations, setHiddenConversations] = useState<string[]>([]);
   const [showHiddenConversations, setShowHiddenConversations] = useState(false);
-  const [allConversations, setAllConversations] = useState<Conversation[]>([]);
   
-  // Animations
+  // Animations globales
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
   const hiddenSectionAnim = useRef(new Animated.Value(50)).current;
-
-  // Charger les conversations
-  useEffect(() => {
-    if (!userId) {
-      console.log("Aucun userId trouvé. Arrêt de la récupération des conversations.");
-      return;
-    }
-
-    console.log("Début de la récupération des conversations pour userId:", userId);
-
-    const conversationsRef = collection(db, "conversations");
-    const q = query(
-      conversationsRef,
-      where("participants", "array-contains", Number(userId))
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      async (snapshot) => {
-        const fetchedConversations = await Promise.all(
-          snapshot.docs.map(async (doc) => {
-            const data = doc.data();
-            const otherParticipant = data.participants.find(
-              (id: number) => id !== Number(userId)
-            );
-
-            const unreadMessagesQuery = query(
-              collection(db, "messages"),
-              where("receiverId", "==", Number(userId)),
-              where("senderId", "==", otherParticipant),
-              where("isRead", "==", false)
-            );
-
-            const unreadMessagesSnapshot = await getDocs(unreadMessagesQuery);
-            const unreadCount = unreadMessagesSnapshot.docs.length;
-
-            return {
-              id: doc.id,
-              participants: data.participants,
-              lastMessage: data.lastMessage || "",
-              lastMessageTimestamp: data.lastMessageTimestamp?.seconds
-                ? new Date(data.lastMessageTimestamp.seconds * 1000).toISOString()
-                : null,
-              otherParticipantName: otherParticipant
-                ? (await fetchUserDetails(otherParticipant)).name
-                : "Inconnu",
-              profilePhoto: otherParticipant
-                ? (await fetchUserDetails(otherParticipant)).profilePhoto
-                : null,
-              unreadCount,
-            };
-          })
-        );
-
-        const sortedConversations = fetchedConversations.sort((a, b) => {
-          if (!a.lastMessageTimestamp) return 1; 
-          if (!b.lastMessageTimestamp) return -1;
-          return new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime();
-        });
-
-        setAllConversations(sortedConversations);
-
-        const visibleConversations = sortedConversations.filter(
-          (conversation) => !hiddenConversations.includes(conversation.id)
-        );
-
-        setConversations(visibleConversations);
-        setLoading(false);
-        
-        // Animer l'apparition de la liste
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            speed: 12,
-            bounciness: 2,
-            useNativeDriver: true,
-          })
-        ]).start();
-      },
-      (error) => {
-        console.error("Erreur lors de la récupération des conversations:", error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [userId, hiddenConversations]);
-
-  // Charger les conversations archivées
-  useEffect(() => {
-    const loadHiddenConversations = async () => {
-      try {
-        const savedHidden = await AsyncStorage.getItem("hiddenConversations");
-        if (savedHidden) {
-          const parsedHidden = JSON.parse(savedHidden);
-          setHiddenConversations(parsedHidden);
- 
-          setConversations((prevConversations) =>
-            prevConversations.filter(
-              (conversation) => !parsedHidden.includes(conversation.id)
-            )
-          );
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des conversations masquées:", error);
-      }
-    };
-
-    loadHiddenConversations();
-  }, []);
-
-  // Sauvegarder les conversations archivées
-  useEffect(() => {
-    const saveHiddenConversations = async () => {
-      try {
-        await AsyncStorage.setItem(
-          "hiddenConversations",
-          JSON.stringify(hiddenConversations)
-        );
-      } catch (error) {
-        console.error("Erreur lors de la sauvegarde des conversations masquées:", error);
-      }
-    };
-
-    saveHiddenConversations();
-  }, [hiddenConversations]);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   
-  // Animation du panneau des conversations archivées
-  useEffect(() => {
-    if (showHiddenConversations) {
-      Animated.spring(hiddenSectionAnim, {
-        toValue: 0,
-        friction: 8,
-        tension: 65,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(hiddenSectionAnim, {
-        toValue: 50,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [showHiddenConversations]);
-
-  // Récupérer les détails d'un utilisateur depuis l'API
-  const fetchUserDetails = useCallback(async (
-    userId: number
-  ): Promise<{ name: string; profilePhoto: string | null }> => {
-    try {
-      const response = await axios.get(`${API_URL}/users/${userId}`);
-      const user = response.data;
-
-      const name = user.useFullName
-        ? `${user.firstName} ${user.lastName}`
-        : user.username || "Utilisateur inconnu";
-
-      const profilePhoto = user.profilePhoto?.url || null;
-
-      return { name, profilePhoto };
-    } catch (error) {
-      console.error(
-        `Erreur lors de la récupération des détails pour l'utilisateur ${userId}:`,
-        error
-      );
-      return { name: "Utilisateur inconnu", profilePhoto: null };
-    }
-  }, []);
-
-  // Masquer une conversation
-  const hideConversation = useCallback((conversationId: string) => {
-    setHiddenConversations((prev) => {
-      const updatedHiddenConversations = [...prev, conversationId];
- 
-      setConversations((prevConversations) =>
-        prevConversations.filter(
-          (conversation) => conversation.id !== conversationId
-        )
-      );
-
-      return updatedHiddenConversations;
-    });
-  }, []);
-
-  // Mettre à jour le compteur de messages non lus
-  const updateUnreadCount = useCallback((receiverId: number) => {
-    setConversations((prevConversations) =>
-      prevConversations.map((conversation) =>
-        conversation.participants.includes(receiverId)
-          ? { ...conversation, unreadCount: 0 }
-          : conversation
-      )
-    );
-
-    return conversations.filter((conversation) =>
-      conversation.participants.includes(receiverId)
-    );
-  }, [conversations]);
-
-  // Formater l'horodatage du dernier message
-  const formatLastMessageTime = useCallback((timestamp: string) => {
-    const messageDate = new Date(timestamp);
-    const today = new Date();
-
-    const isToday =
-      messageDate.getDate() === today.getDate() &&
-      messageDate.getMonth() === today.getMonth() &&
-      messageDate.getFullYear() === today.getFullYear();
-
-    if (isToday) {
-      return messageDate.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } else {
-      return messageDate.toLocaleDateString();
-    }
-  }, []);
-
-  // Récupérer une conversation archivée
-  const recoverConversation = useCallback((conversationId: string) => {
-    setHiddenConversations((prev) => {
-      const updated = prev.filter((id) => id !== conversationId);
- 
-      const recoveredConversation = allConversations.find(
-        (conv) => conv.id === conversationId
-      );
-
-      if (recoveredConversation) {
-        setConversations((prevConversations) => [
-          ...prevConversations,
-          recoveredConversation,
-        ]);
-      }
- 
-      AsyncStorage.setItem(
-        "hiddenConversations",
-        JSON.stringify(updated)
-      ).catch((error) =>
-        console.error(
-          "Erreur lors de la mise à jour des conversations masquées:",
-          error
-        )
-      );
-
-      return updated;
-    });
-  }, [allConversations]);
-
-  // Rendu d'une conversation
-  const renderConversation = useCallback(({ item, index }: { item: Conversation, index: number }) => {
-    return (
-      <ConversationItem
-        item={item}
-        index={index}
-        userId={userId}
-        updateUnreadCount={updateUnreadCount}
-        navigation={navigation}
-        hideConversation={hideConversation}
-        formatLastMessageTime={formatLastMessageTime}
-      />
-    );
-  }, [userId, updateUnreadCount, navigation, hideConversation, formatLastMessageTime]);
-
-  // Données des conversations archivées
-  const hiddenConversationsData = useMemo(() => 
-    allConversations.filter(conversation => 
-      hiddenConversations.includes(conversation.id)
+  // Animation pour les items
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  // Hook personnalisé pour la gestion du stockage
+  const { 
+    getStoredData, 
+    storeData 
+  } = useStorage(STORAGE_KEY_PREFIX);
+  
+  // Conversations visibles
+  const visibleConversations = useMemo(() => 
+    allConversations.filter(
+      conversation => !hiddenConversations.includes(conversation.id)
     ),
     [allConversations, hiddenConversations]
   );
-
+  
+  // Conversations archivées
+  const archivedConversations = useMemo(() => 
+    allConversations.filter(
+      conversation => hiddenConversations.includes(conversation.id)
+    ),
+    [allConversations, hiddenConversations]
+  );
+  
+  // Icône de rotation pour les archives
+  const iconRotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg']
+  });
+  
+  // Chargement des conversations archivées
+  useEffect(() => {
+    if (!userId) return;
+    
+    const loadArchivedConversations = async () => {
+      try {
+        const storedHiddenConversations = await getStoredData(`hidden_${userId}`);
+        if (storedHiddenConversations) {
+          setHiddenConversations(JSON.parse(storedHiddenConversations));
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des conversations archivées:", error);
+      }
+    };
+    
+    loadArchivedConversations();
+  }, [userId, getStoredData]);
+  
+  // Persistance des conversations archivées
+  useEffect(() => {
+    if (!userId || hiddenConversations.length === 0) return;
+    
+    storeData(`hidden_${userId}`, JSON.stringify(hiddenConversations));
+  }, [hiddenConversations, userId, storeData]);
+  
+  // Animation du panneau des archives
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(hiddenSectionAnim, {
+        toValue: showHiddenConversations ? 0 : 50,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotateAnim, {
+        toValue: showHiddenConversations ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [showHiddenConversations, hiddenSectionAnim, rotateAnim]);
+  
+  // Animation d'entrée de la liste principale
+  useEffect(() => {
+    if (!loading) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          speed: 12,
+          bounciness: 2,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [loading, fadeAnim, slideAnim]);
+  
+  // Handlers
+  const handlePressIn = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+  }, [scaleAnim]);
+  
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+  }, [scaleAnim]);
+  
+  const handleConversationPress = useCallback((conversation: Conversation) => {
+    const receiverId = conversation.participants.find(
+      (id) => id !== Number(userId)
+    );
+    
+    if (receiverId) {
+      // Marquer comme lu localement
+      const updatedConversations = allConversations.map(conv => 
+        conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
+      );
+      
+      // Naviguer vers l'écran de chat
+      navigation.navigate("ChatScreen", {
+        senderId: userId,
+        receiverId: receiverId,
+      });
+    }
+  }, [userId, navigation, allConversations]);
+  
+  const handleConversationLongPress = useCallback((conversation: Conversation) => {
+    Alert.alert(
+      "Archiver cette conversation",
+      `Voulez-vous archiver cette conversation avec ${conversation.otherParticipantName || "cet utilisateur"} ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Archiver",
+          onPress: () => {
+            setHiddenConversations(prev => [...prev, conversation.id]);
+          },
+          style: "destructive",
+        },
+      ]
+    );
+  }, []);
+  
+  const handleRecoverConversation = useCallback((conversationId: string) => {
+    setHiddenConversations(prev => 
+      prev.filter(id => id !== conversationId)
+    );
+  }, []);
+  
+  const toggleArchiveVisibility = useCallback(() => {
+    setShowHiddenConversations(prev => !prev);
+  }, []);
+  
+  // Rendu de la liste de conversations
+  const renderConversation = useCallback(({ item, index }: { item: Conversation, index: number }) => (
+    <ConversationItem
+      item={item}
+      index={index}
+      userId={userId}
+      onItemPress={handleConversationPress}
+      onItemLongPress={handleConversationLongPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      animatedValues={{
+        fadeAnim: new Animated.Value(0),
+        slideAnim: new Animated.Value(15),
+        scaleAnim
+      }}
+    />
+  ), [userId, handleConversationPress, handleConversationLongPress, handlePressIn, handlePressOut, scaleAnim]);
+  
+  // Rendu de l'écran
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.titleConversations}>Messages</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleConversations}>Messages</Text>
+          </View>
+          
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => setShowHiddenConversations(!showHiddenConversations)}
+            onPress={toggleArchiveVisibility}
           >
-            <IconWrapper 
-              name={showHiddenConversations ? "close-outline" : "settings-outline"} 
-              size={24} 
-              color="#062C41" 
-            />
+            <Animated.View style={{ transform: [{ rotate: iconRotation }] }}>
+              <IconWrapper 
+                name={showHiddenConversations ? "close-outline" : "archive-outline"} 
+                size={24} 
+                color={COLORS.primary} 
+              />
+            </Animated.View>
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.subtitle}>
-          {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-          {hiddenConversations.length > 0 && !showHiddenConversations && 
-            ` • ${hiddenConversations.length} archivée${hiddenConversations.length !== 1 ? 's' : ''}`}
-        </Text>
+        {archivedConversations.length > 0 && !showHiddenConversations && (
+          <TouchableOpacity 
+            style={styles.archiveInfoContainer}
+            onPress={toggleArchiveVisibility}
+            activeOpacity={0.7}
+          >
+            <IconWrapper name="archive-outline" size={14} color={COLORS.textSecondary} />
+            <Text style={styles.archiveInfo}>
+              {archivedConversations.length} conversation{archivedConversations.length !== 1 ? 's' : ''} archivée{archivedConversations.length !== 1 ? 's' : ''}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       
       {/* Panel des conversations archivées */}
@@ -596,37 +516,53 @@ export default function ConversationsScreen({ navigation, route }: any) {
           ]}
         >
           <View style={styles.hiddenPanelHeader}>
-            <IconWrapper name="archive-outline" size={20} color="#062C41" />
-            <Text style={styles.hiddenPanelTitle}>
-              Conversations archivées ({hiddenConversationsData.length})
-            </Text>
+            <View style={styles.hiddenHeaderLeft}>
+              <IconWrapper name="archive-outline" size={20} color={COLORS.primary} style={styles.hiddenHeaderIcon} />
+              <Text style={styles.hiddenPanelTitle}>
+                Archives
+              </Text>
+            </View>
+            <View style={styles.badge}>
+              <Text style={styles.badgeCount}>{archivedConversations.length}</Text>
+            </View>
           </View>
           
-          {hiddenConversationsData.length > 0 ? (
+          {archivedConversations.length > 0 ? (
             <FlatList
-              data={hiddenConversationsData}
+              data={archivedConversations}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <ArchivedConversationItem 
                   item={item}
-                  recoverConversation={recoverConversation}
+                  onRecover={handleRecoverConversation}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                  scaleAnim={scaleAnim}
                 />
               )}
+              initialNumToRender={8}
+              maxToRenderPerBatch={5}
+              windowSize={10}
+              removeClippedSubviews={Platform.OS === 'android'}
               ListEmptyComponent={null}
               style={styles.hiddenList}
+              contentContainerStyle={styles.hiddenListContent}
             />
           ) : (
             <View style={styles.emptyArchiveContainer}>
-              <IconWrapper name="folder-open-outline" size={48} color="#A0A0A0" />
+              <View style={styles.emptyIconContainer}>
+                <IconWrapper name="archive-outline" size={40} color={COLORS.inactive} />
+              </View>
+              <Text style={styles.emptyArchiveTitle}>Aucune archive</Text>
               <Text style={styles.emptyArchiveText}>
-                Appuyez longuement sur une conversation pour l'archiver
+                Les conversations archivées apparaîtront ici
               </Text>
             </View>
           )}
         </Animated.View>
       )}
       
-      {/* Liste de conversations principale */}
+      {/* Liste principale */}
       <Animated.View style={[
         styles.mainContent,
         { 
@@ -636,21 +572,27 @@ export default function ConversationsScreen({ navigation, route }: any) {
       ]}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#062C41" />
+            <ActivityIndicator size="large" color={COLORS.primary} />
             <Text style={styles.loadingText}>Chargement des conversations...</Text>
           </View>
-        ) : conversations.length > 0 ? (
+        ) : visibleConversations.length > 0 ? (
           <FlatList
-            data={conversations}
+            data={visibleConversations}
             keyExtractor={(item) => item.id}
             renderItem={renderConversation}
+            initialNumToRender={10}
+            maxToRenderPerBatch={5}
+            windowSize={10}
+            removeClippedSubviews={Platform.OS === 'android'}
             contentContainerStyle={styles.conversationsList}
             showsVerticalScrollIndicator={false}
           />
         ) : (
           <View style={styles.emptyContainer}>
-            <IconWrapper name="chatbubbles-outline" size={70} color="#D1D5DB" />
-            <Text style={styles.noConversation}>Aucune conversation</Text>
+            <View style={styles.emptyImageContainer}>
+              <IconWrapper name="chatbubbles-outline" size={70} color={COLORS.inactive} />
+            </View>
+            <Text style={styles.noConversation}>Pas encore de messages</Text>
             <Text style={styles.emptyDescription}>
               Vos conversations apparaîtront ici
             </Text>
@@ -661,58 +603,95 @@ export default function ConversationsScreen({ navigation, route }: any) {
   );
 };
 
-
+// Styles améliorés
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.background,
   },
+  // Header
   header: {
-    marginTop:56,
+    marginTop: 60,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
+    backgroundColor: COLORS.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#F2F4F7",
+    borderBottomColor: COLORS.border,
   },
   titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  titleConversations: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#062C41",
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#8A96A8",
-    marginTop: 4,
-  },
-  actionButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F5F7FA",
-    justifyContent: "center",
+  titleContainer: {
+    flexDirection: "row",
     alignItems: "center",
   },
+  titleConversations: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: COLORS.text,
+    letterSpacing: -0.5,
+  },
+  badgeContainer: {
+    backgroundColor: COLORS.primary,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  archiveInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  archiveInfo: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: "500",
+    marginLeft: 6,
+  },
+  actionButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  // Liste principale
   mainContent: {
     flex: 1,
   },
   conversationsList: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   conversationItem: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    backgroundColor: "#FFFFFF",
-    marginVertical: 6,
+    padding: 16,
     borderRadius: 16,
+    marginVertical: 8,
+    backgroundColor: COLORS.card,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -726,51 +705,69 @@ const styles = StyleSheet.create({
     }),
   },
   unreadConversation: {
-    backgroundColor: "#F0F7FF",
-    borderLeftWidth: 3,
-    borderLeftColor: "#3B82F6",
+    backgroundColor: COLORS.unread,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.unreadIndicator,
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 14,
+    marginRight: 16,
   },
   profilePhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#F5F7FA",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: COLORS.background,
   },
   defaultProfilePhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#E5EFFF",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#F0F4F8",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.border,
+  },
+  unreadDefaultPhoto: {
+    backgroundColor: COLORS.primaryLight,
+    borderColor: COLORS.primaryLight,
   },
   avatarText: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: "#3B82F6",
+    fontWeight: "700",
+    color: COLORS.textSecondary,
   },
   unreadBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 5,
-    borderRadius: 10,
-    backgroundColor: "#FF3B30",
+    bottom: -2,
+    right: -2,
+    backgroundColor: COLORS.accent,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#FFFFFF",
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: COLORS.background,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   unreadBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
   },
   conversationDetails: {
     flex: 1,
@@ -780,95 +777,158 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 5,
+    marginBottom: 6,
   },
   conversationTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#062C41",
+    color: COLORS.text,
     flex: 1,
     marginRight: 8,
   },
-  lastMessage: {
-    fontSize: 14,
-    color: "#64748B",
-    lineHeight: 20,
-  },
-  unreadText: {
-    color: "#334155",
-    fontWeight: "500",
+  unreadTitle: {
+    fontWeight: "700",
+    color: COLORS.primary,
   },
   timestamp: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: COLORS.textLight,
+    fontWeight: "500",
   },
+  unreadTimestamp: {
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  lastMessage: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  unreadText: {
+    fontWeight: "500",
+    color: COLORS.text,
+  },
+  // États de chargement et vide
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingBottom: 50,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 15,
-    color: "#94A3B8",
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginTop: 20,
+    fontWeight: "500",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: 30,
+    paddingBottom: 100,
+  },
+  emptyImageContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.cardDark,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
   },
   noConversation: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#334155",
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 12,
   },
   emptyDescription: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#94A3B8",
+    fontSize: 16,
+    color: COLORS.textSecondary,
     textAlign: "center",
+    lineHeight: 24,
+    maxWidth: "80%",
   },
+  // Section archivée
   hiddenPanel: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 16,
+    backgroundColor: COLORS.cardDark,
+    borderRadius: 20,
     margin: 16,
-    padding: 16,
+    marginTop: 8,
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 3,
+        elevation: 4,
       },
     }),
-    maxHeight: height * 0.4,
   },
   hiddenPanelHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  hiddenHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  hiddenHeaderIcon: {
+    marginRight: 8,
   },
   hiddenPanelTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#062C41",
-    marginLeft: 8,
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  badge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeCount: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
   },
   hiddenList: {
-    maxHeight: height * 0.3,
+    maxHeight: 300,
+  },
+  hiddenListContent: {
+    paddingVertical: 8,
   },
   hiddenConversationItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    justifyContent: "space-between",
+    padding: 16,
+    marginHorizontal: 12,
+    marginVertical: 6,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   hiddenUserInfo: {
     flexDirection: "row",
@@ -876,56 +936,89 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hiddenProfilePhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F5F7FA",
-    marginRight: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    marginRight: 14,
+    borderWidth: 2,
+    borderColor: COLORS.background,
   },
   hiddenDefaultPhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#E5EFFF",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#F0F4F8",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 14,
+    borderWidth: 2,
+    borderColor: COLORS.border,
   },
   hiddenAvatarText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#3B82F6",
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
   },
   hiddenConversationName: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#334155",
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text,
     flex: 1,
   },
   recoverButton: {
-    backgroundColor: "#10B981",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   recoverButtonText: {
-    color: "#FFFFFF",
+    color: "white",
+    fontSize: 14,
     fontWeight: "600",
-    fontSize: 13,
-    marginLeft: 4,
+    marginLeft: 6,
   },
   emptyArchiveContainer: {
-    padding: 24,
+    padding: 30,
     alignItems: "center",
     justifyContent: "center",
   },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.cardDark,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  emptyArchiveTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 8,
+  },
   emptyArchiveText: {
-    marginTop: 12,
     fontSize: 14,
+    color: COLORS.textSecondary,
     textAlign: "center",
-    color: "#94A3B8",
+    maxWidth: "80%",
     lineHeight: 20,
   },
 });
+
+export default ConversationsScreen;
