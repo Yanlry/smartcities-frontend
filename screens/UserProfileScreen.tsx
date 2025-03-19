@@ -27,8 +27,13 @@ import {
 } from "../components/profile";
 // Import des types
 import { TabType } from "../types/profile.types";
+import { StackScreenProps } from "@react-navigation/stack";
 // @ts-ignore
 import { API_URL } from "@env";
+import { ParamListBase } from "@react-navigation/native";
+
+type UserProfileScreenNavigationProps = StackScreenProps<ParamListBase, "UserProfileScreen">;
+
 
 /**
  * Interface pour les props du composant UserProfileScreen
@@ -42,11 +47,12 @@ interface UserProfileScreenProps {
   navigation: any;
 }
 
+
 /**
  * Écran de profil utilisateur
  */
-const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ route, navigation }) => {
-  const { userId } = route.params;
+const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, navigation }) => {
+  const { userId } = route.params as UserProfileScreenProps["route"]["params"];
   const { getToken, getUserId } = useToken();
   
   // États locaux

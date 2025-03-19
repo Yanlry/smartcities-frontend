@@ -62,7 +62,7 @@ export default function CityScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.containerInfo}>
+      <ScrollView>
         <MayorInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
       </ScrollView>
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
@@ -122,8 +122,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 20,
   },
-  containerInfo: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
+  
 });

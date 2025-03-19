@@ -1,6 +1,5 @@
-// src/screens/ProfileScreen.tsx
-
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+// Chemin : screens/ProfileScreen.tsx
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,9 +12,9 @@ import {
   Switch,
   Modal,
   FlatList,
-  StatusBar,
-  SafeAreaView,
   StyleSheet,
+  Dimensions,
+  Animated,
   Platform,
 } from "react-native";
 // @ts-ignore
@@ -23,15 +22,29 @@ import { API_URL } from "@env";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import IconMaterial from "react-native-vector-icons/MaterialIcons";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import franceCitiesRaw from "../assets/france.json";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
-// Types et interfaces
+const franceCities: City[] = franceCitiesRaw as City[];
+const { width } = Dimensions.get('window');
+
+// Définition de la palette de couleurs officielle
+const COLORS = {
+  primary: { base: "#062C41", light: "#1B5D85", dark: "#041E2D", contrast: "#FFFFFF" },
+  secondary: { base: "#2A93D5", light: "#50B5F5", dark: "#1C7AB5", contrast: "#FFFFFF" },
+  accent: { base: "#FF5A5F", light: "#FF7E82", dark: "#E04347", contrast: "#FFFFFF" },
+  neutral: { 
+    50: "#F9FAFC", 100: "#F0F4F8", 200: "#E1E8EF", 300: "#C9D5E3", 400: "#A3B4C6", 
+    500: "#7D91A7", 600: "#5C718A", 700: "#465670", 800: "#2E3B4E", 900: "#1C2536" 
+  },
+  state: { success: "#10B981", warning: "#F59E0B", error: "#EF4444", info: "#3B82F6" },
+  overlay: "rgba(0,0,0,0.7)"
+};
+
 interface City {
   Code_commune_INSEE: number;
   Nom_commune: string;
@@ -51,7 +64,11 @@ interface FormData {
   newPassword: string;
 }
 
-interface User {
+interface HandleInputChange {
+  (field: keyof FormData, value: string): void;
+}
+
+type User = {
   id: string;
   createdAt: string;
   firstName: string;
@@ -74,38 +91,23 @@ interface User {
   profilePhoto?: { url: string };
   isSubscribed: boolean;
   isMunicipality: boolean;
-}
+};
 
-interface StatCard {
-  title: string;
-  icon: string;
-  items: { label: string; value: number | string }[];
-  onPress?: () => void;
-}
-
-const franceCities: City[] = franceCitiesRaw as City[];
-
-/**
- * Écran de profil utilisateur
- * Affiche et permet de modifier les informations de l'utilisateur connecté
- */
 export default function ProfileScreen({ navigation }) {
   const { unreadCount } = useNotification();
 
-  // États liés à l'utilisateur et au chargement
+  // Animation pour le fade-in des sections
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  // Variables d'état
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [stats, setStats] = useState<any>(null);
-
-  // États liés au formulaire
   const [editable, setEditable] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
@@ -114,20 +116,31 @@ export default function ProfileScreen({ navigation }) {
     currentPassword: "",
     newPassword: "",
   });
-
-  // États liés à la ville
+  const [stats, setStats] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingCity, setIsEditingCity] = useState(false);
   const [suggestions, setSuggestions] = useState<City[]>([]);
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [selectedList, setSelectedList] = useState<
+    "followers" | "following" | null
+  >(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  // États liés aux relations
-  const [selectedList, setSelectedList] = useState<"followers" | "following" | null>(null);
-
-  // Récupération des données utilisateur au chargement
+  // Animation d'entrée
   useEffect(() => {
-    navigation.setOptions({ gestureEnabled: false });
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      gestureEnabled: false,
+    });
     async function fetchUser() {
       try {
         const userId = await getUserIdFromToken();
@@ -136,7 +149,9 @@ export default function ProfileScreen({ navigation }) {
 
         const response = await fetch(`${API_URL}/users/${userId}`);
         if (!response.ok)
-          throw new Error("Erreur lors de la récupération des données utilisateur");
+          throw new Error(
+            "Erreur lors de la récupération des données utilisateur"
+          );
 
         const data: User = await response.json();
         setUser(data);
@@ -150,7 +165,6 @@ export default function ProfileScreen({ navigation }) {
     fetchUser();
   }, [navigation]);
 
-  // Mise à jour du formulaire lorsque les données utilisateur sont chargées
   useEffect(() => {
     if (user) {
       setFormData({
@@ -165,18 +179,21 @@ export default function ProfileScreen({ navigation }) {
     }
   }, [user]);
 
-  // Récupération des statistiques utilisateur
   useEffect(() => {
     const fetchStats = async () => {
       if (!user?.id) return;
 
       try {
         setLoading(true);
+        setError(null);
+
         const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-        setStats(response.data);
+
+        const data = response.data;
+        setStats(data);
       } catch (error: any) {
         console.error("Erreur dans fetchStats :", error.message || error);
         setError("Impossible de récupérer les statistiques.");
@@ -188,8 +205,7 @@ export default function ProfileScreen({ navigation }) {
     fetchStats();
   }, [user]);
 
-  // Gestion de la mise à jour de la photo de profil
-  const handleProfileImageUpdate = useCallback(async () => {
+  const handleProfileImageUpdate = async () => {
     try {
       setIsSubmitting(true);
 
@@ -206,6 +222,7 @@ export default function ProfileScreen({ navigation }) {
       }
 
       const photoUri = result.assets?.[0]?.uri;
+
       if (!photoUri) {
         throw new Error("Aucune image sélectionnée");
       }
@@ -217,19 +234,29 @@ export default function ProfileScreen({ navigation }) {
         name: "profile.jpg",
       } as any);
 
+      console.log("FormData clé et valeur:", formData);
+
       const userId = await getUserIdFromToken();
       if (!userId) throw new Error("ID utilisateur non trouvé");
 
-      const responsePost = await fetch(`${API_URL}/users/${userId}/profile-image`, {
-        method: "POST",
-        body: formData,
-      });
+      const responsePost = await fetch(
+        `${API_URL}/users/${userId}/profile-image`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      console.log("Response status:", responsePost.status);
 
       if (!responsePost.ok) {
         const errorBody = await responsePost.text();
         console.error("Response body:", errorBody);
         throw new Error("Échec de la mise à jour de la photo de profil");
       }
+
+      const updatedUser = await responsePost.json();
+      console.log("Response body:", updatedUser);
 
       navigation.replace("ProfileScreen");
     } catch (err: any) {
@@ -238,15 +265,13 @@ export default function ProfileScreen({ navigation }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [navigation]);
+  };
 
-  // Gestion des modifications de champs du formulaire
-  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  const handleInputChange: HandleInputChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
 
-  // Gestion de la sauvegarde des informations de profil
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     try {
       const payload = {
         firstName: formData.firstName,
@@ -258,7 +283,9 @@ export default function ProfileScreen({ navigation }) {
 
       const response = await fetch(`${API_URL}/users/${user?.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
@@ -271,58 +298,68 @@ export default function ProfileScreen({ navigation }) {
     } catch (error) {
       Alert.alert("Erreur", "Impossible de sauvegarder les modifications.");
     }
-  }, [formData, user]);
+  };
 
-  // Gestion du changement de mot de passe
-  const handleChangePassword = useCallback(async () => {
+  const handleChangePassword = async () => {
     if (!formData.currentPassword || !formData.newPassword) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs.");
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/users/${user?.id}/change-password`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/users/${user?.id}/change-password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Mot de passe actuel incorrect ou autre erreur.");
       }
 
       Alert.alert("Succès", "Mot de passe modifié avec succès.");
-      setFormData(prev => ({
-        ...prev,
+      setFormData((prevState) => ({
+        ...prevState,
         currentPassword: "",
         newPassword: "",
       }));
     } catch (error: any) {
-      Alert.alert("Erreur", error.message || "Impossible de modifier le mot de passe.");
+      Alert.alert(
+        "Erreur",
+        error.message || "Impossible de modifier le mot de passe."
+      );
     }
-  }, [formData, user]);
+  };
 
-  // Gestion du menu latéral
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
-  }, []);
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
 
-  // Recherche de ville
-  const handleSearchCity = useCallback(() => {
+  const handleSearchCity = () => {
     const trimmedQuery = query.trim();
 
     if (!trimmedQuery) {
-      Alert.alert("Erreur", "Veuillez entrer un code postal ou un nom de ville.");
+      Alert.alert(
+        "Erreur",
+        "Veuillez entrer un code postal ou un nom de ville."
+      );
       return;
     }
 
     const isCodePostal = /^[0-9]{5}$/.test(trimmedQuery);
+
     const filteredCities = franceCities.filter((city) => {
       const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
       const codePostal = city.Code_postal.toString().trim();
+
       return isCodePostal
         ? codePostal === trimmedQuery
         : cityName.includes(trimmedQuery.toLowerCase());
@@ -333,21 +370,25 @@ export default function ProfileScreen({ navigation }) {
       setModalVisible(true);
     } else {
       setSuggestions([]);
-      Alert.alert("Erreur", "Aucune ville ou code postal correspondant trouvé.");
+      Alert.alert(
+        "Erreur",
+        "Aucune ville ou code postal correspondant trouvé."
+      );
     }
-  }, [query]);
+  };
 
-  // Sélection d'une ville
-  const handleCitySelection = useCallback((city: City) => {
+  const handleCitySelection = (city: City) => {
     setSelectedCity(city);
     setModalVisible(false);
     setQuery(`${city.Nom_commune} (${city.Code_postal})`);
-  }, []);
+  };
 
-  // Sauvegarde de la ville
-  const handleSaveCity = useCallback(async () => {
+  const handleSaveCity = async () => {
     if (!selectedCity) {
-      Alert.alert("Erreur", "Veuillez sélectionner une ville avant d'enregistrer.");
+      Alert.alert(
+        "Erreur",
+        "Veuillez sélectionner une ville avant d'enregistrer."
+      );
       return;
     }
 
@@ -359,11 +400,11 @@ export default function ProfileScreen({ navigation }) {
 
       if (response.status === 200) {
         Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
-        setUser(prev => prev ? ({
+        setUser((prev: any) => ({
           ...prev,
           nomCommune: selectedCity.Nom_commune,
           codePostal: selectedCity.Code_postal,
-        }) : null);
+        }));
         setIsEditingCity(false);
       } else {
         throw new Error("Erreur serveur");
@@ -372,34 +413,35 @@ export default function ProfileScreen({ navigation }) {
       console.error("Erreur lors de la mise à jour :", error);
       Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
     }
-  }, [selectedCity, user]);
+  };
 
-  // Gestion des listes de followers/following
-  const handleShowList = useCallback((listType: "followers" | "following") => {
-    setSelectedList(prev => (prev === listType ? null : listType));
-  }, []);
+  const handleShowList = (listType: "followers" | "following") => {
+    setSelectedList((prev) => (prev === listType ? null : listType));
+  };
 
-  const handleCloseModal = useCallback(() => {
+  const handleCloseModal = () => {
     setSelectedList(null);
-  }, []);
+  };
 
-  // Gestion du unfollow
-  const handleUnfollow = useCallback(async (followingUserId) => {
+  const handleUnfollow = async (followingUserId) => {
     if (!currentUserId) return;
 
     try {
       setIsSubmitting(true);
-      const response = await fetch(`${API_URL}/users/${followingUserId}/unfollow`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ followerId: currentUserId }),
-      });
+      const response = await fetch(
+        `${API_URL}/users/${followingUserId}/unfollow`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ followerId: currentUserId }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Erreur lors du désuivi de cet utilisateur.");
       }
 
-      setUser(prevUser =>
+      setUser((prevUser) =>
         prevUser
           ? {
               ...prevUser,
@@ -414,103 +456,64 @@ export default function ProfileScreen({ navigation }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentUserId]);
+  };
 
-  // Préparation des cartes de statistiques
-  const statCards = useMemo<StatCard[]>(() => [
-    {
-      title: "Activité",
-      icon: "chart-timeline-variant",
-      items: [
-        { label: "Signalements", value: stats?.numberOfReports || 0 },
-        { label: "Commentaires", value: stats?.numberOfComments || 0 },
-        { label: "Votes", value: stats?.numberOfVotes || 0 },
-      ]
-    },
-    {
-      title: "Social",
-      icon: "account-group",
-      items: [
-        { label: "Publications", value: stats?.numberOfPosts || 0 },
-        { label: "Évènements créés", value: stats?.numberOfEventsCreated || 0 },
-        { label: "Participations", value: stats?.numberOfEventsAttended || 0 },
-      ]
-    },
-    {
-      title: "Relations",
-      icon: "account-multiple",
-      items: [
-        { label: "Abonnés", value: user?.followers?.length || 0 },
-        { label: "Abonnements", value: user?.following?.length || 0 },
-      ],
-      onPress: () => handleShowList("followers")
-    },
-    {
-      title: "Abonnement",
-      icon: "star-circle",
-      items: [
-        { label: "SMART+", value: user?.isSubscribed ? "Actif" : "Inactif" },
-        { label: "Mairie", value: user?.isMunicipality ? "Oui" : "Non" },
-      ]
-    }
-  ], [stats, user, handleShowList]);
-
-  // Affichage loading
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
-        <ActivityIndicator size="large" color="#062C41" />
-        <Text style={styles.loadingText}>Chargement des informations...</Text>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color={COLORS.secondary.base} />
+          <Text style={styles.loadingText}>
+            Chargement de votre profil...
+          </Text>
+        </View>
       </View>
     );
   }
 
-  // Affichage erreur
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
-        <Icon name="alert-circle-outline" size={60} color="#d81b60" />
-        <Text style={styles.errorText}>Erreur : {error}</Text>
+        <Icon name="error-outline" size={60} color={COLORS.state.error} />
+        <Text style={styles.errorTitle}>Oups !</Text>
+        <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity 
-          style={styles.retryButton}
+          style={styles.errorButton}
           onPress={() => navigation.replace("ProfileScreen")}
         >
-          <Text style={styles.retryButtonText}>Réessayer</Text>
+          <Text style={styles.errorButtonText}>Réessayer</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // Affichage principal
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#062C41" />
-      
-      {/* Header modernisé */}
+    <View style={styles.container}>
+      {/* Header avec gradient */}
       <LinearGradient
-        colors={['#062C41', '#0c4c6d']}
+        colors={[COLORS.primary.base, COLORS.primary.light]}
+        style={styles.header}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={styles.header}
       >
         <TouchableOpacity 
-          style={styles.menuButton} 
+          style={styles.iconButton} 
           onPress={toggleSidebar}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
         >
-          <Icon name="menu" size={26} color="#FFFFFF" />
+          <Icon name="menu" size={24} color={COLORS.primary.contrast} />
         </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>Mon Profil</Text>
-        
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>MON PROFIL</Text>
+        </View>
+
         <TouchableOpacity 
-          style={styles.notificationButton}
+          style={styles.iconButton}
           onPress={() => navigation.navigate("NotificationsScreen")}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
         >
-          <Icon name="bell" size={26} color="#FFFFFF" />
+          <Icon name="notifications" size={24} color={COLORS.primary.contrast} />
           {unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -523,316 +526,481 @@ export default function ProfileScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Section Photo de profil */}
-        <View style={styles.profileSection}>
-          <View style={styles.profileImageContainer}>
-            {user?.profilePhoto?.url ? (
-              <Image
-                source={{ uri: user.profilePhoto.url }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Icon name="account" size={60} color="#FFFFFF" />
-              </View>
-            )}
-          </View>
-          
-          <Text style={styles.username}>
-            {user?.username || `${user?.firstName} ${user?.lastName}`}
-          </Text>
-          
-          <TouchableOpacity
-            style={styles.updatePhotoButton}
-            onPress={handleProfileImageUpdate}
-            disabled={isSubmitting}
-          >
-            <Icon name="camera" size={18} color="#FFFFFF" style={styles.buttonIcon} />
-            <Text style={styles.updateButtonText}>
-              {isSubmitting ? "Chargement..." : "Modifier la photo"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Section Ville */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Icon name="map-marker" size={20} color="#062C41" />
-            <Text style={styles.cardTitle}>Ville de référence</Text>
-            {!isEditingCity && (
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => setIsEditingCity(true)}
-              >
-                <Icon name="pencil" size={16} color="#062C41" />
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          {!isEditingCity ? (
-            <View style={styles.cityInfo}>
-              <Text style={styles.cityName}>
-                {user?.nomCommune || "Non définie"}
-              </Text>
-              <Text style={styles.cityPostalCode}>
-                {user?.codePostal ? `(${user.codePostal})` : ""}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.editCityContainer}>
-              <View style={styles.searchContainer}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Code postal ou nom de ville"
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholderTextColor="#AAA"
-                />
-                <TouchableOpacity
-                  style={styles.searchButton}
-                  onPress={handleSearchCity}
-                >
-                  <Icon name="magnify" size={22} color="#062C41" />
-                </TouchableOpacity>
+        <Animated.View style={[styles.fadeIn, { opacity: fadeAnim }]}>
+          {/* Section de la photo de profil */}
+          <View style={styles.profileSection}>
+            <LinearGradient
+              colors={[COLORS.primary.light, COLORS.secondary.base]}
+              style={styles.profileGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.profileImageWrapper}>
+                {user?.profilePhoto?.url ? (
+                  <Image
+                    source={{ uri: user.profilePhoto.url }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View style={styles.placeholderImage}>
+                    <Text style={styles.placeholderText}>
+                      {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                    </Text>
+                  </View>
+                )}
               </View>
               
-              <View style={styles.editCityActions}>
-                <TouchableOpacity
-                  style={[styles.cityActionButton, styles.saveCityButton]}
-                  onPress={handleSaveCity}
-                >
-                  <Text style={styles.cityActionButtonText}>Enregistrer</Text>
-                </TouchableOpacity>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>
+                  {formData.firstName} {formData.lastName}
+                </Text>
+                <Text style={styles.profileUsername}>
+                  @{formData.username || "username"}
+                </Text>
                 
                 <TouchableOpacity
-                  style={[styles.cityActionButton, styles.cancelCityButton]}
-                  onPress={() => setIsEditingCity(false)}
+                  style={styles.photoButton}
+                  onPress={handleProfileImageUpdate}
+                  disabled={isSubmitting}
+                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.cityActionButtonText, styles.cancelButtonText]}>
-                    Annuler
+                  <Icon name="photo-camera" size={16} color={COLORS.neutral[50]} />
+                  <Text style={styles.photoButtonText}>
+                    {isSubmitting ? "Modification..." : "Modifier la photo"}
                   </Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          )}
-        </View>
-
-        {/* Section Informations personnelles */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Icon name="account-details" size={20} color="#062C41" />
-            <Text style={styles.cardTitle}>Informations personnelles</Text>
-            {!editable && (
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => {
-                  if (!formData.showEmail) {
-                    Alert.alert(
-                      "Information",
-                      "Activez le partage d'email pour pouvoir modifier vos informations."
-                    );
-                    return;
-                  }
-                  setEditable(true);
-                }}
+            </LinearGradient>
+            
+            {/* Stats rapides */}
+            <View style={styles.quickStats}>
+              <TouchableOpacity 
+                style={styles.quickStatItem}
+                onPress={() => handleShowList("followers")}
               >
-                <Icon name="pencil" size={16} color="#062C41" />
+                <Text style={styles.quickStatNumber}>{user?.followers?.length || 0}</Text>
+                <Text style={styles.quickStatLabel}>Abonnés</Text>
               </TouchableOpacity>
-            )}
-          </View>
-          
-          <View style={styles.formContainer}>
-            {/* Prénom */}
-            <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>Prénom</Text>
-              <TextInput
-                style={[styles.fieldInput, !editable && styles.disabledInput]}
-                value={formData.firstName}
-                onChangeText={(text) => handleInputChange("firstName", text)}
-                editable={editable}
-                placeholder="Votre prénom"
-              />
-            </View>
-            
-            {/* Nom */}
-            <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>Nom</Text>
-              <TextInput
-                style={[styles.fieldInput, !editable && styles.disabledInput]}
-                value={formData.lastName}
-                onChangeText={(text) => handleInputChange("lastName", text)}
-                editable={editable}
-                placeholder="Votre nom"
-              />
-            </View>
-            
-            {/* Nom d'utilisateur */}
-            <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>Nom d'utilisateur</Text>
-              <TextInput
-                style={[styles.fieldInput, !editable && styles.disabledInput]}
-                value={formData.username}
-                onChangeText={(text) => handleInputChange("username", text)}
-                editable={editable}
-                placeholder="Votre nom d'utilisateur"
-              />
-            </View>
-            
-            {/* Email */}
-            {formData.showEmail && (
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Email</Text>
-                <TextInput
-                  style={[styles.fieldInput, !editable && styles.disabledInput]}
-                  value={formData.email}
-                  onChangeText={(text) => handleInputChange("email", text)}
-                  editable={editable}
-                  placeholder="Votre email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
+              
+              <View style={styles.statDivider} />
+              
+              <TouchableOpacity 
+                style={styles.quickStatItem}
+                onPress={() => handleShowList("following")}
+              >
+                <Text style={styles.quickStatNumber}>{user?.following?.length || 0}</Text>
+                <Text style={styles.quickStatLabel}>Abonnements</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.statDivider} />
+              
+              <View style={styles.quickStatItem}>
+                <Text style={styles.quickStatNumber}>{stats?.numberOfReports || 0}</Text>
+                <Text style={styles.quickStatLabel}>Signalements</Text>
               </View>
-            )}
-            
-            {/* Option partage email */}
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>
-                Partager mon email avec les autres utilisateurs
-              </Text>
-              <Switch
-                value={formData.showEmail}
-                onValueChange={async (value) => {
-                  try {
-                    const response = await axios.post(
-                      `${API_URL}/users/show-email`,
-                      {
-                        userId: user?.id,
-                        showEmail: value,
+            </View>
+          </View>
+
+          {/* Cartes d'information */}
+          <View style={styles.cardsContainer}>
+            {/* Informations personnelles */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Icon name="person" size={22} color={COLORS.secondary.base} />
+                <Text style={styles.cardTitle}>Informations personnelles</Text>
+                <TouchableOpacity
+                  style={[styles.editIconButton, editable && styles.saveIconButton]}
+                  onPress={() => {
+                    if (editable) {
+                      handleSave();
+                    } else {
+                      if (!formData.showEmail) {
+                        Alert.alert(
+                          "Afficher l'email",
+                          "Veuillez afficher votre email avant de pouvoir entamer des modifications."
+                        );
+                        return;
                       }
-                    );
-
-                    const updatedShowEmail = response.data.showEmail;
-                    setFormData(prev => ({
-                      ...prev,
-                      showEmail: updatedShowEmail,
-                      email: updatedShowEmail ? user?.email || "" : "",
-                    }));
-
-                    const refreshedUser = await fetch(
-                      `${API_URL}/users/${user?.id}`
-                    ).then((res) => res.json());
-                    setUser(refreshedUser);
-                  } catch (error) {
-                    console.error("Erreur:", error);
-                    Alert.alert("Erreur", "Impossible de mettre à jour la préférence.");
-                  }
-                }}
-                trackColor={{ false: "#D1D1D1", true: "#81b0ff" }}
-                thumbColor={formData.showEmail ? "#062C41" : "#f4f3f4"}
-              />
-            </View>
-            
-            {/* Bouton Sauvegarder */}
-            {editable && (
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSave}
-              >
-                <Icon name="content-save" size={18} color="#FFFFFF" style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>Enregistrer</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Section Mot de passe */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Icon name="lock" size={20} color="#062C41" />
-            <Text style={styles.cardTitle}>Sécurité</Text>
-          </View>
-          
-          <View style={styles.formContainer}>
-            {/* Mot de passe actuel */}
-            <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>Mot de passe actuel</Text>
-              <View style={styles.passwordInputContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  value={formData.currentPassword}
-                  onChangeText={(text) => handleInputChange("currentPassword", text)}
-                  secureTextEntry={!showCurrentPassword}
-                  placeholder="Entrez votre mot de passe actuel"
-                />
-                <TouchableOpacity
-                  style={styles.visibilityToggle}
-                  onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                      setEditable(true);
+                    }
+                  }}
                 >
-                  <Icon name={showCurrentPassword ? "eye-off" : "eye"} size={20} color="#777" />
+                  <Icon 
+                    name={editable ? "check" : "edit"} 
+                    size={20} 
+                    color={editable ? COLORS.state.success : COLORS.secondary.base} 
+                  />
                 </TouchableOpacity>
               </View>
-            </View>
-            
-            {/* Nouveau mot de passe */}
-            <View style={styles.formField}>
-              <Text style={styles.fieldLabel}>Nouveau mot de passe</Text>
-              <View style={styles.passwordInputContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  value={formData.newPassword}
-                  onChangeText={(text) => handleInputChange("newPassword", text)}
-                  secureTextEntry={!showNewPassword}
-                  placeholder="Entrez le nouveau mot de passe"
-                />
-                <TouchableOpacity
-                  style={styles.visibilityToggle}
-                  onPress={() => setShowNewPassword(!showNewPassword)}
-                >
-                  <Icon name={showNewPassword ? "eye-off" : "eye"} size={20} color="#777" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            {/* Bouton Changer mot de passe */}
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleChangePassword}
-            >
-              <Icon name="lock-reset" size={18} color="#FFFFFF" style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Modifier le mot de passe</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        {/* Cartes de statistiques */}
-        {statCards.map((card, index) => (
-          <TouchableOpacity 
-            key={index} 
-            style={styles.card}
-            onPress={card.onPress}
-            disabled={!card.onPress}
-          >
-            <View style={styles.cardHeader}>
-              <Icon name={card.icon} size={20} color="#062C41" />
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              {card.onPress && (
-                <Icon name="chevron-right" size={20} color="#062C41" />
-              )}
-            </View>
-            
-            <View style={styles.statItems}>
-              {card.items.map((item, itemIndex) => (
-                <View key={itemIndex} style={styles.statItem}>
-                  <Text style={styles.statValue}>{item.value}</Text>
-                  <Text style={styles.statLabel}>{item.label}</Text>
+              <View style={styles.cardContent}>
+                {/* Champs du formulaire */}
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Prénom</Text>
+                  <TextInput
+                    style={[
+                      styles.fieldInput,
+                      !editable && styles.fieldInputDisabled
+                    ]}
+                    value={formData.firstName}
+                    onChangeText={(text) => handleInputChange("firstName", text)}
+                    editable={editable}
+                    placeholderTextColor={COLORS.neutral[400]}
+                  />
                 </View>
-              ))}
+                
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Nom</Text>
+                  <TextInput
+                    style={[
+                      styles.fieldInput,
+                      !editable && styles.fieldInputDisabled
+                    ]}
+                    value={formData.lastName}
+                    onChangeText={(text) => handleInputChange("lastName", text)}
+                    editable={editable}
+                    placeholderTextColor={COLORS.neutral[400]}
+                  />
+                </View>
+                
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Nom d'utilisateur</Text>
+                  <TextInput
+                    style={[
+                      styles.fieldInput,
+                      !editable && styles.fieldInputDisabled
+                    ]}
+                    value={formData.username}
+                    onChangeText={(text) => handleInputChange("username", text)}
+                    editable={editable}
+                    placeholderTextColor={COLORS.neutral[400]}
+                  />
+                </View>
+                
+                {formData.showEmail && (
+                  <View style={styles.formField}>
+                    <Text style={styles.fieldLabel}>Email</Text>
+                    <TextInput
+                      style={[
+                        styles.fieldInput,
+                        !editable && styles.fieldInputDisabled
+                      ]}
+                      value={formData.email}
+                      onChangeText={(text) => handleInputChange("email", text)}
+                      editable={editable}
+                      placeholderTextColor={COLORS.neutral[400]}
+                      keyboardType="email-address"
+                    />
+                  </View>
+                )}
+
+                <View style={styles.switchContainer}>
+                  <View style={styles.switchInfo}>
+                    <Icon name="visibility" size={20} color={COLORS.secondary.base} />
+                    <Text style={styles.switchLabel}>
+                      Partager mon email avec les autres utilisateurs
+                    </Text>
+                  </View>
+                  <Switch
+                    value={formData.showEmail}
+                    onValueChange={async (value) => {
+                      try {
+                        const response = await axios.post(
+                          `${API_URL}/users/show-email`,
+                          {
+                            userId: user?.id,
+                            showEmail: value,
+                          }
+                        );
+
+                        const updatedShowEmail = response.data.showEmail;
+
+                        setFormData((prevState) => ({
+                          ...prevState,
+                          showEmail: updatedShowEmail,
+                          email: updatedShowEmail ? user?.email || "" : "",
+                        }));
+
+                        const refreshedUser = await fetch(
+                          `${API_URL}/users/${user?.id}`
+                        ).then((res) => res.json());
+                        setUser(refreshedUser);
+                      } catch (error) {
+                        console.error(
+                          "Erreur lors de la mise à jour de la préférence :",
+                          error
+                        );
+                        Alert.alert(
+                          "Erreur",
+                          "Impossible de mettre à jour la préférence."
+                        );
+                      }
+                    }}
+                    trackColor={{
+                      false: COLORS.neutral[300],
+                      true: COLORS.secondary.light,
+                    }}
+                    thumbColor={formData.showEmail ? COLORS.secondary.base : COLORS.neutral[50]}
+                    ios_backgroundColor={COLORS.neutral[300]}
+                  />
+                </View>
+              </View>
             </View>
-          </TouchableOpacity>
-        ))}
+
+            {/* Sécurité */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Icon name="lock" size={22} color={COLORS.secondary.base} />
+                <Text style={styles.cardTitle}>Sécurité</Text>
+              </View>
+
+              <View style={styles.cardContent}>
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Mot de passe actuel</Text>
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="••••••••"
+                      placeholderTextColor={COLORS.neutral[400]}
+                      secureTextEntry={!showCurrentPassword}
+                      value={formData.currentPassword}
+                      onChangeText={(text) =>
+                        handleInputChange("currentPassword", text)
+                      }
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      <Icon
+                        name={showCurrentPassword ? "visibility-off" : "visibility"}
+                        size={20}
+                        color={COLORS.neutral[500]}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Nouveau mot de passe</Text>
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="••••••••"
+                      placeholderTextColor={COLORS.neutral[400]}
+                      secureTextEntry={!showNewPassword}
+                      value={formData.newPassword}
+                      onChangeText={(text) =>
+                        handleInputChange("newPassword", text)
+                      }
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      <Icon
+                        name={showNewPassword ? "visibility-off" : "visibility"}
+                        size={20}
+                        color={COLORS.neutral[500]}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleChangePassword}
+                >
+                  <Icon name="vpn-key" size={16} color={COLORS.primary.contrast} />
+                  <Text style={styles.actionButtonText}>Changer mon mot de passe</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Localisation */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Icon name="location-on" size={22} color={COLORS.secondary.base} />
+                <Text style={styles.cardTitle}>Localisation</Text>
+                <TouchableOpacity
+                  style={styles.editIconButton}
+                  onPress={() => setIsEditingCity(true)}
+                >
+                  <Icon name="settings" size={20} color={COLORS.secondary.base} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.cardContent}>
+                <View style={styles.locationDisplay}>
+                  <Icon name="place" size={32} color={COLORS.secondary.base} />
+                  <View style={styles.locationInfo}>
+                    <Text style={styles.locationCity}>
+                      {user?.nomCommune || "Aucune ville définie"}
+                    </Text>
+                    <Text style={styles.locationPostal}>
+                      {user?.codePostal || ""}
+                    </Text>
+                  </View>
+                </View>
+
+                {isEditingCity && (
+                  <View style={styles.cityEditContainer}>
+                    <View style={styles.searchBar}>
+                      <TextInput
+                        style={styles.searchInput}
+                        placeholder="Rechercher par ville ou code postal"
+                        placeholderTextColor={COLORS.neutral[400]}
+                        value={query}
+                        onChangeText={setQuery}
+                      />
+                      <TouchableOpacity
+                        style={styles.searchButton}
+                        onPress={handleSearchCity}
+                      >
+                        <Icon name="search" size={20} color={COLORS.primary.contrast} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.cityActionButtons}>
+                      <TouchableOpacity
+                        style={styles.cityActionButton}
+                        onPress={handleSaveCity}
+                      >
+                        <Text style={styles.cityActionButtonText}>Enregistrer</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.cityActionButton, styles.cityActionButtonCancel]}
+                        onPress={() => setIsEditingCity(false)}
+                      >
+                        <Text style={styles.cityActionButtonTextCancel}>Annuler</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Statistiques */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Icon name="bar-chart" size={22} color={COLORS.secondary.base} />
+                <Text style={styles.cardTitle}>Statistiques</Text>
+              </View>
+
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                  <Icon name="thumb-up" size={20} color={COLORS.secondary.base} />
+                  <Text style={styles.statValue}>{stats?.numberOfVotes || 0}</Text>
+                  <Text style={styles.statLabel}>Votes</Text>
+                
+                </View>
+
+                <View style={styles.statCard}>
+                  <Icon name="comment" size={20} color={COLORS.secondary.base} />
+                  <Text style={styles.statValue}>{stats?.numberOfComments || 0}</Text>
+                  <Text style={styles.statLabel}>Commentaires</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Icon name="flag" size={20} color={COLORS.secondary.base} />
+                  <Text style={styles.statValue}>{stats?.numberOfReports || 0}</Text>
+                  <Text style={styles.statLabel}>Signalements</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Icon name="article" size={20} color={COLORS.secondary.base} />
+                  <Text style={styles.statValue}>{stats?.numberOfPosts || 0}</Text>
+                  <Text style={styles.statLabel}>Publications</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Icon name="event" size={20} color={COLORS.secondary.base} />
+                  <Text style={styles.statValue}>{stats?.numberOfEventsCreated || 0}</Text>
+                  <Text style={styles.statLabel}>Événements créés</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Icon name="people" size={20} color={COLORS.secondary.base} />
+                  <Text style={styles.statValue}>{stats?.numberOfEventsAttended || 0}</Text>
+                  <Text style={styles.statLabel}>Participations</Text>
+                </View>
+              </View>
+            </View>
+
+         {/* Adhésions */}
+<View style={styles.card}>
+  <View style={styles.cardHeader}>
+    <Icon name="card-membership" size={22} color={COLORS.secondary.base} />
+    <Text style={styles.cardTitle}>Options d'adhésion</Text>
+  </View>
+
+  <View style={styles.cardContent}>
+    <View style={styles.membershipItem}>
+      <View style={styles.membershipInfo}>
+        <View style={styles.membershipBadge}>
+          <Icon 
+            name="star" 
+            size={16} 
+            color={user?.isSubscribed ? COLORS.state.warning : COLORS.neutral[400]} 
+          />
+        </View>
+        <View>
+          <Text style={styles.membershipTitle}>SMART+</Text>
+          <Text style={styles.membershipDescription}>
+            Accès à toutes les services de l'application
+          </Text>
+        </View>
+      </View>
+      <View style={[
+        styles.membershipStatus, 
+        user?.isSubscribed ? styles.membershipActive : styles.membershipInactive
+      ]}>
+        <Text style={[
+          styles.membershipStatusText,
+          user?.isSubscribed ? styles.membershipActiveText : styles.membershipInactiveText
+        ]}>
+          {user?.isSubscribed ? "Actif" : "Inactif"}
+        </Text>
+      </View>
+    </View>
+
+    <View style={styles.membershipDivider} />
+
+    <View style={styles.membershipItem}>
+      <View style={styles.membershipInfo}>
+        <View style={styles.membershipBadge}>
+          <Icon 
+            name="apartment" 
+            size={16} 
+            color={user?.isMunicipality ? COLORS.state.info : COLORS.neutral[400]} 
+          />
+        </View>
+        <View>
+          <Text style={styles.membershipTitle}>Affiliation mairie</Text>
+          <Text style={styles.membershipDescription}>
+            Statut officiel pour les comptes municipaux
+          </Text>
+        </View>
+      </View>
+      <View style={[
+        styles.membershipStatus, 
+        user?.isMunicipality ? styles.membershipActive : styles.membershipInactive
+      ]}>
+        <Text style={[
+          styles.membershipStatusText,
+          user?.isMunicipality ? styles.membershipActiveText : styles.membershipInactiveText
+        ]}>
+          {user?.isMunicipality ? "Vérifié" : "Non vérifié"}
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+          </View>
+        </Animated.View>
       </ScrollView>
 
-      {/* Modal pour les suggestions de villes */}
+      {/* Modal pour la recherche de ville */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -842,9 +1010,12 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Sélectionnez une ville</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" size={24} color="#062C41" />
+              <Text style={styles.modalTitle}>Sélectionner une ville</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Icon name="close" size={24} color={COLORS.neutral[600]} />
               </TouchableOpacity>
             </View>
             
@@ -855,11 +1026,17 @@ export default function ProfileScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.suggestionItem}
                   onPress={() => handleCitySelection(item)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.cityName}>{item.Nom_commune}</Text>
-                  <Text style={styles.cityPostalCode}>{item.Code_postal}</Text>
+                  <Icon name="place" size={18} color={COLORS.secondary.base} />
+                  <View style={styles.suggestionContent}>
+                    <Text style={styles.suggestionCity}>{item.Nom_commune}</Text>
+                    <Text style={styles.suggestionPostal}>{item.Code_postal}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={20} color={COLORS.neutral[400]} />
                 </TouchableOpacity>
               )}
+              ItemSeparatorComponent={() => <View style={styles.suggestionDivider} />}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.suggestionsList}
             />
@@ -867,7 +1044,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
       </Modal>
 
-      {/* Modal pour les relations */}
+      {/* Modal pour les listes de followers/following */}
       {selectedList && (
         <Modal
           visible={true}
@@ -876,13 +1053,18 @@ export default function ProfileScreen({ navigation }) {
           onRequestClose={handleCloseModal}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.followersModalContent}>
+            <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>
-                  {selectedList === "followers" ? "Vos abonnés" : "Vos abonnements"}
+                  {selectedList === "followers" 
+                    ? "Abonnés" 
+                    : "Abonnements"}
                 </Text>
-                <TouchableOpacity onPress={handleCloseModal}>
-                  <Icon name="close" size={24} color="#062C41" />
+                <TouchableOpacity 
+                  style={styles.modalCloseButton}
+                  onPress={handleCloseModal}
+                >
+                  <Icon name="close" size={24} color={COLORS.neutral[600]} />
                 </TouchableOpacity>
               </View>
               
@@ -890,14 +1072,29 @@ export default function ProfileScreen({ navigation }) {
                 data={selectedList === "followers" ? user?.followers : user?.following}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                  <View style={styles.followItem}>
-                    <Image
-                      source={{
-                        uri: item.profilePhoto || "https://via.placeholder.com/150",
-                      }}
-                      style={styles.followAvatar}
-                    />
-                    <Text style={styles.followName}>{item.username}</Text>
+                  <View style={styles.userListItem}>
+                    <View style={styles.userListItemLeft}>
+                      {item.profilePhoto ? (
+                        <Image
+                          source={{ uri: item.profilePhoto }}
+                          style={styles.userListAvatar}
+                        />
+                      ) : (
+                        <View style={styles.userListAvatarPlaceholder}>
+                          <Text style={styles.userListAvatarText}>
+                            {item.username?.charAt(0) || "?"}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.userListInfo}>
+                        <Text style={styles.userListName}>{item.username}</Text>
+                        {item.firstName && item.lastName && (
+                          <Text style={styles.userListDetail}>
+                            {item.firstName} {item.lastName}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
                     
                     {selectedList === "following" && (
                       <TouchableOpacity
@@ -909,67 +1106,37 @@ export default function ProfileScreen({ navigation }) {
                     )}
                   </View>
                 )}
-                contentContainerStyle={styles.followList}
-                ListEmptyComponent={
+                ItemSeparatorComponent={() => <View style={styles.userListDivider} />}
+                ListEmptyComponent={() => (
                   <View style={styles.emptyListContainer}>
-                    <Icon name="account-off" size={50} color="#DDD" />
+                    <Icon 
+                      name={selectedList === "followers" ? "person-add-disabled" : "group-off"} 
+                      size={48} 
+                      color={COLORS.neutral[400]} 
+                    />
                     <Text style={styles.emptyListText}>
-                      Aucun {selectedList === "followers" ? "abonné" : "abonnement"} pour le moment
+                      {selectedList === "followers" 
+                        ? "Vous n'avez pas encore d'abonnés" 
+                        : "Vous ne suivez personne pour le moment"}
                     </Text>
                   </View>
-                }
+                )}
               />
             </View>
           </View>
         </Modal>
       )}
-
-      {/* Sidebar */}
+      
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-    </SafeAreaView>
+    </View>
   );
 }
 
-// Styles modernisés
+// Styles modernisés avec un design épuré et une meilleure hiérarchie visuelle
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#062C41",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#d81b60",
-    textAlign: "center",
-    marginTop: 12,
-    marginBottom: 24,
-  },
-  retryButton: {
-    backgroundColor: "#062C41",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
+    backgroundColor: COLORS.neutral[500],
   },
   
   // Header styles
@@ -977,1322 +1144,652 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingTop: Platform.OS === "ios" ? 50 : 40,
+    paddingBottom: 15,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    elevation: 4,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
+    zIndex: 10,
   },
-  menuButton: {
-    padding: 4,
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    color: COLORS.primary.contrast,
+    letterSpacing: 0.5,
   },
-  notificationButton: {
-    padding: 4,
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   badge: {
     position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: "#d81b60",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    backgroundColor: COLORS.accent.base,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FFFFFF",
   },
   badgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
+    color: COLORS.accent.contrast,
+    fontSize: 12,
     fontWeight: "bold",
   },
   
-  // Scroll content
+  // Loading and error styles
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: COLORS.neutral[50],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContent: {
+    backgroundColor: COLORS.neutral[50],
+    borderRadius: 16,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.neutral[700],
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.neutral[50],
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: COLORS.neutral[800],
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.neutral[600],
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  errorButton: {
+    backgroundColor: COLORS.secondary.base,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: COLORS.secondary.contrast,
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  
+  // Main content styles
   scrollContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingBottom: 30,
+  },
+  fadeIn: {
+    width: "100%",
   },
   
   // Profile section
   profileSection: {
-    alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  profileImageContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: "hidden",
-    backgroundColor: "#E1E1E1",
-    marginBottom: 12,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  profileImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#999",
-  },
-  username: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
-  },
-  updatePhotoButton: {
+  profileGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 25,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#062C41",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  },
+  profileImageWrapper: {
+    marginRight: 20,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.6)",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  profileImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  placeholderImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: COLORS.neutral[300],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: COLORS.neutral[50],
+    textTransform: "uppercase",
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: COLORS.primary.contrast,
+    marginBottom: 4,
+  },
+  profileUsername: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.8)",
+    marginBottom: 12,
+  },
+  photoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignSelf: "flex-start",
   },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  updateButtonText: {
-    color: "#FFFFFF",
+  photoButtonText: {
+    fontSize: 14,
+    color: COLORS.primary.contrast,
+    marginLeft: 6,
     fontWeight: "500",
   },
   
-  // Card styles
-  card: {
-    backgroundColor: "#FFFFFF",
+  // Quick stats row
+  quickStats: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 16,
+    backgroundColor: COLORS.neutral[50],
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
+    marginHorizontal: 16,
+    marginTop: -20,
+    elevation: 4,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 8,
+  },
+  quickStatItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  quickStatNumber: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.primary.base,
+    marginBottom: 4,
+  },
+  quickStatLabel: {
+    fontSize: 14,
+    color: COLORS.neutral[600],
+  },
+  statDivider: {
+    width: 1,
+    height: "70%",
+    backgroundColor: COLORS.neutral[300],
+    alignSelf: "center",
+  },
+  
+  // Cards container
+  cardsContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  card: {
+    backgroundColor: COLORS.neutral[50],
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: "hidden",
+    padding:5,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neutral[200],
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#062C41",
-    marginLeft: 8,
+    color: COLORS.neutral[800],
+    marginLeft: 10,
     flex: 1,
   },
-  editButton: {
-    padding: 4,
+  editIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.neutral[200],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  saveIconButton: {
+    backgroundColor: COLORS.neutral[200],
+  },
+  cardContent: {
+    padding: 16,
   },
   
-  // City info styles
-  cityInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cityName: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#333",
-  },
-  cityPostalCode: {
-    fontSize: 16,
-    color: "#666",
-    marginLeft: 4,
-  },
-  editCityContainer: {
-    width: "100%",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  searchInput: {
-    flex: 1,
-    padding: 10,
-    fontSize: 15,
-  },
-  searchButton: {
-    padding: 10,
-    backgroundColor: "#F0F0F0",
-  },
-  editCityActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-  cityActionButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveCityButton: {
-    backgroundColor: "#062C41",
-    marginRight: 8,
-  },
-  cancelCityButton: {
-    backgroundColor: "#F0F0F0",
-    marginLeft: 8,
-    borderWidth: 1,
-    borderColor: "#DDD",
-  },
-  cityActionButtonText: {
-    fontWeight: "500",
-    color: "#FFFFFF",
-  },
-  cancelButtonText: {
-    color: "#333",
-  },
-  
-  // Form styles
-  formContainer: {
-    width: "100%",
-  },
+  // Form fields
   formField: {
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 14,
-    color: "#555",
+    fontWeight: "500",
+    color: COLORS.neutral[600],
     marginBottom: 6,
   },
   fieldInput: {
-    borderWidth: 1,
-    borderColor: "#DDD",
+    backgroundColor: COLORS.neutral[100],
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 8,
-    padding: 10,
-    fontSize: 15,
-    color: "#333",
-    backgroundColor: "#FFFFFF",
+    fontSize: 16,
+    color: COLORS.neutral[800],
+    borderWidth: 1,
+    borderColor: COLORS.neutral[300],
   },
-  disabledInput: {
-    backgroundColor: "#F5F5F5",
-    color: "#777",
+  fieldInputDisabled: {
+    backgroundColor: COLORS.neutral[200],
+    color: COLORS.neutral[700],
   },
   switchContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginTop: 10,
+  },
+  switchInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   switchLabel: {
     fontSize: 14,
-    color: "#555",
+    color: COLORS.neutral[700],
+    marginLeft: 8,
     flex: 1,
-    marginRight: 10,
   },
+  
+  // Password fields
   passwordInputContainer: {
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#DDD",
+    alignItems: "center",
+    backgroundColor: COLORS.neutral[100],
     borderRadius: 8,
-    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.neutral[300],
   },
   passwordInput: {
     flex: 1,
-    padding: 10,
-    fontSize: 15,
-  },
-  visibilityToggle: {
-    padding: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  saveButton: {
-    flexDirection: "row",
-    backgroundColor: "#062C41",
+    paddingHorizontal: 14,
     paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.neutral[800],
+  },
+  eyeIcon: {
+    padding: 10,
+  },
+  
+  // Action buttons
+  actionButton: {
+    backgroundColor: COLORS.secondary.base,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    alignSelf: "center",
+  },
+  actionButtonText: {
+    color: COLORS.secondary.contrast,
+    fontWeight: "600",
+    fontSize: 15,
+    marginLeft: 8,
+  },
+  
+  // Location display
+  locationDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  locationInfo: {
+    marginLeft: 15,
+  },
+  locationCity: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.neutral[800],
+  },
+  locationPostal: {
+    fontSize: 14,
+    color: COLORS.neutral[600],
+    marginTop: 2,
+  },
+  
+  // City edit
+  cityEditContainer: {
+    marginTop: 20,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: COLORS.neutral[100],
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    color: COLORS.neutral[800],
+    borderWidth: 1,
+    borderColor: COLORS.neutral[300],
+  },
+  searchButton: {
+    backgroundColor: COLORS.secondary.base,
+    width: 46,
+    height: 46,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
+    marginLeft: 8,
   },
-  buttonText: {
-    color: "#FFFFFF",
+  cityActionButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  cityActionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    backgroundColor: COLORS.secondary.base,
+    borderRadius: 8,
+    marginHorizontal: 6,
+  },
+  cityActionButtonCancel: {
+    backgroundColor: COLORS.neutral[200],
+  },
+  cityActionButtonText: {
+    color: COLORS.secondary.contrast,
     fontWeight: "600",
-    fontSize: 15,
+    fontSize: 14,
+  },
+  cityActionButtonTextCancel: {
+    color: COLORS.neutral[700],
+    fontWeight: "600",
+    fontSize: 14,
   },
   
-  // Stats styles
-  statItems: {
+  // Stats grid
+  statsGrid: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 10,
   },
-  statItem: {
+  statCard: {
+    width: "30%",
+    backgroundColor: COLORS.neutral[100],
+    borderRadius: 8,
+    padding: 12,
     alignItems: "center",
-    padding: 8,
+    marginBottom: 12,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#062C41",
-    marginBottom: 4,
+    color: COLORS.primary.base,
+    marginTop: 6,
+    marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
-    color: "#777",
+    color: COLORS.neutral[600],
     textAlign: "center",
   },
+  
+  // Membership section
+  // Styles pour la section d'adhésion
+membershipItem: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  paddingVertical: 12,
+},
+membershipInfo: {
+  flexDirection: "row",
+  alignItems: "center",
+  flex: 1,
+},
+membershipBadge: {
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  backgroundColor: COLORS.neutral[200],
+  justifyContent: "center",
+  alignItems: "center",
+  marginRight: 14,
+},
+membershipTitle: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: COLORS.neutral[800],
+  marginBottom: 3,
+},
+membershipDescription: {
+  fontSize: 13,
+  paddingRight: 50,
+  color: COLORS.neutral[600],
+},
+membershipStatus: {
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 20,
+  minWidth: 80,
+  alignItems: "center",
+},
+membershipActive: {
+  backgroundColor: "rgba(16, 185, 129, 0.15)",
+  borderWidth: 1,
+  borderColor: "rgba(16, 185, 129, 0.3)",
+},
+membershipInactive: {
+  backgroundColor: "rgba(114, 114, 114, 0.15)",
+  borderWidth: 1,
+  borderColor: COLORS.neutral[300],
+},
+membershipStatusText: {
+  fontSize: 13,
+  fontWeight: "600",
+},
+membershipActiveText: {
+  color: COLORS.state.success,
+},
+membershipInactiveText: {
+  color: COLORS.neutral[800],  // Couleur plus foncée pour une meilleure lisibilité
+},
+membershipDivider: {
+  height: 1,
+  backgroundColor: COLORS.neutral[200],
+  marginVertical: 10,
+},
   
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: COLORS.overlay,
+    justifyContent: "flex-end",
   },
   modalContent: {
-    width: "90%",
-    maxHeight: "70%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  followersModalContent: {
-    width: "90%",
-    maxHeight: "80%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    overflow: "hidden",
+    backgroundColor: COLORS.neutral[50],
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "100%",
+    paddingBottom: 20,
+
   },
   modalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
+    borderBottomColor: COLORS.neutral[200],
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#062C41",
+    color: COLORS.neutral[800],
   },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.neutral[200],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  
+  // Suggestion items
   suggestionsList: {
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   suggestionItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  suggestionContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  suggestionCity: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: COLORS.neutral[800],
+  },
+  suggestionPostal: {
+    fontSize: 14,
+    color: COLORS.neutral[600],
+  },
+  suggestionDivider: {
+    height: 1,
+    backgroundColor: COLORS.neutral[200],
   },
   
-  // Follow list styles
-  followList: {
-    paddingVertical: 8,
-  },
-  followItem: {
+  // User list items
+  userListItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
-  followAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  followName: {
-    fontSize: 16,
+  userListItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
-    color: "#333",
   },
-  unfollowButton: {
-    backgroundColor: "#f44336",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
+  userListAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
-  unfollowButtonText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "500",
+  userListAvatarPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.neutral[300],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  userListAvatarText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.neutral[50],
+  },
+  userListInfo: {
+    marginLeft: 15,
+  },
+  userListName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.neutral[800],
+  },
+  userListDetail: {
+    fontSize: 14,
+    color: COLORS.neutral[600],
+    marginTop: 2,
+  },
+  userListDivider: {
+    height: 1,
+    backgroundColor: COLORS.neutral[200],
   },
   emptyListContainer: {
+    padding: 40,
     alignItems: "center",
     justifyContent: "center",
-    padding: 24,
   },
   emptyListText: {
-    marginTop: 12,
-    color: "#999",
     fontSize: 16,
+    color: COLORS.neutral[600],
     textAlign: "center",
+    marginTop: 16,
+  },
+  unfollowButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  unfollowButtonText: {
+    color: COLORS.state.error,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
-
-
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   ScrollView,
-//   ActivityIndicator,
-//   Image,
-//   TextInput,
-//   Alert,
-//   Switch,
-//   Modal,
-//   FlatList,
-// } from "react-native";
-// // @ts-ignore
-// import { API_URL } from "@env";
-// import { getUserIdFromToken } from "../utils/tokenUtils";
-// import * as ImagePicker from "expo-image-picker";
-// import styles from "./styles/ProfileScreen.styles";
-// import axios from "axios";
-// import Icon from "react-native-vector-icons/MaterialIcons";
-// import Sidebar from "../components/common/Sidebar";
-// import { useNotification } from "../context/NotificationContext";
-// import franceCitiesRaw from "../assets/france.json";
-// import { Ionicons } from "@expo/vector-icons";
-
-// const franceCities: City[] = franceCitiesRaw as City[];
-
-// interface City {
-//   Code_commune_INSEE: number;
-//   Nom_commune: string;
-//   Code_postal: string;
-//   Libelle_acheminement: string;
-//   Ligne_5: string;
-//   coordonnees_gps: string;
-// }
-
-// interface FormData {
-//   firstName: string;
-//   lastName: string;
-//   email: string;
-//   username: string;
-//   showEmail: boolean;
-//   currentPassword: string;
-//   newPassword: string;
-// }
-
-// interface HandleInputChange {
-//   (field: keyof FormData, value: string): void;
-// }
-
-// type User = {
-//   id: string;
-//   createdAt: string;
-//   firstName: string;
-//   lastName: string;
-//   email: string;
-//   showEmail: boolean;
-//   username?: string;
-//   trustRate?: number;
-//   followers?: any[];
-//   following?: any[];
-//   reports?: any[];
-//   comments?: any[];
-//   posts?: any[];
-//   organizedEvents?: any[];
-//   attendedEvents?: any[];
-//   nomCommune?: string;
-//   codePostal?: string;
-//   latitude?: number;
-//   longitude?: number;
-//   profilePhoto?: { url: string };
-//   isSubscribed: boolean;
-//   isMunicipality: boolean;
-// };
-
-// export default function ProfileScreen({ navigation }) {
-//   const { unreadCount } = useNotification();
-
-//   const [user, setUser] = useState<User | null>(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-//   const [editable, setEditable] = useState(false);
-//   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-//   const [showNewPassword, setShowNewPassword] = useState(false);
-//   const [formData, setFormData] = useState({
-//     firstName: "",
-//     lastName: "",
-//     email: "",
-//     username: "",
-//     showEmail: false,
-//     currentPassword: "",
-//     newPassword: "",
-//   });
-//   const [stats, setStats] = useState<any>(null);
-//   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-//   const [isEditingCity, setIsEditingCity] = useState(false);
-//   const [suggestions, setSuggestions] = useState<City[]>([]);
-//   const [query, setQuery] = useState("");
-//   const [modalVisible, setModalVisible] = useState(false);
-//   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-//   const [selectedList, setSelectedList] = useState<
-//     "followers" | "following" | null
-//   >(null);
-//   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-
-//   useEffect(() => {
-//     navigation.setOptions({
-//       gestureEnabled: false,
-//     });
-//     async function fetchUser() {
-//       try {
-//         const userId = await getUserIdFromToken();
-//         setCurrentUserId(userId);
-//         if (!userId) throw new Error("ID utilisateur non trouvé");
-
-//         const response = await fetch(`${API_URL}/users/${userId}`);
-//         if (!response.ok)
-//           throw new Error(
-//             "Erreur lors de la récupération des données utilisateur"
-//           );
-
-//         const data: User = await response.json();
-//         setUser(data);
-//       } catch (err: any) {
-//         setError(err.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     }
-
-//     fetchUser();
-//   }, [navigation]);
-
-//   useEffect(() => {
-//     if (user) {
-//       setFormData({
-//         firstName: user.firstName || "",
-//         lastName: user.lastName || "",
-//         email: user.showEmail ? user.email || "" : "",
-//         showEmail: user.showEmail || false,
-//         username: user.username || "",
-//         currentPassword: "",
-//         newPassword: "",
-//       });
-//     }
-//   }, [user]);
-
-//   useEffect(() => {
-//     const fetchStats = async () => {
-//       if (!user?.id) return;
-
-//       try {
-//         setLoading(true);
-//         setError(null);
-
-//         const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
-//         if (response.status !== 200) {
-//           throw new Error(`Erreur API : ${response.statusText}`);
-//         }
-
-//         const data = response.data;
-//         setStats(data);
-//       } catch (error: any) {
-//         console.error("Erreur dans fetchStats :", error.message || error);
-//         setError("Impossible de récupérer les statistiques.");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchStats();
-//   }, [user]);
-
-//   const handleProfileImageUpdate = async () => {
-//     try {
-//       setIsSubmitting(true);
-
-//       const result = await ImagePicker.launchImageLibraryAsync({
-//         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-//         allowsEditing: true,
-//         quality: 1,
-//         aspect: [1, 1],
-//       });
-
-//       if (result.canceled) {
-//         setIsSubmitting(false);
-//         return;
-//       }
-
-//       const photoUri = result.assets?.[0]?.uri;
-
-//       if (!photoUri) {
-//         throw new Error("Aucune image sélectionnée");
-//       }
-
-//       const formData = new FormData();
-//       formData.append("profileImage", {
-//         uri: photoUri,
-//         type: "image/jpeg",
-//         name: "profile.jpg",
-//       } as any);
-
-//       console.log("FormData clé et valeur:", formData);
-
-//       const userId = await getUserIdFromToken();
-//       if (!userId) throw new Error("ID utilisateur non trouvé");
-
-//       const responsePost = await fetch(
-//         `${API_URL}/users/${userId}/profile-image`,
-//         {
-//           method: "POST",
-//           body: formData,
-//         }
-//       );
-
-//       console.log("Response status:", responsePost.status);
-
-//       if (!responsePost.ok) {
-//         const errorBody = await responsePost.text();
-//         console.error("Response body:", errorBody);
-//         throw new Error("Échec de la mise à jour de la photo de profil");
-//       }
-
-//       const updatedUser = await responsePost.json();
-//       console.log("Response body:", updatedUser);
-
-//       navigation.replace("ProfileScreen");
-//     } catch (err: any) {
-//       console.error("Erreur lors de l'upload :", err.message);
-//       setError(err.message);
-//     } finally {
-//       setIsSubmitting(false);
-//     }
-//   };
-
-//   const handleInputChange: HandleInputChange = (field, value) => {
-//     setFormData({ ...formData, [field]: value });
-//   };
-
-//   const handleSave = async () => {
-//     try {
-//       const payload = {
-//         firstName: formData.firstName,
-//         lastName: formData.lastName,
-//         email: formData.email,
-//         username: formData.username,
-//         showEmail: formData.showEmail.toString(),
-//       };
-
-//       const response = await fetch(`${API_URL}/users/${user?.id}`, {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(payload),
-//       });
-
-//       if (!response.ok) {
-//         throw new Error("Une erreur s'est produite lors de la sauvegarde.");
-//       }
-
-//       Alert.alert("Succès", "Les informations ont été mises à jour.");
-//       setEditable(false);
-//     } catch (error) {
-//       Alert.alert("Erreur", "Impossible de sauvegarder les modifications.");
-//     }
-//   };
-
-//   const handleChangePassword = async () => {
-//     if (!formData.currentPassword || !formData.newPassword) {
-//       Alert.alert("Erreur", "Veuillez remplir tous les champs.");
-//       return;
-//     }
-
-//     try {
-//       const response = await fetch(
-//         `${API_URL}/users/${user?.id}/change-password`,
-//         {
-//           method: "PUT",
-//           headers: {
-//             "Content-Type": "application/json",
-//           },
-//           body: JSON.stringify({
-//             currentPassword: formData.currentPassword,
-//             newPassword: formData.newPassword,
-//           }),
-//         }
-//       );
-
-//       if (!response.ok) {
-//         throw new Error("Mot de passe actuel incorrect ou autre erreur.");
-//       }
-
-//       Alert.alert("Succès", "Mot de passe modifié avec succès.");
-//       setFormData((prevState) => ({
-//         ...prevState,
-//         currentPassword: "",
-//         newPassword: "",
-//       }));
-//     } catch (error: any) {
-//       Alert.alert(
-//         "Erreur",
-//         error.message || "Impossible de modifier le mot de passe."
-//       );
-//     }
-//   };
-
-//   const toggleSidebar = () => {
-//     setIsSidebarOpen((prev) => !prev);
-//   };
-
-//   const handleSearchCity = () => {
-//     const trimmedQuery = query.trim();
-
-//     if (!trimmedQuery) {
-//       Alert.alert(
-//         "Erreur",
-//         "Veuillez entrer un code postal ou un nom de ville."
-//       );
-//       return;
-//     }
-
-//     const isCodePostal = /^[0-9]{5}$/.test(trimmedQuery);
-
-//     const filteredCities = franceCities.filter((city) => {
-//       const cityName = (city.Ligne_5 || city.Nom_commune).toLowerCase().trim();
-//       const codePostal = city.Code_postal.toString().trim();
-
-//       return isCodePostal
-//         ? codePostal === trimmedQuery
-//         : cityName.includes(trimmedQuery.toLowerCase());
-//     });
-
-//     if (filteredCities.length > 0) {
-//       setSuggestions(filteredCities);
-//       setModalVisible(true);
-//     } else {
-//       setSuggestions([]);
-//       Alert.alert(
-//         "Erreur",
-//         "Aucune ville ou code postal correspondant trouvé."
-//       );
-//     }
-//   };
-
-//   const handleCitySelection = (city: City) => {
-//     setSelectedCity(city);
-//     setModalVisible(false);
-//     setQuery(`${city.Nom_commune} (${city.Code_postal})`);
-//   };
-
-//   const handleSaveCity = async () => {
-//     if (!selectedCity) {
-//       Alert.alert(
-//         "Erreur",
-//         "Veuillez sélectionner une ville avant d'enregistrer."
-//       );
-//       return;
-//     }
-
-//     try {
-//       const response = await axios.put(`${API_URL}/users/${user?.id}`, {
-//         nomCommune: selectedCity.Nom_commune,
-//         codePostal: selectedCity.Code_postal,
-//       });
-
-//       if (response.status === 200) {
-//         Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
-//         setUser((prev: any) => ({
-//           ...prev,
-//           nomCommune: selectedCity.Nom_commune,
-//           codePostal: selectedCity.Code_postal,
-//         }));
-//         setIsEditingCity(false);
-//       } else {
-//         throw new Error("Erreur serveur");
-//       }
-//     } catch (error) {
-//       console.error("Erreur lors de la mise à jour :", error);
-//       Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
-//     }
-//   };
-
-//   const handleShowList = (listType: "followers" | "following") => {
-//     setSelectedList((prev) => (prev === listType ? null : listType));
-//   };
-
-//   const handleCloseModal = () => {
-//     setSelectedList(null);
-//   };
-
-//   const handleUnfollow = async (followingUserId) => {
-//     if (!currentUserId) return;
-
-//     try {
-//       setIsSubmitting(true);
-//       const response = await fetch(
-//         `${API_URL}/users/${followingUserId}/unfollow`,
-//         {
-//           method: "DELETE",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ followerId: currentUserId }),
-//         }
-//       );
-
-//       if (!response.ok) {
-//         throw new Error("Erreur lors du désuivi de cet utilisateur.");
-//       }
-
-//       setUser((prevUser) =>
-//         prevUser
-//           ? {
-//               ...prevUser,
-//               following: (prevUser.following || []).filter(
-//                 (following) => following.id !== followingUserId
-//               ),
-//             }
-//           : null
-//       );
-//     } catch (error) {
-//       console.error(error.message);
-//     } finally {
-//       setIsSubmitting(false);
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <View style={styles.center}>
-//         <ActivityIndicator size="large" color="#062C41" />
-//         <Text style={{ fontSize: 18, fontWeight: "bold", color: "#062C41" }}>
-//           Chargement des informations..
-//         </Text>
-//       </View>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <View style={styles.center}>
-//         <Text style={styles.errorText}>Erreur : {error}</Text>
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <View style={styles.container}>
-//       <View style={styles.header}>
-//         {/* Bouton pour ouvrir le menu */}
-//         <TouchableOpacity onPress={toggleSidebar}>
-//           <Icon
-//             name="menu"
-//             size={24}
-//             color="#FFFFFC"
-//             style={{ marginLeft: 10 }}
-//           />
-//         </TouchableOpacity>
-
-//         {/* Titre de la page */}
-//         <View style={styles.typeBadge}>
-//           <Text style={styles.headerTitle}>MON PROFIL</Text>
-//         </View>
-
-//         {/* Bouton de notifications avec compteur */}
-//         <TouchableOpacity
-//           onPress={() => navigation.navigate("NotificationsScreen")}
-//         >
-//           <View>
-//             <Icon
-//               name="notifications"
-//               size={24}
-//               color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
-//               style={{ marginRight: 10 }}
-//             />
-//             {unreadCount > 0 && (
-//               <View style={styles.badge}>
-//                 <Text style={styles.badgeText}>{unreadCount}</Text>
-//               </View>
-//             )}
-//           </View>
-//         </TouchableOpacity>
-//       </View>
-
-//       <ScrollView contentContainerStyle={styles.profileContent}>
-//         <View style={styles.profileImageContainer}>
-//           {user?.profilePhoto?.url ? (
-//             <Image
-//               source={{ uri: user.profilePhoto.url }}
-//               style={styles.profileImage}
-//             />
-//           ) : (
-//             <Text style={styles.noProfileImageText}>
-//               Pas de photo de profil
-//             </Text>
-//           )}
-//           <TouchableOpacity
-//             style={styles.updateButton}
-//             onPress={handleProfileImageUpdate}
-//             disabled={isSubmitting}
-//           >
-//             <Text style={styles.updateButtonText}>
-//               {isSubmitting ? "Modification..." : "Modifier la photo de profil"}
-//             </Text>
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Section Informations de base */}
-//         <View style={styles.section}>
-//           <Text style={styles.sectionTitleProfil}>
-//             Informations personnelles
-//           </Text>
-//           {/* Prénom */}
-//           <View style={styles.fieldContainer}>
-//             <Text style={styles.label}>Prénom :</Text>
-//             <TextInput
-//               style={[styles.input, !editable && styles.inputDisabled]}
-//               value={formData.firstName}
-//               onChangeText={(text) => handleInputChange("firstName", text)}
-//               editable={editable}
-//             />
-//           </View>
-//           {/* Nom */}
-//           <View style={styles.fieldContainer}>
-//             <Text style={styles.label}>Nom :</Text>
-//             <TextInput
-//               style={[styles.input, !editable && styles.inputDisabled]}
-//               value={formData.lastName}
-//               onChangeText={(text) => handleInputChange("lastName", text)}
-//               editable={editable}
-//             />
-//           </View>
-//           {/* Nom d'utilisateur */}
-//           <View style={styles.fieldContainer}>
-//             <Text style={styles.label}>Nom d'utilisateur :</Text>
-//             <TextInput
-//               style={[styles.input, !editable && styles.inputDisabled]}
-//               value={formData.username}
-//               onChangeText={(text) => handleInputChange("username", text)}
-//               editable={editable}
-//             />
-//           </View>
-//           {/* Email */}
-//           {formData.showEmail && (
-//             <View style={styles.fieldContainer}>
-//               <Text style={styles.label}>Email :</Text>
-//               <TextInput
-//                 style={[styles.input, !editable && styles.inputDisabled]}
-//                 value={formData.email}
-//                 onChangeText={(text) => handleInputChange("email", text)}
-//                 editable={editable}
-//               />
-//             </View>
-//           )}
-
-//           <View style={styles.fieldContainer}>
-//             <View style={styles.showEmail}>
-//               <Text style={styles.labelEmail}>
-//                 Activer ou désactiver le partage de votre email avec les autres
-//                 utilisateurs.
-//               </Text>
-//               <Switch
-//                 value={formData.showEmail}
-//                 onValueChange={async (value) => {
-//                   try {
-//                     const response = await axios.post(
-//                       `${API_URL}/users/show-email`,
-//                       {
-//                         userId: user?.id,
-//                         showEmail: value,
-//                       }
-//                     );
-
-//                     const updatedShowEmail = response.data.showEmail;
-
-//                     setFormData((prevState) => ({
-//                       ...prevState,
-//                       showEmail: updatedShowEmail,
-//                       email: updatedShowEmail ? user?.email || "" : "",
-//                     }));
-
-//                     const refreshedUser = await fetch(
-//                       `${API_URL}/users/${user?.id}`
-//                     ).then((res) => res.json());
-//                     setUser(refreshedUser);
-//                   } catch (error) {
-//                     console.error(
-//                       "Erreur lors de la mise à jour de la préférence :",
-//                       error
-//                     );
-//                     Alert.alert(
-//                       "Erreur",
-//                       "Impossible de mettre à jour la préférence."
-//                     );
-//                   }
-//                 }}
-//               />
-//             </View>
-//           </View>
-
-//           {/* Bouton Sauvegarder/Modifier */}
-//           <TouchableOpacity
-//             style={styles.buttonProfil}
-//             onPress={() => {
-//               if (editable) {
-//                 handleSave();
-//                 setEditable(false);
-//               } else {
-//                 if (!formData.showEmail) {
-//                   Alert.alert(
-//                     "Afficher l'email",
-//                     "Veuillez afficher votre email avant de pouvoir entamer des modifications."
-//                   );
-//                   return;
-//                 }
-
-//                 setEditable(true);
-//               }
-//             }}
-//           >
-//             <Text style={styles.buttonTextProfil}>
-//               {editable ? "Sauvegarder" : "Modifier"}
-//             </Text>
-//           </TouchableOpacity>
-
-//           <View style={styles.section}>
-//             <Text style={styles.sectionTitleProfil}>
-//               Modifier le mot de passe
-//             </Text>
-
-//             {/* Mot de passe actuel */}
-//             <View style={styles.fieldContainer}>
-//               <Text style={styles.label}>Mot de passe actuel :</Text>
-//               <View style={styles.inputContainer}>
-//                 <TextInput
-//                   style={styles.input}
-//                   placeholder="Entrez votre mot de passe actuel"
-//                   secureTextEntry={!showCurrentPassword}
-//                   value={formData.currentPassword}
-//                   onChangeText={(text) =>
-//                     setFormData({ ...formData, currentPassword: text })
-//                   }
-//                 />
-//                 <TouchableOpacity
-//                   onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-//                 >
-//                   <Icon
-//                     name={showCurrentPassword ? "visibility-off" : "visibility"}
-//                     size={20}
-//                     color="gray"
-//                     style={styles.icon}
-//                   />
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-
-//             {/* Nouveau mot de passe */}
-//             <View style={styles.fieldContainer}>
-//               <Text style={styles.label}>Nouveau mot de passe :</Text>
-//               <View style={styles.inputContainer}>
-//                 <TextInput
-//                   style={styles.input}
-//                   placeholder="Entrez le nouveau mot de passe"
-//                   secureTextEntry={!showNewPassword}
-//                   value={formData.newPassword}
-//                   onChangeText={(text) =>
-//                     setFormData({ ...formData, newPassword: text })
-//                   }
-//                 />
-//                 <TouchableOpacity
-//                   onPress={() => setShowNewPassword(!showNewPassword)}
-//                 >
-//                   <Icon
-//                     name={showNewPassword ? "visibility-off" : "visibility"}
-//                     size={20}
-//                     color="gray"
-//                     style={styles.icon}
-//                   />
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-
-//             {/* Bouton Sauvegarder */}
-//             <TouchableOpacity
-//               style={styles.buttonProfil}
-//               onPress={handleChangePassword}
-//             >
-//               <Text style={styles.buttonTextProfil}>
-//                 Modifier le mot de passe
-//               </Text>
-//             </TouchableOpacity>
-//           </View>
-//         </View>
-
-//         <View style={styles.cardContainer}>
-//           <Text style={styles.infoCardHeader}>Ville de référence</Text>
-
-//           {/* Affichage de la ville actuelle */}
-//           <View style={styles.cardContent}>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {user?.nomCommune || "Non disponible"}
-//               </Text>
-//               <Text style={styles.statLabel}>Ville</Text>
-//             </View>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {user?.codePostal || "Non disponible"}
-//               </Text>
-//               <Text style={styles.statLabel}>Code postal</Text>
-//             </View>
-//           </View>
-
-//           {/* Bouton pour activer la modification */}
-//           <TouchableOpacity
-//             style={styles.editButton}
-//             onPress={() => setIsEditingCity(true)}
-//           >
-//             <Text style={styles.editButtonText}>Modifier ma ville</Text>
-//           </TouchableOpacity>
-
-//           {/* Mode édition */}
-//           {isEditingCity && (
-//             <View style={styles.editContainer}>
-//               {/* Champ de recherche */}
-//               <View style={styles.searchContainer}>
-//                 <TextInput
-//                   style={styles.inputCity}
-//                   placeholder="Rechercher par code postal"
-//                   value={query}
-//                   onChangeText={setQuery}
-//                   placeholderTextColor="#c7c7c7"
-//                 />
-//                 <TouchableOpacity
-//                   style={styles.searchButton}
-//                   onPress={handleSearchCity}
-//                 >
-//                   <Ionicons name="search-sharp" size={20} color="black" />
-//                 </TouchableOpacity>
-//               </View>
-
-//               {/* Modal pour afficher les suggestions */}
-//               <Modal
-//                 visible={modalVisible}
-//                 animationType="slide"
-//                 transparent={true}
-//                 onRequestClose={() => setModalVisible(false)}
-//               >
-//                 <View style={styles.modalOverlay}>
-//                   <View style={styles.modalContent}>
-//                     <ScrollView>
-//                       {suggestions.map((item, index) => (
-//                         <TouchableOpacity
-//                           key={`${item.Code_commune_INSEE}-${index}`}
-//                           style={styles.suggestionItem}
-//                           onPress={() => handleCitySelection(item)}
-//                         >
-//                           <Text style={styles.suggestionText}>
-//                             {item.Nom_commune} ({item.Code_postal})
-//                           </Text>
-//                         </TouchableOpacity>
-//                       ))}
-//                     </ScrollView>
-//                     <TouchableOpacity
-//                       style={styles.closeButton}
-//                       onPress={() => setModalVisible(false)}
-//                     >
-//                       <Text style={styles.closeButtonText}>Fermer</Text>
-//                     </TouchableOpacity>
-//                   </View>
-//                 </View>
-//               </Modal>
-
-//               {/* Boutons Sauvegarder et Annuler */}
-//               <View style={styles.buttonRow}>
-//                 <TouchableOpacity
-//                   style={styles.saveButton}
-//                   onPress={handleSaveCity}
-//                 >
-//                   <Text style={styles.saveButtonText}>Enregistrer</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   style={styles.cancelButton}
-//                   onPress={() => setIsEditingCity(false)}
-//                 >
-//                   <Text style={styles.cancelButtonText}>Annuler</Text>
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-//           )}
-//         </View>
-
-//         <View style={styles.cardContainer}>
-//           <Text style={styles.infoCardHeader}>Relations</Text>
-//           <View style={styles.cardContent}>
-//             <TouchableOpacity
-//               style={styles.statItem}
-//               onPress={() => handleShowList("followers")}
-//             >
-//               <Text style={styles.statNumber}>
-//                 {user?.followers?.length || 0}
-//               </Text>
-//               <Text style={styles.statLabel}>Abonnées</Text>
-//             </TouchableOpacity>
-
-//             <TouchableOpacity
-//               style={styles.statItem}
-//               onPress={() => handleShowList("following")}
-//             >
-//               <Text style={styles.statNumber}>
-//                 {user?.following?.length || 0}
-//               </Text>
-//               <Text style={styles.statLabel}>Abonnements</Text>
-//             </TouchableOpacity>
-//           </View>
-
-//           {/* Modal pour afficher la liste */}
-//           {selectedList && (
-//             <Modal
-//               visible={true}
-//               transparent={true}
-//               animationType="slide"
-//               onRequestClose={handleCloseModal}
-//             >
-//               <View style={styles.modalContainer}>
-//                 <View style={styles.modalContentFollower}>
-//                   <Text style={styles.modalHeader}>
-//                     {selectedList === "followers"
-//                       ? "Smarters abonnés à votre profil"
-//                       : "Smarters auxquels vous êtes abonné"}
-//                   </Text>
-//                   <FlatList
-//                     data={
-//                       selectedList === "followers"
-//                         ? user?.followers
-//                         : user?.following
-//                     }
-//                     keyExtractor={(item) => item.id.toString()}
-//                     renderItem={({ item }) => (
-//                       <View style={styles.listItem}>
-//                         <Image
-//                           source={{
-//                             uri:
-//                               item.profilePhoto ||
-//                               "https://via.placeholder.com/150",
-//                           }}
-//                           style={styles.avatar}
-//                         />
-//                         <Text style={styles.userName}>{item.username}</Text>
-
-//                         {selectedList === "following" && (
-//                           <TouchableOpacity
-//                             style={styles.unfollowButton}
-//                             onPress={() => handleUnfollow(item.id)}
-//                           >
-//                             <Text style={styles.unfollowButtonText}>
-//                               Se désabonner
-//                             </Text>
-//                           </TouchableOpacity>
-//                         )}
-//                       </View>
-//                     )}
-//                   />
-//                   <TouchableOpacity
-//                     style={styles.closeButton}
-//                     onPress={handleCloseModal}
-//                   >
-//                     <Text style={styles.closeButtonText}>Fermer</Text>
-//                   </TouchableOpacity>
-//                 </View>
-//               </View>
-//             </Modal>
-//           )}
-//         </View>
-
-//         <View style={styles.cardContainer}>
-//           <Text style={styles.infoCardHeader}>
-//             Statistiques de signalements
-//           </Text>
-//           <View style={styles.cardContent}>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {stats?.numberOfComments || 0}
-//               </Text>
-//               <Text style={styles.statLabel}>Commentaires</Text>
-//             </View>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>{stats?.numberOfVotes || 0}</Text>
-//               <Text style={styles.statLabel}>Votes</Text>
-//             </View>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {stats?.numberOfReports || 0}
-//               </Text>
-//               <Text style={styles.statLabel}>Signalements</Text>
-//             </View>
-//           </View>
-//         </View>
-
-//         <View style={styles.cardContainer}>
-//           <Text style={styles.infoCardHeader}>Social</Text>
-//           <View style={styles.cardContent}>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>{stats?.numberOfPosts || 0}</Text>
-//               <Text style={styles.statLabel}>Publications{"\n"}</Text>
-//             </View>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {stats?.numberOfEventsCreated || 0}
-//               </Text>
-//               <Text style={styles.statLabel}>Événements{"\n"}crées</Text>
-//             </View>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {stats?.numberOfEventsAttended || 0}
-//               </Text>
-//               <Text style={styles.statLabel}>
-//                 Participation{"\n"}aux événements
-//               </Text>
-//             </View>
-//           </View>
-//         </View>
-
-//         <View style={styles.cardContainer}>
-//           <Text style={styles.infoCardHeader}>Options</Text>
-//           <View style={styles.cardContent}>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {user?.isSubscribed ? "Oui" : "Non"}
-//               </Text>
-//               <Text style={styles.statLabel}> SMART+</Text>
-//             </View>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>
-//                 {user?.isSubscribed ? "Oui" : "Non"}
-//               </Text>
-//               <Text style={styles.statLabel}>Affiliation mairie</Text>
-//             </View>
-//           </View>
-//         </View>
-//       </ScrollView>
-//       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-//     </View>
-//   );
-// }

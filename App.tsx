@@ -875,16 +875,15 @@ export default function App() {
                         name="ProfileScreen"
                         component={ProfileScreen}
                       />
-                      <Stack.Screen
-                        name="UserProfileScreen"
-                        component={(props) => <UserProfileScreen {...props} />}
-                      />
-                      <Stack.Screen
-                        name="ReportDetailsScreen"
-                        component={(props) => (
-                          <ReportDetailsScreen {...props} />
-                        )}
-                      />
+                     <Stack.Screen
+  name="UserProfileScreen"
+  component={UserProfileScreen}
+/>
+
+<Stack.Screen
+  name="ReportDetailsScreen"
+  component={ReportDetailsScreen}
+/>
                       <Stack.Screen
                         name="ReportScreen"
                         component={ReportScreen}
