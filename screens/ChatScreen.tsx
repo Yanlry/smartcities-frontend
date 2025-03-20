@@ -60,13 +60,14 @@ export default function ChatScreen({ route, navigation }: any) {
   const [lastSentMessage, setLastSentMessage] = useState<Message | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
-  const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState("");
+  const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState<string | null>(null);
   const [userDetails, setUserDetails] = useState<{
     id: string;
     name: string;
     profilePhoto: string | null;
   }>({ id: "", name: "Utilisateur inconnu", profilePhoto: null });
   const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Nouvel état pour le chargement
 
   // Animation pour les nouveaux messages
   const messageAnimation = useRef(new Animated.Value(0)).current;
@@ -119,11 +120,17 @@ export default function ChatScreen({ route, navigation }: any) {
   
   useEffect(() => {
     const fetchUserData = async () => {
-      const userDetails = await fetchUserDetails(receiverId);
-      const currentUser = await fetchCurrentUserDetails(senderId);
-  
-      setUserDetails(userDetails);
-      setCurrentUserProfilePhoto(currentUser.profilePhoto);
+      try {
+        const userDetails = await fetchUserDetails(receiverId);
+        const currentUser = await fetchCurrentUserDetails(senderId);
+    
+        setUserDetails(userDetails);
+        setCurrentUserProfilePhoto(currentUser.profilePhoto);
+      } catch (error) {
+        console.error("Erreur lors du chargement des données utilisateur :", error);
+      } finally {
+        setIsLoading(false); // Fin du chargement
+      }
     };
   
     fetchUserData();
@@ -183,7 +190,9 @@ export default function ChatScreen({ route, navigation }: any) {
     }
   };
 
-  const fetchCurrentUserDetails = async (userId) => {
+  const fetchCurrentUserDetails = async (
+    userId: string
+  ): Promise<{ id: string; name: string; profilePhoto: string | null }> => {
     try {
       const response = await axios.get(`${API_URL}/users/${userId}`);
       const user = response.data;
@@ -205,7 +214,7 @@ export default function ChatScreen({ route, navigation }: any) {
   };
 
   // Gestion de l'envoi des messages
-  const sendMessage = async () => {
+  const sendMessage = async (): Promise<void> => {
     if (newMessage.trim().length === 0) {
       console.warn("Message vide, envoi annulé.");
       return;
@@ -321,7 +330,7 @@ export default function ChatScreen({ route, navigation }: any) {
     }
   };
 
-  const markMessagesAsRead = async () => {
+  const markMessagesAsRead = async (): Promise<void> => {
     const unreadMessages = messages.filter(
       (msg) => msg.receiverId === senderId && !msg.isRead
     );
@@ -351,7 +360,7 @@ export default function ChatScreen({ route, navigation }: any) {
     }
   };
 
-  const reportConversation = async () => {
+  const reportConversation = async (): Promise<void> => {
     if (!reportReason.trim()) {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
       return;
@@ -462,16 +471,19 @@ export default function ChatScreen({ route, navigation }: any) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#3E64FF" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <StatusBar
-        backgroundColor={styles.header.backgroundColor}
-        barStyle="light-content"
-      />
-      
-      {/* Header personnalisé */}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -490,7 +502,7 @@ export default function ChatScreen({ route, navigation }: any) {
           ) : (
             <View style={[styles.headerAvatar, styles.avatarPlaceholder]}>
               <Text style={styles.avatarInitial}>
-                {userDetails.name.charAt(0).toUpperCase()}
+                {userDetails.name?.charAt(0).toUpperCase() || "?"}
               </Text>
             </View>
           )}
@@ -581,7 +593,7 @@ export default function ChatScreen({ route, navigation }: any) {
                 {!isSentByCurrentUser && !isConsecutive && !userDetails.profilePhoto && (
                   <View style={[styles.messageAvatar, styles.avatarPlaceholder]}>
                     <Text style={styles.avatarInitial}>
-                      {userDetails.name.charAt(0).toUpperCase()}
+                      {userDetails.name?.charAt(0).toUpperCase() || "?"}
                     </Text>
                   </View>
                 )}

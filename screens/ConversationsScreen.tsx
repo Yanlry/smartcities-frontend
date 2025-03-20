@@ -259,7 +259,6 @@ const ArchivedConversationItem = memo(({
           activeOpacity={1}
         >
           <IconWrapper name="refresh-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.recoverButtonText}>Récupérer</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -282,6 +281,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   // États 
   const [hiddenConversations, setHiddenConversations] = useState<string[]>([]);
   const [showHiddenConversations, setShowHiddenConversations] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false); // Nouvel état pour le loader
   
   // Animations globales
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -340,9 +340,23 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   
   // Persistance des conversations archivées
   useEffect(() => {
-    if (!userId || hiddenConversations.length === 0) return;
-    
-    storeData(`hidden_${userId}`, JSON.stringify(hiddenConversations));
+    if (!userId) return;
+
+    const persistHiddenConversations = async () => {
+      try {
+        if (hiddenConversations.length === 0) {
+          // Supprimez la clé si aucune conversation n'est archivée
+          await storeData(`hidden_${userId}`, "");
+        } else {
+          // Sinon, mettez à jour le stockage
+          await storeData(`hidden_${userId}`, JSON.stringify(hiddenConversations));
+        }
+      } catch (error) {
+        console.error("Erreur lors de la persistance des conversations archivées:", error);
+      }
+    };
+
+    persistHiddenConversations();
   }, [hiddenConversations, userId, storeData]);
   
   // Animation du panneau des archives
@@ -364,6 +378,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   // Animation d'entrée de la liste principale
   useEffect(() => {
     if (!loading) {
+      setTimeout(() => setIsLoaded(true), 500); // Simule un délai pour afficher les conversations
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -466,139 +481,146 @@ const ConversationsScreen = ({ navigation, route }: any) => {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleConversations}>Messages</Text>
-          </View>
-          
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={toggleArchiveVisibility}
-          >
-            <Animated.View style={{ transform: [{ rotate: iconRotation }] }}>
-              <IconWrapper 
-                name={showHiddenConversations ? "close-outline" : "archive-outline"} 
-                size={24} 
-                color={COLORS.primary} 
-              />
-            </Animated.View>
-          </TouchableOpacity>
+      {/* Loader global */}
+      {!isLoaded && (
+        <View style={styles.globalLoader}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Chargement des conversations...</Text>
         </View>
-        
-        {archivedConversations.length > 0 && !showHiddenConversations && (
-          <TouchableOpacity 
-            style={styles.archiveInfoContainer}
-            onPress={toggleArchiveVisibility}
-            activeOpacity={0.7}
-          >
-            <IconWrapper name="archive-outline" size={14} color={COLORS.textSecondary} />
-            <Text style={styles.archiveInfo}>
-              {archivedConversations.length} conversation{archivedConversations.length !== 1 ? 's' : ''} archivée{archivedConversations.length !== 1 ? 's' : ''}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      
-      {/* Panel des conversations archivées */}
-      {showHiddenConversations && (
-        <Animated.View 
-          style={[
-            styles.hiddenPanel,
-            {
-              opacity: hiddenSectionAnim.interpolate({
-                inputRange: [0, 50],
-                outputRange: [1, 0]
-              }),
-              transform: [{ translateY: hiddenSectionAnim }]
-            }
-          ]}
-        >
-          <View style={styles.hiddenPanelHeader}>
-            <View style={styles.hiddenHeaderLeft}>
-              <IconWrapper name="archive-outline" size={20} color={COLORS.primary} style={styles.hiddenHeaderIcon} />
-              <Text style={styles.hiddenPanelTitle}>
-                Archives
-              </Text>
+      )}
+
+      {isLoaded && (
+        <>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <View style={styles.titleContainer}>
+                <Text style={styles.titleConversations}>Messages</Text>
+              </View>
+              
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={toggleArchiveVisibility}
+              >
+                <Animated.View style={{ transform: [{ rotate: iconRotation }] }}>
+                  <IconWrapper 
+                    name={showHiddenConversations ? "close-outline" : "archive-outline"} 
+                    size={24} 
+                    color={COLORS.primary} 
+                  />
+                </Animated.View>
+              </TouchableOpacity>
             </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeCount}>{archivedConversations.length}</Text>
-            </View>
+            
+            {archivedConversations.length > 0 && !showHiddenConversations && (
+              <TouchableOpacity 
+                style={styles.archiveInfoContainer}
+                onPress={toggleArchiveVisibility}
+                activeOpacity={0.7}
+              >
+                <IconWrapper name="archive-outline" size={14} color={COLORS.textSecondary} />
+                <Text style={styles.archiveInfo}>
+                  {archivedConversations.length} conversation{archivedConversations.length !== 1 ? 's' : ''} archivée{archivedConversations.length !== 1 ? 's' : ''}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
           
-          {archivedConversations.length > 0 ? (
-            <FlatList
-              data={archivedConversations}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <ArchivedConversationItem 
-                  item={item}
-                  onRecover={handleRecoverConversation}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  scaleAnim={scaleAnim}
-                />
-              )}
-              initialNumToRender={8}
-              maxToRenderPerBatch={5}
-              windowSize={10}
-              removeClippedSubviews={Platform.OS === 'android'}
-              ListEmptyComponent={null}
-              style={styles.hiddenList}
-              contentContainerStyle={styles.hiddenListContent}
-            />
-          ) : (
-            <View style={styles.emptyArchiveContainer}>
-              <View style={styles.emptyIconContainer}>
-                <IconWrapper name="archive-outline" size={40} color={COLORS.inactive} />
+          {/* Panel des conversations archivées */}
+          {showHiddenConversations && (
+            <Animated.View 
+              style={[
+                styles.hiddenPanel,
+                {
+                  opacity: hiddenSectionAnim.interpolate({
+                    inputRange: [0, 50],
+                    outputRange: [1, 0]
+                  }),
+                  transform: [{ translateY: hiddenSectionAnim }]
+                }
+              ]}
+            >
+              <View style={styles.hiddenPanelHeader}>
+                <View style={styles.hiddenHeaderLeft}>
+                  <IconWrapper name="archive-outline" size={20} color={COLORS.primary} style={styles.hiddenHeaderIcon} />
+                  <Text style={styles.hiddenPanelTitle}>
+                    Archives
+                  </Text>
+                </View>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeCount}>{archivedConversations.length}</Text>
+                </View>
               </View>
-              <Text style={styles.emptyArchiveTitle}>Aucune archive</Text>
-              <Text style={styles.emptyArchiveText}>
-                Les conversations archivées apparaîtront ici
-              </Text>
-            </View>
+              
+              {archivedConversations.length > 0 ? (
+                <FlatList
+                  data={archivedConversations}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <ArchivedConversationItem 
+                      item={item}
+                      onRecover={handleRecoverConversation}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                      scaleAnim={scaleAnim}
+                    />
+                  )}
+                  initialNumToRender={8}
+                  maxToRenderPerBatch={5}
+                  windowSize={10}
+                  removeClippedSubviews={Platform.OS === 'android'}
+                  ListEmptyComponent={null}
+                  style={styles.hiddenList}
+                  contentContainerStyle={styles.hiddenListContent}
+                />
+              ) : (
+                <View style={styles.emptyArchiveContainer}>
+                  <View style={styles.emptyIconContainer}>
+                    <IconWrapper name="archive-outline" size={40} color={COLORS.inactive} />
+                  </View>
+                  <Text style={styles.emptyArchiveTitle}>Aucune archive</Text>
+                  <Text style={styles.emptyArchiveText}>
+                    Les conversations archivées apparaîtront ici
+                  </Text>
+                </View>
+              )}
+            </Animated.View>
           )}
-        </Animated.View>
+          
+          {/* Liste principale */}
+          <Animated.View style={[
+            styles.mainContent,
+            { 
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }] 
+            }
+          ]}>
+            {visibleConversations.length > 0 ? (
+              <FlatList
+                data={visibleConversations}
+                keyExtractor={(item) => item.id}
+                renderItem={renderConversation}
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                windowSize={10}
+                removeClippedSubviews={Platform.OS === 'android'}
+                contentContainerStyle={styles.conversationsList}
+                showsVerticalScrollIndicator={false}
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyImageContainer}>
+                  <IconWrapper name="chatbubbles-outline" size={70} color={COLORS.inactive} />
+                </View>
+                <Text style={styles.noConversation}>Pas encore de messages</Text>
+                <Text style={styles.emptyDescription}>
+                  Vos conversations apparaîtront ici
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        </>
       )}
-      
-      {/* Liste principale */}
-      <Animated.View style={[
-        styles.mainContent,
-        { 
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }] 
-        }
-      ]}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Chargement des conversations...</Text>
-          </View>
-        ) : visibleConversations.length > 0 ? (
-          <FlatList
-            data={visibleConversations}
-            keyExtractor={(item) => item.id}
-            renderItem={renderConversation}
-            initialNumToRender={10}
-            maxToRenderPerBatch={5}
-            windowSize={10}
-            removeClippedSubviews={Platform.OS === 'android'}
-            contentContainerStyle={styles.conversationsList}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyImageContainer}>
-              <IconWrapper name="chatbubbles-outline" size={70} color={COLORS.inactive} />
-            </View>
-            <Text style={styles.noConversation}>Pas encore de messages</Text>
-            <Text style={styles.emptyDescription}>
-              Vos conversations apparaîtront ici
-            </Text>
-          </View>
-        )}
-      </Animated.View>
     </View>
   );
 };
@@ -970,7 +992,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: COLORS.primary,
     borderRadius: 20,
-    paddingHorizontal: 14,
+    paddingHorizontal: 8,
     paddingVertical: 8,
     ...Platform.select({
       ios: {
@@ -1018,6 +1040,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: "80%",
     lineHeight: 20,
+  },
+  globalLoader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.background,
   },
 });
 

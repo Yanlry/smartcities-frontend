@@ -43,6 +43,7 @@
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "^14.0.2",
     "expo-location": "~18.0.8",
+    "expo-sensors": "^14.0.2",
     "expo-splash-screen": "~0.29.22",
     "expo-status-bar": "~2.0.1",
     "firebase": "^11.1.0",

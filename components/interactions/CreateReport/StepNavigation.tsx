@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     }),
   },
   navButtonRight: {
-    backgroundColor: '#1DB681',
+    backgroundColor: '#27746B',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     ...Platform.select({
       ios: {
-        shadowColor: '#1DB681',
+        shadowColor: '#27746B',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
@@ -179,7 +179,8 @@ const styles = StyleSheet.create({
     }),
   },
   disabledButton: {
-    backgroundColor: '#61D3AB',
+    backgroundColor: '#27746B',
+    opacity: 0.6,
     ...Platform.select({
       ios: {
         shadowOpacity: 0.1,

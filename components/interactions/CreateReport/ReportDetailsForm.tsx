@@ -1,15 +1,28 @@
-import React from 'react';
+// components/interactions/CreateReport/ReportDetailsForm.tsx
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   TextInput,
   Text,
   StyleSheet,
   Dimensions,
-  Platform
+  Platform,
+  Animated,
+  TouchableOpacity,
+  LayoutAnimation,
+  UIManager,
+  ViewStyle,
+  TextStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PhotoManager from '../../interactions/PhotoManager';
 import { Photo } from './types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Activer LayoutAnimation pour Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface ReportDetailsFormProps {
   title: string;
@@ -18,11 +31,12 @@ interface ReportDetailsFormProps {
   onTitleChange: (text: string) => void;
   onDescriptionChange: (text: string) => void;
   onPhotosChange: (photos: Photo[]) => void;
+  onBack?: () => void;
 }
 
 /**
- * Composant pour saisir les détails d'un signalement
- * Style refondu pour une apparence moderne, épurée et orientée mobile-first.
+ * Composant optimisé pour saisir les détails d'un signalement
+ * Intègre une tooltip d'information accessible depuis le header (côté gauche)
  */
 const ReportDetailsForm: React.FC<ReportDetailsFormProps> = ({
   title,
@@ -30,19 +44,106 @@ const ReportDetailsForm: React.FC<ReportDetailsFormProps> = ({
   photos,
   onTitleChange,
   onDescriptionChange,
-  onPhotosChange
+  onPhotosChange,
+  onBack
 }) => {
+  const insets = useSafeAreaInsets();
+  // État pour contrôler l'affichage de la tooltip d'information
+  const [showInfoTooltip, setShowInfoTooltip] = useState(false);
+  // Animation pour la tooltip
+  const tooltipOpacity = useRef(new Animated.Value(0)).current;
+  const tooltipTranslateY = useRef(new Animated.Value(-20)).current;
+  
+  /**
+   * Gère l'affichage/masquage de la tooltip d'information
+   */
+  const toggleInfoTooltip = useCallback(() => {
+    // Utilise LayoutAnimation pour une transition fluide du reste du contenu
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    
+    // Configure l'animation de la tooltip
+    if (!showInfoTooltip) {
+      setShowInfoTooltip(true);
+      Animated.parallel([
+        Animated.timing(tooltipOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tooltipTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(tooltipOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tooltipTranslateY, {
+          toValue: -20,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowInfoTooltip(false);
+      });
+    }
+  }, [showInfoTooltip, tooltipOpacity, tooltipTranslateY]);
+
   return (
     <View style={styles.container}>
+      {/* Header avec icône d'information à gauche */}
       <View style={styles.header}>
-        <Text style={styles.pageTitle}>Décrivez le problème</Text>
+            <TouchableOpacity
+              style={styles.infoButton}
+              onPress={toggleInfoTooltip}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+        <Text style={styles.headerTitle}>Décrivez le problème</Text>
+
+        <TouchableOpacity
+              style={styles.infoButton}
+              onPress={toggleInfoTooltip}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="alert" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
       </View>
       
-      <Text style={styles.subtitle}>
-        Fournissez des détails précis pour faciliter sa résolution
-      </Text>
+      {/* Tooltip d'information (positionnée à gauche) */}
+      {showInfoTooltip && (
+        <Animated.View 
+          style={[
+            styles.infoTooltip, 
+            { 
+              opacity: tooltipOpacity,
+              transform: [{ translateY: tooltipTranslateY }],
+              top: Platform.OS === 'ios' ? insets.top + 60 : 50,
+              left: 20, // Positionnée à gauche
+            }
+          ]}
+        >
+          <Text style={styles.infoTooltipText}>
+            Fournissez des détails précis pour faciliter la résolution du problème.
+            Une description claire et des photos aideront les intervenants à traiter
+            plus efficacement votre signalement.
+          </Text>
+          <View style={styles.infoTooltipArrow} />
+        </Animated.View>
+      )}
       
-      <View style={styles.formContainer}>
+      {/* Formulaire de saisie */}
+      <View style={[
+        styles.formContainer,
+        // Ajoute un padding supplémentaire si la tooltip est visible
+        showInfoTooltip && { marginTop: 70 }
+      ]}>
         <View style={styles.inputGroup}>
           <Text style={styles.fieldLabel}>
             Titre <Text style={styles.required}>*</Text>
@@ -106,23 +207,25 @@ const ReportDetailsForm: React.FC<ReportDetailsFormProps> = ({
 };
 
 const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F3F5', // Fond gris ultra clair pour un look moderne
-    paddingBottom: 16,
+    backgroundColor: '#F8F9FA',
   },
   header: {
-    backgroundColor: '#3498db', // Couleur bleu vif et moderne
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#062C41',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 15,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     ...Platform.select({
       ios: {
-        shadowColor: '#3498db',
+        shadowColor: 'rgba(0, 0, 0, 0.2)',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -132,22 +235,79 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  pageTitle: {
+  leftHeaderContainer: {
+    width: 40,
+    alignItems: 'flex-start',
+  },
+  rightPlaceholder: {
+    width: 40,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#FFFFFF',
+    flex: 1,
     textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#444444',
-    textAlign: 'center',
-    marginVertical: 20,
-    paddingHorizontal: 24,
+  infoButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  infoTooltip: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    padding: 14,
+    zIndex: 1000,
+    maxWidth: width * 0.7,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  infoTooltipText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  infoTooltipArrow: {
+    position: 'absolute',
+    top: -10,
+    left: 13, // Positionnée à gauche
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'rgba(0, 0, 0, 0.8)',
   },
   formContainer: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
+    margin: 20,
     borderRadius: 16,
     paddingVertical: 24,
     paddingHorizontal: 20,
@@ -173,7 +333,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   required: {
-    color: '#FF453A', // Rouge vif pour indiquer un champ obligatoire
+    color: '#C8372D',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -220,17 +380,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   photoBadge: {
-    position: 'absolute',
-    left: 50,
-    top: 0,
-    backgroundColor: 'rgba(10,132,255,0.1)',
+    marginLeft: 10,
+    backgroundColor: 'rgba(21, 108, 179, 0.1)',
     paddingHorizontal: 10,
     paddingVertical: 2,
     borderRadius: 12,
-    marginLeft: 10,
   },
   photoBadgeText: {
-    color: '#3498db',
+    color: '#156CB3',
     fontSize: 12,
     fontWeight: '600',
   },

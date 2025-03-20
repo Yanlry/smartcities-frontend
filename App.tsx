@@ -875,15 +875,15 @@ export default function App() {
                         name="ProfileScreen"
                         component={ProfileScreen}
                       />
-                     <Stack.Screen
-  name="UserProfileScreen"
-  component={UserProfileScreen}
-/>
+                      <Stack.Screen
+                        name="UserProfileScreen"
+                        component={UserProfileScreen}
+                      />
 
-<Stack.Screen
-  name="ReportDetailsScreen"
-  component={ReportDetailsScreen}
-/>
+                      <Stack.Screen
+                        name="ReportDetailsScreen"
+                        component={ReportDetailsScreen}
+                      />
                       <Stack.Screen
                         name="ReportScreen"
                         component={ReportScreen}

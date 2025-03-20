@@ -1474,6 +1474,7 @@ const styles = StyleSheet.create({
   },
   // Create Post Card
   createPostContainer: {
+    marginTop:10,
     padding: 16,
     backgroundColor: "#ffffff",
     marginHorizontal: 16,

@@ -1,6 +1,6 @@
 // components/interactions/CreateReport/LocationSelectionStep.tsx
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { 
   View, 
   TextInput, 
@@ -10,13 +10,22 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Platform
+  Platform,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import { LocationCoordinates } from './types';
 import AddressSuggestionModal from './AddressSuggestionModal';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Activer LayoutAnimation pour Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // Constante pour le libellé de la position actuelle
 export const CURRENT_LOCATION_LABEL = "Ma position";
@@ -38,10 +47,12 @@ interface LocationSelectionStepProps {
   onModalClose: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  onBack?: () => void;
 }
 
 /**
  * Composant pour l'étape de sélection de localisation
+ * Intègre une tooltip d'information accessible depuis le header
  */
 const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   query,
@@ -57,10 +68,58 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   onSuggestionSelect,
   onModalClose,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  onBack
 }) => {
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const [mapError, setMapError] = useState<boolean>(false);
+  
+  // État pour contrôler l'affichage de la tooltip d'information
+  const [showInfoTooltip, setShowInfoTooltip] = useState(false);
+  // Animation pour la tooltip
+  const tooltipOpacity = useRef(new Animated.Value(0)).current;
+  const tooltipTranslateY = useRef(new Animated.Value(-20)).current;
+  
+  /**
+   * Gère l'affichage/masquage de la tooltip d'information
+   */
+  const toggleInfoTooltip = useCallback(() => {
+    // Utilise LayoutAnimation pour une transition fluide du reste du contenu
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    
+    // Configure l'animation de la tooltip
+    if (!showInfoTooltip) {
+      setShowInfoTooltip(true);
+      Animated.parallel([
+        Animated.timing(tooltipOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tooltipTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(tooltipOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tooltipTranslateY, {
+          toValue: -20,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowInfoTooltip(false);
+      });
+    }
+  }, [showInfoTooltip, tooltipOpacity, tooltipTranslateY]);
   
   /**
    * Gère l'appui sur la carte
@@ -69,6 +128,11 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     try {
       const { latitude, longitude } = event.nativeEvent.coordinate;
       onMapPress(latitude, longitude);
+      
+      // Masque la tooltip si elle est visible
+      if (showInfoTooltip) {
+        toggleInfoTooltip();
+      }
     } catch (error) {
       console.warn("Error handling map press:", error);
     }
@@ -79,6 +143,11 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
    */
   const handleUseCurrentLocation = () => {
     onUseCurrentLocation();
+    
+    // Masque la tooltip si elle est visible
+    if (showInfoTooltip) {
+      toggleInfoTooltip();
+    }
   };
 
   /**
@@ -88,14 +157,88 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     setMapError(true);
   };
 
+  // Ajout d'un hook pour récupérer l'adresse via géocodage inversé
+  React.useEffect(() => {
+    if (selectedLocation && query === CURRENT_LOCATION_LABEL) {
+      (async () => {
+        try {
+          const [result] = await Location.reverseGeocodeAsync({
+            latitude: selectedLocation.latitude,
+            longitude: selectedLocation.longitude,
+          });
+          if (result) {
+            // Extraction des données de l'adresse
+            const streetAddress = result.name || result.street || '';
+            const postal = result.postalCode || '';
+            const city = result.city || '';
+            // Construction de l'adresse formatée avec une virgule après la rue si possible
+            let address = '';
+            if (streetAddress) {
+              address = `${streetAddress}, ${postal} ${city}`.trim();
+            } else {
+              address = `${postal} ${city}`.trim();
+            }
+            if(address) {
+              onQueryChange(address);
+            }
+          }
+        } catch (error) {
+          console.error("Le géocodage inversé a échoué", error);
+        }
+      })();
+    }
+  }, [selectedLocation, query, onQueryChange]);
+
   return (
     <View style={styles.container}>
+      {/* Header avec icône d'information */}
       <View style={styles.header}>
-              <Text style={styles.pageTitle}>Localisation</Text>
-            </View>
-            <Text style={styles.pageSubtitle}>Indiquez où se situe le problème</Text>
+
+            <TouchableOpacity
+              style={styles.infoButton}
+              onPress={toggleInfoTooltip}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>Localisation</Text>
+        {/* Placeholder pour maintenir l'équilibre visuel */}
+        <TouchableOpacity
+              style={styles.infoButton}
+              onPress={toggleInfoTooltip}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="alert" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+      </View>
       
-      <View style={styles.contentContainer}>
+      {/* Tooltip d'information */}
+      {showInfoTooltip && (
+        <Animated.View 
+          style={[
+            styles.infoTooltip, 
+            { 
+              opacity: tooltipOpacity,
+              transform: [{ translateY: tooltipTranslateY }],
+              top: Platform.OS === 'ios' ? insets.top + 60 : 50
+            }
+          ]}
+        >
+          <Text style={styles.infoTooltipText}>
+            Indiquez où se situe le problème. Vous pouvez utiliser la barre de recherche, 
+            votre position actuelle, ou appuyer directement sur la carte pour sélectionner 
+            un emplacement précis.
+          </Text>
+          <View style={styles.infoTooltipArrow} />
+        </Animated.View>
+      )}
+      
+      <View style={[
+        styles.contentContainer,
+        // Ajoute un padding supplémentaire si la tooltip est visible
+        showInfoTooltip && { paddingTop: 70 }
+      ]}>
         <View style={styles.searchCard}>
           <View style={styles.inputContainer}>
             <Ionicons name="search-outline" size={22} color="#8E8E93" style={styles.searchIcon} />
@@ -116,7 +259,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
               onPress={onSearchAddress}
             >
               <LinearGradient
-                colors={['#3498db', '#2980b9']}
+                colors={['#062C41', '#062C41']}
                 style={styles.buttonGradient}
               >
                 <Ionicons name="search" size={22} color="#fff" />
@@ -129,7 +272,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
               accessibilityLabel="Utiliser ma position actuelle"
             >
               <LinearGradient
-                colors={['#2ecc71', '#27ae60']}
+                colors={['#27746B', '#1E5A53']}
                 style={styles.buttonGradient}
               >
                 <Ionicons name="location" size={22} color="#fff" />
@@ -141,7 +284,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         <View style={styles.mapSection}>
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#062C41" />
+              <ActivityIndicator size="large" color="#1A4B8C" />
               <Text style={styles.loadingText}>Localisation en cours...</Text>
             </View>
           ) : mapError ? (
@@ -171,7 +314,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                       latitude: selectedLocation.latitude,
                       longitude: selectedLocation.longitude,
                     }}
-                    pinColor="#d81b60"
+                    pinColor="#C8372D"
                     title="Position choisie"
                     description={query === CURRENT_LOCATION_LABEL ? "Votre position actuelle" : "Vous avez sélectionné cet endroit."}
                   />
@@ -204,7 +347,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
               disabled={!selectedLocation || isSubmitting}
             >
               <LinearGradient
-                colors={['#1DB681', '#1DB681']}
+                colors={['#27746B', '#1E5A53']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.submitGradient}
@@ -228,6 +371,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       <AddressSuggestionModal
         visible={modalVisible}
         suggestions={suggestions}
+        currentAddress={query}
         onSelect={onSuggestionSelect}
         onClose={onModalClose}
       />
@@ -238,19 +382,21 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8F9FA',
   },
   header: {
-    backgroundColor: '#3498db', // Couleur bleu vif et moderne
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#062C41',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 15,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     ...Platform.select({
       ios: {
-        shadowColor: '#3498db',
+        shadowColor: 'rgba(0, 0, 0, 0.2)',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -260,11 +406,80 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  pageTitle: {
+  leftHeaderContainer: {
+    width: 40,
+    alignItems: 'flex-start',
+  },
+  rightPlaceholder: {
+    width: 40,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#FFFFFF',
+    flex: 1,
     textAlign: 'center',
+  },
+  infoButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  infoTooltip: {
+    position: 'absolute',
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    padding: 14,
+    zIndex: 1000,
+    maxWidth: width * 0.7,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  infoTooltipText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  infoTooltipArrow: {
+    position: 'absolute',
+    top: -10,
+    left: 13,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'rgba(0, 0, 0, 0.8)',
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   stepIndicator: {
     width: 40,
@@ -287,10 +502,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'center',
   },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
   searchCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -307,7 +518,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
@@ -355,7 +566,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
@@ -370,7 +581,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#062C41',
+    color: '#1A4B8C',
   },
   mapContainer: {
     flex: 1,
@@ -412,7 +623,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   mapInstructions: {
-    backgroundColor: 'rgba(6, 44, 65, 0.8)',
+    backgroundColor: 'rgba(26, 75, 140, 0.8)',
     color: '#fff',
     padding: 8,
     borderRadius: 20,
@@ -432,13 +643,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#d81b60',
+        shadowColor: 'rgba(39, 116, 107, 0.5)',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
@@ -466,7 +677,7 @@ const styles = StyleSheet.create({
   },
   loadingSubmitContainer: {
     width: '100%',
-    backgroundColor: '#2ecc71',
+    backgroundColor: '#27746B',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,

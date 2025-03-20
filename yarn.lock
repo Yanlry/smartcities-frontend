@@ -6264,6 +6264,13 @@ expo-modules-core@2.2.3:
   dependencies:
     invariant "^2.2.4"
 
+expo-sensors@^14.0.2:
+  version "14.0.2"
+  resolved "https://registry.yarnpkg.com/expo-sensors/-/expo-sensors-14.0.2.tgz#bf2cfadcb17f396e0447aaa5405d1d90d6e46e95"
+  integrity sha512-nCb1Q3ctb0oVTZ9p6eFmQ2fINa6KoxXXIhagPpdN0qR82p00YosP27IuyxjVB3fnCJFeC4TffNxNjBxwAUk+nA==
+  dependencies:
+    invariant "^2.2.4"
+
 expo-splash-screen@~0.17.0:
   version "0.17.5"
   resolved "https://registry.npmjs.org/expo-splash-screen/-/expo-splash-screen-0.17.5.tgz"

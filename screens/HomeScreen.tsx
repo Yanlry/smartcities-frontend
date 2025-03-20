@@ -16,6 +16,7 @@ import { useUserRanking } from "../hooks/user/useUserRanking";
 import { useNearbyReports } from "../hooks/reports/useNearbyReports";
 import { useEvents } from "../hooks/events/useEvents";
 import { useFetchStatistics } from "../hooks/api/useFetchStatistics";
+import GlobalToggleButton from "../components/common/ShakeButton/GlobalToggleButton"; // Import the missing component
 // @ts-ignore
 import { API_URL } from "@env";
 
@@ -266,18 +267,10 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           updateProfileImage={updateProfileImage}
         />
 
-        {/* Bouton pour ouvrir/fermer toutes les sections */}
-        <TouchableOpacity
-          style={styles.globalToggleButton}
-          onPress={toggleAllSections}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.globalToggleButtonText}>
-            {areAllSectionsVisible
-              ? "▲  Fermer toutes les sections  ▲"
-              : "▼  Ouvrir tout  ▼"}
-          </Text>
-        </TouchableOpacity>
+        <GlobalToggleButton
+          areAllSectionsVisible={areAllSectionsVisible}
+          onToggle={toggleAllSections}
+        />
 
         {/* Section Classement */}
         <RankingSection

@@ -529,7 +529,7 @@ export default function NotificationsScreen({ navigation }) {
                   {item.message}
                 </Text>
                 <Text style={styles.notificationDate}>
-                  {getRelativeTime(item.createdAt)}
+                 Il y a {getRelativeTime(item.createdAt)}
                 </Text>
               </View>
               <Icon 

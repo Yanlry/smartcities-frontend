@@ -32,6 +32,8 @@ interface AddressSuggestionModalProps {
   onSelect: (suggestion: AddressSuggestion) => void;
   /** Fonction appelée pour fermer le modal */
   onClose: () => void;
+  /** Adresse actuelle optionnelle */
+  currentAddress?: string;
 }
 
 /**
@@ -373,7 +375,8 @@ const AddressSuggestionModal: React.FC<AddressSuggestionModalProps> = memo(({
   visible,
   suggestions,
   onSelect,
-  onClose
+  onClose,
+  currentAddress
 }) => {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
@@ -381,8 +384,14 @@ const AddressSuggestionModal: React.FC<AddressSuggestionModalProps> = memo(({
 
   // Tri des suggestions avec mémoïsation pour éviter les recalculs inutiles
   const sortedSuggestions = useMemo(() => 
-    sortSuggestions(suggestions),
-    [suggestions]
+    sortSuggestions(
+      suggestions.map(suggestion =>
+        suggestion.formatted === "Ma position" && currentAddress && currentAddress !== "Ma position"
+          ? { ...suggestion, formatted: currentAddress }
+          : suggestion
+      )
+    ),
+    [suggestions, currentAddress]
   );
 
   // Gérer les animations d'apparition et de disparition

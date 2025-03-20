@@ -78,7 +78,9 @@ export default function MayorInfoCard({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-50)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const rotateAnims = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
+  const rotateAnims = useRef(
+    [...Array(5)].map(() => new Animated.Value(0))
+  ).current;
   const cardScrollX = useRef(new Animated.Value(0)).current;
   const likeAnimations = useRef<Animated.Value[]>([]).current;
 
@@ -144,7 +146,7 @@ export default function MayorInfoCard({
       id: 5,
       type: "info",
       title: "Nouveau parc pour planches à roulettes",
-      date: "14 septembre 2024", 
+      date: "14 septembre 2024",
       content:
         "La mairie est heureuse d'annoncer l'ouverture prochaine d'un nouveau skatepark à proximité du complexe sportif.",
       icon: "🛹",
@@ -306,7 +308,7 @@ export default function MayorInfoCard({
     try {
       const cityName = city;
       const userId = String(await getUserIdFromToken());
-      
+
       const [eventsData, rankingData] = await Promise.all([
         fetchEvents(cityName),
         fetchRankingByCity(userId, cityName),
@@ -334,15 +336,15 @@ export default function MayorInfoCard({
   // Toggle section expansion
   const toggleSection = (section: keyof typeof expandedSections) => {
     const index = Object.keys(expandedSections).indexOf(section);
-    
+
     // Animate rotation on section toggle
     Animated.timing(rotateAnims[index], {
       toValue: expandedSections[section] ? 0 : 1,
       duration: 300,
       useNativeDriver: true,
     }).start();
-    
-    setExpandedSections(prev => ({
+
+    setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
@@ -397,19 +399,13 @@ export default function MayorInfoCard({
     };
   };
 
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
+    Dimensions.get("window");
 
   return (
-    <Animated.View
+    <View
       style={[
-        styles.container,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim },
-          ],
-        },
+        styles.container
       ]}
     >
       <ScrollView
@@ -427,134 +423,177 @@ export default function MayorInfoCard({
         }
       >
         {/* City header with background */}
-        // Refonte de l'en-tête avec des informations plus utiles et un design plus fonctionnel
-<LinearGradient
-  colors={["#062C41", "#0D4671"]}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 1 }}
-  style={styles.cityHeader}
->
-  {/* Barre d'information principale */}
-  <View style={styles.cityHeaderContent}>
-    <View style={styles.cityInfoContainer}>
-      <View style={styles.cityNameContainer}>
-        <Text style={styles.cityName}>{city}</Text>
-        <View style={styles.weatherIndicator}>
-          <Text style={styles.weatherIcon}>☀️</Text>
-          <Text style={styles.weatherTemp}>21°C</Text>
-        </View>
-      </View>
-      
-      <View style={styles.notificationBadge}>
-        <Text style={styles.notificationCount}>3</Text>
-      </View>
-    </View>
-    
-    {/* Indicateurs d'activité */}
-    <View style={styles.activityIndicatorsContainer}>
-      <View style={styles.statusBar}>
-        <View style={styles.statusItem}>
-          <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-          <Text style={styles.statusText}>Services municipaux ouverts</Text>
-        </View>
-        
-        <TouchableOpacity style={styles.alertButton} activeOpacity={0.8}>
-          <Text style={styles.alertButtonText}>Alertes actives (2)</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{totalUsers || "..."}</Text>
-          <Text style={styles.statLabel}>Membres</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{events?.length || "..."}</Text>
-          <Text style={styles.statLabel}>Événements</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{ranking ? `#${ranking}` : "..."}</Text>
-          <Text style={styles.statLabel}>Votre rang</Text>
-        </View>
-      </View>
-    </View>
-  </View>
-  
-  {/* Boutons d'action rapide améliorés */}
-  <View style={styles.quickActions}>
-    <TouchableOpacity 
-      style={styles.quickActionButton}
-      activeOpacity={0.8}
-    >
-      <View style={styles.quickActionIconContainer}>
-        <Text style={styles.quickActionIcon}>📢</Text>
-      </View>
-      <Text style={styles.quickActionText}>Actualités</Text>
-    </TouchableOpacity>
-    
-    <TouchableOpacity 
-      style={styles.quickActionButton}
-      activeOpacity={0.8}
-      onPress={() => navigation.navigate("ReportScreen")}
-    >
-      <View style={[styles.quickActionIconContainer, { backgroundColor: 'rgba(244, 67, 54, 0.2)' }]}>
-        <Text style={styles.quickActionIcon}>🚨</Text>
-      </View>
-      <Text style={styles.quickActionText}>Signaler</Text>
-    </TouchableOpacity>
-    
-    <TouchableOpacity 
-      style={styles.quickActionButton}
-      activeOpacity={0.8}
-    >
-      <View style={styles.quickActionIconContainer}>
-        <Text style={styles.quickActionIcon}>📅</Text>
-      </View>
-      <Text style={styles.quickActionText}>Événements</Text>
-    </TouchableOpacity>
-    
-    <TouchableOpacity 
-      style={styles.quickActionButton}
-      activeOpacity={0.8}
-    >
-      <View style={styles.quickActionIconContainer}>
-        <Text style={styles.quickActionIcon}>📋</Text>
-      </View>
-      <Text style={styles.quickActionText}>Services</Text>
-    </TouchableOpacity>
-  </View>
-</LinearGradient>
+        <LinearGradient
+          colors={["#062C41", "#0D4671"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cityHeader}
+        >
+          {/* Barre d'information principale */}
+          <View style={styles.cityHeaderContent}>
+            <View style={styles.cityInfoContainer}>
+              <View style={styles.cityNameContainer}>
+                <Text style={styles.cityName}>{city}</Text>
+              </View>
+              <View style={styles.weatherIndicator}>
+                  <Text style={styles.weatherIcon}>☀️</Text>
+                  <Text style={styles.weatherTemp}>21°C</Text>
+                </View>
+            </View>
+
+            {/* Indicateurs d'activité */}
+            <View style={styles.activityIndicatorsContainer}>
+              <View style={styles.statusBar}>
+                <View style={styles.statusItem}>
+                  <View
+                    style={[styles.statusDot, { backgroundColor: "#4CAF50" }]}
+                  />
+                  <Text style={styles.statusText}>
+                    Services municipaux ouverts
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.alertButton}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.alertButtonText}>
+                    Alertes actives (2)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{totalUsers || "..."}</Text>
+                  <Text style={styles.statLabel}>Membres</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {events?.length || "..."}
+                  </Text>
+                  <Text style={styles.statLabel}>Événements</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {ranking ? `#${ranking}` : "..."}
+                  </Text>
+                  <Text style={styles.statLabel}>Votre rang</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Boutons d'action rapide améliorés */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              activeOpacity={0.8}
+            >
+              <View style={styles.quickActionIconContainer}>
+                <Text style={styles.quickActionIcon}>📢</Text>
+              </View>
+              <Text style={styles.quickActionText}>Actualités</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate("ReportScreen")}
+            >
+              <View
+                style={[
+                  styles.quickActionIconContainer,
+                  { backgroundColor: "rgba(244, 67, 54, 0.2)" },
+                ]}
+              >
+                <Text style={styles.quickActionIcon}>🚨</Text>
+              </View>
+              <Text style={styles.quickActionText}>Signaler</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              activeOpacity={0.8}
+            >
+              <View style={styles.quickActionIconContainer}>
+                <Text style={styles.quickActionIcon}>📅</Text>
+              </View>
+              <Text style={styles.quickActionText}>Événements</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              activeOpacity={0.8}
+            >
+              <View style={styles.quickActionIconContainer}>
+                <Text style={styles.quickActionIcon}>📋</Text>
+              </View>
+              <Text style={styles.quickActionText}>Services</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
 
         {/* Main content tabs navigation */}
         <View style={styles.contentTabs}>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "updates" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "updates" && styles.activeTabButton,
+            ]}
             onPress={() => setActiveTab("updates")}
           >
-            <Text style={[styles.tabButtonText, activeTab === "updates" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeTab === "updates" && styles.activeTabText,
+              ]}
+            >
               Actualités
             </Text>
-            {activeTab === "updates" && <View style={styles.activeTabIndicator} />}
+            {activeTab === "updates" && (
+              <View style={styles.activeTabIndicator} />
+            )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "events" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "events" && styles.activeTabButton,
+            ]}
             onPress={() => setActiveTab("events")}
           >
-            <Text style={[styles.tabButtonText, activeTab === "events" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeTab === "events" && styles.activeTabText,
+              ]}
+            >
               Événements
             </Text>
-            {activeTab === "events" && <View style={styles.activeTabIndicator} />}
+            {activeTab === "events" && (
+              <View style={styles.activeTabIndicator} />
+            )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "services" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "services" && styles.activeTabButton,
+            ]}
             onPress={() => setActiveTab("services")}
           >
-            <Text style={[styles.tabButtonText, activeTab === "services" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeTab === "services" && styles.activeTabText,
+              ]}
+            >
               Services
             </Text>
-            {activeTab === "services" && <View style={styles.activeTabIndicator} />}
+            {activeTab === "services" && (
+              <View style={styles.activeTabIndicator} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -572,13 +611,15 @@ export default function MayorInfoCard({
                   <View style={styles.sectionIconContainer}>
                     <Text style={styles.sectionIcon}>👨‍💼</Text>
                   </View>
-                  <Text style={styles.sectionTitle}>Le maire et son équipe</Text>
+                  <Text style={styles.sectionTitle}>
+                    Le maire et son équipe
+                  </Text>
                 </View>
                 <Animated.View style={getRotationStyle(0)}>
                   <Text style={styles.sectionArrow}>▼</Text>
                 </Animated.View>
               </TouchableOpacity>
-              
+
               {expandedSections.mayorInfo && (
                 <Animated.View style={styles.mayorCard}>
                   <LinearGradient
@@ -599,7 +640,9 @@ export default function MayorInfoCard({
                       </View>
                       <View style={styles.mayorDetails}>
                         <Text style={styles.mayorName}>Pierre BÉHARELLE</Text>
-                        <Text style={styles.mayorTitle}>Maire de {city}</Text>
+                        <Text style={styles.mayorTitle}>
+                          Maire de <Text>{city}</Text>
+                        </Text>
                         <Text style={styles.mayorSubtitle}>
                           Permanence sur rendez-vous
                         </Text>
@@ -617,7 +660,7 @@ export default function MayorInfoCard({
                         </TouchableOpacity>
                       </View>
                     </View>
-                    
+
                     <View style={styles.mayorActions}>
                       <TouchableOpacity
                         style={styles.mayorActionButton}
@@ -664,7 +707,11 @@ export default function MayorInfoCard({
                           activeOpacity={0.9}
                         >
                           <Image
-                            source={{ uri: `https://randomuser.me/api/portraits/${index % 2 === 0 ? 'men' : 'women'}/${index + 25}.jpg` }}
+                            source={{
+                              uri: `https://randomuser.me/api/portraits/${
+                                index % 2 === 0 ? "men" : "women"
+                              }/${index + 25}.jpg`,
+                            }}
                             style={styles.teamMemberImage}
                           />
                           <Text style={styles.teamMemberName}>
@@ -708,13 +755,15 @@ export default function MayorInfoCard({
                   <View style={styles.sectionIconContainer}>
                     <Text style={styles.sectionIcon}>📢</Text>
                   </View>
-                  <Text style={styles.sectionTitle}>Actualités de la ville</Text>
+                  <Text style={styles.sectionTitle}>
+                    Actualités de la ville
+                  </Text>
                 </View>
                 <Animated.View style={getRotationStyle(1)}>
                   <Text style={styles.sectionArrow}>▼</Text>
                 </Animated.View>
               </TouchableOpacity>
-              
+
               {expandedSections.cityUpdates && (
                 <View style={styles.updatesContainer}>
                   {/* Animated card carousel */}
@@ -738,10 +787,7 @@ export default function MayorInfoCard({
                     {newsContent.map((news, index) => (
                       <Animated.View
                         key={news.id}
-                        style={[
-                          styles.newsCard,
-                          { width: SCREEN_WIDTH - 32 },
-                        ]}
+                        style={[styles.newsCard, { width: SCREEN_WIDTH - 32 }]}
                       >
                         <LinearGradient
                           colors={
@@ -786,9 +832,9 @@ export default function MayorInfoCard({
                             </View>
                           </View>
                         </View>
-                        
+
                         <Text style={styles.newsContent}>{news.content}</Text>
-                        
+
                         {/* Optional image placeholder */}
                         <View style={styles.newsImageContainer}>
                           <View style={styles.newsImagePlaceholder}>
@@ -805,7 +851,7 @@ export default function MayorInfoCard({
                             </Text>
                           </View>
                         </View>
-                        
+
                         {/* Social interaction buttons */}
                         <View style={styles.newsActions}>
                           <TouchableOpacity
@@ -818,7 +864,7 @@ export default function MayorInfoCard({
                               {news.likes}
                             </Text>
                           </TouchableOpacity>
-                          
+
                           <TouchableOpacity
                             style={styles.newsActionButton}
                             activeOpacity={0.8}
@@ -828,7 +874,7 @@ export default function MayorInfoCard({
                               {news.comments}
                             </Text>
                           </TouchableOpacity>
-                          
+
                           <TouchableOpacity
                             style={styles.newsActionButton}
                             activeOpacity={0.8}
@@ -838,7 +884,7 @@ export default function MayorInfoCard({
                               {news.shares}
                             </Text>
                           </TouchableOpacity>
-                          
+
                           <TouchableOpacity
                             style={styles.newsActionButton}
                             activeOpacity={0.8}
@@ -849,7 +895,7 @@ export default function MayorInfoCard({
                       </Animated.View>
                     ))}
                   </ScrollView>
-                  
+
                   {/* Card pagination indicators */}
                   {renderCardIndicators()}
                 </View>
@@ -873,7 +919,7 @@ export default function MayorInfoCard({
                   <Text style={styles.sectionArrow}>▼</Text>
                 </Animated.View>
               </TouchableOpacity>
-              
+
               {expandedSections.socialRanking && (
                 <View style={styles.socialRankingContainer}>
                   <View style={styles.leaderboardHeader}>
@@ -885,7 +931,7 @@ export default function MayorInfoCard({
                       <Text style={styles.rankingFilterIcon}>▼</Text>
                     </TouchableOpacity>
                   </View>
-                  
+
                   {/* User ranking grid */}
                   <ScrollView
                     horizontal
@@ -897,11 +943,18 @@ export default function MayorInfoCard({
                   >
                     <View style={styles.topThreeContainer}>
                       {smarterData.slice(0, 3).map((user, index) => {
-                        const color = index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : "#CD7F32";
-                        const scale = index === 0 ? 1.15 : index === 1 ? 1.05 : 1;
-                        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
+                        const color =
+                          index === 0
+                            ? "#FFD700"
+                            : index === 1
+                            ? "#C0C0C0"
+                            : "#CD7F32";
+                        const scale =
+                          index === 0 ? 1.15 : index === 1 ? 1.05 : 1;
+                        const medal =
+                          index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
                         const position = index === 0 ? 1 : index === 1 ? 0 : 2; // Reorder to show 1st in middle, 2nd on left, 3rd on right
-                        
+
                         return (
                           <TouchableOpacity
                             key={user.id}
@@ -910,7 +963,12 @@ export default function MayorInfoCard({
                               {
                                 transform: [{ scale }],
                                 zIndex: 3 - index,
-                                alignSelf: position === 1 ? 'center' : position === 0 ? 'flex-start' : 'flex-end',
+                                alignSelf:
+                                  position === 1
+                                    ? "center"
+                                    : position === 0
+                                    ? "flex-start"
+                                    : "flex-end",
                               },
                             ]}
                             onPress={() =>
@@ -933,7 +991,9 @@ export default function MayorInfoCard({
                             >
                               <Image
                                 source={{
-                                  uri: user.image?.uri || "https://via.placeholder.com/150",
+                                  uri:
+                                    user.image?.uri ||
+                                    "https://via.placeholder.com/150",
                                 }}
                                 style={styles.topUserImage}
                               />
@@ -978,7 +1038,9 @@ export default function MayorInfoCard({
                           </View>
                           <Image
                             source={{
-                              uri: user.image?.uri || "https://via.placeholder.com/150",
+                              uri:
+                                user.image?.uri ||
+                                "https://via.placeholder.com/150",
                             }}
                             style={styles.leaderboardUserImage}
                           />
@@ -991,12 +1053,14 @@ export default function MayorInfoCard({
                             </Text>
                           </View>
                           <View style={styles.leaderboardBadge}>
-                            <Text style={styles.leaderboardBadgeText}>Actif</Text>
+                            <Text style={styles.leaderboardBadgeText}>
+                              Actif
+                            </Text>
                           </View>
                         </TouchableOpacity>
                       ))}
                     </View>
-                    
+
                     {/* Your ranking section */}
                     <View style={styles.yourRankingContainer}>
                       <Text style={styles.yourRankingTitle}>Votre rang</Text>
@@ -1019,9 +1083,12 @@ export default function MayorInfoCard({
                       </View>
                     </View>
                   </ScrollView>
-                  
+
                   {/* Call to action button */}
-                  <TouchableOpacity style={styles.viewAllRanksButton} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    style={styles.viewAllRanksButton}
+                    activeOpacity={0.8}
+                  >
                     <Text style={styles.viewAllRanksText}>
                       Voir le classement complet
                     </Text>
@@ -1052,7 +1119,7 @@ export default function MayorInfoCard({
                   <Text style={styles.sectionArrow}>▼</Text>
                 </Animated.View>
               </TouchableOpacity>
-              
+
               {expandedSections.upcomingEvents && (
                 <View style={styles.eventsContainer}>
                   {events && events.length > 0 ? (
@@ -1064,7 +1131,9 @@ export default function MayorInfoCard({
                       >
                         <View style={styles.featuredEventImageContainer}>
                           <View style={styles.featuredEventImage}>
-                            <Text style={styles.featuredEventImageText}>🎭</Text>
+                            <Text style={styles.featuredEventImageText}>
+                              🎭
+                            </Text>
                           </View>
                           <LinearGradient
                             colors={["transparent", "rgba(0,0,0,0.7)"]}
@@ -1096,7 +1165,9 @@ export default function MayorInfoCard({
                         </View>
                         <View style={styles.featuredEventContent}>
                           <Text style={styles.featuredEventDescription}>
-                            Venez découvrir les talents locaux lors du Festival des Arts Urbains. Musique, danse, graffiti et bien plus encore!
+                            Venez découvrir les talents locaux lors du Festival
+                            des Arts Urbains. Musique, danse, graffiti et bien
+                            plus encore!
                           </Text>
                           <View style={styles.eventActions}>
                             <TouchableOpacity style={styles.interestedButton}>
@@ -1131,7 +1202,10 @@ export default function MayorInfoCard({
                               <Text style={styles.eventListDateMonth}>SEP</Text>
                             </View>
                             <View style={styles.eventListContent}>
-                              <Text style={styles.eventListTitle} numberOfLines={1}>
+                              <Text
+                                style={styles.eventListTitle}
+                                numberOfLines={1}
+                              >
                                 {event.title || "Événement de la ville"}
                               </Text>
                               <View style={styles.eventListMeta}>
@@ -1143,7 +1217,9 @@ export default function MayorInfoCard({
                                 </Text>
                               </View>
                             </View>
-                            <TouchableOpacity style={styles.eventListActionButton}>
+                            <TouchableOpacity
+                              style={styles.eventListActionButton}
+                            >
                               <Text style={styles.eventListActionIcon}>+</Text>
                             </TouchableOpacity>
                           </TouchableOpacity>
@@ -1169,7 +1245,8 @@ export default function MayorInfoCard({
                         Aucun événement à venir
                       </Text>
                       <Text style={styles.noEventsDescription}>
-                        Il n'y a pas d'événements prévus pour le moment dans votre ville.
+                        Il n'y a pas d'événements prévus pour le moment dans
+                        votre ville.
                       </Text>
                       <TouchableOpacity
                         style={styles.createEventButton}
@@ -1184,11 +1261,11 @@ export default function MayorInfoCard({
                 </View>
               )}
             </View>
-            
+
             {/* Past events section */}
             <View style={styles.pastEventsContainer}>
               <Text style={styles.pastEventsTitle}>Événements passés</Text>
-              
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -1264,22 +1341,30 @@ export default function MayorInfoCard({
                   <Text style={styles.sectionArrow}>▼</Text>
                 </Animated.View>
               </TouchableOpacity>
-              
+
               {expandedSections.publicServices && (
                 <View style={styles.servicesContainer}>
                   {/* Services featured card */}
                   <View style={styles.servicesFeaturedCard}>
                     <View style={styles.mayorOfficeCard}>
                       <View style={styles.mayorOfficeHeader}>
-                        <Text style={styles.mayorOfficeTitle}>Mairie de {city}</Text>
+                        <Text style={styles.mayorOfficeTitle}>
+                          Mairie de {city}
+                        </Text>
                         <TouchableOpacity
                           style={styles.mayorOfficeAction}
-                          onPress={() => Linking.openURL(`https://maps.google.com/?q=Mairie+${city}`)}
+                          onPress={() =>
+                            Linking.openURL(
+                              `https://maps.google.com/?q=Mairie+${city}`
+                            )
+                          }
                         >
-                          <Text style={styles.mayorOfficeActionText}>Itinéraire</Text>
+                          <Text style={styles.mayorOfficeActionText}>
+                            Itinéraire
+                          </Text>
                         </TouchableOpacity>
                       </View>
-                      
+
                       <View style={styles.mayorOfficeContent}>
                         <Image
                           source={require("../../../assets/images/mayor.png")}
@@ -1287,13 +1372,17 @@ export default function MayorInfoCard({
                         />
                         <View style={styles.mayorOfficeInfo}>
                           <View style={styles.mayorOfficeInfoItem}>
-                            <Text style={styles.mayorOfficeInfoLabel}>Adresse</Text>
+                            <Text style={styles.mayorOfficeInfoLabel}>
+                              Adresse
+                            </Text>
                             <Text style={styles.mayorOfficeInfoText}>
                               11 rue Sadi Carnot{"\n"}59320 {city}
                             </Text>
                           </View>
                           <View style={styles.mayorOfficeInfoItem}>
-                            <Text style={styles.mayorOfficeInfoLabel}>Contact</Text>
+                            <Text style={styles.mayorOfficeInfoLabel}>
+                              Contact
+                            </Text>
                             <TouchableOpacity onPress={handlePressPhoneNumber}>
                               <Text style={styles.mayorOfficePhone}>
                                 03 20 44 02 90
@@ -1302,9 +1391,11 @@ export default function MayorInfoCard({
                           </View>
                         </View>
                       </View>
-                      
+
                       <View style={styles.mayorOfficeHours}>
-                        <Text style={styles.mayorOfficeHoursTitle}>Horaires d'ouverture</Text>
+                        <Text style={styles.mayorOfficeHoursTitle}>
+                          Horaires d'ouverture
+                        </Text>
                         <View style={styles.mayorOfficeHoursContent}>
                           <View style={styles.mayorOfficeHoursItem}>
                             <Text style={styles.mayorOfficeDay}>Lun - Ven</Text>
@@ -1319,39 +1410,47 @@ export default function MayorInfoCard({
                             </Text>
                           </View>
                           <View style={styles.mayorOfficeHoursItem}>
-                            <Text style={styles.mayorOfficeDay}>Dim & Jours fériés</Text>
+                            <Text style={styles.mayorOfficeDay}>
+                              Dim & Jours fériés
+                            </Text>
                             <Text style={styles.mayorOfficeTime}>Fermé</Text>
                           </View>
                         </View>
                       </View>
                     </View>
                   </View>
-                  
+
                   {/* Services grid */}
-                  <View  style={styles.servicesContent}> 
-                  <Text style={styles.servicesGridTitle}>Services en ligne</Text>
-                  <View style={styles.servicesGrid}>
-                    {publicServices.map((service) => (
-                      <TouchableOpacity
-                        key={service.id}
-                        style={styles.serviceGridItem}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.serviceIconContainer}>
-                          <Text style={styles.serviceIcon}>{service.icon}</Text>
-                        </View>
-                        <Text style={styles.serviceTitle}>{service.title}</Text>
-                        <Text style={styles.serviceDescription}>
-                          {service.description}
-                        </Text>
-                        <TouchableOpacity style={styles.serviceActionButton}>
-                          <Text style={styles.serviceActionText}>
-                            {service.action}
+                  <View style={styles.servicesContent}>
+                    <Text style={styles.servicesGridTitle}>
+                      Services en ligne
+                    </Text>
+                    <View style={styles.servicesGrid}>
+                      {publicServices.map((service) => (
+                        <TouchableOpacity
+                          key={service.id}
+                          style={styles.serviceGridItem}
+                          activeOpacity={0.8}
+                        >
+                          <View style={styles.serviceIconContainer}>
+                            <Text style={styles.serviceIcon}>
+                              {service.icon}
+                            </Text>
+                          </View>
+                          <Text style={styles.serviceTitle}>
+                            {service.title}
                           </Text>
+                          <Text style={styles.serviceDescription}>
+                            {service.description}
+                          </Text>
+                          <TouchableOpacity style={styles.serviceActionButton}>
+                            <Text style={styles.serviceActionText}>
+                              {service.action}
+                            </Text>
+                          </TouchableOpacity>
                         </TouchableOpacity>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                      ))}
+                    </View>
                   </View>
                   {/* Documents section */}
                   <View style={styles.documentsSection}>
@@ -1359,11 +1458,17 @@ export default function MayorInfoCard({
                       Documents administratifs
                     </Text>
                     <Text style={styles.documentsSectionDescription}>
-                      Téléchargez les formulaires et documents officiels de votre mairie
+                      Téléchargez les formulaires et documents officiels de
+                      votre mairie
                     </Text>
-                    
+
                     <View style={styles.documentsList}>
-                      {["Acte de naissance", "Autorisation de travaux", "Inscription scolaire", "Permis de construire"].map((doc, index) => (
+                      {[
+                        "Acte de naissance",
+                        "Autorisation de travaux",
+                        "Inscription scolaire",
+                        "Permis de construire",
+                      ].map((doc, index) => (
                         <TouchableOpacity
                           key={index}
                           style={styles.documentItem}
@@ -1378,13 +1483,15 @@ export default function MayorInfoCard({
                               PDF - {Math.floor(Math.random() * 900) + 100} Ko
                             </Text>
                           </View>
-                          <TouchableOpacity style={styles.documentDownloadButton}>
+                          <TouchableOpacity
+                            style={styles.documentDownloadButton}
+                          >
                             <Text style={styles.documentDownloadIcon}>↓</Text>
                           </TouchableOpacity>
                         </TouchableOpacity>
                       ))}
                     </View>
-                    
+
                     <TouchableOpacity
                       style={styles.allDocumentsButton}
                       activeOpacity={0.8}
@@ -1398,11 +1505,13 @@ export default function MayorInfoCard({
                 </View>
               )}
             </View>
-            
+
             {/* Emergency section */}
             <View style={styles.emergencySection}>
-              <Text style={styles.emergencySectionTitle}>Numéros d'urgence</Text>
-              
+              <Text style={styles.emergencySectionTitle}>
+                Numéros d'urgence
+              </Text>
+
               <View style={styles.emergencyCards}>
                 <TouchableOpacity
                   style={[styles.emergencyCard, styles.emergencyCardSamu]}
@@ -1412,7 +1521,7 @@ export default function MayorInfoCard({
                   <Text style={styles.emergencyNumber}>15</Text>
                   <Text style={styles.emergencyName}>SAMU</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[styles.emergencyCard, styles.emergencyCardPolice]}
                   activeOpacity={0.8}
@@ -1421,7 +1530,7 @@ export default function MayorInfoCard({
                   <Text style={styles.emergencyNumber}>17</Text>
                   <Text style={styles.emergencyName}>Police</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[styles.emergencyCard, styles.emergencyCardPompier]}
                   activeOpacity={0.8}
@@ -1430,7 +1539,7 @@ export default function MayorInfoCard({
                   <Text style={styles.emergencyNumber}>18</Text>
                   <Text style={styles.emergencyName}>Pompiers</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[styles.emergencyCard, styles.emergencyCardEurope]}
                   activeOpacity={0.8}
@@ -1441,13 +1550,13 @@ export default function MayorInfoCard({
                 </TouchableOpacity>
               </View>
             </View>
-            
+
             {/* Community support section */}
             <View style={styles.communitySupportSection}>
               <Text style={styles.communitySupportTitle}>
                 Entraide communautaire
               </Text>
-              
+
               <TouchableOpacity
                 style={styles.communitySupportCard}
                 activeOpacity={0.9}
@@ -1461,7 +1570,8 @@ export default function MayorInfoCard({
                   <View style={styles.communitySupportContent}>
                     <Text style={styles.communitySupportEmoji}>👥</Text>
                     <Text style={styles.communitySupportText}>
-                      Rejoignez le réseau d'entraide local pour aider ou demander de l'aide à vos voisins.
+                      Rejoignez le réseau d'entraide local pour aider ou
+                      demander de l'aide à vos voisins.
                     </Text>
                     <TouchableOpacity style={styles.communitySupportButton}>
                       <Text style={styles.communitySupportButtonText}>
@@ -1474,17 +1584,22 @@ export default function MayorInfoCard({
             </View>
           </View>
         )}
-        
+
         {/* Footer section */}
         <View style={styles.footerSection}>
-          <TouchableOpacity style={styles.footerContactButton} activeOpacity={0.8}>
-            <Text style={styles.footerContactButtonText}>Contacter la mairie</Text>
+          <TouchableOpacity
+            style={styles.footerContactButton}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.footerContactButtonText}>
+              Contacter la mairie
+            </Text>
           </TouchableOpacity>
-          
+
           <Text style={styles.footerText}>
-            © 2024 Smartcities - {city}
+            © 2024 Smartcities - Tous droits réservés
           </Text>
-          
+
           <View style={styles.footerLinks}>
             <TouchableOpacity>
               <Text style={styles.footerLink}>Mentions légales</Text>
@@ -1500,7 +1615,7 @@ export default function MayorInfoCard({
           </View>
         </View>
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -1515,7 +1630,7 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     paddingBottom: 30,
   },
-  
+
   // Header de la ville
   cityHeader: {
     width: "100%",
@@ -1665,7 +1780,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "500",
   },
-  
+
   cityBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1682,9 +1797,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#062C41",
   },
- 
 
-  
   // Navigation par onglets
   contentTabs: {
     flexDirection: "row",
@@ -1726,7 +1839,7 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     left: "30%",
   },
-  
+
   // En-têtes de section
   sectionContainer: {
     marginHorizontal: 10,
@@ -1771,7 +1884,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#8A94A6",
   },
-  
+
   // Maire et équipe municipale
   mayorCard: {
     borderRadius: 12,
@@ -1951,7 +2064,7 @@ const styles = StyleSheet.create({
     color: "#0056B3",
     textAlign: "center",
   },
-  
+
   // Actualités de la ville
   updatesContainer: {
     marginTop: 10,
@@ -2098,7 +2211,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0056B3",
     width: 20,
   },
-  
+
   // Top utilisateurs / classements
   socialRankingContainer: {
     marginTop: 10,
@@ -2138,11 +2251,21 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   topThreeContainer: {
+    backgroundColor: "#FFFFFF",
+    height: "100%",
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 10,
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "flex-end",
     paddingHorizontal: 10,
-    marginBottom: 20,
     width: Dimensions.get("window").width * 0.8,
   },
   topUserContainer: {
@@ -2156,7 +2279,7 @@ const styles = StyleSheet.create({
   },
   medalEmoji: {
     fontSize: 30,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
@@ -2346,7 +2469,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#0056B3",
   },
-  
+
   // Événements
   eventsTabContainer: {
     marginTop: 10,
@@ -2423,7 +2546,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -2446,7 +2569,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "rgba(255,255,255,0.95)",
     fontWeight: "500",
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -2698,7 +2821,7 @@ const styles = StyleSheet.create({
     color: "#8A94A6",
     fontWeight: "500",
   },
-  
+
   // Services
   servicesTabContainer: {
     marginTop: 10,
@@ -2820,7 +2943,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    paddingHorizontal : 16,
+    paddingHorizontal: 16,
   },
   servicesGridTitle: {
     fontSize: 18,
@@ -2969,7 +3092,7 @@ const styles = StyleSheet.create({
     color: "#0056B3",
   },
   emergencySection: {
-    marginTop:16,
+    marginTop: 16,
     marginHorizontal: 10,
     marginBottom: 24,
   },
@@ -3016,7 +3139,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 6,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -3025,7 +3148,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     textAlign: "center",
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -3057,7 +3180,7 @@ const styles = StyleSheet.create({
   communitySupportEmoji: {
     fontSize: 44,
     marginBottom: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowColor: "rgba(0, 0, 0, 0.15)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
@@ -3082,7 +3205,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
-  
+
   // Footer section
   footerSection: {
     marginHorizontal: 10,
