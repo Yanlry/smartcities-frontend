@@ -1,4 +1,3 @@
-// components/home/ReportsSection/ReportsSection.tsx
 import React, { memo, useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
@@ -85,13 +84,14 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       outputRange: ["0deg", "180deg"],
     });
 
-    // Animation de pulsation pour le badge
+    // Animation de pulsation optimisée pour le badge
     useEffect(() => {
       if (reports.length > 0) {
-        Animated.loop(
+        // Création d'une référence à l'animation pour pouvoir la nettoyer
+        const pulseAnimation = Animated.loop(
           Animated.sequence([
             Animated.timing(badgePulse, {
-              toValue: 1.1,
+              toValue: 1.1, // Amplitude harmonisée avec les autres sections
               duration: 1000,
               useNativeDriver: true,
               easing: Easing.inOut(Easing.sin),
@@ -103,9 +103,17 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
               easing: Easing.inOut(Easing.sin),
             }),
           ])
-        ).start();
+        );
+        
+        // Démarrer l'animation
+        pulseAnimation.start();
+        
+        // Fonction de nettoyage appelée lors du démontage du composant
+        return () => {
+          pulseAnimation.stop();
+        };
       }
-    }, [reports.length]);
+    }, [reports.length, badgePulse]); // Ajout de badgePulse comme dépendance pour éviter les warnings de hooks
 
     // Gestion de la visibilité avec LayoutAnimation
     useEffect(() => {
@@ -130,7 +138,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         duration: 300,
         useNativeDriver: true,
       }).start();
-    }, [isVisible]);
+    }, [isVisible, rotateAnim, opacityAnim]); // Ajout de rotateAnim et opacityAnim comme dépendances
 
     // Animation pour l'effet de pression sur l'en-tête
     const handleHeaderPressIn = useCallback(() => {
@@ -139,7 +147,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         friction: 8,
         useNativeDriver: true,
       }).start();
-    }, []);
+    }, [headerScaleAnim]); // Ajout de headerScaleAnim comme dépendance
 
     const handleHeaderPressOut = useCallback(() => {
       Animated.spring(headerScaleAnim, {
@@ -148,7 +156,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         tension: 40,
         useNativeDriver: true,
       }).start();
-    }, []);
+    }, [headerScaleAnim]); 
 
     /**
      * Gestionnaire de changement de mode d'affichage

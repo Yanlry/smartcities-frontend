@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   countBadge: {
-    backgroundColor: "#4A80F0",
+    backgroundColor: "#1B5D85",
     width: 28,
     height: 28,
     borderRadius: 14,

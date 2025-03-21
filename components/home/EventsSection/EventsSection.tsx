@@ -1,5 +1,4 @@
-// Modification ciblée du composant EventsSection.tsx
-
+// Composant EventsSection modifié avec animation de pulsation en continu
 import React, { memo, useRef, useEffect } from 'react';
 import { 
   View, 
@@ -72,23 +71,40 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
       easing: Easing.bezier(0.4, 0.0, 0.2, 1),
       useNativeDriver: true
     }).start();
+  }, [isVisible, rotateAnim]);
 
-    // Animation du badge (pulse) quand les événements changent
+  // Animation de pulsation en continu pour le badge (séparée des autres animations)
+  useEffect(() => {
+    let pulseAnimation: Animated.CompositeAnimation | null = null;
+    
     if (featuredEvents.length > 0) {
-      Animated.sequence([
-        Animated.timing(badgePulse, {
-          toValue: 1.2,
-          duration: 200,
-          useNativeDriver: true
-        }),
-        Animated.timing(badgePulse, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true
-        })
-      ]).start();
+      pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(badgePulse, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.sin)
+          }),
+          Animated.timing(badgePulse, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.sin)
+          })
+        ])
+      );
+      
+      pulseAnimation.start();
     }
-  }, [isVisible, rotateAnim, featuredEvents.length, badgePulse]);
+    
+    // Nettoyage de l'animation lors du démontage du composant
+    return () => {
+      if (pulseAnimation) {
+        pulseAnimation.stop();
+      }
+    };
+  }, [featuredEvents.length, badgePulse]);
 
   // Animation de pression
   const handleHeaderPressIn = () => {
@@ -135,9 +151,9 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
                 />
               </View>
               <View>
-                <Text style={styles.title}>Événements à venir</Text>
+                <Text style={styles.title}>Événements</Text>
                 <Text style={styles.subtitle}>
-                  Activités et rencontres près de
+                  Activités et rencontres à venir
                 </Text>
               </View>
             </View>
@@ -265,7 +281,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   sectionContent: {
-
+    // Styles pour le contenu
   },
 });
 
