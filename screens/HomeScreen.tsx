@@ -1,3 +1,4 @@
+// Chemin: screens/HomeScreen.tsx
 import React, { useState, useCallback, memo } from "react";
 import {
   View,
@@ -16,7 +17,7 @@ import { useUserRanking } from "../hooks/user/useUserRanking";
 import { useNearbyReports } from "../hooks/reports/useNearbyReports";
 import { useEvents } from "../hooks/events/useEvents";
 import { useFetchStatistics } from "../hooks/api/useFetchStatistics";
-import GlobalToggleButton from "../components/common/ShakeButton/GlobalToggleButton"; // Import the missing component
+import GlobalToggleButton from "../components/common/ShakeButton/GlobalToggleButton";
 // @ts-ignore
 import { API_URL } from "@env";
 
@@ -25,7 +26,7 @@ import RankingSection from "../components/home/RankingSection/RankingSection";
 import ReportsSection from "../components/home/ReportsSection/ReportsSection";
 import EventsSection from "../components/home/EventsSection/EventsSection";
 import EventCalendar from "../components/home/EventsSection/EventCalendar";
-import CategoryReportsSection from "../components/home/CategoryReportsSection/CategoryReportsSection";
+import CategorySelector from "../components/home/CategorySelector/CategorySelector";
 import MayorInfoSection from "../components/home/MayorInfoSection/MayorInfoSection";
 import Chart from "../components/home/ChartSection/Chart";
 
@@ -85,6 +86,8 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       loading: eventsLoading,
       error: eventsError,
       fetchEventsByDate,
+      getEventsForMonth,
+      getMarkedDatesForMonth
     } = useEvents(user?.nomCommune || "");
 
     // Graphique
@@ -102,14 +105,14 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     const [showFollowingModal, setShowFollowingModal] = useState(false);
 
     // États de visibilité des sections
-    const [isSectionVisible, setSectionVisible] = useState(true);
-    const [isReportsVisible, setReportsVisible] = useState(true);
-    const [isEventsVisible, setEventsVisible] = useState(true);
-    const [isCalendarVisible, setCalendarVisible] = useState(true);
+    const [isSectionVisible, setSectionVisible] = useState(false);
+    const [isReportsVisible, setReportsVisible] = useState(false);
+    const [isEventsVisible, setEventsVisible] = useState(false);
+    const [isCalendarVisible, setCalendarVisible] = useState(false);
     const [isCategoryReportsVisible, setCategoryReportsVisible] =
-      useState(true);
-    const [isMayorInfoVisible, setMayorInfoVisible] = useState(true);
-    const [areAllSectionsVisible, setAllSectionsVisible] = useState(true);
+      useState(false);
+    const [isMayorInfoVisible, setMayorInfoVisible] = useState(false);
+    const [areAllSectionsVisible, setAllSectionsVisible] = useState(false);
 
     // État de rafraîchissement
     const [refreshing, setRefreshing] = useState(false);
@@ -319,10 +322,13 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           onEventPress={handleEventPress}
           isVisible={isCalendarVisible}
           toggleVisibility={() => setCalendarVisible((prev) => !prev)}
+          cityName={user?.nomCommune}
+          getEventsForMonth={getEventsForMonth}
+          getMarkedDatesForMonth={getMarkedDatesForMonth}
         />
 
         {/* Section Catégories de signalements */}
-        <CategoryReportsSection
+        <CategorySelector
           categories={categories}
           onCategoryPress={handleCategoryClick}
           isVisible={isCategoryReportsVisible}
@@ -352,7 +358,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
         <BadgeModal
           visible={showBadgeModal}
           onClose={() => setShowBadgeModal(false)}
-          userVotes={stats?.votes?.length || 0} // Ajout de cette ligne cruciale
+          userVotes={stats?.votes?.length || 0}
         />
 
         <LikeInfoModal
@@ -371,7 +377,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           visible={showFollowingModal}
           onClose={toggleFollowingList}
           following={user?.following || []}
-          onUserPress={handleFollowingUserPress} // Utilisez la nouvelle fonction ici
+          onUserPress={handleFollowingUserPress}
         />
       </ScrollView>
     );
@@ -441,6 +447,7 @@ const styles = StyleSheet.create({
     color: "#888",
     fontSize: 12,
     marginVertical: 20,
+    paddingBottom: 100,
   },
 });
 

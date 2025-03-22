@@ -1,6 +1,13 @@
 // Modification du composant Chart avec badge pulsant
 
-import React, { useState, useEffect, memo, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  memo,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -15,14 +22,14 @@ import {
   ViewStyle,
   TextStyle,
   Pressable,
-  LayoutAnimation
+  LayoutAnimation,
 } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 import { chartColors } from "../../../utils/reportHelpers";
 import { ChartProps } from "../ChartSection/chart.types";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from "@expo/vector-icons";
 
 // Configuration de LayoutAnimation pour Android
 if (Platform.OS === "android") {
@@ -49,7 +56,7 @@ const THEME = {
   danger: "#e74c3c",
   border: "rgba(255, 255, 255, 0.3)",
   shadow: "rgba(0, 0, 0, 0.1)",
-  accent: "#6366F1",  // Ajout d'une couleur d'accent pour harmoniser avec EventsSection
+  accent: "#6366F1", // Ajout d'une couleur d'accent pour harmoniser avec EventsSection
 };
 
 // Couleur de fond harmonisée pour le header et le contenu en état ouvert
@@ -124,10 +131,10 @@ interface ChartStyles {
 /**
  * Composant Chart amélioré avec design glassmorphisme et effet de fusion visuelle
  * quand la section est ouverte.
- * 
+ *
  * Résout spécifiquement les problèmes de marges horizontales et verticales
  * entre le header et le contenu lorsque la section est ouverte.
- * 
+ *
  * @param props - Les propriétés du composant
  * @param props.data - Les données à afficher dans le graphique
  * @param props.loading - Indique si les données sont en cours de chargement
@@ -241,7 +248,7 @@ const Chart: React.FC<ChartProps> = memo(
           ])
         ).start();
       }
-      
+
       // Nettoyage de l'animation lors du démontage du composant
       return () => {
         badgePulse.stopAnimation();
@@ -272,7 +279,7 @@ const Chart: React.FC<ChartProps> = memo(
       Animated.timing(headerScaleAnim, {
         toValue: 0.98,
         duration: 100,
-        useNativeDriver: true
+        useNativeDriver: true,
       }).start();
     }, [headerScaleAnim]);
 
@@ -280,7 +287,7 @@ const Chart: React.FC<ChartProps> = memo(
       Animated.timing(headerScaleAnim, {
         toValue: 1,
         duration: 150,
-        useNativeDriver: true
+        useNativeDriver: true,
       }).start();
     }, [headerScaleAnim]);
 
@@ -431,21 +438,25 @@ const Chart: React.FC<ChartProps> = memo(
           Conteneur principal avec un z-index qui garantit que le header reste au-dessus,
           et sans marge qui pourrait causer des problèmes d'alignement
         */}
-        <View style={{ position: 'relative', zIndex: 1 }}>
+        <View style={{ position: "relative", zIndex: 1 }}>
           {/* En-tête de section avec design moderne et fusion visuelle quand ouvert */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.headerContainer,
               {
-                backgroundColor: isStatsVisible ? EXPANDED_BACKGROUND : COLLAPSED_BACKGROUND,
+                backgroundColor: isStatsVisible
+                  ? EXPANDED_BACKGROUND
+                  : COLLAPSED_BACKGROUND,
                 borderBottomLeftRadius: isStatsVisible ? 0 : 20,
                 borderBottomRightRadius: isStatsVisible ? 0 : 20,
                 transform: [{ scale: headerScaleAnim }],
-
+                // Ombres uniquement quand fermé
                 // Bordure inférieure invisible pour éviter toute ligne de séparation
                 borderBottomWidth: isStatsVisible ? 1 : 0,
-                borderBottomColor: isStatsVisible ? EXPANDED_BACKGROUND : 'transparent',
-              }
+                borderBottomColor: isStatsVisible
+                  ? EXPANDED_BACKGROUND
+                  : "transparent",
+              },
             ]}
           >
             <Pressable
@@ -467,7 +478,7 @@ const Chart: React.FC<ChartProps> = memo(
                   <View>
                     <Text style={styles.title}>Statistiques</Text>
                     <Text style={styles.subtitle}>
-                      Recensées à {formattedCommune || "la ville"}
+                      Incidents recensés cette année
                     </Text>
                   </View>
                 </View>
@@ -484,11 +495,11 @@ const Chart: React.FC<ChartProps> = memo(
                       <Text style={styles.countText}>{totalReports}</Text>
                     </Animated.View>
                   )}
-                  
-                  <Animated.View 
+
+                  <Animated.View
                     style={[
                       styles.arrowContainer,
-                      { transform: [{ rotate: arrowRotation }] }
+                      { transform: [{ rotate: arrowRotation }] },
                     ]}
                   >
                     <Text style={styles.arrowIcon}>⌄</Text>
@@ -504,7 +515,7 @@ const Chart: React.FC<ChartProps> = memo(
             un véritable effet de fusion sans aucune marge visible
           */}
           {isStatsVisible && (
-            <View 
+            <View
               style={[
                 styles.sectionContentContainer,
                 {
@@ -512,7 +523,7 @@ const Chart: React.FC<ChartProps> = memo(
                   // Pas de bordure supérieure pour une fusion parfaite
                   borderTopWidth: 0,
                   zIndex: 0, // En dessous du header
-                }
+                },
               ]}
             >
               <LinearGradient
@@ -533,7 +544,7 @@ const Chart: React.FC<ChartProps> = memo(
                         elevation: 2,
                       },
                     }),
-                  }
+                  },
                 ]}
               >
                 {/* Message si aucune donnée n'est disponible */}
@@ -556,7 +567,13 @@ const Chart: React.FC<ChartProps> = memo(
                     >
                       <View style={styles.chartWrapper}>
                         {chartType === "BarChart" ? (
-                          <View style={{ alignItems: "center", width: "100%", marginRight : 20 }}>
+                          <View
+                            style={{
+                              alignItems: "center",
+                              width: "100%",
+                              marginRight: 20,
+                            }}
+                          >
                             <BarChart
                               data={{
                                 labels: data.labels,
@@ -591,8 +608,7 @@ const Chart: React.FC<ChartProps> = memo(
                           <View
                             style={{
                               width: "100%",
-                              alignItems: "center" // Centrer le graphique
-                              
+                              alignItems: "center", // Centrer le graphique
                             }}
                           >
                             <PieChart
@@ -639,7 +655,9 @@ const Chart: React.FC<ChartProps> = memo(
                       <Text style={styles.summaryTitle}>
                         Légende des signalements
                       </Text>
-                      <View style={styles.summaryList}>{generateSummary()}</View>
+                      <View style={styles.summaryList}>
+                        {generateSummary()}
+                      </View>
                     </View>
                   </>
                 )}
@@ -657,7 +675,7 @@ const styles = StyleSheet.create<ChartStyles>({
   container: {
     marginVertical: 5,
     marginHorizontal: 0, // Pas de marge horizontale pour le conteneur principal
-    position: 'relative',
+    position: "relative",
   },
   headerContainer: {
     borderRadius: 20,
@@ -787,7 +805,7 @@ const styles = StyleSheet.create<ChartStyles>({
   },
   chartWrapper: {
     width: "100%",
-    alignItems: "center", 
+    alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent", // Transparent pour se fondre avec le fond parent
     overflow: "hidden",
@@ -798,19 +816,19 @@ const styles = StyleSheet.create<ChartStyles>({
   },
   switchButtonContainer: {
     marginBottom: 20,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   switchButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
   },
   switchButtonText: {
-    color: '#3498db',
+    color: "#3498db",
     fontSize: 14,
     fontWeight: "400",
-    textDecorationLine: 'underline',
-    textDecorationColor: 'rgba(52, 152, 219, 0.4)',
+    textDecorationLine: "underline",
+    textDecorationColor: "rgba(52, 152, 219, 0.4)",
   },
   summaryContainer: {
     marginTop: 10,
@@ -823,8 +841,7 @@ const styles = StyleSheet.create<ChartStyles>({
     color: THEME.text,
     textAlign: "center",
   },
-  summaryList: {
-  },
+  summaryList: {},
   summaryItem: {
     borderRadius: 50,
     overflow: "hidden",

@@ -102,31 +102,31 @@ export const useNearbyReports = (latitude: number | undefined, longitude: number
       name: "danger",
       label: "Danger",
       icon: "alert-circle-outline",
-      color: "#FF4C4C",
+      color: "#92281F",
     },
     {
       name: "travaux",
       label: "Travaux",
       icon: "construct-outline",
-      color: "#FFA500",
+      color: "#DD8E31",
     },
     {
       name: "nuisance",
       label: "Nuisance",
       icon: "volume-high-outline",
-      color: "#B4A0E5",
+      color: "#8655AB",
     },
     {
       name: "reparation",
-      label: "Réparation",
+      label: "Maintenance",
       icon: "hammer-outline",
-      color: "#33C2FF",
+      color: "#345995",
     },
     {
       name: "pollution",
       label: "Pollution",
       icon: "leaf-outline",
-      color: "#32CD32",
+      color: "#2E7D6E",
     },
   ], []);
 

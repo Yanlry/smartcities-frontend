@@ -1,4 +1,4 @@
-// src/components/Calendar/CustomCalendar.tsx
+// Chemin: components/home/EventsSection/CustomCalendar.tsx
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
@@ -8,18 +8,22 @@ import {
   StyleSheet, 
   FlatList,
   Dimensions, 
-  ViewStyle,
-  TextStyle
+  LayoutAnimation,
+  Platform,
+  UIManager
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+
+// Activer LayoutAnimation pour Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // Constants
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DAYS_IN_WEEK = 7;
 const CALENDAR_WIDTH = Math.min(SCREEN_WIDTH - 40, 340);
 const DAY_SIZE = Math.floor(CALENDAR_WIDTH / DAYS_IN_WEEK) - 4;
-const EVENT_MARKER_COLOR = '#76FF03';
-const EVENT_MARKER_BORDER = '#4CAF50';
 
 // Types
 interface CalendarProps {
@@ -27,7 +31,7 @@ interface CalendarProps {
   markedDates?: Record<string, boolean>;
   onDateSelected: (date: Date) => void;
   selectedDate?: Date | null;
-  onMonthChange?: (year: number, month: number) => void;  // <-- nouvelle prop
+  onMonthChange?: (year: number, month: number) => void;
 }
 
 // Helper Functions
@@ -90,9 +94,6 @@ const MONTHS = [
 
 /**
  * Composant calendrier personnalisé avec une prise en charge fiable du marquage des dates
- * 
- * @param props Les propriétés du composant
- * @returns Composant React
  */
 const CustomCalendar: React.FC<CalendarProps> = ({
   initialDate = new Date(),
@@ -116,34 +117,56 @@ const CustomCalendar: React.FC<CalendarProps> = ({
   const today = useMemo(() => new Date(), []);
   const todayString = useMemo(() => normalizeDate(today), [today]);
   
-  // Handlers
-  const handlePrevMonth = useCallback(() => {
-    setCurrentDate(prev => {
-      if (prev.month === 0) {
-        return { year: prev.year - 1, month: 11 };
-      }
-      return { ...prev, month: prev.month - 1 };
-    });
-  }, []);
-  
-  const handleNextMonth = useCallback(() => {
-    setCurrentDate(prev => {
-      if (prev.month === 11) {
-        return { year: prev.year + 1, month: 0 };
-      }
-      return { ...prev, month: prev.month + 1 };
-    });
-  }, []);
-  
-  const handleDatePress = useCallback((date: Date) => {
-    onDateSelected(date);
-  }, [onDateSelected]);
 
+  // Notification initiale du mois actuel
   useEffect(() => {
     if (onMonthChange) {
       onMonthChange(currentDate.year, currentDate.month);
     }
-  }, [currentDate.year, currentDate.month]);
+  }, []);
+
+  // Handlers
+  const handlePrevMonth = useCallback(() => {
+    LayoutAnimation.configureNext({
+      duration: 200,
+      update: { type: 'easeInEaseOut' }
+    });
+    
+    setCurrentDate(prev => {
+      const newMonth = prev.month === 0 ? 11 : prev.month - 1;
+      const newYear = prev.month === 0 ? prev.year - 1 : prev.year;
+      
+      // Notifier le parent du changement de mois
+      if (onMonthChange) {
+        onMonthChange(newYear, newMonth);
+      }
+      
+      return { year: newYear, month: newMonth };
+    });
+  }, [onMonthChange]);
+  
+  const handleNextMonth = useCallback(() => {
+    LayoutAnimation.configureNext({
+      duration: 200,
+      update: { type: 'easeInEaseOut' }
+    });
+    
+    setCurrentDate(prev => {
+      const newMonth = prev.month === 11 ? 0 : prev.month + 1;
+      const newYear = prev.month === 11 ? prev.year + 1 : prev.year;
+      
+      // Notifier le parent du changement de mois
+      if (onMonthChange) {
+        onMonthChange(newYear, newMonth);
+      }
+      
+      return { year: newYear, month: newMonth };
+    });
+  }, [onMonthChange]);
+  
+  const handleDatePress = useCallback((date: Date) => {
+    onDateSelected(date);
+  }, [onDateSelected]);
   
   // Render item for calendar day
   const renderDay = useCallback(({ item }: { item: {date: Date | null, isCurrentMonth: boolean} }) => {
@@ -188,7 +211,11 @@ const CustomCalendar: React.FC<CalendarProps> = ({
     <View style={styles.container}>
       {/* Header with month navigation */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handlePrevMonth} style={styles.navButton}>
+        <TouchableOpacity 
+          onPress={handlePrevMonth} 
+          style={styles.navButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <MaterialIcons name="chevron-left" size={24} color="#333" />
         </TouchableOpacity>
         
@@ -196,7 +223,11 @@ const CustomCalendar: React.FC<CalendarProps> = ({
           {`${MONTHS[currentDate.month]} ${currentDate.year}`}
         </Text>
         
-        <TouchableOpacity onPress={handleNextMonth} style={styles.navButton}>
+        <TouchableOpacity 
+          onPress={handleNextMonth} 
+          style={styles.navButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <MaterialIcons name="chevron-right" size={24} color="#333" />
         </TouchableOpacity>
       </View>
@@ -221,7 +252,7 @@ const CustomCalendar: React.FC<CalendarProps> = ({
         initialNumToRender={42} // Show all days at once
       />
       
-      {/* Legend for marked dates */}
+      {/* Legend for marked dates - amélioré pour plus de visibilité */}
       <View style={styles.legend}>
         <View style={styles.legendItemContainer}>
           <View style={styles.legendMarker} />
@@ -256,6 +287,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 18,
+    backgroundColor: '#F7F9FC',
   },
   weekdaysContainer: {
     flexDirection: 'row',
@@ -308,9 +340,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   markedDayContainer: {
-    backgroundColor: EVENT_MARKER_COLOR,
-    borderWidth: 2,
-    borderColor: EVENT_MARKER_BORDER,
+    // Style amélioré pour rendre les marqueurs plus visibles
+    backgroundColor: 'rgba(118, 255, 3, 0.2)',
   },
   markedDayText: {
     color: '#1B5E20',
@@ -322,29 +353,34 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: EVENT_MARKER_BORDER,
+    backgroundColor: '#4CAF50',
+    borderWidth: 1,
+    borderColor: 'white',
   },
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',
     paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 5,
   },
   legendItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 5,
   },
   legendMarker: {
     width: 12,
     height: 12,
-    backgroundColor: EVENT_MARKER_COLOR,
-    borderWidth: 1,
-    borderColor: EVENT_MARKER_BORDER,
+    backgroundColor: '#4CAF50',
     borderRadius: 6,
-    marginRight: 6,
+    marginRight: 8,
   },
   legendText: {
     fontSize: 12,
     color: '#4A5568',
+    fontWeight: '500',
   }
 });
 

@@ -1,4 +1,4 @@
-// src/components/EventCalendar/EventCalendar.tsx
+// Chemin: components/home/EventsSection/EventCalendar.tsx
 
 import React, { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react';
 import { 
@@ -13,14 +13,13 @@ import {
   UIManager,
   ScrollView,
   Pressable,
-  ViewStyle,
-  TextStyle
+  NativeScrollEvent,
+  NativeSyntheticEvent
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Event } from './event.types';
 import CustomCalendar from './CustomCalendar';
-
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -29,6 +28,12 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 // Constants
 const LIGHT_BLUE_BACKGROUND = '#F0F7FF';
+// Dégradé blanc élégant pour les événements sélectionnés
+const SELECTED_EVENT_GRADIENT_START = '#FFFFFF';
+const SELECTED_EVENT_GRADIENT_END = '#FFFFFF';
+// Dégradé standard maintenu pour les événements normaux
+const NORMAL_EVENT_GRADIENT_START = '#f6f8fa';
+const NORMAL_EVENT_GRADIENT_END = '#e8f0fe';
 
 /**
  * Fonction utilitaire pour normaliser les dates
@@ -40,13 +45,18 @@ const normalizeDate = (dateInput: string | Date): string => {
 
 /**
  * Composant pour afficher un événement individuel
+ * @param event - L'événement à afficher
+ * @param onPress - Fonction appelée lors du clic sur l'événement
+ * @param isSelected - Indique si l'événement est dans un jour sélectionné
  */
 const EventItem = memo(({ 
   event, 
-  onPress 
+  onPress,
+  isSelected = true // Par défaut, tous les événements sont "sélectionnés" pour avoir le même style
 }: { 
   event: Event, 
-  onPress: (id: string) => void 
+  onPress: (id: string) => void,
+  isSelected?: boolean
 }) => {
   const eventScaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -73,6 +83,11 @@ const EventItem = memo(({
     month: 'long'
   });
   const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+  
+  // Déterminer les couleurs du gradient en fonction de l'état de sélection
+  const gradientColors: [string, string] = isSelected 
+    ? [SELECTED_EVENT_GRADIENT_START, SELECTED_EVENT_GRADIENT_END]
+    : [NORMAL_EVENT_GRADIENT_START, NORMAL_EVENT_GRADIENT_END];
 
   return (
     <Animated.View 
@@ -82,7 +97,10 @@ const EventItem = memo(({
       ]}
     >
       <TouchableOpacity
-        style={styles.eventItem}
+        style={[
+          styles.eventItem,
+          isSelected && styles.selectedEventItem
+        ]}
         onPress={() => onPress(event.id)}
         activeOpacity={0.9}
         onPressIn={handleEventPressIn}
@@ -90,24 +108,58 @@ const EventItem = memo(({
       >
         <View style={styles.eventInfo}>
           <View style={styles.eventDateContainer}>
-            <View style={styles.dateCircle}>
-              <Text style={styles.dateDay}>{eventDate.getDate()}</Text>
-              <Text style={styles.dateMonth}>
+            <View style={[
+              styles.dateCircle,
+              isSelected && styles.selectedDateCircle
+            ]}>
+              <Text style={[
+                styles.dateDay,
+                isSelected && styles.selectedDateText
+              ]}>
+                {eventDate.getDate()}
+              </Text>
+              <Text style={[
+                styles.dateMonth,
+                isSelected && styles.selectedDateText
+              ]}>
                 {eventDate.toLocaleDateString("fr-FR", { month: 'short' })}
               </Text>
             </View>
           </View>
           <View style={styles.eventDetails}>
-            <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
-            <Text style={styles.eventDate}>{capitalizedDate}</Text>
+            <Text 
+              style={[
+                styles.eventTitle,
+                isSelected && styles.selectedEventText
+              ]} 
+              numberOfLines={1}
+            >
+              {event.title}
+            </Text>
+            <Text 
+              style={[
+                styles.eventDate,
+                isSelected && styles.selectedEventDateText
+              ]}
+            >
+              {capitalizedDate}
+            </Text>
             <View style={styles.locationContainer}>
               <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.eventLocation} numberOfLines={1}>{event.location}</Text>
+              <Text 
+                style={[
+                  styles.eventLocation,
+                  isSelected && styles.selectedEventText
+                ]} 
+                numberOfLines={1}
+              >
+                {event.location}
+              </Text>
             </View>
           </View>
         </View>
         <LinearGradient
-          colors={['#f6f8fa', '#e8f0fe']}
+          colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.eventGradient}
@@ -127,6 +179,8 @@ interface EventCalendarProps {
   isVisible: boolean;
   toggleVisibility: () => void;
   cityName?: string;
+  getEventsForMonth?: (year: number, month: number) => Event[];
+  getMarkedDatesForMonth?: (year: number, month: number) => Record<string, boolean>;
 }
 
 /**
@@ -138,7 +192,9 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
   onEventPress,
   isVisible,
   toggleVisibility,
-  cityName = "Haubourdin"
+  cityName = "Haubourdin",
+  getEventsForMonth,
+  getMarkedDatesForMonth
 }) => {
   // État et Refs
   const rotateAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
@@ -149,10 +205,49 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // Préparer les dates marquées pour le calendrier
-  const markedDates = useMemo(() => {
-    const dates: Record<string, boolean> = {};
+  // Refs pour le scroll
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isNearTopRef = useRef(true);
+  const isNearBottomRef = useRef(false);
+  
+  // Animation de pulsation pour le badge - SANS condition pour pulser même à zéro
+  useEffect(() => {
+    // Configuration de l'animation de pulsation sans condition
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(badgePulse, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.sin),
+        }),
+        Animated.timing(badgePulse, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.sin),
+        }),
+      ])
+    );
     
+    // Démarrer l'animation immédiatement
+    pulseAnimation.start();
+    
+    // Nettoyage lors du démontage du composant
+    return () => {
+      pulseAnimation.stop();
+    };
+  }, [badgePulse]); // Seulement dépendant de badgePulse
+  
+  // Préparer les dates marquées pour le calendrier à partir de getMarkedDatesForMonth
+  const markedDates = useMemo(() => {
+    if (getMarkedDatesForMonth) {
+      const dates = getMarkedDatesForMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+      return dates;
+    }
+    
+    // Fallback si getMarkedDatesForMonth n'est pas disponible
+    const dates: Record<string, boolean> = {};
     events.forEach(event => {
       const eventDate = new Date(event.date);
       if (
@@ -164,9 +259,8 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
       }
     });
     
-    console.log(`[EventCalendar] Dates marquées: ${Object.keys(dates).length}`);
     return dates;
-  }, [events, currentMonth]);
+  }, [events, currentMonth, getMarkedDatesForMonth]);
 
   // Rotation pour l'animation de la flèche
   const arrowRotation = rotateAnim.interpolate({
@@ -174,10 +268,32 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
     outputRange: ['0deg', '180deg']
   });
 
-  // Filtrer les événements pour la date sélectionnée
+  // Vérification des limites de défilement
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const contentHeight = event.nativeEvent.contentSize.height;
+    const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
+    
+    // Définir un seuil pour détecter quand nous sommes proches des limites
+    const threshold = 20; // pixels
+    
+    isNearTopRef.current = offsetY < threshold;
+    isNearBottomRef.current = contentHeight > 0 && 
+                             scrollViewHeight > 0 && 
+                             offsetY + scrollViewHeight >= contentHeight - threshold;
+  }, []);
+
+  // Filtrer les événements pour la date sélectionnée ou obtenir tous les événements du mois
   useEffect(() => {
+    // Utiliser LayoutAnimation pour une transition fluide
+    LayoutAnimation.configureNext({
+      duration: 300,
+      create: { type: 'easeInEaseOut', property: 'opacity' },
+      update: { type: 'easeInEaseOut', property: 'opacity' }
+    });
+    
     if (selectedDate) {
-      const selectedDateStr = normalizeDate(selectedDate.toISOString());
+      const selectedDateStr = normalizeDate(selectedDate);
       
       const filtered = events.filter(event => {
         const eventDateStr = normalizeDate(event.date);
@@ -186,52 +302,26 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
       
       setFilteredEvents(filtered);
     } else {
-      const filtered = events.filter(event => {
-        const eventDate = new Date(event.date);
-        return (
-          eventDate.getFullYear() === currentMonth.getFullYear() &&
-          eventDate.getMonth() === currentMonth.getMonth()
-        );
-      });
-      setFilteredEvents(filtered);
-    }
-  }, [selectedDate, events, currentMonth]);
-
-  // Animation de pulsation pour le badge
-  useEffect(() => {
-    if (events.length > 0) {
-      const pulseAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(badgePulse, {
-            toValue: 1.1,
-            duration: 1000,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.sin),
-          }),
-          Animated.timing(badgePulse, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.sin),
-          }),
-        ])
-      );
+      // Si aucune date n'est sélectionnée, afficher tous les événements du mois
+      const monthEvents = getEventsForMonth 
+        ? getEventsForMonth(currentMonth.getFullYear(), currentMonth.getMonth()) 
+        : events.filter(event => {
+            const eventDate = new Date(event.date);
+            return (
+              eventDate.getFullYear() === currentMonth.getFullYear() &&
+              eventDate.getMonth() === currentMonth.getMonth()
+            );
+          });
       
-      pulseAnimation.start();
-      
-      return () => {
-        pulseAnimation.stop();
-      };
+      setFilteredEvents(monthEvents);
     }
-  }, [events.length, badgePulse]);
+  }, [selectedDate, events, currentMonth, getEventsForMonth]);
 
   // Animation lors du changement de visibilité
   useEffect(() => {
     LayoutAnimation.configureNext({
       duration: 300,
-      update: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-      },
+      update: { type: LayoutAnimation.Types.easeInEaseOut },
     });
     
     Animated.timing(rotateAnim, {
@@ -267,12 +357,22 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
 
   // Gestion du changement de date
   const handleDateChange = useCallback((date: Date) => {
+    // Animation fluide lors du changement de date
+    LayoutAnimation.configureNext({
+      duration: 250,
+      update: { type: 'easeInEaseOut', property: 'opacity' }
+    });
+    
     setSelectedDate(date);
-    onDateChange(normalizeDate(date.toISOString()));
+    onDateChange(normalizeDate(date));
   }, [onDateChange]);
 
+  // Gestion du changement de mois
   const handleMonthChange = useCallback((year: number, month: number) => {
     setCurrentMonth(new Date(year, month, 1));
+    
+    // Réinitialiser la date sélectionnée lors du changement de mois
+    setSelectedDate(null);
   }, []);
 
   return (
@@ -311,22 +411,22 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
                 <View>
                   <Text style={styles.title}>Calendrier</Text>
                   <Text style={styles.subtitle}>
-                    Événements prévus à {cityName}
+                    Événements prévus ce mois
                   </Text>
                 </View>
               </View>
 
               <View style={styles.headerControls}>
-                {filteredEvents.length > 0 && (
-                  <Animated.View
-                    style={[
-                      styles.countBadge,
-                      { transform: [{ scale: badgePulse }] },
-                    ]}
-                  >
-                    <Text style={styles.countText}>{filteredEvents.length}</Text>
-                  </Animated.View>
-                )}
+                {/* Badge toujours visible avec animation de pulsation */}
+                <Animated.View
+                  style={[
+                    styles.countBadge,
+                    filteredEvents.length === 0 && styles.emptyCountBadge,
+                    { transform: [{ scale: badgePulse }] }
+                  ]}
+                >
+                  <Text style={styles.countText}>{filteredEvents.length}</Text>
+                </Animated.View>
 
                 <Animated.View
                   style={[
@@ -356,7 +456,7 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
             <View style={styles.calendarContainer}>
               {/* Utilisation du calendrier personnalisé */}
               <CustomCalendar
-                initialDate={new Date()}
+                initialDate={currentMonth}
                 markedDates={markedDates}
                 onDateSelected={handleDateChange}
                 selectedDate={selectedDate}
@@ -371,18 +471,29 @@ const EventCalendar: React.FC<EventCalendarProps> = memo(({
                   : "Tous les événements"}
               </Text>
               {filteredEvents.length > 0 ? (
-                <ScrollView 
-                  style={styles.eventsScrollView}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {filteredEvents.map((event) => (
-                    <EventItem 
-                      key={event.id} 
-                      event={event} 
-                      onPress={onEventPress} 
-                    />
-                  ))}
-                </ScrollView>
+                <View style={styles.eventsScrollContainer}>
+                  <ScrollView 
+                    ref={scrollViewRef}
+                    style={styles.eventsScrollView}
+                    contentContainerStyle={styles.eventsScrollContent}
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled={true}
+                    scrollEventThrottle={16}
+                    onScroll={handleScroll}
+                    bounces={false}
+                  >
+                    {filteredEvents.map((event) => (
+                      <EventItem 
+                        key={event.id} 
+                        event={event} 
+                        onPress={onEventPress}
+                        isSelected={true}
+                      />
+                    ))}
+                    {/* Espace supplémentaire en bas pour permettre un défilement fluide */}
+                    <View style={styles.scrollEndSpacer} />
+                  </ScrollView>
+                </View>
               ) : (
                 <View style={styles.noEventsContainer}>
                   <View style={styles.emptyIconContainer}>
@@ -490,6 +601,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
+  emptyCountBadge: {
+    backgroundColor: "#3a7bd5", // Conserver la même couleur pour la cohérence
+  },
   countText: {
     color: "white",
     fontSize: 14,
@@ -524,6 +638,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   eventsListContainer: {
+    width: '100%',
     marginBottom: 5,
   },
   eventsListTitle: {
@@ -533,11 +648,36 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
+  eventsScrollContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: LIGHT_BLUE_BACKGROUND,
+    maxHeight: 370, // Légèrement réduit pour assurer la visibilité au-delà
+  },
   eventsScrollView: {
-    maxHeight: 400,
+    backgroundColor: LIGHT_BLUE_BACKGROUND,
+    paddingHorizontal: 8,
+  },
+  eventsScrollContent: {
+    paddingVertical: 8,
+    paddingBottom: 16,
+  },
+  scrollEndSpacer: {
   },
   eventItemContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(0, 0, 0, 0.1)",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 1,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   eventItem: {
     backgroundColor: '#fff',
@@ -549,6 +689,31 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     position: 'relative',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.03)',
+  },
+  selectedEventItem: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  selectedDateCircle: {
+    backgroundColor: '#F0F8FF', // Bleu très pâle
+    borderWidth: 2,
+    borderColor: '#3a7bd5', // Bordure bleue pour marquer la sélection
+  },
+  selectedDateText: {
+    color: '#3a7bd5', // Maintient la cohérence avec la couleur principale
+    fontWeight: '700',
+  },
+  selectedEventText: {
+    color: '#333333', // Texte foncé sur fond blanc pour lisibilité
+    fontWeight: '700', // Plus gras pour emphase
+  },
+  selectedEventDateText: {
+    color: '#666666', // Gris moyen pour la date
   },
   eventGradient: {
     position: 'absolute',

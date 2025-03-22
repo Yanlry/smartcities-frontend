@@ -86,7 +86,7 @@ export const COLORS = {
       opacity: "rgba(39, 116, 107, 0.1)" // Pour overlays et backgrounds subtils
     },
     reparation: {
-      main: "#156CB3",     // Bleu technique fiable
+      main: "#345995",     // Bleu technique fiable
       light: "#D8E8F6",    // Fond pour cartes réparation
       dark: "#0E4F82",     // Accentuation et contraste
       opacity: "rgba(21, 108, 179, 0.1)" // Pour overlays et backgrounds subtils
