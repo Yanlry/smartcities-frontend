@@ -9,26 +9,23 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  PanResponder,
-  StatusBar,
-  LayoutAnimation,
+  FlatList,
+  ViewToken,
   Platform,
-  UIManager,
-  ScrollView,
 } from 'react-native';
 import { FeaturedEvent } from './event.types';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
-// Configuration pour les animations LayoutAnimation sur Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// Approche de centrage mathématiquement précis
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH * 0.85;
+const VISIBLE_CARDS = 1.15; // Voir légèrement la carte suivante
+const ITEM_WIDTH = SCREEN_WIDTH / VISIBLE_CARDS;
+const SPACING = (ITEM_WIDTH - CARD_WIDTH) / 2;
+const OFFSET_DISTANCE = ITEM_WIDTH;
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const IS_IPHONE_X = Platform.OS === 'ios' && (SCREEN_HEIGHT >= 812 || SCREEN_WIDTH >= 812);
-const STATUS_BAR_HEIGHT = Platform.OS === 'ios' ? (IS_IPHONE_X ? 44 : 20) : StatusBar.currentHeight || 0;
-
-// Types d'état de carte personnalisés
+// Types d'état de carte
 type CardState = 'compressed' | 'expanded';
 
 interface FeaturedEventsProps {
@@ -39,62 +36,193 @@ interface FeaturedEventsProps {
 }
 
 /**
- * Composant Glass UI optimisé pour arrière-plan clair
- * @param props Options de personnalisation visuelles
+ * CardItem - Le composant de carte individuelle
  */
-const GlassContainer = memo(({ 
-  style, 
-  intensity = 40, 
-  tint = 'light', 
-  children 
-}: { 
-  style?: any; 
-  intensity?: number; 
-  tint?: 'light' | 'dark'; 
-  children: React.ReactNode;
-}) => {
-  // Optimisation des calculs de transparence
-  const opacity = useMemo(() => Math.min(intensity / 100, 0.85), [intensity]);
+const CardItem: React.FC<{
+  item: FeaturedEvent;
+  index: number;
+  activeIndex: number;
+  onPress: (id: string) => void;
+  isExpanded: boolean;
+  onToggleExpand: (id: string) => void;
+}> = memo(({ item, index, activeIndex, onPress, isExpanded, onToggleExpand }) => {
+  // Animations
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const expandAnim = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
   
-  // Couleurs adaptées pour fond clair
-  const backgroundColor = tint === 'light' 
-    ? `rgba(255, 255, 255, ${opacity})` 
-    : `rgba(30, 30, 30, ${opacity})`;
+  // Animation d'entrée
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, []);
   
-  const borderColor = tint === 'light' 
-    ? 'rgba(0, 0, 0, 0.06)' 
-    : 'rgba(255, 255, 255, 0.08)';
+  // Animation d'expansion
+  useEffect(() => {
+    Animated.timing(expandAnim, {
+      toValue: isExpanded ? 1 : 0,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [isExpanded]);
   
-  // Effet d'ombre adapté pour fond clair
-  const shadowProps = tint === 'light' 
-    ? {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      }
-    : {};
+  // Hauteur dynamique du contenu étendu
+  const expandedHeight = expandAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 120],
+  });
+  
+  // Opacité du contenu étendu
+  const expandedOpacity = expandAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.5, 1],
+  });
+  
+  // Opacité supplémentaire pour l'overlay quand le contenu est étendu
+  const overlayOpacity = expandAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.5], // Ajoute jusqu'à 50% d'opacité noire supplémentaire quand étendu
+  });
+  
+  const isActive = index === activeIndex;
+  
+  // Calculer les styles basés sur l'état actif
+  const cardStyle = {
+    opacity: isActive ? 1 : 0.8,
+    transform: [
+      { scale: scaleAnim },
+      { translateY: isActive ? -5 : 0 }
+    ],
+  };
+  
+  // Catégorie dynamique pour la démonstration
+  const categories = ['Tendance', 'Populaire', 'Nouveau', 'À la une'];
+  const icons: Array<'trending-up' | 'star' | 'fiber-new' | 'featured-play-list'> = ['trending-up', 'star', 'fiber-new', 'featured-play-list'];
+  const categoryIndex = index % categories.length;
   
   return (
-    <View style={[
-      {
-        backgroundColor,
-        borderColor,
-        borderWidth: 0.5,
-        overflow: 'hidden',
-        ...shadowProps,
-      },
-      style,
-    ]}>
-      {children}
-    </View>
+    <Animated.View style={[styles.cardContainer, cardStyle]}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.cardImage}
+        resizeMode="cover"
+      />
+      
+      {/* Overlay gradient de base */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
+        locations={[0.4, 0.75, 1]}
+        style={styles.cardOverlay}
+      />
+      
+      {/* Overlay supplémentaire contrôlé par l'animation */}
+      <Animated.View 
+        style={[
+          styles.cardOverlay, 
+          { 
+            backgroundColor: 'black',
+            opacity: overlayOpacity 
+          }
+        ]}
+      />
+      
+      {/* Badge de catégorie */}
+      <View style={styles.categoryBadgeContainer}>
+        <LinearGradient
+          colors={['#7C4DFF', '#5E35B1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.categoryBadge}
+        >
+          <MaterialIcons
+            name={icons[categoryIndex]}
+            size={14}
+            color="#FFFFFF"
+            style={{ marginRight: 4 }}
+          />
+          <Text style={styles.categoryText}>{categories[categoryIndex]}</Text>
+        </LinearGradient>
+      </View>
+      
+      {/* Contenu de la carte */}
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>{item.title}</Text>
+        
+        {/* Contenu extensible */}
+        <Animated.View
+          style={[
+            styles.expandedContent,
+            { height: expandedHeight, opacity: expandedOpacity }
+          ]}
+        >
+          <Text style={styles.cardDescription}>
+            Découvrez cet événement exceptionnel qui vous fera vivre 
+            des moments inoubliables.
+          </Text>
+          
+          <View style={styles.metaContainer}>
+            <View style={styles.metaItem}>
+              <MaterialIcons name="location-on" size={16} color="white" style={{ marginRight: 4 }} />
+              <Text style={styles.metaText}>Paris, France</Text>
+            </View>
+            
+            <View style={styles.metaItem}>
+              <MaterialIcons name="access-time" size={16} color="white" style={{ marginRight: 4 }} />
+              <Text style={styles.metaText}>19:00</Text>
+            </View>
+          </View>
+        </Animated.View>
+        
+        {/* Actions */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={styles.expandButton}
+            onPress={() => onToggleExpand(item.id)}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)']}
+              style={styles.expandButtonGradient}
+            >
+              <Text style={styles.expandButtonText}>
+                {isExpanded ? 'Voir moins' : 'Voir plus'}
+              </Text>
+              <MaterialIcons
+                name={isExpanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                size={16}
+                color="white"
+                style={{ marginLeft: 4 }}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.detailsButton}
+            onPress={() => onPress(item.id)}
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={['#7C4DFF', '#3A0CA3']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.detailsButtonGradient}
+            >
+              <Text style={styles.detailsButtonText}>Détails</Text>
+              <MaterialIcons name="arrow-forward" size={16} color="white" style={{ marginLeft: 4 }} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Animated.View>
   );
 });
 
 /**
- * Composant FeaturedEvents redesigné avec un style glassmorphique sur fond clair
- * Adapté pour être lisible et esthétique sur un arrière-plan clair
+ * FeaturedEvents - Implémentation de carrousel centré optimisé
  */
 const FeaturedEvents: React.FC<FeaturedEventsProps> = memo(({
   events,
@@ -102,390 +230,214 @@ const FeaturedEvents: React.FC<FeaturedEventsProps> = memo(({
   error,
   onEventPress
 }) => {
-  // Animations et états
+  // États et références
   const [activeIndex, setActiveIndex] = useState(0);
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
   const scrollX = useRef(new Animated.Value(0)).current;
-  const animatedValue = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  // Animation d'entrée optimisée
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true
-    }).start();
-  }, []);
-
-  // Gestion du changement d'index actif
-  const handleScrollEnd = useCallback((event: any) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(contentOffsetX / (SCREEN_WIDTH * 0.85));
-    setActiveIndex(newIndex);
-  }, []);
-
-  // Toggle optimisé pour les états de carte
+  const flatListRef = useRef<FlatList>(null);
+  
+  // Gestion des états d'expansion des cartes
   const toggleCardState = useCallback((id: string) => {
-    LayoutAnimation.configureNext({
-      duration: 250,
-      update: { type: 'easeInEaseOut', property: 'opacity' },
-    });
-    
     setCardStates(prev => {
       const currentState = prev[id] || 'compressed';
       return {
         ...prev,
-        [id]: currentState === 'compressed' ? 'expanded' : 'compressed'
+        [id]: currentState === 'compressed' ? 'expanded' : 'compressed',
       };
     });
   }, []);
-
-  // PanResponder optimisé pour des mouvements fluides
-  const panResponder = useMemo(() => 
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 8;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        // Résistance progressive pour feedback haptique
-        const dampingFactor = 0.7;
-        const clampedDx = gestureState.dx * dampingFactor;
-        
-        Animated.event(
-          [null, { dx: animatedValue }],
-          { useNativeDriver: false }
-        )(_, { dx: clampedDx });
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > 60 && activeIndex > 0) {
-          // Swipe droite - précédent
-          scrollViewRef.current?.scrollTo({
-            x: (activeIndex - 1) * (SCREEN_WIDTH * 0.85),
-            animated: true
-          });
-          setActiveIndex(activeIndex - 1);
-        } else if (gestureState.dx < -60 && activeIndex < events.length - 1) {
-          // Swipe gauche - suivant
-          scrollViewRef.current?.scrollTo({
-            x: (activeIndex + 1) * (SCREEN_WIDTH * 0.85),
-            animated: true
-          });
-          setActiveIndex(activeIndex + 1);
-        }
-        
-        // Snap-back animation
-        Animated.spring(animatedValue, {
-          toValue: 0,
-          friction: 7,
-          tension: 40,
-          useNativeDriver: false
-        }).start();
-      }
-    }), [activeIndex, events.length]
+  
+  // Calcul de l'index actif basé sur le défilement
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
   );
-
-  // Rendu de l'indicateur d'état - Chargement
-  if (loading) {
+  
+  // Mise à jour de l'index actif lors du défilement
+  useEffect(() => {
+    const listener = scrollX.addListener(({ value }) => {
+      const index = Math.round(value / OFFSET_DISTANCE);
+      if (index !== activeIndex) {
+        setActiveIndex(index);
+      }
+    });
+    
+    return () => scrollX.removeListener(listener);
+  }, [activeIndex]);
+  
+  // Optimisation du positionnement des éléments
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: ITEM_WIDTH,
+    offset: ITEM_WIDTH * index,
+    index,
+  }), []);
+  
+  // Rendu des indicateurs de pagination
+  const renderPagination = useCallback(() => {
+    if (!events.length) return null;
+    
     return (
-      <Animated.View style={[styles.container, {opacity: fadeAnim}]}>
-        <View style={styles.centeredContent}>
-          <GlassContainer style={styles.loadingCard} intensity={70} tint="light">
-            <ActivityIndicator size="large" color="#4361EE" />
-            <Text style={styles.loadingText}>Chargement...</Text>
-          </GlassContainer>
-        </View>
-      </Animated.View>
-    );
-  }
-
-  // Rendu de l'indicateur d'état - Erreur
-  if (error) {
-    return (
-      <Animated.View style={[styles.container, {opacity: fadeAnim}]}>
-        <View style={styles.centeredContent}>
-          <GlassContainer style={styles.errorCard} intensity={70} tint="light">
-            <View style={styles.errorIcon}>
-              <Text style={styles.errorIconText}>!</Text>
-            </View>
-            <Text style={styles.errorTitle}>Connexion impossible</Text>
-            <Text style={styles.errorDescription}>{error}</Text>
-            <TouchableOpacity style={styles.actionButton}>
-              <LinearGradient
-                colors={['#4361EE', '#3A0CA3']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.buttonGradient}
-              >
-                <Text style={styles.buttonText}>Réessayer</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </GlassContainer>
-        </View>
-      </Animated.View>
-    );
-  }
-
-  // Rendu de l'indicateur d'état - Aucun événement
-  if (events.length === 0) {
-    return (
-      <Animated.View style={[styles.container, {opacity: fadeAnim}]}>
-        <View style={styles.centeredContent}>
-          <GlassContainer style={styles.emptyCard} intensity={70} tint="light">
-            <Text style={styles.emptyIcon}>🗓️</Text>
-            <Text style={styles.emptyTitle}>Aucun événement</Text>
-            <Text style={styles.emptyDescription}>
-              Pas d'événement prévu pour le moment.
-            </Text>
-            <TouchableOpacity style={styles.actionButton}>
-              <LinearGradient
-                colors={['#4361EE', '#3A0CA3']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.buttonGradient}
-              >
-                <Text style={styles.buttonText}>Explorer d'autres villes</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </GlassContainer>
-        </View>
-      </Animated.View>
-    );
-  }
-
-  return (
-    <Animated.View style={styles.container}>
-      {/* Indicateurs de progression */}
-      <View style={styles.progressContainer}>
-        {events.map((_, index) => (
-          <TouchableOpacity 
-            key={index} 
-            style={styles.progressTouch}
-            onPress={() => {
-              scrollViewRef.current?.scrollTo({
-                x: index * (SCREEN_WIDTH * 0.85),
-                animated: true
-              });
-              setActiveIndex(index);
-            }}
-          >
-            <View style={styles.progressBg}>
-              <View style={[
-                styles.progressFill, 
-                { 
-                  width: index <= activeIndex ? '100%' : 0,
-                  backgroundColor: index === activeIndex ? '#4361EE' : 'rgba(67, 97, 238, 0.5)'
-                }
-              ]} />
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Carrousel d'événements */}
-      <Animated.ScrollView
-        ref={scrollViewRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToInterval={SCREEN_WIDTH * 0.85}
-        snapToAlignment="center"
-        contentContainerStyle={styles.scrollContent}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        onMomentumScrollEnd={handleScrollEnd}
-        {...panResponder.panHandlers}
-      >
-        {events.map((item, index) => {
-          const cardState = cardStates[item.id] || 'compressed';
-          const isExpanded = cardState === 'expanded';
+      <View style={styles.paginationContainer}>
+        {events.map((_, index) => {
+          const isPrimary = index === activeIndex;
           
           return (
-            <Animated.View 
-              key={item.id} 
-              style={[
-                styles.eventCardWrapper,
-                {
-                  transform: [
-                    { translateX: animatedValue.interpolate({
-                      inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-                      outputRange: [50, 0, -50],
-                      extrapolate: 'clamp'
-                    }) }
-                  ]
-                }
-              ]}
+            <TouchableOpacity
+              key={index}
+              style={styles.paginationDotContainer}
+              onPress={() => {
+                flatListRef.current?.scrollToIndex({
+                  animated: true,
+                  index,
+                  viewPosition: 0.5,
+                });
+              }}
             >
-              {/* Carte non cliquable - image juste pour affichage */}
-              <View style={styles.cardTouchable}>
-                {/* Image de fond */}
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
-                
-                {/* Overlay pour meilleure lisibilité */}
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.9)']}
-                  style={styles.cardGradient}
-                  locations={[0, 0.6, 1]}
-                />
-                
-                {/* Badge de catégorie */}
-                <View style={styles.categoryContainer}>
-                  <GlassContainer style={styles.categoryBadge} intensity={60} tint="dark">
-                    <Text style={styles.categoryText}>
-                      {['Tendance', 'Populaire', 'Nouveau', 'À la une'][index % 4]}
-                    </Text>
-                  </GlassContainer>
-                </View>
-                
-                {/* Contenu de la carte */}
-                <View style={styles.cardContent}>
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>{item.title}</Text>
-                  </View>
-                  
-                  {/* Contenu extensible */}
-                  {isExpanded && (
-                    <Animated.View style={styles.expandedContent}>
-                      <Text style={styles.cardDescription}>
-                        Découvrez cet événement exceptionnel qui vous fera vivre 
-                        des moments inoubliables.
-                      </Text>
-                      
-                      <View style={styles.metaContainer}>
-                        <View style={styles.metaItem}>
-                          <Text style={styles.metaIcon}>📍</Text>
-                          <Text style={styles.metaText}>Paris, France</Text>
-                        </View>
-                        
-                        <View style={styles.metaItem}>
-                          <Text style={styles.metaIcon}>🕐</Text>
-                          <Text style={styles.metaText}>19:00</Text>
-                        </View>
-                      </View>
-                    </Animated.View>
-                  )}
-                  
-                  {/* Boutons d'action */}
-                  <View style={styles.actionContainer}>
-                    {/* Bouton Voir plus/Voir moins - maintenant cliquable pour toggle */}
-                    <TouchableOpacity 
-                      style={styles.secondaryButton}
-                      onPress={() => toggleCardState(item.id)}
-                    >
-                      <GlassContainer style={styles.secondaryButtonInner} intensity={60} tint="dark">
-                        <Text style={styles.secondaryButtonText}>
-                          {isExpanded ? 'Voir moins' : 'Voir plus'}
-                        </Text>
-                      </GlassContainer>
-                    </TouchableOpacity>
-                    
-                    {/* Bouton Détails - toujours "Détails" */}
-                    <TouchableOpacity 
-                      style={styles.primaryButton}
-                      onPress={() => onEventPress(item.id)}
-                    >
-                      <LinearGradient
-                        colors={['#4361EE', '#3A0CA3']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.primaryButtonGradient}
-                      >
-                        <Text style={styles.primaryButtonText}>
-                          Détails
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </Animated.View>
+              <View
+                style={[
+                  styles.paginationDot,
+                  isPrimary && styles.paginationDotActive,
+                  { width: isPrimary ? 24 : 8 }
+                ]}
+              />
+            </TouchableOpacity>
           );
         })}
-      </Animated.ScrollView>
-    </Animated.View>
+      </View>
+    );
+  }, [events, activeIndex]);
+  
+  // Centrage mathématiquement précis
+  const renderItem = useCallback(({ item, index }: { item: FeaturedEvent; index: number }) => {
+    return (
+      <View style={styles.itemContainer}>
+        <CardItem
+          item={item}
+          index={index}
+          activeIndex={activeIndex}
+          onPress={onEventPress}
+          isExpanded={cardStates[item.id] === 'expanded'}
+          onToggleExpand={toggleCardState}
+        />
+      </View>
+    );
+  }, [activeIndex, cardStates, onEventPress, toggleCardState]);
+  
+  // Rendu des états vides/erreur/chargement
+  if (loading) {
+    return (
+      <View style={styles.centerContent}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7C4DFF" />
+          <Text style={styles.statusText}>Chargement des événements...</Text>
+        </View>
+      </View>
+    );
+  }
+  
+  if (error) {
+    return (
+      <View style={styles.centerContent}>
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={36} color="#FF4B4B" />
+          <Text style={styles.errorTitle}>Connexion impossible</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+        </View>
+      </View>
+    );
+  }
+  
+  if (events.length === 0) {
+    return (
+      <View style={styles.centerContent}>
+        <View style={styles.emptyContainer}>
+          <MaterialIcons name="event-busy" size={36} color="#7C4DFF" />
+          <Text style={styles.emptyTitle}>Aucun événement</Text>
+          <Text style={styles.emptyMessage}>Pas d'événement prévu pour le moment.</Text>
+        </View>
+      </View>
+    );
+  }
+  
+  // Rendu principal avec FlatList optimisé
+  return (
+    <View style={styles.container}>
+      {renderPagination()}
+      
+      <FlatList
+        ref={flatListRef}
+        data={events}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={ITEM_WIDTH}
+        snapToAlignment="center"
+        decelerationRate="fast"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        getItemLayout={getItemLayout}
+        contentContainerStyle={styles.flatlistContent}
+        initialScrollIndex={0}
+      />
+    </View>
   );
 });
 
-// Styles optimisés pour l'interface avec le comportement modifié
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F0FF',
+    backgroundColor: '#fff',
   },
-  
-  // Progress indicators
-  progressContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  flatlistContent: {
+
   },
-  progressTouch: {
-    flex: 1,
-    paddingHorizontal: 2,
+  itemContainer: {
+    width: ITEM_WIDTH,
+    padding: SPACING / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  progressBg: {
-    height: 3,
-    backgroundColor: 'rgba(67, 97, 238, 0.2)',
-    borderRadius: 1.5,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4361EE',
-    borderRadius: 1.5,
-  },
-  
-  // Event cards
-  scrollContent: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingBottom: 16,
-  },
-  eventCardWrapper: {
-    width: SCREEN_WIDTH * 0.85,
-    marginRight: 10,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTouchable: {
+  cardContainer: {
+    width: CARD_WIDTH,
+    height: 450,
     borderRadius: 16,
     overflow: 'hidden',
-    height: SCREEN_HEIGHT * 0.5,
+    backgroundColor: '#FFF',
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0,0,0,0.2)',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   cardImage: {
     position: 'absolute',
     width: '100%',
     height: '100%',
   },
-  cardGradient: {
+  cardOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: '70%',
+    height: '100%',
   },
-  categoryContainer: {
+  categoryBadgeContainer: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
   },
   categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   categoryText: {
@@ -493,32 +445,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  
-  // Card content
   cardContent: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
-  },
-  cardHeader: {
-    marginBottom: 12,
+    padding: 20,
   },
   cardTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   expandedContent: {
+    overflow: 'hidden',
     marginBottom: 16,
   },
   cardDescription: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: 'rgba(255, 255, 255, 0.95)',
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 22,
+    marginBottom: 16,
   },
   metaContainer: {
     flexDirection: 'row',
@@ -529,137 +480,126 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  metaIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
   metaText: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 13,
-  },
-  
-  // Action buttons
-  actionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  secondaryButton: {
-    marginRight: 10,
-  },
-  secondaryButtonInner: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  secondaryButtonText: {
-    color: '#FFFFFF',
+    color: 'rgba(255, 255, 255, 0.95)',
     fontSize: 13,
     fontWeight: '500',
   },
-  primaryButton: {
-    flex: 1,
-    borderRadius: 16,
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  expandButton: {
+    marginRight: 12,
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  primaryButtonGradient: {
-    paddingVertical: 8,
+  expandButtonGradient: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  primaryButtonText: {
+  expandButtonText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },
-  
-  // États de chargement, erreur, vide
-  centeredContent: {
+  detailsButton: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  loadingCard: {
-    width: 200,
-    height: 120,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: '#1A1F36',
-    marginTop: 12,
-    fontSize: 14,
-  },
-  errorCard: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  errorIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(220, 38, 38, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  errorIconText: {
-    color: '#DC2626',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  errorTitle: {
-    color: '#1A1F36',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  errorDescription: {
-    color: 'rgba(26, 31, 54, 0.8)',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  emptyCard: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  emptyIcon: {
-    fontSize: 32,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    color: '#1A1F36',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  emptyDescription: {
-    color: 'rgba(26, 31, 54, 0.8)',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  actionButton: {
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
-    width: '100%',
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(124, 77, 255, 0.5)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  buttonGradient: {
+  detailsButtonGradient: {
+    flexDirection: 'row',
     paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonText: {
+  detailsButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 16,
+  },
+  paginationDotContainer: {
+    padding: 8,
+  },
+  paginationDot: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(124, 77, 255, 0.2)',
+  },
+  paginationDotActive: {
+    backgroundColor: '#7C4DFF',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  statusText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  }
 });
 
 export default FeaturedEvents;

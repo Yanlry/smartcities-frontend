@@ -1,3 +1,5 @@
+// Chemin : src/components/ReportsSection/ReportsSection.tsx
+
 import React, { memo, useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
@@ -22,6 +24,7 @@ import { getTypeLabel, typeColors } from "../../../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../../../utils/reductOpacity";
 import { formatCity } from "../../../utils/formatters";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -32,7 +35,24 @@ if (Platform.OS === "android") {
   }
 }
 
-const LIGHT_RED_BACKGROUND = '#FFF0F0';
+// Configuration des couleurs pour le thème - Style harmonisé avec teinte rouge
+const THEME = {
+  primary: "#FF4D4F", // Rouge principal
+  primaryDark: "#E73A3C", // Rouge foncé
+  secondary: "#FF7875", // Rouge clair
+  background: "#F9FAFE", // Fond très légèrement bleuté
+  backgroundDark: "#ECF0F7", // Fond légèrement plus sombre
+  cardBackground: "#FFFFFF", // Blanc pur pour les cartes
+  text: "#2D3748", // Texte principal presque noir
+  textLight: "#718096", // Texte secondaire gris
+  textMuted: "#A0AEC0", // Texte tertiaire gris clair
+  border: "#E2E8F0", // Bordures légères
+  shadow: "rgba(13, 26, 83, 0.12)", // Ombres avec teinte bleuâtre
+};
+
+// Couleur de fond optimisées pour l'état ouvert/fermé
+const EXPANDED_BACKGROUND = "rgba(250, 251, 255, 0.97)";
+const COLLAPSED_BACKGROUND = "#FFFFFF";
 
 /**
  * Interface pour les propriétés du composant ReportsSection
@@ -70,6 +90,9 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
     const opacityAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const headerScaleAnim = useRef(new Animated.Value(1)).current;
     const badgePulse = useRef(new Animated.Value(1)).current;
+    const contentSlideAnim = useRef(
+      new Animated.Value(isVisible ? 1 : 0)
+    ).current;
     const scrollViewRef = useRef<ScrollView>(null);
 
     // État local pour le mode d'affichage
@@ -84,6 +107,12 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       outputRange: ["0deg", "180deg"],
     });
 
+    // Animation de glissement pour le contenu
+    const contentSlide = contentSlideAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-20, 0],
+    });
+
     // Animation de pulsation optimisée pour le badge
     useEffect(() => {
       if (reports.length > 0) {
@@ -91,7 +120,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         const pulseAnimation = Animated.loop(
           Animated.sequence([
             Animated.timing(badgePulse, {
-              toValue: 1.1, // Amplitude harmonisée avec les autres sections
+              toValue: 1.1,
               duration: 1000,
               useNativeDriver: true,
               easing: Easing.inOut(Easing.sin),
@@ -104,16 +133,16 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
             }),
           ])
         );
-        
+
         // Démarrer l'animation
         pulseAnimation.start();
-        
+
         // Fonction de nettoyage appelée lors du démontage du composant
         return () => {
           pulseAnimation.stop();
         };
       }
-    }, [reports.length, badgePulse]); // Ajout de badgePulse comme dépendance pour éviter les warnings de hooks
+    }, [reports.length, badgePulse]);
 
     // Gestion de la visibilité avec LayoutAnimation
     useEffect(() => {
@@ -138,7 +167,15 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         duration: 300,
         useNativeDriver: true,
       }).start();
-    }, [isVisible, rotateAnim, opacityAnim]); // Ajout de rotateAnim et opacityAnim comme dépendances
+
+      // Animation de glissement pour le contenu
+      Animated.timing(contentSlideAnim, {
+        toValue: isVisible ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }).start();
+    }, [isVisible, rotateAnim, opacityAnim, contentSlideAnim]);
 
     // Animation pour l'effet de pression sur l'en-tête
     const handleHeaderPressIn = useCallback(() => {
@@ -147,7 +184,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         friction: 8,
         useNativeDriver: true,
       }).start();
-    }, [headerScaleAnim]); // Ajout de headerScaleAnim comme dépendance
+    }, [headerScaleAnim]);
 
     const handleHeaderPressOut = useCallback(() => {
       Animated.spring(headerScaleAnim, {
@@ -156,7 +193,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         tension: 40,
         useNativeDriver: true,
       }).start();
-    }, [headerScaleAnim]); 
+    }, [headerScaleAnim]);
 
     /**
      * Gestionnaire de changement de mode d'affichage
@@ -202,28 +239,42 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
     /**
      * Rendu de l'état vide (aucun signalement trouvé)
      */
-    const renderEmptyState = useCallback(() => (
-      <View style={styles.emptyStateContainer}>
-        <View style={styles.emptyStateIconContainer}>
-          <Text style={styles.emptyStateIcon}>🔍</Text>
+    const renderEmptyState = useCallback(
+      () => (
+        <View style={styles.emptyStateContainer}>
+          <LinearGradient
+            colors={["rgba(255, 100, 100, 0.1)", "rgba(255, 75, 75, 0.02)"]}
+            style={styles.emptyStateGradient}
+          >
+            <View style={styles.emptyStateIconContainer}>
+              <MaterialIcons name="search-off" size={36} color="#FF4D4F" />
+            </View>
+            <Text style={styles.emptyStateTitle}>Aucun signalement trouvé</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Il n'y a pas encore de signalements dans cette catégorie à
+              proximité.
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyStateButton}
+              onPress={() => setSelectedCategory("Tous")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[THEME.primary, THEME.secondary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.emptyStateButtonGradient}
+              >
+                <Text style={styles.emptyStateButtonText}>
+                  Voir tous les signalements
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
-        <Text style={styles.emptyStateTitle}>
-          Aucun signalement trouvé
-        </Text>
-        <Text style={styles.emptyStateSubtext}>
-          Il n'y a pas encore de signalements dans cette catégorie à
-          proximité.
-        </Text>
-        <TouchableOpacity
-          style={styles.emptyStateButton}
-          onPress={() => setSelectedCategory("Tous")}
-        >
-          <Text style={styles.emptyStateButtonText}>
-            Voir tous les signalements
-          </Text>
-        </TouchableOpacity>
-      </View>
-    ), [setSelectedCategory]);
+      ),
+      [setSelectedCategory]
+    );
 
     /**
      * Rendu du contenu principal selon l'état de chargement et la disponibilité des données
@@ -232,14 +283,14 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       if (loading) {
         return (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0066CC" />
+            <ActivityIndicator size="large" color={THEME.primary} />
             <Text style={styles.loadingText}>
               Chargement des signalements...
             </Text>
           </View>
         );
-      } 
-      
+      }
+
       if (reports.length === 0) {
         return renderEmptyState();
       }
@@ -257,9 +308,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                 : styles.reportsCardContainer
             }
             decelerationRate="fast"
-            snapToInterval={
-              displayMode === "card" ? SCREEN_WIDTH : undefined
-            }
+            snapToInterval={displayMode === "card" ? SCREEN_WIDTH : undefined}
             snapToAlignment="center"
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -294,13 +343,21 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
             <View style={styles.paginationContainer}>
               {reports.map((_, index) => {
                 const currentIndex = getCurrentIndex();
+                const isActive = currentIndex === index;
                 return (
-                  <View
+                  <Animated.View
                     key={index}
                     style={[
                       styles.paginationDot,
-                      currentIndex === index &&
-                        styles.activePaginationDot,
+                      isActive && styles.activePaginationDot,
+                      {
+                        width: isActive ? 24 : 8,
+                        transform: [
+                          {
+                            scale: isActive ? 1 : 0.8,
+                          },
+                        ],
+                      },
                     ]}
                   />
                 );
@@ -310,161 +367,227 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         </View>
       );
     }, [
-      loading, 
-      reports, 
-      displayMode, 
-      handleScroll, 
-      getCurrentIndex, 
-      renderEmptyState, 
-      formatTime, 
-      onPressReport
+      loading,
+      reports,
+      displayMode,
+      handleScroll,
+      getCurrentIndex,
+      renderEmptyState,
+      formatTime,
+      onPressReport,
     ]);
 
     return (
       <View style={styles.container}>
-      {/* Conteneur unifié qui englobe le header et le contenu */}
-      <View style={[
-        styles.unifiedContainer,
-        isVisible && styles.unifiedContainerActive
-      ]}>
-        {/* En-tête avec animation de scale */}
-        <Animated.View
-          style={[
-            styles.headerContainer,
-            { 
-              transform: [{ scale: headerScaleAnim }],
-              backgroundColor: isVisible ? LIGHT_RED_BACKGROUND : '#FFFFFF',
-              // Suppression des bordures inférieures quand ouvert
-              borderBottomLeftRadius: isVisible ? 0 : 20,
-              borderBottomRightRadius: isVisible ? 0 : 20,
-            },
-          ]}
-        >
-          <Pressable
-            onPress={toggleVisibility}
-            onPressIn={handleHeaderPressIn}
-            onPressOut={handleHeaderPressOut}
-            style={styles.header}
-          >
-            <View style={styles.headerContent}>
-              {/* Icône et titre */}
-              <View style={styles.titleContainer}>
-                <View style={styles.alertIconContainer}>
-                  <MaterialIcons
-                    name="notifications"
-                    size={32}
-                    color="#CC3333"
-                  />
-                </View>
-                <View>
-                  <Text style={styles.title}>Signalements</Text>
-                  <Text style={styles.subtitle}>
-                    Incidents à proximité de vous
-                  </Text>
-                </View>
-              </View>
-
-              {/* Badge de nombre de reports et flèche */}
-              <View style={styles.headerControls}>
-                {reports.length > 0 && (
-                  <Animated.View
-                    style={[
-                      styles.countBadge,
-                      { transform: [{ scale: badgePulse }] },
-                    ]}
-                  >
-                    <Text style={styles.countText}>{reports.length}</Text>
-                  </Animated.View>
-                )}
-
-                <Animated.View
-                  style={[
-                    styles.arrowContainer,
-                    { transform: [{ rotate: arrowRotation }] },
-                  ]}
-                >
-                  <Text style={styles.arrowIcon}>⌄</Text>
-                </Animated.View>
-              </View>
-            </View>
-          </Pressable>
-        </Animated.View>
-
-        {/* Contenu principal avec hauteur conditionnelle */}
-        {isVisible && (
+        {/* Conteneur principal avec position relative pour le z-index */}
+        <View style={{ position: "relative", zIndex: 1 }}>
+          {/* En-tête de section avec design harmonisé */}
           <Animated.View
             style={[
-              styles.contentContainer, 
-              { 
-                opacity: opacityAnim,
-                backgroundColor: LIGHT_RED_BACKGROUND,
-                marginTop: 0, // Suppression de la marge pour éviter l'écart
-              }
+              styles.headerContainer,
+              {
+                backgroundColor: isVisible ? EXPANDED_BACKGROUND : COLLAPSED_BACKGROUND,
+                borderBottomLeftRadius: isVisible ? 0 : 20,
+                borderBottomRightRadius: isVisible ? 0 : 20,
+                transform: [{ scale: headerScaleAnim }],
+                borderBottomWidth: isVisible ? 1 : 0,
+                borderBottomColor: isVisible ? THEME.border : "transparent",
+                elevation: isVisible ? 5 : 2,
+                shadowOpacity: isVisible ? 0.06 : 0.08,
+              },
             ]}
           >
-            {/* Options et filtres */}
-            <View style={styles.filtersContainer}>
-              {/* Contrôles d'affichage */}
-              <View style={styles.displayControls}>
-                <TouchableOpacity
-                  style={[
-                    styles.displayModeButton,
-                    displayMode === "card" && styles.activeDisplayMode,
-                  ]}
-                  onPress={() => handleDisplayModeChange("card")}
-                >
-                  <Text style={styles.displayModeIcon}>🗂️</Text>
-                  <Text style={styles.displayModeText}>Afficher par cartes</Text>
-                </TouchableOpacity>
+            <Pressable
+              onPress={toggleVisibility}
+              onPressIn={handleHeaderPressIn}
+              onPressOut={handleHeaderPressOut}
+              style={styles.header}
+              android_ripple={{ color: 'rgba(0, 0, 0, 0.05)', borderless: true }}
+            >
+              <View style={styles.headerContent}>
+                {/* Icône et titre */}
+                <View style={styles.titleContainer}>
+                  <LinearGradient
+                    colors={[THEME.primary, THEME.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.iconContainer}
+                  >
+                    <MaterialIcons
+                      name="notifications"
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                  </LinearGradient>
+                  <View>
+                    <Text style={styles.title}>Signalements</Text>
+                    <Text style={styles.subtitle}>
+                      Incidents à proximité de vous
+                    </Text>
+                  </View>
+                </View>
 
-                <TouchableOpacity
-                  style={[
-                    styles.displayModeButton,
-                    displayMode === "list" && styles.activeDisplayMode,
-                  ]}
-                  onPress={() => handleDisplayModeChange("list")}
-                >
-                  <Text style={styles.displayModeIcon}>📋</Text>
-                  <Text style={styles.displayModeText}>Afficher par liste</Text>
-                </TouchableOpacity>
+                {/* Badge de nombre d'utilisateurs et flèche */}
+                <View style={styles.headerControls}>
+                  {reports.length > 0 && (
+                    <Animated.View
+                      style={[
+                        styles.countBadge,
+                        { transform: [{ scale: badgePulse }] },
+                      ]}
+                    >
+                      <LinearGradient
+                        colors={[THEME.secondary, THEME.primary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.countBadgeGradient}
+                      >
+                        <Text style={styles.countText}>{reports.length}</Text>
+                      </LinearGradient>
+                    </Animated.View>
+                  )}
+
+                  <Animated.View
+                    style={[
+                      styles.arrowContainer,
+                      {
+                        transform: [
+                          { rotate: arrowRotation },
+                          { scale: isVisible ? 1.1 : 1 }
+                        ],
+                      },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={isVisible ? 
+                        [THEME.primary, THEME.primaryDark] : 
+                        ['#A0AEC0', '#718096']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.arrowIndicator}
+                    >
+                      <Text style={styles.arrowIcon}>⌄</Text>
+                    </LinearGradient>
+                  </Animated.View>
+                </View>
               </View>
-            </View>
-
-            {/* Contenu principal avec chargement/vide/liste de rapports */}
-            <View style={styles.contentSection}>
-              {renderContent()}
-            </View>
+            </Pressable>
           </Animated.View>
-        )}
-      </View>
-    </View>
-  );
-}
-);
 
+          {/* Contenu de la section */}
+          {isVisible && (
+            <View
+              style={styles.sectionContentContainer}
+            >
+              <LinearGradient
+                colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
+                style={styles.sectionContent}
+              >
+                <Animated.View
+                  style={[
+                    styles.contentInner,
+                    {
+                      opacity: opacityAnim,
+                      transform: [{ translateY: contentSlide }],
+                    },
+                  ]}
+                >
+                  {/* Options et filtres */}
+                  <View style={styles.filtersContainer}>
+                    {/* Contrôles d'affichage */}
+                    <View style={styles.displayControls}>
+                      <TouchableOpacity
+                        style={[
+                          styles.displayModeButton,
+                          displayMode === "card" && styles.activeDisplayMode,
+                        ]}
+                        onPress={() => handleDisplayModeChange("card")}
+                        activeOpacity={0.8}
+                      >
+                        <MaterialIcons
+                          name="view-carousel"
+                          size={18}
+                          color={displayMode === "card" ? THEME.primary : "#666"}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={[
+                            styles.displayModeText,
+                            displayMode === "card" && styles.activeDisplayModeText,
+                          ]}
+                        >
+                          Vue cartes
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.displayModeButton,
+                          displayMode === "list" && styles.activeDisplayMode,
+                        ]}
+                        onPress={() => handleDisplayModeChange("list")}
+                        activeOpacity={0.8}
+                      >
+                        <MaterialIcons
+                          name="view-list"
+                          size={18}
+                          color={displayMode === "list" ? THEME.primary : "#666"}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={[
+                            styles.displayModeText,
+                            displayMode === "list" && styles.activeDisplayModeText,
+                          ]}
+                        >
+                          Vue liste
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Contenu principal avec chargement/vide/liste de rapports */}
+                  <View style={styles.contentSection}>{renderContent()}</View>
+                </Animated.View>
+              </LinearGradient>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+);
 
 // Définition de type pour les styles
 type ReportsSectionStyles = {
   container: ViewStyle;
+  unifiedContainer: ViewStyle;
+  unifiedContainerActive: ViewStyle;
   headerContainer: ViewStyle;
   header: ViewStyle;
   headerContent: ViewStyle;
   titleContainer: ViewStyle;
-  alertIconContainer: ViewStyle;
+  iconContainer: ViewStyle;
   title: TextStyle;
   subtitle: TextStyle;
   headerControls: ViewStyle;
   countBadge: ViewStyle;
+  countBadgeGradient: ViewStyle;
   countText: TextStyle;
   arrowContainer: ViewStyle;
+  arrowIndicator: ViewStyle;
   arrowIcon: TextStyle;
   contentContainer: ViewStyle;
+  sectionContentContainer: ViewStyle;
+  sectionContent: ViewStyle;
+  contentInner: ViewStyle;
   filtersContainer: ViewStyle;
   displayControls: ViewStyle;
   displayModeButton: ViewStyle;
   activeDisplayMode: ViewStyle;
   displayModeIcon: TextStyle;
   displayModeText: TextStyle;
+  activeDisplayModeText: TextStyle;
   contentSection: ViewStyle;
   reportsWrapper: ViewStyle;
   reportsCardContainer: ViewStyle;
@@ -474,51 +597,41 @@ type ReportsSectionStyles = {
   loadingContainer: ViewStyle;
   loadingText: TextStyle;
   emptyStateContainer: ViewStyle;
+  emptyStateGradient: ViewStyle;
   emptyStateIconContainer: ViewStyle;
   emptyStateIcon: TextStyle;
   emptyStateTitle: TextStyle;
   emptyStateSubtext: TextStyle;
   emptyStateButton: ViewStyle;
+  emptyStateButtonGradient: ViewStyle;
   emptyStateButtonText: TextStyle;
   paginationContainer: ViewStyle;
   paginationDot: ViewStyle;
   activePaginationDot: ViewStyle;
-  unifiedContainer: ViewStyle;
-  unifiedContainerActive: ViewStyle;
-
 };
 
 const styles = StyleSheet.create<ReportsSectionStyles>({
   container: {
     marginVertical: 5,
     overflow: "hidden",
+    borderRadius: 24,
+    marginHorizontal: 10,
   },
-  unifiedContainer: {
+  // Styles du header harmonisés avec les autres composants
+  headerContainer: {
     borderRadius: 20,
-    overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: "rgba(0, 0, 0, 0.08)",
+        shadowColor: THEME.shadow,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 12,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
-  unifiedContainerActive: {
-    backgroundColor: LIGHT_RED_BACKGROUND,
-  },
-  headerContainer: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 20, // Sera modifié conditionnellement
-    borderBottomRightRadius: 20, // Sera modifié conditionnellement
-    backgroundColor: "#FFFFFF", // La couleur sera remplacée conditionnellement
-  },
-
   header: {
     borderRadius: 20,
     overflow: "hidden",
@@ -534,76 +647,149 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     flexDirection: "row",
     alignItems: "center",
   },
-  alertIconContainer: {
+  iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 59, 48, 0.1)",
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
     ...Platform.select({
       ios: {
-        shadowColor: "rgba(255, 59, 48, 0.3)",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 5,
       },
       android: {
-        elevation: 2,
+        elevation: 3,
       },
     }),
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333333",
+    color: THEME.text,
     marginBottom: 2,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    color: THEME.textLight,
+    letterSpacing: -0.2,
   },
   headerControls: {
     flexDirection: "row",
     alignItems: "center",
   },
+  // Badge de comptage avec animation de pulsation et dégradé
   countBadge: {
-    backgroundColor: "#CC3333",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 14,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.secondary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  countBadgeGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   countText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
   },
   arrowContainer: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  arrowIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
   arrowIcon: {
     fontSize: 24,
-    color: "#4F566B",
+    color: "#FFFFFF",
     fontWeight: "bold",
+    marginTop: -10,
+  },
+  unifiedContainer: {
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  unifiedContainerActive: {
+    // Styles spécifiques quand le conteneur est actif
   },
   contentContainer: {
+    paddingVertical: 20,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  // Styles du contenu
+  sectionContentContainer: {
+    overflow: "hidden",
+    marginTop: -1, // Chevauchement léger pour éliminer toute ligne visible
+    borderTopWidth: 0,
+    zIndex: 0,
+  },
+  sectionContent: {
+    borderRadius: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    overflow: "hidden",
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-
+  contentInner: {
+    padding: 15,
+  },
   filtersContainer: {
+    marginBottom: 15,
   },
   displayControls: {
     flexDirection: "row",
     justifyContent: "center",
+    marginTop: 5,
   },
   displayModeButton: {
     flexDirection: "row",
@@ -615,16 +801,22 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     backgroundColor: "rgba(0, 0, 0, 0.03)",
   },
   activeDisplayMode: {
-    backgroundColor: "rgba(204, 0, 0, 0.1)",
+    backgroundColor: `rgba(${parseInt(THEME.primary.slice(1, 3), 16)}, ${parseInt(
+      THEME.primary.slice(3, 5),
+      16
+    )}, ${parseInt(THEME.primary.slice(5, 7), 16)}, 0.1)`,
   },
   displayModeIcon: {
-    fontSize: 12,
-    marginRight: 8,
+    marginRight: 6,
   },
   displayModeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "500",
-    color: "#333",
+    color: "#666",
+  },
+  activeDisplayModeText: {
+    color: THEME.primary,
+    fontWeight: "600",
   },
   contentSection: {
     minHeight: 150,
@@ -638,8 +830,7 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
   },
   reportsListContainer: {
     width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
+    alignSelf: "center",
     flexDirection: "column",
     paddingVertical: 10,
   },
@@ -666,7 +857,14 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     textAlign: "center",
   },
   emptyStateContainer: {
-    padding: 40,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyStateGradient: {
+    width: "100%",
+    borderRadius: 16,
+    padding: 30,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -674,10 +872,15 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "rgba(0, 102, 204, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
+    shadowColor: "rgba(255, 77, 79, 0.3)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   emptyStateIcon: {
     fontSize: 40,
@@ -685,23 +888,32 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#16213E",
+    color: "#333",
     marginBottom: 12,
     textAlign: "center",
   },
   emptyStateSubtext: {
     fontSize: 15,
-    color: "#667085",
+    color: "#666",
     textAlign: "center",
     marginBottom: 24,
     maxWidth: 280,
     lineHeight: 22,
   },
   emptyStateButton: {
-    backgroundColor: "#0066CC",
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "rgba(0, 0, 0, 0.1)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emptyStateButtonGradient: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyStateButtonText: {
     color: "#FFFFFF",
@@ -711,18 +923,17 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: 15,
   },
   paginationDot: {
-    width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#D9D9D9",
+    backgroundColor: "#EAEAEA",
     marginHorizontal: 4,
+    // La largeur sera définie dynamiquement
   },
   activePaginationDot: {
-    width: 24,
-    backgroundColor: "#0066CC",
+    backgroundColor: THEME.primary,
   },
 });
 

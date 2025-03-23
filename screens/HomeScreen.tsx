@@ -25,10 +25,10 @@ import ProfileSection from "../components/home/ProfileSection/ProfileSection";
 import RankingSection from "../components/home/RankingSection/RankingSection";
 import ReportsSection from "../components/home/ReportsSection/ReportsSection";
 import EventsSection from "../components/home/EventsSection/EventsSection";
-import EventCalendar from "../components/home/EventsSection/EventCalendar";
-import CategorySelector from "../components/home/CategorySelector/CategorySelector";
+import EventCalendar from "../components/home/EventsSection/EventCalendarSection";
+import CategorySelector from "../components/home/CategorySelector/CategorySelectorSection";
 import MayorInfoSection from "../components/home/MayorInfoSection/MayorInfoSection";
-import Chart from "../components/home/ChartSection/Chart";
+import Chart from "../components/home/ChartSection/ChartSection";
 
 // Modaux
 import {
@@ -112,6 +112,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     const [isCategoryReportsVisible, setCategoryReportsVisible] =
       useState(false);
     const [isMayorInfoVisible, setMayorInfoVisible] = useState(false);
+    const [isChartVisible, setChartVisible] = useState(false);
     const [areAllSectionsVisible, setAllSectionsVisible] = useState(false);
 
     // État de rafraîchissement
@@ -148,6 +149,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       setCalendarVisible(newVisibility);
       setCategoryReportsVisible(newVisibility);
       setMayorInfoVisible(newVisibility);
+      setChartVisible(newVisibility);
     }, [areAllSectionsVisible]);
 
     // Ouvre le modal des abonnés
@@ -312,7 +314,8 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           data={statsData}
           loading={userLoading}
           nomCommune={nomCommune}
-          controlStatsVisibility={areAllSectionsVisible}
+          isVisible={isChartVisible}
+          toggleVisibility={() => setChartVisible((prev) => !prev)}
         />
 
         {/* Section Calendrier d'événements */}

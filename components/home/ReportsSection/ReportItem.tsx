@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { Report } from './report.types';
 import { formatDistance } from '../../../utils/formatters';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -56,6 +58,8 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(30)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
   
   // Animation de pulsation pour l'indicateur de distance
   useEffect(() => {
@@ -91,6 +95,26 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
         useNativeDriver: true,
       })
     ]).start();
+    
+    // Animation de rotation subtile pour le texte "Nouveau"
+    if (isRecent(report.createdAt)) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 1500,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    }
   }, []);
 
   // Utilisation de formatDistance pour un affichage optimisé
@@ -101,6 +125,49 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
     inputRange: [0, 1],
     outputRange: [1, 1.15]
   });
+  
+  // Animation de rotation pour le badge "Nouveau"
+  const newBadgeRotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['-2deg', '2deg']
+  });
+  
+  // Obtenir une couleur plus foncée pour le dégradé
+  const getDarkerColor = (color: string): string => {
+    // Convertir le code hexadécimal en RGB
+    let r = parseInt(color.slice(1, 3), 16);
+    let g = parseInt(color.slice(3, 5), 16);
+    let b = parseInt(color.slice(5, 7), 16);
+    
+    // Assombrir les valeurs RGB (multiplier par 0.8)
+    r = Math.floor(r * 0.8);
+    g = Math.floor(g * 0.8);
+    b = Math.floor(b * 0.8);
+    
+    // Reconvertir en code hexadécimal
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  };
+  
+  // Gestion des états de press
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      friction: 8,
+      useNativeDriver: true
+    }).start();
+  };
+  
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true
+    }).start();
+  };
+  
+  // Couleur plus foncée pour le dégradé
+  const darkerColor = getDarkerColor(typeColor);
 
   return (
     <Animated.View 
@@ -108,26 +175,30 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
         styles.timelinePointContainer,
         {
           opacity: fadeAnim,
-          transform: [{ translateY }]
+          transform: [
+            { translateY },
+            { scale: scaleAnim }
+          ]
         }
       ]}
     >
-      
       {/* Carte principale */}
       <TouchableOpacity
-        style={[
-          styles.reportCard,
-          { backgroundColor: '#FFF0F0' }
-        ]}
+        style={styles.reportCard}
         onPress={() => onPress(report.id)}
+        activeOpacity={0.95}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
       >
         {/* Partie supérieure avec photo */}
         <View style={styles.reportCardTop}>
-          {/* Overlay de couleur */}
-          <View style={[
-            styles.typeColorOverlay, 
-            { backgroundColor: `${typeColor}25` }
-          ]} />
+          {/* Overlay de couleur avec dégradé */}
+          <LinearGradient
+            colors={[`${typeColor}40`, `${typeColor}10`] as const}
+            style={styles.typeColorOverlay}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
           
           {report.photos &&
           Array.isArray(report.photos) &&
@@ -139,13 +210,29 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
             />
           ) : (
             <View style={styles.noPhotoContainer}>
+              <View style={styles.noPhotoIconContainer}>
+                <MaterialIcons name="image-not-supported" size={32} color="#A0A0A0" />
+              </View>
               <Text style={styles.noPhotoText}>Aucune photo</Text>
             </View>
           )}
           
-          {/* Type badge */}
-          <View style={[styles.typeBadge, { backgroundColor: typeColor }]}>
-            <Text style={styles.typeBadgeText}>{typeLabel}</Text>
+          {/* Type badge avec dégradé */}
+          <View style={styles.typeBadgeContainer}>
+            <LinearGradient
+              colors={[typeColor, darkerColor] as const}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.typeBadge}
+            >
+              <MaterialIcons 
+                name="error-outline" 
+                size={12} 
+                color="white" 
+                style={styles.typeBadgeIcon} 
+              />
+              <Text style={styles.typeBadgeText}>{typeLabel}</Text>
+            </LinearGradient>
           </View>
           
           {/* Distance badge animé */}
@@ -155,17 +242,40 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
               { transform: [{ scale: distanceBadgeScale }] }
             ]}
           >
-            <View style={styles.distanceBadgeContent}>
-              <Text style={styles.distanceBadgeIcon}>📍</Text>
+            <LinearGradient
+              colors={['rgba(0, 0, 0, 0.86)', 'rgba(20, 20, 20, 0.95)'] as const}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.distanceBadgeContent}
+            >
+              <MaterialIcons 
+                name="location-on" 
+                size={12} 
+                color="white" 
+                style={styles.distanceBadgeIcon} 
+              />
               <Text style={styles.distanceBadgeText}>{distanceText}</Text>
-            </View>
+            </LinearGradient>
           </Animated.View>
           
-          {/* Marqueur de récence */}
+          {/* Marqueur de récence avec animation */}
           {isRecent(report.createdAt) && (
-            <View style={styles.recentMarker}>
-              <Text style={styles.recentMarkerText}>Nouveau</Text>
-            </View>
+            <Animated.View 
+              style={[
+                styles.recentMarkerContainer,
+                { transform: [{ rotate: newBadgeRotate }] }
+              ]}
+            >
+              <LinearGradient
+                colors={['#FF5252', '#FF3D71'] as const}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.recentMarker}
+              >
+                <Text style={styles.recentMarkerText}>Nouveau</Text>
+                <MaterialIcons name="fiber-new" size={12} color="white" style={{ marginLeft: 4 }} />
+              </LinearGradient>
+            </Animated.View>
           )}
         </View>
         
@@ -180,24 +290,32 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
           <View style={styles.metadataContainer}>
             {/* Localisation */}
             <View style={styles.locationContainer}>
-              <Text style={styles.locationIcon}>📍</Text>
+              <MaterialIcons name="location-on" size={14} color="#616161" style={styles.locationIcon} />
               <Text style={styles.locationText} numberOfLines={1}>{formattedCity}</Text>
             </View>
             
             {/* Horodatage */}
             <View style={styles.timeContainer}>
-              <Text style={styles.timeIcon}>🕒</Text>
+              <MaterialIcons name="access-time" size={14} color="#616161" style={styles.timeIcon} />
               <Text style={styles.timeText}>{formattedTime}</Text>
             </View>
           </View>
           
-          {/* Bouton d'action */}
+          {/* Bouton d'action avec dégradé */}
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: "#92281F" }]}
+            style={styles.actionButtonContainer}
             activeOpacity={0.8}
             onPress={() => onPress(report.id)}
           >
-            <Text style={styles.actionButtonText}>Voir détails</Text>
+            <LinearGradient
+              colors={['#FF5252', darkerColor] as const}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.actionButton}
+            >
+              <Text style={styles.actionButtonText}>Voir détails</Text>
+              <MaterialIcons name="arrow-forward" size={14} color="white" style={{ marginLeft: 6 }} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -207,32 +325,19 @@ const ReportItem: React.FC<ReportItemProps> = memo(({
 
 const styles = StyleSheet.create({
   timelinePointContainer: {
-    width: SCREEN_WIDTH, // ~85% de la largeur de l'écran
-  },
-  urgencyDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-  },
-  highUrgency: {
-    borderColor: '#FF5252',
-  },
-  mediumUrgency: {
-    borderColor: '#FFC107',
-  },
-  lowUrgency: {
-    borderColor: '#4CAF50',
+    width: SCREEN_WIDTH - 30, // ~85% de la largeur de l'écran
+    alignSelf: 'center',
   },
   reportCard: {
     borderRadius: 24,
     overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
+        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.15,
-        shadowRadius: 15,
+        shadowRadius: 16,
       },
       android: {
         elevation: 8,
@@ -257,7 +362,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#F7F7F7',
     zIndex: 2,
   },
   noPhotoIconContainer: {
@@ -267,37 +372,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  noPhotoIcon: {
-    fontSize: 30,
+    backgroundColor: '#F0F0F0',
   },
   noPhotoText: {
     color: '#757575',
     fontSize: 14,
     fontWeight: '500',
   },
-  typeBadge: {
-    flexDirection: 'row',
+  typeBadgeContainer: {
     position: 'absolute',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderEndEndRadius: 24,
+    top: 0,
+    left: 0,
     zIndex: 3,
+    overflow: 'hidden',
+    borderBottomRightRadius: 24,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 3,
+        elevation: 4,
       },
     }),
   },
+  typeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomRightRadius: 24,
+  },
   typeBadgeIcon: {
-    fontSize: 14,
     marginRight: 6,
   },
   typeBadgeText: {
@@ -311,18 +419,17 @@ const styles = StyleSheet.create({
     bottom: 16,
     right: 16,
     zIndex: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.86)',
     borderRadius: 16,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 5,
+        elevation: 6,
       },
     }),
   },
@@ -331,10 +438,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
+    borderRadius: 16,
   },
   distanceBadgeIcon: {
-    fontSize: 12,
-    color: '#FFFFFF',
     marginRight: 4,
   },
   distanceBadgeText: {
@@ -342,25 +448,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
-  recentMarker: {
+  recentMarkerContainer: {
     position: 'absolute',
+    top: 0,
     right: 0,
-    backgroundColor: '#FF3D71',
+    zIndex: 3,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#FF3D71',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  recentMarker: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomLeftRadius: 24,
-    zIndex: 3,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   },
   recentMarkerText: {
     color: '#FFFFFF',
@@ -368,27 +479,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   reportCardBottom: {
-    padding: 16,
+    padding: 20,
   },
   reportTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#212121',
-    marginBottom: 12,
+    marginBottom: 16,
     letterSpacing: -0.3,
     lineHeight: 24,
   },
   metadataContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   locationIcon: {
-    fontSize: 14,
-    color: '#616161',
     marginRight: 8,
   },
   locationText: {
@@ -401,8 +510,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeIcon: {
-    fontSize: 14,
-    color: '#616161',
     marginRight: 8,
   },
   timeText: {
@@ -410,7 +517,23 @@ const styles = StyleSheet.create({
     color: '#616161',
     fontStyle: 'italic',
   },
+  actionButtonContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#CC3333',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
   actionButton: {
+    flexDirection: 'row',
     padding: 12,
     borderRadius: 12,
     alignItems: 'center',

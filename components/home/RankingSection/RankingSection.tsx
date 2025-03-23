@@ -18,6 +18,7 @@ import { SmarterUser } from "../ProfileSection/user.types";
 import SmarterItem from "./SmarterItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Configuration pour Android
 if (Platform.OS === "android") {
@@ -26,7 +27,25 @@ if (Platform.OS === "android") {
   }
 }
 
-const LIGHT_BLUE_BACKGROUND = '#F0F7FF';
+// Configuration des couleurs pour le thème - Style harmonisé avec teinte violette/indigo
+const THEME = {
+  primary: "#6C63FF", // Indigo principal
+  primaryDark: "#4F46E5", // Indigo foncé
+  secondary: "#B4ADFF", // Indigo clair
+  background: "#F9FAFE", // Fond très légèrement bleuté
+  backgroundDark: "#ECF0F7", // Fond légèrement plus sombre
+  cardBackground: "#FFFFFF", // Blanc pur pour les cartes
+  text: "#2D3748", // Texte principal presque noir
+  textLight: "#718096", // Texte secondaire gris
+  textMuted: "#A0AEC0", // Texte tertiaire gris clair
+  border: "#E2E8F0", // Bordures légères
+  shadow: "rgba(13, 26, 83, 0.12)", // Ombres avec teinte bleuâtre
+};
+
+// Couleur de fond optimisées pour l'état ouvert/fermé
+const EXPANDED_BACKGROUND = "rgba(250, 251, 255, 0.97)";
+const COLLAPSED_BACKGROUND = "#FFFFFF";
+
 /**
  * Interface pour les propriétés du composant RankingSection
  */
@@ -56,11 +75,18 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
     const opacityAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const headerScaleAnim = useRef(new Animated.Value(1)).current;
     const badgePulse = useRef(new Animated.Value(1)).current;
+    const contentSlideAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
 
     // Animation de rotation pour l'icône de flèche
     const arrowRotation = rotateAnim.interpolate({
       inputRange: [0, 1],
       outputRange: ["0deg", "180deg"],
+    });
+
+    // Animation de slide pour le contenu
+    const contentSlide = contentSlideAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-20, 0],
     });
 
     // Séparer les podium users et les autres
@@ -112,6 +138,14 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
         toValue: isVisible ? 1 : 0,
         duration: 300,
         useNativeDriver: true,
+      }).start();
+
+      // Animation de slide du contenu
+      Animated.timing(contentSlideAnim, {
+        toValue: isVisible ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
       }).start();
     }, [isVisible]);
 
@@ -201,11 +235,17 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
         <TouchableOpacity
           style={styles.seeAllButton}
           onPress={onSeeAllPress}
-          activeOpacity={0.9}
+          activeOpacity={0.8}
         >
-          <View style={styles.seeAllGradient}>
+          <LinearGradient
+            colors={[THEME.primary, THEME.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.seeAllGradient}
+          >
+            <MaterialIcons name="format-list-bulleted" size={18} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.seeAllText}>Voir le classement complet</Text>
-          </View>
+          </LinearGradient>
         </TouchableOpacity>
       );
     }, [hasMoreUsers, onSeeAllPress]);
@@ -216,7 +256,7 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
         <View style={styles.emptyStateContainer}>
           <View style={styles.emptyStateContent}>
             <View style={styles.emptyStateIconContainer}>
-              <MaterialIcons name="emoji-events" size={32} color="#CCCCDD" />
+              <MaterialIcons name="emoji-events" size={32} color={THEME.primary} />
             </View>
             <Text style={styles.emptyStateTitle}>Aucun contributeur</Text>
             <Text style={styles.emptyStateSubtitle}>
@@ -230,21 +270,21 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
 
     return (
       <View style={styles.container}>
-        {/* Conteneur unifié qui enveloppe l'en-tête et le contenu */}
-        <View style={[
-          styles.unifiedContainer,
-          isVisible && styles.unifiedContainerActive
-        ]}>
-          {/* En-tête avec titre et contrôle */}
+        {/* Conteneur principal avec position relative pour le z-index */}
+        <View style={{ position: "relative", zIndex: 1 }}>
+          {/* En-tête de section avec design harmonisé */}
           <Animated.View
             style={[
               styles.headerContainer,
-              { 
-                transform: [{ scale: headerScaleAnim }],
-                backgroundColor: isVisible ? LIGHT_BLUE_BACKGROUND : '#FFFFFF',
-                // Bordures arrondies conditionnelles
+              {
+                backgroundColor: isVisible ? EXPANDED_BACKGROUND : COLLAPSED_BACKGROUND,
                 borderBottomLeftRadius: isVisible ? 0 : 20,
                 borderBottomRightRadius: isVisible ? 0 : 20,
+                transform: [{ scale: headerScaleAnim }],
+                borderBottomWidth: isVisible ? 1 : 0,
+                borderBottomColor: isVisible ? THEME.border : "transparent",
+                elevation: isVisible ? 5 : 2,
+                shadowOpacity: isVisible ? 0.06 : 0.08,
               },
             ]}
           >
@@ -253,21 +293,27 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
               onPressIn={handleHeaderPressIn}
               onPressOut={handleHeaderPressOut}
               style={styles.header}
+              android_ripple={{ color: 'rgba(0, 0, 0, 0.05)', borderless: true }}
             >
               <View style={styles.headerContent}>
                 {/* Icône et titre */}
                 <View style={styles.titleContainer}>
-                  <View style={styles.trophyIconContainer}>
+                  <LinearGradient
+                    colors={[THEME.primary, THEME.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.iconContainer}
+                  >
                     <MaterialIcons
                       name="emoji-events"
-                      size={32}
-                      color="#1B5D85"
+                      size={24}
+                      color="#FFFFFF"
                     />
-                  </View>
+                  </LinearGradient>
                   <View>
                     <Text style={styles.title}>Classement</Text>
                     <Text style={styles.subtitle}>
-                      Top 10 des meilleurs Smarters
+                      Top {MAX_DISPLAY_USERS} des meilleurs Smarters
                     </Text>
                   </View>
                 </View>
@@ -281,17 +327,38 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
                         { transform: [{ scale: badgePulse }] },
                       ]}
                     >
-                      <Text style={styles.countText}>{topUsers.length}</Text>
+                      <LinearGradient
+                        colors={[THEME.secondary, THEME.primary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.countBadgeGradient}
+                      >
+                        <Text style={styles.countText}>{topUsers.length}</Text>
+                      </LinearGradient>
                     </Animated.View>
                   )}
 
                   <Animated.View
                     style={[
                       styles.arrowContainer,
-                      { transform: [{ rotate: arrowRotation }] },
+                      {
+                        transform: [
+                          { rotate: arrowRotation },
+                          { scale: isVisible ? 1.1 : 1 }
+                        ],
+                      },
                     ]}
                   >
-                    <Text style={styles.arrowIcon}>⌄</Text>
+                    <LinearGradient
+                      colors={isVisible ? 
+                        [THEME.primary, THEME.primaryDark] : 
+                        ['#A0AEC0', '#718096']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.arrowIndicator}
+                    >
+                      <Text style={styles.arrowIcon}>⌄</Text>
+                    </LinearGradient>
                   </Animated.View>
                 </View>
               </View>
@@ -300,47 +367,52 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
 
           {/* Contenu principal avec hauteur conditionnelle */}
           {isVisible && (
-            <Animated.View
-              style={[
-                styles.contentContainer, 
-                { 
-                  opacity: opacityAnim,
-                  backgroundColor: LIGHT_BLUE_BACKGROUND,
-                  marginTop: 0, // Suppression de la marge pour éviter l'écart
-                  paddingTop: 15, // Padding pour l'espacement interne
-                  borderBottomLeftRadius: 20,
-                  borderBottomRightRadius: 20,
-                }
-              ]}
+            <View
+              style={styles.sectionContentContainer}
             >
-              {topUsers.length > 0 ? (
-                <>
-                  {/* Podium pour les 3 premiers */}
-                  <View>{renderPodium()}</View>
+              <LinearGradient
+                colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
+                style={styles.sectionContent}
+              >
+                <Animated.View
+                  style={[
+                    styles.contentInner,
+                    {
+                      opacity: opacityAnim,
+                      transform: [{ translateY: contentSlide }],
+                    },
+                  ]}
+                >
+                  {topUsers.length > 0 ? (
+                    <>
+                      {/* Podium pour les 3 premiers */}
+                      <View>{renderPodium()}</View>
 
-                  {/* Liste des autres utilisateurs */}
-                  {listUsers.length > 0 && (
-                    <View style={styles.rankingListContainer}>
-                      <View style={styles.rankingListHeader}>
-                        <Text style={styles.rankingListTitle}>
-                          Autres contributeurs
-                        </Text>
-                        <TouchableOpacity onPress={onSeeAllPress}>
-                          <Text style={styles.viewAllLink}>
-                            Voir tout le classement
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
+                      {/* Liste des autres utilisateurs */}
+                      {listUsers.length > 0 && (
+                        <View style={styles.rankingListContainer}>
+                          <View style={styles.rankingListHeader}>
+                            <Text style={styles.rankingListTitle}>
+                              Autres contributeurs
+                            </Text>
+                            <TouchableOpacity onPress={onSeeAllPress}>
+                              <Text style={styles.viewAllLink}>
+                                Voir tout
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
 
-                      {renderUserList()}
-                      {renderSeeAllButton()}
-                    </View>
+                          {renderUserList()}
+                          {renderSeeAllButton()}
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    renderEmptyState()
                   )}
-                </>
-              ) : (
-                renderEmptyState()
-              )}
-            </Animated.View>
+                </Animated.View>
+              </LinearGradient>
+            </View>
           )}
         </View>
       </View>
@@ -350,33 +422,25 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
 
 const styles = StyleSheet.create({
   container: {
+    marginHorizontal: 10,
     marginVertical: 5,
     overflow: "hidden",
+    borderRadius: 24,
   },
-  // Nouveau conteneur unifié pour la gestion de l'apparence commune
-  unifiedContainer: {
+  // Styles du header harmonisés avec les autres composants
+  headerContainer: {
     borderRadius: 20,
-    overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: "rgba(0, 0, 0, 0.08)",
+        shadowColor: THEME.shadow,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 12,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
-  },
-  unifiedContainerActive: {
-    backgroundColor: LIGHT_BLUE_BACKGROUND,
-  },
-  headerContainer: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 20, // Sera modifié conditionnellement
-    borderBottomRightRadius: 20, // Sera modifié conditionnellement
   },
   header: {
     borderRadius: 20,
@@ -393,67 +457,128 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  trophyIconContainer: {
+  iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F7F9FC",
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
-  },
-  trophyIcon: {
-    fontSize: 22,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333333",
+    color: THEME.text,
     marginBottom: 2,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    color: THEME.textLight,
+    letterSpacing: -0.2,
   },
   headerControls: {
     flexDirection: "row",
     alignItems: "center",
   },
+  // Badge de comptage avec animation de pulsation et dégradé
   countBadge: {
-    backgroundColor: "#1B5D85",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 14,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.secondary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  countBadgeGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   countText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
   },
   arrowContainer: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  arrowIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
   arrowIcon: {
     fontSize: 24,
-    color: "#4F566B",
+    color: "#FFFFFF",
     fontWeight: "bold",
+    marginTop: -10,
   },
-  contentContainer: {
-    // marginTop est maintenant 0, avec un paddingTop à la place
+  // Styles du contenu
+  sectionContentContainer: {
+    overflow: "hidden",
+    marginTop: -1, // Chevauchement léger pour éliminer toute ligne visible
+    borderTopWidth: 0,
+    zIndex: 0,
   },
+  sectionContent: {
+    borderRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  contentInner: {
+    padding: 15,
+  },
+  // Styles existants pour le contenu
   podiumContainer: {
     flexDirection: "row",
     justifyContent: "center",
     paddingBottom: 20,
   },
   rankingListContainer: {
-    paddingHorizontal: 16,
     marginBottom: 16,
   },
   rankingListHeader: {
@@ -461,6 +586,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 5,
   },
   rankingListTitle: {
     fontSize: 16,
@@ -469,16 +595,15 @@ const styles = StyleSheet.create({
   },
   viewAllLink: {
     fontSize: 13,
-    color: "#4A80F0",
-    fontWeight: "400",
-    opacity: 0.8,
+    color: THEME.primary,
+    fontWeight: "500",
   },
   rankingListItems: {
     marginBottom: 10,
   },
   emptyStateContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 40,
+    paddingVertical: 30,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -493,14 +618,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#E6EBF5",
+    backgroundColor: "#f0eeff",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
-  },
-  emptyStateIcon: {
-    fontSize: 32,
-    opacity: 0.7,
   },
   emptyStateTitle: {
     fontSize: 18,
@@ -518,24 +639,18 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "#4A80F0",
-    ...Platform.select({
-      ios: {
-        shadowColor: "rgba(0, 0, 0, 0.1)",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    shadowColor: "rgba(0, 0, 0, 0.1)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   seeAllGradient: {
     paddingVertical: 14,
+    paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4A80F0",
+    flexDirection: "row",
   },
   seeAllText: {
     color: "#FFFFFF",

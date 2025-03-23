@@ -1,4 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+// Modifications apportées au composant MapScreen pour la section des filtres
+// Éléments modifiés: filtersHeader, gestion des filtres actifs et amélioration visuelle
+
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import {
   View,
   ActivityIndicator,
@@ -6,9 +9,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
+  Dimensions,
+  Platform,
   Image,
+  ScrollView
 } from "react-native";
-import MapView, { Marker, Camera, Region } from "react-native-maps";
+import MapView, { Marker, Region } from "react-native-maps";
 import { useLocation } from "../hooks/location/useLocation";
 import {
   fetchAllReportsInRegion,
@@ -19,18 +25,113 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../types/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { getTypeIcon, typeIcons } from "../utils/typeIcons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
+import { PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
+  interpolate,
+  Extrapolate,
+  runOnJS,
+  useAnimatedGestureHandler,
 } from "react-native-reanimated";
 import { formatDate } from "../utils/formatters";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
+// Type pour les gradients (tuple en lecture seule)
+type GradientTuple = readonly [string, string, ...string[]];
+
+// Définition des types d'icônes
+type IconType = {
+  name: string;
+  label: string;
+  color?: string;
+};
+
+// Système d'icônes pour remplacer les images
+const ICONS: Record<string, IconType> = {
+  events: {
+    name: "calendar-star",
+    label: "Événements",
+    color: "#E43737"
+  },
+  danger: {
+    name: "alert-octagon",
+    label: "Danger",
+    color: "#FF3B30"
+  },
+  travaux: {
+    name: "hammer",
+    label: "Travaux",
+    color: "#FF9500"
+  },
+  nuisance: {
+    name: "volume-high",
+    label: "Nuisance",
+    color: "#9C27B0"
+  },
+  pollution: {
+    name: "factory",
+    label: "Pollution",
+    color: "#34C759"
+  },
+  reparation: {
+    name: "wrench",
+    label: "Réparation",
+    color: "#007AFF"
+  }
+};
+
+// Fonction pour obtenir l'icône selon le type
+const getTypeIcon = (type: string): IconType => {
+  return ICONS[type] || ICONS.events;
+};
+
+// CIF Color Palette avec typage correct
+const COLORS = {
+  primary: "#062C41",
+  primaryLight: "#0A4D73",
+  primaryGradient: ["#062C41", "#0A4D73"] as GradientTuple,
+  secondary: "#E43737",
+  secondaryLight: "#FF5252",
+  secondaryGradient: ["#E43737", "#FF5252"] as GradientTuple,
+  accent: "#A1D9F7",
+  accentGradient: ["#A1D9F7", "#70C1F2"] as GradientTuple,
+  background: "#F8F9FA",
+  card: "#FFFFFF",
+  cardShadow: "rgba(6, 44, 65, 0.1)",
+  text: {
+    primary: "#333333",
+    secondary: "#666666",
+    light: "#999999",
+    inverse: "#FFFFFF",
+  },
+  marker: {
+    shadow: "rgba(0, 0, 0, 0.2)",
+    background: "#FFFFFF",
+  },
+};
+
+// CIF Animation Constants
+const ANIMATION = {
+  duration: {
+    short: 150,
+    medium: 300,
+    long: 500,
+  },
+  spring: {
+    damping: 15,
+    stiffness: 150,
+    mass: 1,
+  },
+};
+
+// Standardized Type Labels
 const TYPE_LABELS: Record<string, string> = {
   reparation: "Réparation",
   nuisance: "Nuisance",
@@ -39,28 +140,41 @@ const TYPE_LABELS: Record<string, string> = {
   pollution: "Pollution",
 };
 
+/**
+ * MapScreen component displays a map with reports and events based on user location
+ * and provides filtering, preview, and navigation capabilities.
+ */
 export default function MapScreen() {
   const { location, loading } = useLocation();
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation<MapScreenNavigationProp>();
-  const translateY = useSharedValue(0);
+  const insets = useSafeAreaInsets();
+  const windowHeight = Dimensions.get('window').height;
+  const windowWidth = Dimensions.get('window').width;
+  
+  // Animated values
+  const translateY = useSharedValue(windowHeight);
+  const filtersHeight = useSharedValue(56);
+  const filtersExpandButton = useSharedValue(0);
+  const floatingButtonsScale = useSharedValue(0);
+  const mapControlsOpacity = useSharedValue(0);
 
+  // Component state
   const [reports, setReports] = useState<Report[]>([]);
   const [events, setEvents] = useState<ReportEvent[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedReport, setSelectedReport] = useState<
-    Report | ReportEvent | null
-  >(null);
-  const [mapType, setMapType] = useState<
-    "standard" | "satellite" | "hybrid" | "terrain"
-  >("standard");
-  const [selectedFilter, setSelectedFilter] = useState<
-    "all" | "reports" | "events"
-  >("all");
+  const [selectedReport, setSelectedReport] = useState<Report | ReportEvent | null>(null);
+  const [mapType, setMapType] = useState<"standard" | "satellite" | "hybrid" | "terrain">("standard");
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "reports" | "events">("all");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
+  // Valeur de couleur par défaut pour les gradients
+  const defaultGradient = ["#F5F5F5", "#F5F5F5"] as GradientTuple;
+
+  // Effect for initializing the map with user location
   useEffect(() => {
     if (location) {
       const initialRegion = {
@@ -79,15 +193,24 @@ export default function MapScreen() {
       );
 
       fetchDataInRegion(initialRegion);
+      
+      // Animate UI elements entry
+      floatingButtonsScale.value = withSpring(1, ANIMATION.spring);
+      
+      mapControlsOpacity.value = withTiming(1, {
+        duration: ANIMATION.duration.long,
+      });
     }
   }, [location]);
 
+  // Effect for showing selected report detail
   useEffect(() => {
     if (selectedReport) {
-      translateY.value = withTiming(0, { duration: 200 });
+      translateY.value = withSpring(0, ANIMATION.spring);
     }
   }, [selectedReport]);
 
+  // Function to fetch reports and events in the current map region
   const fetchDataInRegion = async (region?: Region) => {
     const regionToUse =
       region ||
@@ -138,17 +261,25 @@ export default function MapScreen() {
     }
   };
 
-  const handleGesture = (event) => {
-    if (event.nativeEvent.translationY > 50) {
-      translateY.value = withTiming(0, { duration: 100 });
-      setTimeout(() => {
-        setSelectedReport(null);
-        translateY.value = withTiming(0, { duration: 0 });
-      }, 200);
-    }
-  };
+  // Handle the gesture for dismissing the report detail panel
+  const gestureHandler = useAnimatedGestureHandler({
+    onActive: (event) => {
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+      }
+    },
+    onEnd: (event) => {
+      if (event.translationY > 100) {
+        translateY.value = withSpring(windowHeight, ANIMATION.spring);
+        runOnJS(setSelectedReport)(null);
+      } else {
+        translateY.value = withSpring(0, ANIMATION.spring);
+      }
+    },
+  });
 
-  const filteredMarkers = (): (Report | ReportEvent)[] => {
+  // Filter markers based on selected filter and category
+  const filteredMarkers = useCallback((): (Report | ReportEvent)[] => {
     let markers: (Report | ReportEvent)[] = [];
 
     if (selectedFilter === "reports") {
@@ -168,56 +299,126 @@ export default function MapScreen() {
     }
 
     return markers;
-  };
+  }, [reports, events, selectedFilter, selectedCategory]);
 
-  const toggleMapType = () => {
+  // Toggle map type between standard and satellite
+  const toggleMapType = useCallback(() => {
     setMapType((prevType) =>
       prevType === "standard" ? "satellite" : "standard"
     );
-  };
+  }, []);
 
+  // Toggle filters expansion
+  const toggleFiltersExpanded = useCallback(() => {
+    setFiltersExpanded(prev => !prev);
+    filtersHeight.value = withSpring(
+      filtersExpanded ? 56 : 140, 
+      ANIMATION.spring
+    );
+    filtersExpandButton.value = withSpring(
+      filtersExpanded ? 0 : 1,
+      ANIMATION.spring
+    );
+  }, [filtersExpanded, filtersHeight, filtersExpandButton]);
+
+  // Check if an item is a Report or an Event
   const isReport = (item: Report | ReportEvent): item is Report =>
     (item as Report).type !== undefined;
 
-  const formatType = (type: string): string => {
+  // Format type to display the localized label
+  const formatType = useCallback((type: string): string => {
     return TYPE_LABELS[type] || "Type inconnu";
-  };
+  }, []);
 
-  const animatedStyle = useAnimatedStyle(() => ({
+  // Determine if any filters are active
+  const hasActiveFilters = useMemo(() => 
+    selectedFilter !== 'all' || selectedCategory !== null,
+  [selectedFilter, selectedCategory]);
+
+  // Get active filter label for header display
+  const getActiveFilterLabel = useMemo(() => {
+    if (selectedCategory) {
+      return ICONS[selectedCategory].label;
+    } else if (selectedFilter === "events") {
+      return ICONS.events.label;
+    } else if (selectedFilter === "reports") {
+      return "Signalements";
+    }
+    return null;
+  }, [selectedFilter, selectedCategory]);
+
+  // Animated styles
+  const detailPanelStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
+    opacity: interpolate(
+      translateY.value,
+      [0, windowHeight / 2, windowHeight],
+      [1, 0.5, 0],
+      Extrapolate.CLAMP
+    ),
   }));
 
-  if (loading || !isReady) {
-    console.log("⏳ En attente du chargement...");
+  const filtersContainerStyle = useAnimatedStyle(() => ({
+    height: filtersHeight.value,
+  }));
+
+  const filtersButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ 
+      rotate: `${interpolate(
+        filtersExpandButton.value, 
+        [0, 1], 
+        [0, Math.PI / 2]
+      )}rad` 
+    }],
+  }));
+
+  const floatingButtonsStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: floatingButtonsScale.value }],
+    opacity: floatingButtonsScale.value,
+  }));
+
+  // Loading indicator during initial load or when fetching reports
+  if (loading || !isReady || loadingReports) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#062C41" />
+        <LinearGradient
+          colors={COLORS.primaryGradient}
+          style={styles.loadingGradient}
+        >
+          <ActivityIndicator size="large" color={COLORS.accent} />
+          <Text style={styles.loadingText}>
+            {loadingReports ? "Chargement des données..." : "Initialisation..."}
+          </Text>
+        </LinearGradient>
       </View>
     );
   }
 
-  if (loading || loadingReports) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#062C41" />
-      </View>
-    );
-  }
-
+  // Error view if location is not available
   if (!location) {
-    Alert.alert(
-      "Localisation indisponible",
-      "Impossible de récupérer votre position actuelle."
-    );
     return (
       <View style={styles.errorContainer}>
-        <Text>Localisation indisponible</Text>
+        <LinearGradient
+          colors={COLORS.primaryGradient}
+          style={styles.errorGradient}
+        >
+          <MaterialCommunityIcons
+            name="map-marker-off"
+            size={60}
+            color={COLORS.accent}
+          />
+          <Text style={styles.errorTitle}>Localisation indisponible</Text>
+          <Text style={styles.errorText}>
+            Impossible de récupérer votre position actuelle.
+          </Text>
+        </LinearGradient>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {/* Map Component */}
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -231,35 +432,38 @@ export default function MapScreen() {
         scrollEnabled={true}
         showsCompass={false}
       >
-        {/* 🔹 Marqueurs de signalements et événements */}
-        {filteredMarkers().map((item, index) => {
-          const isReport = (item: Report | ReportEvent): item is Report =>
-            (item as Report).type !== undefined;
-
-          return (
-            <Marker
-              key={`${item.id}-${index}`}
-              coordinate={{
-                latitude: item.latitude,
-                longitude: item.longitude,
-              }}
-              onPress={() => setSelectedReport(item)}
-            >
-              <View style={styles.markerContainer}>
-                <Image
-                  source={
+        {/* Map Markers */}
+        {filteredMarkers().map((item, index) => (
+          <Marker
+            key={`${item.id}-${index}`}
+            coordinate={{
+              latitude: item.latitude,
+              longitude: item.longitude,
+            }}
+            onPress={() => setSelectedReport(item)}
+          >
+            <View style={styles.markerContainer}>
+              <View style={styles.markerIconShadow}>
+                <LinearGradient
+                  colors={
                     isReport(item)
-                      ? getTypeIcon(item.type)
-                      : require("../assets/icons/event.png")
+                      ? COLORS.primaryGradient
+                      : COLORS.secondaryGradient
                   }
-                  style={styles.markerIcon}
-                />
+                  style={styles.markerGradient}
+                >
+                  <MaterialCommunityIcons
+                    name={isReport(item) ? (getTypeIcon(item.type).name as any) : ICONS.events.name}
+                    size={24}
+                    color={COLORS.text.inverse}
+                  />
+                </LinearGradient>
               </View>
-            </Marker>
-          );
-        })}
+            </View>
+          </Marker>
+        ))}
 
-        {/* 🔹 Pin de la position actuelle de l'utilisateur */}
+        {/* User Location Marker */}
         {location && (
           <Marker
             coordinate={{
@@ -268,123 +472,343 @@ export default function MapScreen() {
             }}
           >
             <View style={styles.userMarkerContainer}>
-              <Image
-                source={require("../assets/icons/location.png")}
-                style={styles.userMarkerIcon}
-              />
+              <View style={styles.userMarkerRing}>
+                <View style={styles.userMarkerDot} />
+              </View>
             </View>
           </Marker>
         )}
       </MapView>
 
-      <View style={styles.legendContainer}>
-  {/* 🔹 Bouton "Tout afficher" */}
-  <TouchableOpacity
-    style={[
-      styles.legendItem,
-      selectedFilter === "all" && styles.activeLegendItem,
-    ]}
-    onPress={() => {
-      setSelectedFilter("all");
-      setSelectedCategory(null);
-    }}
-  >
-    <MaterialCommunityIcons
-      style={styles.iconLegend}
-      name="view-grid"
-      size={22}
-      color="#062C41"
-    />
-    <Text style={styles.legendText}>Tout</Text>
-  </TouchableOpacity>
+      {/* Section de filtres optimisée avec amélioration visuelle */}
+      <Animated.View style={[styles.filtersContainer, filtersContainerStyle]}>
+        <LinearGradient
+          colors={hasActiveFilters ? COLORS.primaryGradient : ["#FFFFFF", "#F8F9FA"] as GradientTuple}
+          style={styles.filtersHeaderGradient}
+        >
+          <View style={styles.filtersHeader}>
+            {hasActiveFilters ? (
+              <View style={styles.activeFilterLabelContainer}>
+                <Text style={styles.filtersTitleActive}>
+                  Filtre actif:
+                </Text>
+                <Text style={styles.activeFilterName}>
+                  {getActiveFilterLabel}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.filtersTitle}>Filtres</Text>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.expandButton}
+              onPress={toggleFiltersExpanded}
+            >
+              <Animated.View style={filtersButtonStyle}>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color={hasActiveFilters ? COLORS.text.inverse : COLORS.primary}
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+        
+        {/* Mode compact (afficher uniquement les filtres actifs ou par défaut) */}
+        {!filtersExpanded && (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipScrollContainer}
+          >
+            {/* Filtre "Tout" */}
+            <TouchableOpacity
+              style={[
+                styles.filterChip,
+                selectedFilter === "all" && styles.activeFilterChip,
+              ]}
+              onPress={() => {
+                setSelectedFilter("all");
+                setSelectedCategory(null);
+              }}
+            >
+              <LinearGradient
+                colors={selectedFilter === "all" 
+                  ? COLORS.accentGradient 
+                  : defaultGradient}
+                style={styles.chipGradient}
+              >
+                <MaterialCommunityIcons
+                  name="view-grid"
+                  size={18}
+                  color={selectedFilter === "all" ? COLORS.text.inverse : COLORS.primary}
+                />
+                <Text style={[
+                  styles.chipText,
+                  selectedFilter === "all" && styles.activeChipText,
+                ]}>
+                  Tout
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            {/* Filtre "Événements" (affiché si sélectionné ou mode par défaut) */}
+            {(selectedFilter === "events" || !hasActiveFilters) && (
+              <TouchableOpacity
+                style={[
+                  styles.filterChip,
+                  selectedFilter === "events" && styles.activeFilterChip,
+                ]}
+                onPress={() => {
+                  setSelectedFilter("events");
+                  setSelectedCategory(null);
+                }}
+              >
+                <LinearGradient
+                  colors={selectedFilter === "events" 
+                    ? COLORS.secondaryGradient 
+                    : defaultGradient}
+                  style={styles.chipGradient}
+                >
+                  <MaterialCommunityIcons
+                    name={ICONS.events.name as any}
+                    size={18}
+                    color={selectedFilter === "events" ? COLORS.text.inverse : COLORS.primary}
+                  />
+                  <Text style={[
+                    styles.chipText,
+                    selectedFilter === "events" && styles.activeChipText,
+                  ]}>
+                    {ICONS.events.label}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+            
+            {/* Catégorie sélectionnée avec bouton de suppression */}
+            {selectedCategory && (
+              <TouchableOpacity
+                style={styles.filterChip}
+                onPress={() => {
+                  setSelectedCategory(null);
+                }}
+              >
+                <LinearGradient
+                  colors={COLORS.primaryGradient}
+                  style={styles.chipGradient}
+                >
+                  <MaterialCommunityIcons
+                    name={ICONS[selectedCategory].name as any}
+                    size={18}
+                    color={COLORS.text.inverse}
+                  />
+                  <Text style={[styles.chipText, styles.activeChipText]}>
+                    {ICONS[selectedCategory].label}
+                  </Text>
+                  <View style={styles.closeIconContainer}>
+                    <MaterialCommunityIcons
+                      name="close-circle"
+                      size={16}
+                      color={COLORS.text.inverse}
+                    />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+            
+            {/* Indicateur pour montrer qu'il y a plus de filtres */}
+            {!hasActiveFilters && (
+              <View style={styles.moreFiltersIndicator}>
+                <MaterialCommunityIcons
+                  name="dots-horizontal"
+                  size={24}
+                  color={COLORS.text.secondary}
+                />
+              </View>
+            )}
+          </ScrollView>
+        )}
+        
+        {/* Mode étendu (afficher tous les filtres) */}
+        {filtersExpanded && (
+          <View style={styles.expandedFiltersContainer}>
+            {/* Rangée 1: Filtres principaux */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipScrollContainer}
+            >
+              {/* Filtre "Tout" */}
+              <TouchableOpacity
+                style={styles.filterChip}
+                onPress={() => {
+                  setSelectedFilter("all");
+                  setSelectedCategory(null);
+                }}
+              >
+                <LinearGradient
+                  colors={selectedFilter === "all" 
+                    ? COLORS.accentGradient 
+                    : defaultGradient}
+                  style={styles.chipGradient}
+                >
+                  <MaterialCommunityIcons
+                    name="view-grid"
+                    size={18}
+                    color={selectedFilter === "all" ? COLORS.text.inverse : COLORS.primary}
+                  />
+                  <Text style={[
+                    styles.chipText,
+                    selectedFilter === "all" && styles.activeChipText,
+                  ]}>
+                    Tout
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              {/* Filtre "Événements" */}
+              <TouchableOpacity
+                style={styles.filterChip}
+                onPress={() => {
+                  setSelectedFilter("events");
+                  setSelectedCategory(null);
+                }}
+              >
+                <LinearGradient
+                  colors={selectedFilter === "events" 
+                    ? COLORS.secondaryGradient 
+                    : defaultGradient}
+                  style={styles.chipGradient}
+                >
+                  <MaterialCommunityIcons
+                    name={ICONS.events.name as any}
+                    size={18}
+                    color={selectedFilter === "events" ? COLORS.text.inverse : COLORS.primary}
+                  />
+                  <Text style={[
+                    styles.chipText,
+                    selectedFilter === "events" && styles.activeChipText,
+                  ]}>
+                    {ICONS.events.label}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </ScrollView>
+            
+            {/* Rangée 2: Catégories de signalements */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipScrollContainer}
+              style={styles.categoryRow}
+            >
+              {Object.keys(ICONS)
+                .filter(key => key !== "events")
+                .map(key => (
+                  <TouchableOpacity
+                    key={key}
+                    style={styles.filterChip}
+                    onPress={() => {
+                      setSelectedFilter("reports");
+                      setSelectedCategory(selectedCategory === key ? null : key);
+                    }}
+                  >
+                    <LinearGradient
+                      colors={selectedCategory === key
+                        ? [ICONS[key].color || COLORS.primary, COLORS.primary] as GradientTuple
+                        : defaultGradient}
+                      style={styles.chipGradient}
+                    >
+                      <MaterialCommunityIcons
+                        name={ICONS[key].name as any}
+                        size={18}
+                        color={selectedCategory === key ? COLORS.text.inverse : COLORS.primary}
+                      />
+                      <Text style={[
+                        styles.chipText,
+                        selectedCategory === key && styles.activeChipText,
+                      ]}>
+                        {ICONS[key].label}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+          </View>
+        )}
+      </Animated.View>
 
-  {/* 🔹 Bouton "Événements" - Géré manuellement */}
-  <TouchableOpacity
-    style={[
-      styles.legendItem,
-      selectedFilter === "events" && styles.activeLegendItem,
-    ]}
-    onPress={() => {
-      setSelectedFilter("events");
-      setSelectedCategory(null);
-    }}
-  >
-    <Image source={typeIcons.events.icon} style={styles.legendIcon} />
-    <Text style={styles.legendText}>{typeIcons.events.label}</Text>
-  </TouchableOpacity>
-
-  {/* 🔹 Catégories des reports (exclut "events" pour éviter le doublon) */}
-  {Object.keys(typeIcons)
-    .filter((key) => key !== "events") // ✅ Exclut events du mapping
-    .map((key) => (
-      <TouchableOpacity
-        key={key}
-        style={[
-          styles.legendItem,
-          selectedCategory === key && styles.activeLegendItem,
-        ]}
-        onPress={() => {
-          setSelectedFilter("reports"); // ✅ S'assure que c'est bien un report
-          setSelectedCategory(selectedCategory === key ? null : key);
-        }}
-      >
-        <Image source={typeIcons[key].icon} style={styles.legendIcon} />
-        <Text style={styles.legendText}>{typeIcons[key].label}</Text>
-      </TouchableOpacity>
-    ))}
-</View>
-
-      <View style={styles.floatingButtonContainer}>
-        {/* Bouton basculer le type de carte */}
+      {/* Floating Action Buttons */}
+      <Animated.View style={[styles.floatingButtonContainer, floatingButtonsStyle]}>
+        {/* Map Type Toggle Button */}
         <TouchableOpacity
           style={styles.floatingButtonView}
           onPress={toggleMapType}
         >
-          <MaterialCommunityIcons
-            name={mapType === "standard" ? "satellite-variant" : "map-outline"}
-            size={24}
-            color="white"
-          />
+          <LinearGradient
+            colors={COLORS.primaryGradient}
+            style={styles.floatingButtonGradient}
+          >
+            <MaterialCommunityIcons
+              name={mapType === "standard" ? "satellite-variant" : "map-outline"}
+              size={24}
+              color="white"
+            />
+          </LinearGradient>
         </TouchableOpacity>
 
-        {/* Bouton rechercher les signalements */}
+        {/* Search Button */}
         <TouchableOpacity
           style={styles.floatingButtonSearch}
           onPress={() => fetchDataInRegion(mapRegion || undefined)}
         >
-          <MaterialCommunityIcons name="magnify" size={24} color="white" />
+          <LinearGradient
+            colors={COLORS.secondaryGradient}
+            style={styles.floatingButtonGradient}
+          >
+            <MaterialCommunityIcons name="magnify" size={24} color="white" />
+          </LinearGradient>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
+      {/* Report/Event Detail Panel */}
       {selectedReport && (
-        <PanGestureHandler onGestureEvent={handleGesture}>
-          <Animated.View style={[styles.previewContainer, animatedStyle]}>
-            {/* Icone de fermeture (Swipe vers le bas) */}
+        <PanGestureHandler onGestureEvent={gestureHandler}>
+          <Animated.View style={[styles.previewContainer, detailPanelStyle]}>
+            {/* Pull Handle */}
             <View style={styles.closeIcon}>
               <View style={styles.closeIconBar} />
             </View>
 
-            {/* Image et type */}
+            {/* Header with Icon and Title */}
             <View style={styles.previewHeader}>
-              <Image
-                source={
+              <LinearGradient
+                colors={
                   isReport(selectedReport)
-                    ? getTypeIcon(selectedReport.type)
-                    : require("../assets/icons/event.png")
+                    ? COLORS.primaryGradient
+                    : COLORS.secondaryGradient
                 }
-                style={styles.previewImage}
-              />
-              <View>
+                style={styles.previewIconContainer}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    isReport(selectedReport)
+                      ? (getTypeIcon(selectedReport.type).name as any)
+                      : (ICONS.events.name as any)
+                  }
+                  size={28}
+                  color={COLORS.text.inverse}
+                />
+              </LinearGradient>
+              
+              <View style={styles.previewTitleContainer}>
                 <Text
                   style={styles.previewTitle}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  {isReport(selectedReport)
-                    ? selectedReport.title.length > 32
-                      ? `${selectedReport.title.slice(0, 32)}...`
-                      : selectedReport.title
-                    : selectedReport.title.length > 32
+                  {selectedReport.title.length > 32
                     ? `${selectedReport.title.slice(0, 32)}...`
                     : selectedReport.title}
                 </Text>
@@ -396,7 +820,7 @@ export default function MapScreen() {
               </View>
             </View>
 
-            {/* 📷 Image du report (si disponible) */}
+            {/* Image if available */}
             {"photos" in selectedReport &&
               selectedReport.photos?.length > 0 && (
                 <Image
@@ -406,39 +830,48 @@ export default function MapScreen() {
                 />
               )}
 
-            {/* Informations */}
-            <View style={styles.previewInfo}>
-              <MaterialCommunityIcons name="calendar" size={16} color="#666" />
-              <Text style={styles.previewText}>
-                {isReport(selectedReport) && selectedReport.createdAt
-                  ? formatDate(selectedReport.createdAt)
-                  : !isReport(selectedReport) && selectedReport.date
-                  ? formatDate(selectedReport.date)
-                  : "Date inconnue"}
-              </Text>
-            </View>
 
-            <View style={styles.previewInfo}>
-              <MaterialCommunityIcons
-                name="map-marker-distance"
-                size={16}
-                color="#666"
-              />
-              <Text style={styles.previewText}>
-                {selectedReport.distance !== undefined &&
-                selectedReport.distance !== null
-                  ? `${selectedReport.distance.toFixed(2)} km`
-                  : (!isReport(selectedReport) && selectedReport.location) ||
-                    "Lieu inconnu"}
-              </Text>
+            {/* Info badges */}
+            <View style={styles.previewInfoContainer}>
+              <View style={styles.previewInfoBadge}>
+                <MaterialCommunityIcons 
+                  name="calendar" 
+                  size={16} 
+                  color={COLORS.primary} 
+                />
+                <Text style={styles.previewInfoText}>
+                  {isReport(selectedReport) && selectedReport.createdAt
+                    ? formatDate(selectedReport.createdAt)
+                    : !isReport(selectedReport) && selectedReport.date
+                    ? formatDate(selectedReport.date)
+                    : "Date inconnue"}
+                </Text>
+              </View>
+
+              <View style={styles.previewInfoBadge}>
+                <MaterialCommunityIcons
+                  name="map-marker-distance"
+                  size={16}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.previewInfoText}>
+                  {selectedReport.distance !== undefined &&
+                  selectedReport.distance !== null
+                    ? `${selectedReport.distance.toFixed(2)} km`
+                    : (!isReport(selectedReport) && selectedReport.location) ||
+                      "Lieu inconnu"}
+                </Text>
+              </View>
             </View>
 
             {/* Description */}
-            <Text style={styles.previewDescription}>
-              {selectedReport.description || "Aucune description disponible"}
-            </Text>
+            <View style={styles.previewDescriptionContainer}>
+              <Text style={styles.previewDescription}>
+                {selectedReport.description || "Aucune description disponible"}
+              </Text>
+            </View>
 
-            {/* Bouton Voir Plus */}
+            {/* Action Button */}
             <TouchableOpacity
               style={styles.detailsButton}
               onPress={() => {
@@ -454,7 +887,16 @@ export default function MapScreen() {
                 setSelectedReport(null);
               }}
             >
-              <Text style={styles.detailsButtonText}>Voir plus</Text>
+              <LinearGradient
+                colors={
+                  isReport(selectedReport)
+                    ? COLORS.primaryGradient
+                    : COLORS.secondaryGradient
+                }
+                style={styles.detailsButtonGradient}
+              >
+                <Text style={styles.detailsButtonText}>Voir plus</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
         </PanGestureHandler>
@@ -464,235 +906,427 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Main container styles
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  markerContainer: {
-    alignItems: "center",
-  },
-  markerText: {
-    backgroundColor: "white",
-    padding: 4,
-    borderRadius: 5,
-    fontSize: 10,
-  },
-  markerIcon: {
-    width: 30,
-    height: 30,
-    resizeMode: "contain",
-  },
-  markerIconEvent: {
-    width: 50,
-    height: 50,
-    resizeMode: "contain",
-  },
-  legendContainer: {
-    position: "absolute",
-    top: 100,
-    left: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    padding: 10,
-    borderRadius: 10,
-    elevation: 5,
-  },
-  activeLegendItem: {
-    backgroundColor: "#A1D9F7",
-    borderRadius: 8,
-    padding: 5,
-  },
-  iconLegend: {
-    marginLeft: 1,
-    marginRight: 8,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  legendIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 8,
-    resizeMode: "contain",
-  },
-  legendText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#333",
-  },
+  
+  // Loading and error styles
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingGradient: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: COLORS.text.inverse,
+    marginTop: 16,
+    fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  mapTypeButton: {
-    position: "absolute",
-    top: 640,
-    left: "35%",
-    backgroundColor: "#fff",
-    padding: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
+  errorGradient: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  mapTypeButtonText: {
-    color: "#000",
+  errorTitle: {
+    color: COLORS.text.inverse,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
   },
-
-  searchButton: {
-    position: "absolute",
-    top: 685,
-    left: "50%",
-    transform: [{ translateX: -100 }],
-    width: 200,
-    backgroundColor: "#062C41",
-    borderRadius: 30,
-    padding: 10,
+  errorText: {
+    color: COLORS.text.inverse,
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  
+  // Map marker styles
+  markerContainer: {
     alignItems: "center",
+    justifyContent: "center",
   },
-  searchButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  markerIconShadow: {
+    shadowColor: COLORS.marker.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 20,
   },
+  markerGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 5,
+  },
+  markerIcon: {
+    width: 24,
+    height: 24,
+    tintColor: COLORS.text.inverse,
+  },
+  userMarkerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  userMarkerRing: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(6, 44, 65, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userMarkerDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: COLORS.text.inverse,
+  },
+  
+  // Styles améliorés pour la section de filtres
+  filtersContainer: {
+    position: "absolute",
+    top: 110,
+    left: 10,
+    right: 10,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+    zIndex: 10,
+  },
+  filtersHeaderGradient: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  filtersHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  filtersTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text.primary,
+  },
+  filtersTitleActive: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: COLORS.text.inverse,
+    opacity: 0.9,
+  },
+  activeFilterLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeFilterName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text.inverse,
+    marginLeft: 6,
+  },
+  expandButton: {
+    padding: 4,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipScrollContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  filterChip: {
+    marginHorizontal: 4,
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  activeFilterChip: {
+    // Styles appliqués via la LinearGradient
+  },
+  chipGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  chipText: {
+    fontSize: 13,
+    color: COLORS.text.primary,
+    marginLeft: 6,
+    fontWeight: "500",
+  },
+  activeChipText: {
+    color: COLORS.text.inverse,
+  },
+  closeIconContainer: {
+    marginLeft: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  moreFiltersIndicator: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  expandedFiltersContainer: {
+    paddingBottom: 4,
+  },
+  categoryRow: {
+    marginTop: 0,
+    
+  },
+  
+  // Floating button styles
   floatingButtonContainer: {
     position: "absolute",
     bottom: 80,
     right: 20,
     alignItems: "center",
+    zIndex: 10,
   },
   floatingButtonView: {
-    backgroundColor: "#062C41",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   floatingButtonSearch: {
-    backgroundColor: "#E43737",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
+  floatingButtonGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Preview panel styles
   previewContainer: {
     position: "absolute",
-    bottom: 70,
-    width: "100%",
-    backgroundColor: "white",
-    padding: 16,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.card,
+    padding: 20,
+    paddingBottom: 110,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: -5 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 20,
+      },
+    }),
+    zIndex: 100,
   },
   closeIcon: {
     alignSelf: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   closeIconBar: {
     width: 40,
-    height: 5,
-    backgroundColor: "#CCC",
+    height: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderRadius: 10,
   },
-
-  previewImage: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
-    borderRadius: 10,
+  previewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  previewIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  previewIcon: {
+    width: 28,
+    height: 28,
+    tintColor: COLORS.text.inverse,
+  },
+  previewTitleContainer: {
+    flex: 1,
   },
   previewTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
-    width: "100%",
-    flexShrink: 1,
-    textAlign: "left",
-  },
-  previewHeader: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
+    color: COLORS.text.primary,
+    marginBottom: 4,
   },
   previewType: {
     fontSize: 14,
-    color: "#666",
+    color: COLORS.text.secondary,
   },
-  previewInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 5,
+  previewImageContainer: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  previewText: {
+  previewPhotoPlaceholder: {
+    width: "100%",
+    height: 150,
+    backgroundColor: 'rgba(161, 217, 247, 0.1)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewPhotoText: {
+    marginTop: 8,
+    color: COLORS.text.secondary,
     fontSize: 14,
-    color: "#666",
-    marginLeft: 5,
-  },
-  previewDescription: {
-    fontSize: 14,
-    color: "#444",
-    marginVertical: 5,
-    marginBottom: 20,
-  },
-  detailsButton: {
-    backgroundColor: "#062C41",
-    paddingVertical: 12,
-    borderRadius: 50,
-    alignItems: "center",
-  },
-  detailsButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  userMarkerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
   },
   previewImageLarge: {
     width: "100%",
-    height: 100,
-    borderRadius: 20,
-    marginBottom: 10,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 16,
   },
-  userMarkerIcon: {
-    width: 40,
-    height: 40,
+  previewInfoContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+    flexWrap: 'wrap',
+  },
+  previewInfoBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: 'rgba(161, 217, 247, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  previewInfoText: {
+    fontSize: 14,
+    color: COLORS.text.primary,
+    marginLeft: 6,
+  },
+  previewDescriptionContainer: {
+    marginBottom: 20,
+    backgroundColor: COLORS.background,
+    padding: 12,
+    borderRadius: 8,
+  },
+  previewDescription: {
+    fontSize: 14,
+    color: COLORS.text.primary,
+    lineHeight: 20,
+  },
+  detailsButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.cardShadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  detailsButtonGradient: {
+    paddingVertical: 14,
+    borderRadius: 25,
+    alignItems: "center",
+  },
+  detailsButtonText: {
+    color: COLORS.text.inverse,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

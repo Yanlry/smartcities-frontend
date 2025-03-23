@@ -1,4 +1,4 @@
-// Composant EventsSection modifié avec animation de pulsation en continu
+// Composant EventsSection avec design harmonisé
 import React, { memo, useRef, useEffect } from 'react';
 import { 
   View, 
@@ -14,6 +14,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import FeaturedEvents from './FeaturedEvents';
 import { FeaturedEvent } from './event.types';
 
@@ -23,6 +24,25 @@ if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true);
   }
 }
+
+// Configuration des couleurs pour le thème - Style harmonisé avec teinte violette
+const THEME = {
+  primary: "#7C4DFF", // Violet principal
+  primaryDark: "#5E35B1", // Violet foncé
+  secondary: "#B388FF", // Violet clair
+  background: "#F9FAFE", // Fond très légèrement bleuté
+  backgroundDark: "#ECF0F7", // Fond légèrement plus sombre
+  cardBackground: "#FFFFFF", // Blanc pur pour les cartes
+  text: "#2D3748", // Texte principal presque noir
+  textLight: "#718096", // Texte secondaire gris
+  textMuted: "#A0AEC0", // Texte tertiaire gris clair
+  border: "#E2E8F0", // Bordures légères
+  shadow: "rgba(13, 26, 83, 0.12)", // Ombres avec teinte bleuâtre
+};
+
+// Couleur de fond optimisées pour l'état ouvert/fermé
+const EXPANDED_BACKGROUND = "rgba(250, 251, 255, 0.97)";
+const COLLAPSED_BACKGROUND = "#FFFFFF";
 
 /**
  * Interface définissant les propriétés du composant EventsSection
@@ -37,8 +57,7 @@ interface EventsSectionProps {
 }
 
 /**
- * Composant affichant une section d'événements à venir avec animation et design moderne
- * Redesign basé sur le header du composant Classement
+ * Composant affichant une section d'événements à venir avec design harmonisé
  */
 const EventsSection: React.FC<EventsSectionProps> = memo(({ 
   featuredEvents, 
@@ -52,6 +71,8 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
   const headerScaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
   const badgePulse = useRef(new Animated.Value(1)).current;
+  const contentSlideAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
+  const iconRotateAnim = useRef(new Animated.Value(0)).current;
 
   // Animation de rotation pour la flèche
   const arrowRotation = rotateAnim.interpolate({
@@ -59,10 +80,28 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
     outputRange: ['0deg', '180deg']
   });
 
+  // Animation de glissement vertical pour le contenu
+  const contentSlide = contentSlideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-20, 0]
+  });
+
+  // Animation de rotation subtile pour l'icône
+  const iconRotation = iconRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
   // Animation lors du changement de visibilité
   useEffect(() => {
     // Animation fluide pour le changement de layout
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    LayoutAnimation.configureNext({
+      duration: 300,
+      update: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.scaleXY,
+      },
+    });
     
     // Animation de rotation de la flèche
     Animated.timing(rotateAnim, {
@@ -71,9 +110,29 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
       easing: Easing.bezier(0.4, 0.0, 0.2, 1),
       useNativeDriver: true
     }).start();
-  }, [isVisible, rotateAnim]);
+    
+    // Animation de glissement du contenu
+    Animated.timing(contentSlideAnim, {
+      toValue: isVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.cubic),
+    }).start();
+    
+    // Animation de l'icône au changement d'état
+    if (isVisible) {
+      Animated.timing(iconRotateAnim, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true
+      }).start(() => {
+        iconRotateAnim.setValue(0); // Reset pour la prochaine animation
+      });
+    }
+  }, [isVisible, rotateAnim, contentSlideAnim, iconRotateAnim]);
 
-  // Animation de pulsation en continu pour le badge (séparée des autres animations)
+  // Animation de pulsation en continu pour le badge
   useEffect(() => {
     let pulseAnimation: Animated.CompositeAnimation | null = null;
     
@@ -108,92 +167,155 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
 
   // Animation de pression
   const handleHeaderPressIn = () => {
-    Animated.timing(headerScaleAnim, {
+    Animated.spring(headerScaleAnim, {
       toValue: 0.98,
-      duration: 100,
+      friction: 8,
       useNativeDriver: true
     }).start();
   };
 
   const handleHeaderPressOut = () => {
-    Animated.timing(headerScaleAnim, {
+    Animated.spring(headerScaleAnim, {
       toValue: 1,
-      duration: 150,
+      friction: 5,
+      tension: 40,
       useNativeDriver: true
     }).start();
   };
 
   return (
     <View style={styles.container}>
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          { 
-            transform: [{ scale: headerScaleAnim }],
-            backgroundColor: isVisible ? '#F5F0FF' : '#FFFFFF' // Applique une teinte violette légère si ouvert
-          }
-        ]}
-      >
-        <Pressable
-          onPress={toggleVisibility}
-          onPressIn={handleHeaderPressIn}
-          onPressOut={handleHeaderPressOut}
-          style={styles.header}
+      {/* Conteneur principal avec position relative pour le z-index */}
+      <View style={{ position: "relative", zIndex: 1 }}>
+        {/* En-tête de section avec design harmonisé */}
+        <Animated.View
+          style={[
+            styles.headerContainer,
+            {
+              backgroundColor: isVisible ? EXPANDED_BACKGROUND : COLLAPSED_BACKGROUND,
+              borderBottomLeftRadius: isVisible ? 0 : 20,
+              borderBottomRightRadius: isVisible ? 0 : 20,
+              transform: [{ scale: headerScaleAnim }],
+              borderBottomWidth: isVisible ? 1 : 0,
+              borderBottomColor: isVisible ? THEME.border : "transparent",
+              elevation: isVisible ? 5 : 2,
+            },
+          ]}
         >
-          <View style={styles.headerContent}>
-            {/* Icône et titre */}
-            <View style={styles.titleContainer}>
-              <View style={styles.iconContainer}>
-                <MaterialIcons
-                  name="event"
-                  size={32}
-                  color="#6366F1"
-                />
+          <Pressable
+            onPress={toggleVisibility}
+            onPressIn={handleHeaderPressIn}
+            onPressOut={handleHeaderPressOut}
+            style={styles.header}
+            android_ripple={{ color: 'rgba(0, 0, 0, 0.05)', borderless: true }}
+          >
+            <View style={styles.headerContent}>
+              {/* Icône et titre */}
+              <View style={styles.titleContainer}>
+                <LinearGradient
+                  colors={[THEME.primary, THEME.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.iconContainer}
+                >
+                  <Animated.View 
+                    style={{
+                      transform: [
+                        { rotate: isVisible ? iconRotation : '0deg' }
+                      ]
+                    }}
+                  >
+                    <MaterialIcons
+                      name="event"
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                  </Animated.View>
+                </LinearGradient>
+                <View>
+                  <Text style={styles.title}>Événements</Text>
+                  <Text style={styles.subtitle}>
+                    Activités et rencontres à venir
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.title}>Événements</Text>
-                <Text style={styles.subtitle}>
-                  Activités et rencontres à venir
-                </Text>
-              </View>
-            </View>
 
-            {/* Badge de nombre d'événements et flèche */}
-            <View style={styles.headerControls}>
-              {featuredEvents.length > 0 && (
+              {/* Badge de nombre d'événements et flèche */}
+              <View style={styles.headerControls}>
+                {featuredEvents.length > 0 && (
+                  <Animated.View
+                    style={[
+                      styles.countBadge,
+                      { transform: [{ scale: badgePulse }] },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={[THEME.secondary, THEME.primary]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.countBadgeGradient}
+                    >
+                      <Text style={styles.countText}>{featuredEvents.length}</Text>
+                    </LinearGradient>
+                  </Animated.View>
+                )}
+
                 <Animated.View
                   style={[
-                    styles.countBadge,
-                    { transform: [{ scale: badgePulse }] }
+                    styles.arrowContainer,
+                    {
+                      transform: [
+                        { rotate: arrowRotation },
+                        { scale: isVisible ? 1.1 : 1 }
+                      ],
+                    },
                   ]}
                 >
-                  <Text style={styles.countText}>{featuredEvents.length}</Text>
+                  <LinearGradient
+                    colors={isVisible ? 
+                      [THEME.primary, THEME.primaryDark] : 
+                      ['#A0AEC0', '#718096']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.arrowIndicator}
+                  >
+                    <Text style={styles.arrowIcon}>⌄</Text>
+                  </LinearGradient>
                 </Animated.View>
-              )}
+              </View>
+            </View>
+          </Pressable>
+        </Animated.View>
 
+        {/* Contenu de la section */}
+        {isVisible && (
+          <View
+            style={styles.sectionContentContainer}
+          >
+            <LinearGradient
+              colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
+              style={styles.sectionContent}
+            >
               <Animated.View
                 style={[
-                  styles.arrowContainer,
-                  { transform: [{ rotate: arrowRotation }] }
+                  styles.contentInner,
+                  {
+                    opacity: contentSlideAnim,
+                    transform: [{ translateY: contentSlide }],
+                  },
                 ]}
               >
-                <Text style={styles.arrowIcon}>⌄</Text>
+                <FeaturedEvents
+                  events={featuredEvents}
+                  loading={loading}
+                  error={error}
+                  onEventPress={onEventPress}
+                />
               </Animated.View>
-            </View>
+            </LinearGradient>
           </View>
-        </Pressable>
-      </Animated.View>
-
-      {isVisible && (
-        <View style={styles.sectionContent}>
-          <FeaturedEvents
-            events={featuredEvents}
-            loading={loading}
-            error={error}
-            onEventPress={onEventPress}
-          />
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 });
@@ -201,19 +323,22 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
 const styles = StyleSheet.create({
   container: {
     marginVertical: 5,
+    overflow: "hidden",
+    borderRadius: 24,
+    marginHorizontal: 10,
   },
+  // Styles du header inspirés des designs modernes
   headerContainer: {
     borderRadius: 20,
-    // La couleur de fond est désormais appliquée de manière conditionnelle dans le style inline
     ...Platform.select({
       ios: {
-        shadowColor: "rgba(0, 0, 0, 0.08)",
+        shadowColor: THEME.shadow,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 12,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
     }),
   },
@@ -235,53 +360,120 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F7F9FC",
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333333",
+    color: THEME.text,
     marginBottom: 2,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    color: THEME.textLight,
+    letterSpacing: -0.2,
   },
   headerControls: {
     flexDirection: "row",
     alignItems: "center",
   },
+  // Badge de comptage avec animation de pulsation et dégradé
   countBadge: {
-    backgroundColor: "#6366F1",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 14,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.secondary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  countBadgeGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   countText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
   },
   arrowContainer: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  arrowIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
   arrowIcon: {
     fontSize: 24,
-    color: "#4F566B",
+    color: "#FFFFFF",
     fontWeight: "bold",
+    marginTop: -10,
+
+  },
+  // Styles du contenu
+  sectionContentContainer: {
+    overflow: "hidden",
+    marginTop: -1, // Chevauchement léger pour éliminer toute ligne visible
+    borderTopWidth: 0,
+    zIndex: 0,
   },
   sectionContent: {
-    // Styles pour le contenu
+    borderRadius: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  contentInner: {
+    paddingVertical: 10,
   },
 });
 
