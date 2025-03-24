@@ -62,35 +62,35 @@ export const COLORS = {
   // Système de couleurs pour les catégories avec variantes
   categories: {
     danger: {
-      main: "#C8372D",     // Rouge vif mais sophistiqué 
-      light: "#F2DBD9",    // Fond pour cartes danger
-      dark: "#92281F",     // Accentuation et contraste
-      opacity: "rgba(200, 55, 45, 0.1)" // Pour overlays et backgrounds subtils
+      main: "#E05263",     // Rouge rubis sophistiqué avec équilibre entre vivacité et élégance
+      light: "#F9E3E5",    // Fond subtil avec 90% de luminosité
+      dark: "#B23B48",     // Version concentrée pour éléments d'accent
+      opacity: "rgba(224, 82, 99, 0.12)" // Overlay délicat
     },
     travaux: {
-      main: "#DD8E31",     // Orange terre plus professionnel
-      light: "#F8ECDC",    // Fond pour cartes travaux
-      dark: "#A46924",     // Accentuation et contraste
-      opacity: "rgba(221, 142, 49, 0.1)" // Pour overlays et backgrounds subtils
+      main: "#FFBC42",     // Jaune vif et lumineux
+    light: "#FEF7E2",    
+    dark: "#FFBC42",     
+    opacity: "rgb(255, 183, 0)"
     },
     nuisance: {
-      main: "#8655AB",     // Violet posé et institutionnel
-      light: "#E8DEF0",    // Fond pour cartes nuisance
-      dark: "#5E3C79",     // Accentuation et contraste
-      opacity: "rgba(134, 85, 171, 0.1)" // Pour overlays et backgrounds subtils
+      main: "#9C64D6",     // Violet contemporain avec équilibre parfait
+      light: "#F2EAFB",    // Fond lavande aérien
+      dark: "#7942B2",     // Violet intense pour accents
+      opacity: "rgba(156, 100, 214, 0.12)" // Overlay subtil
     },
     pollution: {
-      main: "#27746B",     // Vert-bleu profond et sérieux
-      light: "#D8E9E8",    // Fond pour cartes pollution
-      dark: "#1E5A53",     // Accentuation et contraste
-      opacity: "rgba(39, 116, 107, 0.1)" // Pour overlays et backgrounds subtils
+      main: "#41A894",     // Turquoise professionnel à mi-chemin entre vert et bleu
+      light: "#E4F5F2",    // Fond glacé délicat
+      dark: "#2C7D6A",     // Version dense pour contraste
+      opacity: "rgba(65, 168, 148, 0.12)" // Overlay translucide
     },
     reparation: {
-      main: "#345995",     // Bleu technique fiable
-      light: "#D8E8F6",    // Fond pour cartes réparation
-      dark: "#0E4F82",     // Accentuation et contraste
-      opacity: "rgba(21, 108, 179, 0.1)" // Pour overlays et backgrounds subtils
-    }
+      main: "#4A87DB",     // Bleu azur technique mais vibrant
+      light: "#E6F0FB",    // Fond céleste subtil
+      dark: "#2F62AF",     // Bleu profond pour éléments cliquables
+      opacity: "rgba(74, 135, 219, 0.12)" // Overlay sophistiqué
+    },
   }
 };
 

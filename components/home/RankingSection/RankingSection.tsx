@@ -553,6 +553,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   sectionContent: {
+    paddingTop:15,
     borderRadius: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,

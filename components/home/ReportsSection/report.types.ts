@@ -14,6 +14,8 @@ export interface Report {
     photos: ReportPhoto[];
     comments?: any[];
     votes?: any[];
+    upVotes: number;
+  downVotes: number;
   }
   
   export interface ReportPhoto {

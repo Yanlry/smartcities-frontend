@@ -94,12 +94,16 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       new Animated.Value(isVisible ? 1 : 0)
     ).current;
     const scrollViewRef = useRef<ScrollView>(null);
+    const swipeHintAnim = useRef(new Animated.Value(0)).current;
 
     // État local pour le mode d'affichage
     const [displayMode, setDisplayMode] = useState<"card" | "list">("card");
 
     // État pour suivre la position du défilement
     const [scrollPosition, setScrollPosition] = useState(0);
+    
+    // État pour suivre si l'utilisateur a déjà fait défiler
+    const [hasScrolled, setHasScrolled] = useState(false);
 
     // Animation de rotation pour l'icône de flèche
     const arrowRotation = rotateAnim.interpolate({
@@ -111,6 +115,12 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
     const contentSlide = contentSlideAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [-20, 0],
+    });
+    
+    // Animation pour l'indication de défilement
+    const swipeIndicatorTranslate = swipeHintAnim.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [0, 20, 0],
     });
 
     // Animation de pulsation optimisée pour le badge
@@ -143,6 +153,26 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         };
       }
     }, [reports.length, badgePulse]);
+    
+    // Animation d'indication de défilement
+    useEffect(() => {
+      if (isVisible && displayMode === "card" && !hasScrolled && reports.length > 0) {
+        const swipeAnimation = Animated.loop(
+          Animated.timing(swipeHintAnim, {
+            toValue: 2,
+            duration: 2000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.cubic),
+          })
+        );
+        
+        swipeAnimation.start();
+        
+        return () => {
+          swipeAnimation.stop();
+        };
+      }
+    }, [isVisible, displayMode, hasScrolled, reports.length, swipeHintAnim]);
 
     // Gestion de la visibilité avec LayoutAnimation
     useEffect(() => {
@@ -207,6 +237,12 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         )
       );
       setDisplayMode(mode);
+      // Réinitialiser l'indicateur de défilement lors du changement de mode
+      setHasScrolled(false);
+      setScrollPosition(0);
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
+      }
     }, []);
 
     /**
@@ -215,6 +251,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
     useEffect(() => {
       if (scrollViewRef.current && isVisible) {
         scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: true });
+        setHasScrolled(false);
       }
     }, [selectedCategory, isVisible]);
 
@@ -225,14 +262,20 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       (e: { nativeEvent: { contentOffset: { x: number } } }) => {
         const offsetX = e.nativeEvent.contentOffset.x;
         setScrollPosition(offsetX);
+        
+        // Marquer comme défilé si l'utilisateur a scrollé de plus de 10px
+        if (!hasScrolled && offsetX > 10) {
+          setHasScrolled(true);
+        }
       },
-      []
+      [hasScrolled]
     );
 
     /**
      * Calcul de l'index actuel pour la pagination
      */
     const getCurrentIndex = useCallback(() => {
+      // En mode carte, on considère les cartes réelles + la carte d'instruction
       return Math.round(scrollPosition / SCREEN_WIDTH);
     }, [scrollPosition]);
 
@@ -275,6 +318,56 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       ),
       [setSelectedCategory]
     );
+    
+    /**
+     * Rendu de la carte d'instruction pour le scroll
+     */
+    const renderScrollInstructionCard = useCallback(() => {
+      return (
+        <View style={styles.cardItemContainer}>
+          <View style={styles.instructionCardContainer}>
+            <LinearGradient
+                colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
+              style={styles.instructionCardGradient}
+            >
+              <View style={styles.instructionCardContent}>
+                <View style={styles.instructionIconContainer}>
+                  <MaterialIcons name="swipe" size={40} color={THEME.primary} />
+                </View>
+                <Text style={styles.instructionTitle}>Découvrez les signalements</Text>
+                <Text style={styles.instructionText}>
+                  Faites glisser vers la droite pour consulter les incidents signalés à proximité
+                </Text>
+                
+                {/* Indicateur animé */}
+                <Animated.View 
+                  style={[
+                    styles.swipeIndicator,
+                    {
+                      transform: [{ translateX: swipeIndicatorTranslate }]
+                    }
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[THEME.primary, THEME.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.swipeIndicatorGradient}
+                  >
+                    <MaterialIcons 
+                      name="chevron-right" 
+                      size={36} 
+                      color="#FFFFFF" 
+                    />
+                  </LinearGradient>
+                </Animated.View>
+
+              </View>
+            </LinearGradient>
+          </View>
+        </View>
+      );
+    }, [reports.length, swipeIndicatorTranslate]);
 
     /**
      * Rendu du contenu principal selon l'état de chargement et la disponibilité des données
@@ -313,6 +406,10 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
+            {/* Instruction card en mode carte uniquement */}
+            {displayMode === "card" && renderScrollInstructionCard()}
+            
+            {/* Cartes de signalement */}
             {reports.map((report) => (
               <View
                 key={report.id}
@@ -339,11 +436,26 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
           </ScrollView>
 
           {/* Indicateur de pagination optimisé */}
-          {reports.length > 1 && displayMode === "card" && (
+          {reports.length > 0 && displayMode === "card" && (
             <View style={styles.paginationContainer}>
+              {/* Point pour la carte d'instruction */}
+              <Animated.View
+                style={[
+                  styles.paginationDot,
+                  getCurrentIndex() === 0 && styles.activePaginationDot,
+                  {
+                    width: getCurrentIndex() === 0 ? 24 : 8,
+                    transform: [
+                      {
+                        scale: getCurrentIndex() === 0 ? 1 : 0.8,
+                      },
+                    ],
+                  },
+                ]}
+              />
+              {/* Points pour les cartes de signalement */}
               {reports.map((_, index) => {
-                const currentIndex = getCurrentIndex();
-                const isActive = currentIndex === index;
+                const isActive = getCurrentIndex() === index + 1; // +1 pour tenir compte de la carte d'instruction
                 return (
                   <Animated.View
                     key={index}
@@ -373,6 +485,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       handleScroll,
       getCurrentIndex,
       renderEmptyState,
+      renderScrollInstructionCard,
       formatTime,
       onPressReport,
     ]);
@@ -608,6 +721,15 @@ type ReportsSectionStyles = {
   paginationContainer: ViewStyle;
   paginationDot: ViewStyle;
   activePaginationDot: ViewStyle;
+  // Nouveaux styles pour la carte d'instruction
+  instructionCardContainer: ViewStyle;
+  instructionCardGradient: ViewStyle;
+  instructionCardContent: ViewStyle;
+  instructionIconContainer: ViewStyle;
+  instructionTitle: TextStyle;
+  instructionText: TextStyle;
+  swipeIndicator: ViewStyle;
+  swipeIndicatorGradient: ViewStyle;
 };
 
 const styles = StyleSheet.create<ReportsSectionStyles>({
@@ -781,15 +903,13 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     }),
   },
   contentInner: {
-    padding: 15,
+    marginTop:10
   },
   filtersContainer: {
-    marginBottom: 15,
   },
   displayControls: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 5,
   },
   displayModeButton: {
     flexDirection: "row",
@@ -934,6 +1054,98 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
   },
   activePaginationDot: {
     backgroundColor: THEME.primary,
+  },
+  
+  // Nouveaux styles pour la carte d'instruction
+  instructionCardContainer: {
+    width: SCREEN_WIDTH - 60,
+    height: 280, // Hauteur augmentée pour afficher toute l'icône
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  instructionCardGradient: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  instructionCardContent: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+  },
+  instructionIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 77, 79, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  instructionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333333",
+    marginBottom: 8,
+    textAlign: "center",
+    letterSpacing: -0.3,
+  },
+  instructionText: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    marginBottom: 20,
+    maxWidth: 280,
+    lineHeight: 20,
+  },
+  swipeIndicator: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    overflow: "hidden",
+    marginBottom: 24,
+    marginTop: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  swipeIndicatorGradient: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
