@@ -5,15 +5,15 @@ import { View, ActivityIndicator, Text, ScrollView, Alert } from "react-native";
 import Sidebar from "../components/common/Sidebar";
 import { profileStyles } from "../styles/profileStyles";
 import { useToken } from "../hooks/auth/useToken";
-// Import direct de RankBadge
-import RankBadge from "../components/home/ProfileSection/RankBadge";
-// Utiliser useBadge au lieu de badgeUtils
-import useBadge from "../hooks/ui/useBadge";
+import { useBadge } from "../hooks/ui/useBadge"; // Import du hook useBadge
+
 import { 
   useUserProfile, 
   useUserStats, 
-  useUserContent 
+  useUserContent,
+
 } from "../hooks/profile/index";
+import { useUserRanking } from "../hooks/user/useUserRanking"; // Import du hook useUserRanking
 // Imports des autres composants
 import {
   ProfileHeader,
@@ -23,8 +23,10 @@ import {
   ReportsTab,
   PostsTab,
   EventsTab,
-  ReportModal
+  ReportModal,
 } from "../components/profile";
+import RankBadge from "../components/home/ProfileSection/RankBadge";
+
 // Import des types
 import { TabType } from "../types/profile.types";
 import { StackScreenProps } from "@react-navigation/stack";
@@ -54,11 +56,11 @@ interface UserProfileScreenProps {
 const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, navigation }) => {
   const { userId } = route.params as UserProfileScreenProps["route"]["params"];
   const { getToken, getUserId } = useToken();
+  const { getBadgeStyles } = useBadge(); // Utilisation du hook useBadge
   
   // États locaux
   const [selectedTab, setSelectedTab] = useState<TabType>("info");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
-  const [modalOrnementVisible, setModalOrnementVisible] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -82,24 +84,17 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
     loading: contentLoading, 
     error: contentError 
   } = useUserContent(userId);
-  
-  // Hook pour les badges utilisateur
-  const { getBadgeStyles } = useBadge();
-  
-  // Calcul du style du badge en fonction des votes
-  const badgeStyle = useMemo(() => {
-    if (!stats?.votes?.length) return undefined;
-    return getBadgeStyles(stats.votes.length);
-  }, [stats?.votes?.length, getBadgeStyles]);
-  
-  
-  // Estimation du nombre total d'utilisateurs pour le badge
-  // Note: Puisque stats n'a pas de propriété totalUsers, nous utilisons une valeur par défaut
-  // Idéalement, cette valeur devrait venir d'une API ou d'un autre hook
-  const totalUsersEstimate = useMemo(() => {
-    // Si vous avez accès à cette donnée ailleurs, utilisez-la ici
-    return 1000; // Valeur par défaut
-  }, []);
+
+  // Hooks pour récupérer le ranking et totalUsers (similaire à HomeScreen)
+  const { ranking: rankingFromRanking, totalUsers: totalUsersFromRanking, getRankingSuffix } = useUserRanking(user?.nomCommune || "");
+
+  // Vous pouvez conserver le calcul du suffixe pour le cas où user?.ranking est défini localement,
+  // ou utiliser directement getRankingSuffix(rankingFromRanking)
+  const rankingSuffix = useMemo(() => getRankingSuffix(rankingFromRanking), [getRankingSuffix, rankingFromRanking]);
+
+  // Remplacer la récupération de totalUsers :
+  // const totalUsers = stats?.totalUsers || 0;
+  const totalUsers = totalUsersFromRanking;
   
   /**
    * Bascule l'état du sidebar
@@ -121,6 +116,28 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
   const closeReportModal = useCallback(() => {
     setReportModalVisible(false);
   }, []);
+
+  /**
+   * Navigation vers l'écran de classement
+   */
+  const navigateToRanking = useCallback(() => {
+    navigation.navigate("RankingScreen");
+  }, [navigation]);
+
+  /**
+   * Affiche la modale de badge
+   */
+  const showBadgeModal = useCallback(() => {
+    // Implementer selon vos besoins
+    Alert.alert("Badge", "Informations sur le badge de l'utilisateur");
+  }, []);
+
+  /**
+   * Récupère le style du badge en fonction des votes de l'utilisateur
+   */
+  const badgeStyle = useMemo(() => {
+    return getBadgeStyles(stats?.votes?.length || 0);
+  }, [getBadgeStyles, stats?.votes?.length]);
 
   /**
    * Envoie un signalement au serveur
@@ -185,19 +202,6 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
     setIsSubmitting(false);
   }, [handleUnfollow]);
 
-  /**
-   * Ouvre la modale des paliers
-   */
-  const openTiersModal = useCallback(() => {
-    setModalOrnementVisible(true);
-  }, []);
-
-  /**
-   * Ferme la modale des paliers
-   */
-  const closeTiersModal = useCallback(() => {
-    setModalOrnementVisible(false);
-  }, []);
 
   // Vérification du chargement et des erreurs
   const isLoading = userLoading || statsLoading || contentLoading;
@@ -247,19 +251,18 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
           onFollow={handleFollowWithSubmitting}
           onUnfollow={handleUnfollowWithSubmitting}
         />
-        
-        {/* RankBadge remplaçant BadgeDisplay */}
-        {user?.ranking && (
+
+        {/* Badge de classement - Intégration du composant RankBadge */}
+        <View>
           <RankBadge
-          ranking={user?.ranking || 999999} // Utiliser une grande valeur par défaut si pas de classement
-          rankingSuffix={user?.ranking === 1 ? 'er' : 'ème'}
-          totalUsers={totalUsersEstimate}
-          onNavigateToRanking={openTiersModal}
-          badgeStyle={badgeStyle || getBadgeStyles(0)} // Utiliser le badge "Premiers pas" si pas de votes
-          onShowBadgeModal={openTiersModal}
-          showStatsSection={false}
-        />
-        )}
+            ranking={user?.ranking || null}
+            rankingSuffix={rankingSuffix}
+            totalUsers={totalUsers}
+            onNavigateToRanking={navigateToRanking}
+            badgeStyle={badgeStyle}
+            onShowBadgeModal={showBadgeModal}
+          />
+        </View>
         
         {/* Onglets de navigation entre les sections */}
         <ProfileTabs 

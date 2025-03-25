@@ -100,7 +100,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
       if (formattedData.voteRatio >= 85) return "#4CAF50";
       if (formattedData.voteRatio >= 60) return "#8BC34A";
       if (formattedData.voteRatio >= 50) return "#FF9800";
-      return "#FF9800";
+      return "#4CAF50";
     }, [formattedData.voteRatio, totalFeedback]);
 
     return (
@@ -261,7 +261,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
               rankingSuffix={rankingSuffix}
               totalUsers={totalUsers}
               onNavigateToRanking={onNavigateToRanking}
-              // Passer le badgeStyle pour tous les utilisateurs, pas seulement le premier
               badgeStyle={badgeStyle}
               onShowBadgeModal={onShowBadgeModal}
             />

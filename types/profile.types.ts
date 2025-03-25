@@ -76,6 +76,7 @@ export interface User {
     numberOfPosts: number;
     numberOfEventsCreated: number;
     numberOfEventsAttended: number;
+    totalUsers?: number;
   }
   
   export type TabType = "info" | "publications" | "signalement" | "evenement";

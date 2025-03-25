@@ -685,4 +685,5 @@ export const profileStyles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 8,
   },
+  
 });

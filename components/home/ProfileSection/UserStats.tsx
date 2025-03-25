@@ -13,6 +13,7 @@ interface UserStatsProps {
   onShowFollowers: () => void;
   onShowFollowing: () => void;
   onShowVoteInfo: () => void;
+  
 }
 
 /**

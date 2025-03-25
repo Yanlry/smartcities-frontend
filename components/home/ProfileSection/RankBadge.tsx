@@ -152,11 +152,11 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
 
     // Récupération de la couleur principale en fonction du rang
     const getPrimaryColor = useCallback(() => {
-      if (ranking === 1) return "#FFA000"; // Or
+      if (ranking === 1) return "#FFD700"; // Or
       if (ranking === 2) return "#C0C0C0"; // Argent
       if (ranking === 3) return "#CD7F32"; // Bronze
       if (ranking && ranking <= 10) return "#6A0DAD"; // Violet royal
-      if (ranking && ranking <= 50) return "#26A69A"; // Bleu
+      if (ranking && ranking <= 50) return "#1E88E5"; // Bleu
       return "#26A69A"; // Teal
     }, [ranking]);
 
@@ -164,7 +164,7 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
     const getGradientColors = useCallback((): [string, string] => {
       const primary = getPrimaryColor();
 
-      if (ranking === 1) return [primary, "#FFD700"]; // Or --> Orange foncé
+      if (ranking === 1) return [primary, "#FFA000"]; // Or --> Orange foncé
       if (ranking === 2) return [primary, "#757575"]; // Argent --> Gris foncé
       if (ranking === 3) return [primary, "#8D6E63"]; // Bronze --> Brun
       if (ranking && ranking <= 10) return [primary, "#3949AB"]; // Violet --> Indigo
