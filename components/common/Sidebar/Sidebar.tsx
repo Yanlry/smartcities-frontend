@@ -1,3 +1,5 @@
+// Chemin : components/Sidebar/Sidebar.tsx
+
 import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import {
   Animated,
@@ -9,202 +11,360 @@ import {
   Platform,
   StatusBar,
   ScrollView,
+  Easing,
+  Image,
+  Pressable,
+  useWindowDimensions,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../context/AuthContext';
 import { SidebarProps } from './types';
 import SidebarItem from './SidebarItem';
+import { BlurView } from 'expo-blur'; // Si disponible, sinon utilisez une View standard
 
-// Enhanced color system
-const COLORS = {
-  primary: {
-    base: "#062C41",
-    light: "#1B5D85",
-    dark: "#041E2D",
-    contrast: "#FFFFFF",
+// Système de design pour réseau social moderne
+const THEME = {
+  colors: {
+    primary: {
+      gradient: ["#8E2DE2", "#4A00E0"] as const, // Gradient violet-indigo
+      dark: "#2E1A47",
+      main: "#5D3FD3",
+      light: "#8E72E1",
+      ultraLight: "#EFE9FF"
+    },
+    secondary: {
+      gradient: ["#FF416C", "#FF4B2B"], // Gradient rose-orange
+      dark: "#B22A49",
+      main: "#FF416C",
+      light: "#FF7A9C",
+      ultraLight: "#FFECF1"
+    },
+    accent: {
+      gradient: ["#00C6FB", "#005BEA"], // Gradient bleu clair-bleu
+      dark: "#005BEA",
+      main: "#1DA1F2",
+      light: "#70C4F9",
+      ultraLight: "#E8F5FE"
+    },
+    success: {
+      main: "#4CD964",
+      light: "#A5EBAE",
+    },
+    neutral: {
+      darkest: "#0A0A0A",
+      dark: "#262626",
+      medium: "#737373",
+      light: "#D4D4D4",
+      lightest: "#F5F5F5",
+      white: "#FFFFFF",
+    },
+    glass: {
+      dark: "rgba(10, 10, 10, 0.65)",
+      medium: "rgba(38, 38, 38, 0.55)",
+      light: "rgba(255, 255, 255, 0.15)",
+      ultraLight: "rgba(255, 255, 255, 0.07)",
+    },
+    overlay: {
+      dark: "rgba(0, 0, 0, 0.75)",
+      medium: "rgba(0, 0, 0, 0.5)",
+      light: "rgba(0, 0, 0, 0.25)",
+    }
   },
-  secondary: {
-    base: "#2A93D5",
-    light: "#50B5F5",
-    dark: "#1C7AB5",
-    contrast: "#FFFFFF",
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
   },
-  accent: {
-    base: "#FF5A5F",
-    light: "#FF7E82",
-    dark: "#E04347",
-    contrast: "#FFFFFF",
+  borderRadius: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    round: 9999,
   },
-  neutral: {
-    50: "#F9FAFC",
-    100: "#F0F4F8",
-    200: "#E1E8EF",
-    300: "#C9D5E3",
-    400: "#A3B4C6",
-    500: "#7D91A7",
-    600: "#5C718A",
-    700: "#465670",
-    800: "#2E3B4E",
-    900: "#1C2536",
+  animation: {
+    duration: {
+      fastest: 150,
+      fast: 250,
+      normal: 300,
+      slow: 450,
+      slowest: 600,
+    },
+    easing: {
+      standard: Easing.bezier(0.4, 0.0, 0.2, 1),
+      decelerate: Easing.bezier(0.0, 0.0, 0.2, 1),
+      accelerate: Easing.bezier(0.4, 0.0, 1, 1),
+      sharp: Easing.bezier(0.4, 0.0, 0.6, 1),
+      spring: Easing.bezier(0.175, 0.885, 0.32, 1.275),
+    },
   },
 };
 
+// Helper pour les ombres multi-plateforme
+const getShadow = (elevation = 4) => {
+  return Platform.select({
+    ios: {
+      shadowColor: THEME.colors.neutral.darkest,
+      shadowOffset: { width: 0, height: elevation / 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: elevation * 0.75,
+    },
+    android: {
+      elevation,
+    },
+    default: {
+      shadowColor: THEME.colors.neutral.darkest,
+      shadowOffset: { width: 0, height: elevation / 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: elevation * 0.75,
+      elevation,
+    }
+  });
+};
+
 /**
- * Enhanced Sidebar component with scrollable content
- * Maintains full animation capabilities while adding scroll functionality
+ * Sidebar moderne pour réseau social
+ * Design immersif avec une gestion optimisée des animations
  */
 const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   const insets = useSafeAreaInsets();
-  const [sidebarAnimation] = useState(new Animated.Value(-350));
-  const overlayAnimation = useRef(new Animated.Value(0)).current;
-  const mainItemsAnimation = useRef(Array(6).fill(0).map(() => new Animated.Value(40))).current;
-  const secondaryItemsAnimation = useRef(Array(4).fill(0).map(() => new Animated.Value(40))).current;
-  const logoutButtonAnimation = useRef(new Animated.Value(0)).current;
-  const scrollViewRef = useRef<ScrollView>(null);
-  
+  const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
   const { handleLogout } = useAuth();
-  const [activeItem, setActiveItem] = useState<string | null>(null);
-
-  // Enhanced animations
+  const scrollViewRef = useRef<ScrollView>(null);
+  
+  // Animations avec valeurs initiales
+  const sidebarTranslateX = useRef(new Animated.Value(-width)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const avatarScale = useRef(new Animated.Value(0.8)).current;
+  const nameOpacity = useRef(new Animated.Value(0)).current;
+  const statOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Animation pour les éléments de menu - tableau d'animations
+  const mainItemsAnimations = useRef(
+    Array(6).fill(0).map(() => new Animated.Value(-50))
+  ).current;
+  
+  const secondaryItemsAnimations = useRef(
+    Array(4).fill(0).map(() => new Animated.Value(-40))
+  ).current;
+  
+  const logoutButtonAnimation = useRef({
+    opacity: new Animated.Value(0),
+    translateY: new Animated.Value(20)
+  }).current;
+  
+  // Simulation des statistiques utilisateur pour réseau social
+  const userStats = {
+    followers: "4,285",
+    following: "1,367",
+    posts: "297",
+    profileProgress: 85,
+  };
+  
+  // Gestion de toutes les animations d'entrée/sortie
   useEffect(() => {
     if (isOpen) {
-      // Reset scroll position to top when sidebar opens
+      // Reset position du scroll
       if (scrollViewRef.current) {
         scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
       }
       
-      // Sidebar slide-in animation
-      Animated.timing(sidebarAnimation, {
+      // Animation de l'entrée du sidebar avec timing optimisé
+      Animated.timing(sidebarTranslateX, {
         toValue: 0,
-        duration: 350,
+        duration: THEME.animation.duration.normal,
+        easing: THEME.animation.easing.standard,
         useNativeDriver: true,
       }).start();
       
-      // Overlay fade-in
-      Animated.timing(overlayAnimation, {
+      // Overlay avec légère décélération
+      Animated.timing(overlayOpacity, {
         toValue: 1,
-        duration: 350,
+        duration: THEME.animation.duration.fast,
+        easing: THEME.animation.easing.decelerate,
         useNativeDriver: true,
       }).start();
       
-      // Staggered animation for main menu items
-      mainItemsAnimation.forEach((anim, i) => {
-        Animated.timing(anim, {
-          toValue: 0,
-          duration: 400,
-          delay: 100 + (i * 50),
+      // Animation de l'avatar avec effet de scale spring
+      Animated.timing(avatarScale, {
+        toValue: 1,
+        duration: THEME.animation.duration.slow,
+        easing: THEME.animation.easing.spring,
+        useNativeDriver: true,
+      }).start();
+      
+      // Animation d'opacité pour les informations utilisateur
+      Animated.sequence([
+        Animated.delay(150),
+        Animated.timing(nameOpacity, {
+          toValue: 1,
+          duration: THEME.animation.duration.normal,
           useNativeDriver: true,
-        }).start();
+        }),
+      ]).start();
+      
+      // Animation des statistiques utilisateur
+      Animated.sequence([
+        Animated.delay(250),
+        Animated.timing(statOpacity, {
+          toValue: 1,
+          duration: THEME.animation.duration.normal,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      
+      // Animation séquentielle des éléments de menu principal
+      mainItemsAnimations.forEach((anim, index) => {
+        Animated.sequence([
+          Animated.delay(350 + (index * 50)),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: THEME.animation.duration.fast,
+            easing: THEME.animation.easing.standard,
+            useNativeDriver: true,
+          }),
+        ]).start();
       });
       
-      // Staggered animation for secondary menu items
-      secondaryItemsAnimation.forEach((anim, i) => {
-        Animated.timing(anim, {
-          toValue: 0,
-          duration: 400,
-          delay: 400 + (i * 50),
-          useNativeDriver: true,
-        }).start();
+      // Animation séquentielle des éléments de menu secondaire
+      secondaryItemsAnimations.forEach((anim, index) => {
+        Animated.sequence([
+          Animated.delay(700 + (index * 50)),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: THEME.animation.duration.fast,
+            easing: THEME.animation.easing.standard,
+            useNativeDriver: true,
+          }),
+        ]).start();
       });
       
-      // Logout button animation
-      Animated.timing(logoutButtonAnimation, {
-        toValue: 1,
-        duration: 500,
-        delay: 700,
-        useNativeDriver: true,
-      }).start();
+      // Animation du bouton de déconnexion
+      Animated.sequence([
+        Animated.delay(900),
+        Animated.parallel([
+          Animated.timing(logoutButtonAnimation.opacity, {
+            toValue: 1,
+            duration: THEME.animation.duration.normal,
+            useNativeDriver: true,
+          }),
+          Animated.timing(logoutButtonAnimation.translateY, {
+            toValue: 0,
+            duration: THEME.animation.duration.normal,
+            easing: THEME.animation.easing.standard,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+      
     } else {
-      // Reverse animations when closing
-      Animated.timing(sidebarAnimation, {
-        toValue: -350,
-        duration: 300,
+      // Animation de fermeture - plus rapide que l'ouverture
+      Animated.timing(sidebarTranslateX, {
+        toValue: -width,
+        duration: THEME.animation.duration.fast,
+        easing: THEME.animation.easing.accelerate,
         useNativeDriver: true,
       }).start();
       
-      Animated.timing(overlayAnimation, {
+      Animated.timing(overlayOpacity, {
         toValue: 0,
-        duration: 300,
+        duration: THEME.animation.duration.fast,
+        easing: THEME.animation.easing.accelerate,
         useNativeDriver: true,
       }).start();
       
-      // Reset all item animations
-      [...mainItemsAnimation, ...secondaryItemsAnimation].forEach(anim => {
-        anim.setValue(40);
+      // Réinitialisation des animations d'items
+      avatarScale.setValue(0.8);
+      nameOpacity.setValue(0);
+      statOpacity.setValue(0);
+      
+      mainItemsAnimations.forEach(anim => {
+        anim.setValue(-50);
       });
       
-      logoutButtonAnimation.setValue(0);
+      secondaryItemsAnimations.forEach(anim => {
+        anim.setValue(-40);
+      });
+      
+      logoutButtonAnimation.opacity.setValue(0);
+      logoutButtonAnimation.translateY.setValue(20);
     }
-  }, [isOpen, sidebarAnimation, overlayAnimation, mainItemsAnimation, secondaryItemsAnimation, logoutButtonAnimation]);
+  }, [isOpen, width]);
 
+  // Navigation avec mémorisation
   const handleNavigation = useCallback((screen: string) => {
-    setActiveItem(screen);
     navigation.navigate(screen as never);
     toggleSidebar();
   }, [navigation, toggleSidebar]);
 
+  // Gestion de la déconnexion
   const handleLogoutWithSidebarClose = useCallback(() => {
     toggleSidebar();
     setTimeout(() => {
       handleLogout();
-    }, 300);
+    }, THEME.animation.duration.normal);
   }, [toggleSidebar, handleLogout]);
 
+  // Définition des éléments de menu avec icônes adaptées à un réseau social
   const mainMenuItems = [
     {
-      icon: <MaterialCommunityIcons name="view-dashboard-outline" size={22} color={COLORS.primary.contrast} />,
-      label: "Tableau de bord",
+      icon: <FontAwesome5 name="home" size={18} color={THEME.colors.neutral.white} />,
+      label: "Fil d'actualité",
       screen: "Main"
     },
     {
-      icon: <Ionicons name="earth-outline" size={22} color={COLORS.primary.contrast} />,
-      label: "Tout sur ma ville",
+      icon: <FontAwesome5 name="map-marker-alt" size={18} color={THEME.colors.neutral.white} />,
+      label: "Explorer ma ville",
       screen: "CityScreen"
     },
     {
-      icon: <Ionicons name="trophy-outline" size={22} color={COLORS.primary.contrast} />,
-      label: "Classement général",
+      icon: <FontAwesome5 name="trophy" size={18} color={THEME.colors.neutral.white} />,
+      label: "Classements",
       screen: "RankingScreen"
     },
     {
-      icon: <MaterialCommunityIcons name="account-circle-outline" size={22} color={COLORS.primary.contrast} />,
-      label: "Informations personnelles",
+      icon: <FontAwesome5 name="user" size={18} color={THEME.colors.neutral.white} />,
+      label: "Mon profil",
       screen: "ProfileScreen"
     },
     {
-      icon: <MaterialCommunityIcons name="alert-octagon-outline" size={22} color={COLORS.primary.contrast} />,
-      label: "Mes signalements",
+      icon: <FontAwesome5 name="bell" size={18} color={THEME.colors.neutral.white} />,
+      label: "Mes notifications",
       screen: "ReportScreen"
     },
     {
-      icon: <MaterialCommunityIcons name="calendar-star" size={22} color={COLORS.primary.contrast} />,
-      label: "Mes événements",
+      icon: <FontAwesome5 name="calendar-alt" size={18} color={THEME.colors.neutral.white} />,
+      label: "Événements",
       screen: "EventsScreen"
     }
   ];
 
   const secondaryMenuItems = [
     {
-      icon: <Ionicons name="settings-outline" size={22} color={COLORS.neutral[300]} />,
-      label: "Préférences",
+      icon: <FontAwesome5 name="cog" size={18} color={THEME.colors.neutral.light} />,
+      label: "Paramètres",
       screen: "PreferencesScreen"
     },
     {
-      icon: <Ionicons name="help-circle-outline" size={22} color={COLORS.neutral[300]} />,
-      label: "F.A.Q",
+      icon: <FontAwesome5 name="question-circle" size={18} color={THEME.colors.neutral.light} />,
+      label: "Aide et support",
       screen: "FAQScreen"
     },
     {
-      icon: <Ionicons name="document-text-outline" size={22} color={COLORS.neutral[300]} />,
+      icon: <FontAwesome5 name="file-alt" size={18} color={THEME.colors.neutral.light} />,
       label: "Conditions d'utilisation",
       screen: "TermsScreen"
     },
     {
-      icon: <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.neutral[300]} />,
+      icon: <FontAwesome5 name="shield-alt" size={18} color={THEME.colors.neutral.light} />,
       label: "Confidentialité",
       screen: "PrivacyScreen"
     }
@@ -212,257 +372,439 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
 
   return (
     <>
-      {/* Animated overlay with blur effect */}
+      {/* Overlay animé avec effet de flou */}
       {isOpen && (
         <Animated.View 
           style={[
             styles.overlay,
             { 
-              opacity: overlayAnimation,
+              opacity: overlayOpacity,
               top: 0,
-              paddingTop: StatusBar.currentHeight || 0
             }
           ]}
         >
-          <TouchableOpacity 
+          <Pressable 
             style={styles.overlayTouch} 
             onPress={toggleSidebar}
-            activeOpacity={1}
+            android_ripple={{ color: 'rgba(255,255,255,0.1)', borderless: true }}
           />
         </Animated.View>
       )}
 
-      {/* Main sidebar container with animation */}
+      {/* Sidebar principal avec animation de translation */}
       <Animated.View
         style={[
           styles.sidebar,
           { 
-            transform: [{ translateX: sidebarAnimation }],
-            paddingTop: insets.top || 45,
+            transform: [{ translateX: sidebarTranslateX }],
+            paddingTop: insets.top || 0,
+            paddingBottom: insets.bottom || 0,
           },
         ]}
       >
+        {/* Arrière-plan avec dégradé */}
         <LinearGradient
-          colors={[COLORS.primary.dark, COLORS.primary.base, COLORS.primary.light]}
-          style={styles.sidebarGradient}
+          colors={['#062C41', '#062C41', '#0F3460']}
+          style={styles.sidebarBackground}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 1, y: 1 }}
         >
-          {/* Content container with fixed height */}
+          {/* Conteneur principal */}
           <View style={styles.contentContainer}>
-            {/* Scrollable content area */}
-            <ScrollView
-              ref={scrollViewRef}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingBottom: 20
-              }}
-              style={styles.scrollView}
-            >
-              {/* App branding section */}
-              <View style={styles.brandingContainer}>
-                <Text style={styles.sidebarTitle}>MENU</Text>
-                <View style={styles.brandingLine} />
-              </View>
-
-              {/* Main menu section with animated items */}
-              <View style={styles.menuSection}>
-                <Text style={styles.sectionLabel}>NAVIGATION PRINCIPALE</Text>
-                {mainMenuItems.map((item, index) => (
-                  <Animated.View 
-                    key={`main-${index}`}
-                    style={{ 
-                      transform: [{ translateX: mainItemsAnimation[index] }],
-                      opacity: mainItemsAnimation[index].interpolate({
-                        inputRange: [0, 40],
-                        outputRange: [1, 0]
-                      })
-                    }}
-                  >
-                    <SidebarItem
-                      icon={item.icon}
-                      label={item.label}
-                      onPress={() => handleNavigation(item.screen)}
-                      isActive={activeItem === item.screen}
-                    />
-                  </Animated.View>
-                ))}
-              </View>
-
-              {/* Settings & Help section with animated items */}
-              <View style={styles.footerSection}>
-                <Text style={styles.sectionLabel}>PARAMÈTRES & AIDE</Text>
-                {secondaryMenuItems.map((item, index) => (
-                  <Animated.View 
-                    key={`secondary-${index}`}
-                    style={{ 
-                      transform: [{ translateX: secondaryItemsAnimation[index] }],
-                      opacity: secondaryItemsAnimation[index].interpolate({
-                        inputRange: [0, 40],
-                        outputRange: [1, 0]
-                      })
-                    }}
-                  >
-                    <SidebarItem
-                      icon={item.icon}
-                      label={item.label}
-                      onPress={() => handleNavigation(item.screen)}
-                      isActive={activeItem === item.screen}
-                      isSecondary
-                    />
-                  </Animated.View>
-                ))}
-                <Text style={styles.version}>v1.07.23</Text>
-              </View>
-            </ScrollView>
-          </View>
-
-          {/* Fixed footer with logout button - positioned outside ScrollView */}
-          <View style={[styles.fixedFooter, { paddingBottom: insets.bottom || 20 }]}>
-            {/* Animated logout button */}
-            <Animated.View style={{
-              opacity: logoutButtonAnimation,
-              transform: [{ 
-                translateY: logoutButtonAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0]
-                })
-              }]
-            }}>
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogoutWithSidebarClose}
-                activeOpacity={0.85}
+            {/* En-tête avec avatar et statistiques utilisateur */}
+            <View style={styles.userProfileSection}>
+              {/* Bouton de fermeture en haut à droite */}
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={toggleSidebar}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
               >
+                <View style={styles.closeButtonInner}>
+                  <FontAwesome5 name="times" size={16} color={THEME.colors.neutral.light} />
+                </View>
+              </TouchableOpacity>
+              
+              {/* Avatar animé */}
+              <Animated.View style={[
+                styles.avatarContainer, 
+                { transform: [{ scale: avatarScale }] }
+              ]}>
                 <LinearGradient
-                  colors={[COLORS.accent.light, COLORS.accent.base]}
-                  style={styles.logoutGradient}
+                  colors={THEME.colors.primary.gradient}
+                  style={styles.avatarGradientBorder}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={styles.logoutIcon} />
-                  <Text style={styles.logoutText}>DÉCONNEXION</Text>
+                  <Image 
+                    source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }} 
+                    style={styles.avatarImage}
+                  />
                 </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
+                
+                {/* Badge de statut en ligne */}
+                <View style={styles.onlineStatusBadge}>
+                  <View style={styles.onlineStatusIndicator} />
+                </View>
+              </Animated.View>
+              
+              {/* Nom d'utilisateur avec animation d'opacité */}
+              <Animated.View style={{ opacity: nameOpacity }}>
+                <Text style={styles.userName}>Claire Duvergé</Text>
+                <Text style={styles.userHandle}>@clairduv</Text>
+              </Animated.View>
+              
+              {/* Statistiques de profil avec animation */}
+              <Animated.View style={[styles.statsContainer, { opacity: statOpacity }]}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats.followers}</Text>
+                  <Text style={styles.statLabel}>Abonnés</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats.following}</Text>
+                  <Text style={styles.statLabel}>Abonnements</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats.posts}</Text>
+                  <Text style={styles.statLabel}>Publications</Text>
+                </View>
+              </Animated.View>
+              
+              {/* Barre de progression du profil */}
+              <Animated.View style={[styles.progressContainer, { opacity: statOpacity }]}>
+                <Text style={styles.progressText}>Profil complété à {userStats.profileProgress}%</Text>
+                <View style={styles.progressBarBackground}>
+                  <View style={[styles.progressBarFill, { width: `${userStats.profileProgress}%` }]} />
+                </View>
+              </Animated.View>
+            </View>
+            
+            {/* Zone de scroll pour le menu */}
+            <ScrollView
+              ref={scrollViewRef}
+              showsVerticalScrollIndicator={false}
+              style={styles.menuScrollView}
+              contentContainerStyle={styles.menuScrollContent}
+            >
+              {/* Menu principal */}
+              <Text style={styles.menuSectionTitle}>MENU</Text>
+              {mainMenuItems.map((item, index) => (
+                <Animated.View 
+                  key={`main-${index}`}
+                  style={{ 
+                    transform: [{ translateX: mainItemsAnimations[index] }],
+                    opacity: mainItemsAnimations[index].interpolate({
+                      inputRange: [-50, 0],
+                      outputRange: [0, 1]
+                    })
+                  }}
+                >
+                  <SidebarItem
+                    icon={item.icon}
+                    label={item.label}
+                    onPress={() => handleNavigation(item.screen)}
+                    isActive={false}
+                  />
+                </Animated.View>
+              ))}
+              
+              {/* Menu secondaire */}
+              <Text style={[styles.menuSectionTitle, styles.secondaryTitle]}>PARAMÈTRES</Text>
+              {secondaryMenuItems.map((item, index) => (
+                <Animated.View 
+                  key={`secondary-${index}`}
+                  style={{ 
+                    transform: [{ translateX: secondaryItemsAnimations[index] }],
+                    opacity: secondaryItemsAnimations[index].interpolate({
+                      inputRange: [-40, 0],
+                      outputRange: [0, 1]
+                    })
+                  }}
+                >
+                  <SidebarItem
+                    icon={item.icon}
+                    label={item.label}
+                    onPress={() => handleNavigation(item.screen)}
+                    isActive={false}
+                    isSecondary={true}
+                  />
+                </Animated.View>
+              ))}
+              
+              {/* Numéro de version avec badge moderne */}
+              <View style={styles.versionContainer}>
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+                  style={styles.versionBadge}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                >
+                  <Text style={styles.versionText}>v1.07.23</Text>
+                </LinearGradient>
+              </View>
+            </ScrollView>
           </View>
+          
+          {/* Footer avec bouton de déconnexion */}
+          <Animated.View style={[
+            styles.footerContainer,
+            {
+              opacity: logoutButtonAnimation.opacity,
+              transform: [{ translateY: logoutButtonAnimation.translateY }]
+            }
+          ]}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogoutWithSidebarClose}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={THEME.colors.secondary.gradient as [string, string, ...string[]]}
+                style={styles.logoutButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <FontAwesome5 name="sign-out-alt" size={16} color="#FFFFFF" style={styles.logoutIcon} />
+                <Text style={styles.logoutText}>Déconnexion</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </LinearGradient>
       </Animated.View>
     </>
   );
 });
 
-const { width, height } = Dimensions.get("window");
+/**
+ * Styles optimisés pour interface de réseau social moderne
+ * Design avec hiérarchie visuelle claire et esthétique contemporaine
+ */
 const styles = StyleSheet.create({
+  // Structure principale
   sidebar: {
     position: "absolute",
     top: 0,
     left: 0,
-    width: 300,
+    width: "80%", // largeur % pour meilleure adaptabilité
+    maxWidth: 360,
     height: "100%",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    zIndex: 10,
+    zIndex: 1000,
     overflow: 'hidden',
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
+    borderTopRightRadius: 30,
+    borderBottomRightRadius: 30,
+    ...getShadow(15),
   },
-  sidebarGradient: {
+  sidebarBackground: {
     flex: 1,
-    paddingHorizontal: 16,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
+    borderTopRightRadius: 30,
+    borderBottomRightRadius: 30,
   },
   contentContainer: {
     flex: 1,
     flexDirection: 'column',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  brandingContainer: {
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  sidebarTitle: {
-    color: COLORS.primary.contrast,
-    fontSize: 24,
-    fontWeight: "700",
-    letterSpacing: 3,
-    marginBottom: 8,
-  },
-  brandingLine: {
-    width: 40,
-    height: 3,
-    backgroundColor: COLORS.secondary.light,
-    borderRadius: 2,
-  },
-  menuSection: {
-    marginTop: 16,
-  },
-  sectionLabel: {
-    color: COLORS.neutral[300],
-    fontSize: 12,
-    marginBottom: 16,
-    letterSpacing: 0.5,
-    fontWeight: "600",
-  },
-  footerSection: {
-    marginTop: 30,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
-  },
-  version: {
-    color: COLORS.neutral[500],
-    fontSize: 12,
-    marginTop: 20,
-    textAlign: "center",
-  },
-  fixedFooter: {
-    paddingVertical: 16, 
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
-  },
-  logoutButton: {
-    borderRadius: 10,
-    overflow: 'hidden',
-    shadowColor: COLORS.accent.dark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  logoutGradient: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 10,
-  },
-  logoutIcon: {
-    marginRight: 8,
-  },
-  logoutText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: 0.5,
   },
   overlay: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    zIndex: 9,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    zIndex: 999,
   },
   overlayTouch: {
     width: "100%",
     height: "100%",
+  },
+
+  // En-tête profil utilisateur
+  userProfileSection: {
+    paddingTop: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingBottom: THEME.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: THEME.spacing.lg,
+    right: THEME.spacing.lg,
+    zIndex: 10,
+  },
+  closeButtonInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    alignSelf: 'center',
+    marginBottom: THEME.spacing.md,
+    position: 'relative',
+  },
+  avatarGradientBorder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    padding: 3, // épaisseur de la bordure
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarImage: {
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+  },
+  onlineStatusBadge: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: THEME.colors.neutral.dark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: THEME.colors.neutral.dark,
+  },
+  onlineStatusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: THEME.colors.success.main,
+  },
+  userName: {
+    color: THEME.colors.neutral.white,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  userHandle: {
+    color: THEME.colors.neutral.light,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.md,
+  },
+
+  // Statistiques de l'utilisateur
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: THEME.spacing.xs,
+    marginBottom: THEME.spacing.md,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    color: THEME.colors.neutral.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  statLabel: {
+    color: THEME.colors.neutral.light,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginHorizontal: THEME.spacing.xs,
+  },
+
+  // Barre de progression
+  progressContainer: {
+    marginBottom: THEME.spacing.md,
+  },
+  progressText: {
+    color: THEME.colors.neutral.light,
+    fontSize: 12,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  progressBarBackground: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: THEME.colors.accent.main,
+    borderRadius: 2,
+  },
+
+  // Zone de menu
+  menuScrollView: {
+    flex: 1,
+  },
+  menuScrollContent: {
+    paddingHorizontal: THEME.spacing.md,
+    paddingTop: THEME.spacing.md,
+    paddingBottom: THEME.spacing.xl,
+  },
+  menuSectionTitle: {
+    color: THEME.colors.neutral.light,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: THEME.spacing.md,
+    paddingLeft: THEME.spacing.xs,
+  },
+  secondaryTitle: {
+    marginTop: THEME.spacing.xl,
+  },
+
+  // Version badge
+  versionContainer: {
+    alignItems: 'center',
+    marginTop: THEME.spacing.xl,
+  },
+  versionBadge: {
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.xs,
+    borderRadius: THEME.borderRadius.round,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  versionText: {
+    color: THEME.colors.neutral.light,
+    fontSize: 12,
+  },
+
+  // Footer et bouton de déconnexion
+  footerContainer: {
+    paddingHorizontal: THEME.spacing.lg,
+    paddingBottom: THEME.spacing.lg,
+    paddingTop: THEME.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  logoutButton: {
+    borderRadius: THEME.borderRadius.lg,
+    overflow: 'hidden',
+    ...getShadow(6),
+  },
+  logoutButtonGradient: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.md,
+    borderRadius: THEME.borderRadius.lg,
+  },
+  logoutIcon: {
+    marginRight: THEME.spacing.sm,
+  },
+  logoutText: {
+    color: THEME.colors.neutral.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

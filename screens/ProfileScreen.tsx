@@ -96,8 +96,25 @@ type User = {
 export default function ProfileScreen({ navigation }) {
   const { unreadCount } = useNotification();
 
-  // Animation pour le fade-in des sections
-  const fadeAnim = useState(new Animated.Value(0))[0];
+  // Désactivation du fade: initialisation avec 1
+  const fadeAnim = useState(new Animated.Value(1))[0];
+  
+  // Supprimez ou commentez l’animation de fade-in
+  // useEffect(() => {
+  //   Animated.timing(fadeAnim, {
+  //     toValue: 1,
+  //     duration: 800,
+  //     useNativeDriver: true,
+  //   }).start();
+  // }, [fadeAnim]);
+
+  // Ajout d’un listener pour réinitialiser la Sidebar lors du blur du screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("blur", () => {
+      setIsSidebarOpen(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Variables d'état
   const [user, setUser] = useState<User | null>(null);
@@ -127,15 +144,6 @@ export default function ProfileScreen({ navigation }) {
     "followers" | "following" | null
   >(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-
-  // Animation d'entrée
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -826,7 +834,7 @@ export default function ProfileScreen({ navigation }) {
                   style={styles.editIconButton}
                   onPress={() => setIsEditingCity(true)}
                 >
-                  <Icon name="settings" size={20} color={COLORS.secondary.base} />
+                  <Icon name="edit" size={20} color={COLORS.secondary.base} />
                 </TouchableOpacity>
               </View>
 

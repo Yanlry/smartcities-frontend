@@ -71,27 +71,28 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
     const positiveFlex = totalFeedback === 0 ? 0.5 : voteSummary.up;
     const negativeFlex = totalFeedback === 0 ? 0.5 : voteSummary.down;
 
-   const formattedData = useMemo(() => {
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
+    const formattedData = useMemo(() => {
+      const formatNumber = (num: number): string => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+      };
 
-  const total = voteSummary.up + voteSummary.down;
-  // Calcul précis du ratio
-  const voteRatio = total === 0 ? 50 : Math.round((voteSummary.up / total) * 100);
-  const negativeRatio = total === 0 ? 50 : 100 - voteRatio;
+      const total = voteSummary.up + voteSummary.down;
+      // Calcul précis du ratio
+      const voteRatio =
+        total === 0 ? 50 : Math.round((voteSummary.up / total) * 100);
+      const negativeRatio = total === 0 ? 50 : 100 - voteRatio;
 
-  return {
-    formattedUpVotes: formatNumber(voteSummary.up),
-    formattedDownVotes: formatNumber(voteSummary.down),
-    voteRatio,
-    negativeRatio,
-    formattedFollowers: formatNumber(user?.followers?.length || 0),
-    formattedFollowing: formatNumber(user?.following?.length || 0),
-  };
-}, [voteSummary, user?.followers?.length, user?.following?.length]);
+      return {
+        formattedUpVotes: formatNumber(voteSummary.up),
+        formattedDownVotes: formatNumber(voteSummary.down),
+        voteRatio,
+        negativeRatio,
+        formattedFollowers: formatNumber(user?.followers?.length || 0),
+        formattedFollowing: formatNumber(user?.following?.length || 0),
+      };
+    }, [voteSummary, user?.followers?.length, user?.following?.length]);
 
     // Couleur dynamique basée sur le ratio de votes
     // Modification de la variable ratingColor
@@ -107,33 +108,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
       <View style={styles.container}>
         {/* Header avec fond dégradé */}
         <LinearGradient
-          colors={["#062C41", "#041E2D"]}
+          colors={["#062C41", "#062C41", "#0F3460"]}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 1, y: 1 }}
         >
-          {/* Actions rapides: localisation et paramètres */}
-          <View style={styles.actionBar}>
-            <TouchableOpacity
-              style={styles.locationButton}
-              onPress={onNavigateToCity}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="location" size={16} color="#FFF" />
-              <Text style={styles.locationText} numberOfLines={1}>
-                Ma ville : {user?.nomCommune || "HAUBOURDIN"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={onShowNameModal}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="settings-outline" size={20} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-
           {/* Informations principales de l'utilisateur */}
           <View style={styles.profileMainRow}>
             {/* Photo de profil */}
@@ -159,18 +138,43 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
 
             {/* Infos utilisateur */}
             <View style={styles.userInfo}>
-              <View style={styles.nameRow}>
-                <Text style={styles.userName} numberOfLines={1}>
-                  {displayName}
-                </Text>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={16}
-                  color="#4CAF50"
-                  style={styles.verifiedIcon}
-                />
+              <View style={styles.nameContainer}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.userName} numberOfLines={1}>
+                    {displayName}
+                  </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color="#4CAF50"
+                    style={styles.verifiedIcon}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={onShowNameModal}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="settings-outline" size={14} color="#FFF" />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.memberInfo}>Membre depuis {memberSince}</Text>
+              <TouchableOpacity
+                style={styles.locationButton}
+                onPress={onNavigateToCity}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={14}
+                  color="#E5E5E5"
+                  style={styles.iconName}
+                />
+
+                <Text style={styles.memberInfo}>
+                  {user?.nomCommune || "Ville inconnu"}{" "}
+                </Text>
+              </TouchableOpacity>
 
               {/* Section d'engagement social - Nouveau design type pill */}
               <View style={styles.socialEngagementContainer}>
@@ -277,7 +281,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   headerGradient: {
-    paddingTop: Platform.OS === "ios" ? 100 : 110, // Ajustement pour le header natif
+    paddingTop: Platform.OS === "ios" ? 120 : 110, // Ajustement pour le header natif
     paddingBottom: 8,
   },
   actionBar: {
@@ -290,12 +294,7 @@ const styles = StyleSheet.create({
   locationButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 16,
-    paddingVertical: 5,
-    paddingLeft: 10,
-    paddingRight: 20,
-    maxWidth: SCREEN_WIDTH * 0.5,
+    maxWidth: SCREEN_WIDTH * 0.56,
   },
   locationText: {
     color: "#FFF",
@@ -304,12 +303,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   iconButton: {
-    width: 34,
-    height: 34,
+    position: "absolute",
+    right: 0,
+    top: 4,
     borderRadius: 17,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
   },
   profileMainRow: {
     flexDirection: "row",
@@ -355,6 +352,11 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -385,8 +387,14 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   memberInfo: {
+    marginVertical: 3,
+    marginLeft: 15,
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.8)",
+  },
+  iconName: {
+    position: "absolute",
+    top: 2,
   },
   // Nouveaux styles pour l'avis de la communauté intégré
   communityRatingContainer: {

@@ -353,12 +353,12 @@ export default function App() {
 
     return (
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
-        <LinearGradient
-          colors={[COLORS.primary.dark, COLORS.primary.base]}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
+         <LinearGradient
+                  colors={['#062C41', '#062C41', '#0F3460']}
+                  style={styles.headerGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
           {/* Enhanced glassmorphism effect */}
           {Platform.OS === "ios" && (
             <BlurView
@@ -524,12 +524,12 @@ export default function App() {
 
       return (
         <View style={styles.tabBarWrapper}>
-          <LinearGradient
-            colors={[COLORS.primary.base, COLORS.primary.dark]}
-            style={styles.tabBarGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
+         <LinearGradient
+                  colors={['#062C41', '#062C41', '#0F3460']}
+                  style={styles.headerGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
             {/* Glassmorphism effect for iOS */}
             {Platform.OS === "ios" && (
               <BlurView
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
     borderRadius: LAYOUT.radius.circle,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.15)",
   },
