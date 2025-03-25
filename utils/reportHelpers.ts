@@ -24,6 +24,7 @@ export interface ReportCategory {
   value: ReportType;
   article: string;
   description: string;
+  label?: string;
 }
 
 /**

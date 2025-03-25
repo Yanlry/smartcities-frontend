@@ -1,4 +1,4 @@
-// hooks/ui/useBadge.ts
+// hooks/ui/useBadge.ts - Nouvelle palette de couleurs
 
 import React, { useMemo } from 'react';
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -14,6 +14,7 @@ interface BadgeTier {
 /**
  * Hook personnalisé pour la gestion des badges utilisateur
  * Optimisé avec useMemo pour éviter les recalculs inutiles
+ * Palette de couleurs modernisée et professionnelle
  */
 export const useBadge = () => {
   /**
@@ -26,11 +27,11 @@ export const useBadge = () => {
       description: "Plus de 1000 votes",
       votes: 1000,
       styleConfig: {
-        backgroundColor: "#997BBA",
-        textColor: "#fff",
-        borderColor: "#5B3F78",
-        shadowColor: "#997BBA",
-        starsColor: "#5B3F78",
+        backgroundColor: "#7E57C2", // Violet améthyste moderne
+        textColor: "#757575",
+        borderColor: "#4527A0", // Violet foncé pour l'accent
+        shadowColor: "#B39DDB", // Violet clair pour les ombres
+        starsColor: "#4527A0", // Or pour les étoiles (prestige)
         stars: 6,
         icon: null,
       }
@@ -40,11 +41,11 @@ export const useBadge = () => {
       description: "500 à 999 votes",
       votes: 500,
       styleConfig: {
-        backgroundColor: "#70B3B1",
-        textColor: "#fff",
-        borderColor: "#044745",
-        shadowColor: "#70B3B1",
-        starsColor: "#044745",
+        backgroundColor: "#00ACC1", // Bleu-vert moderne (teal)
+        textColor: "#006064",
+        borderColor: "#006064", // Teal foncé pour l'accent
+        shadowColor: "#80DEEA", // Teal clair pour les ombres
+        starsColor: "#006064", // Blanc bleuté pour les étoiles
         stars: 5,
         icon: null,
       }
@@ -54,11 +55,11 @@ export const useBadge = () => {
       description: "250 à 499 votes",
       votes: 250,
       styleConfig: {
-        backgroundColor: "#FAF3E3",
-        textColor: "#856404",
-        borderColor: "#856404",
-        shadowColor: "#D4AF37",
-        starsColor: "#D4AF37",
+        backgroundColor: "#FFD700", // Or classique, plus authentique
+        textColor: "#FFFFFF", // Texte blanc pour un meilleur contraste sur fond doré
+        borderColor: "#B8860B", // Or foncé (DarkGoldenrod) pour l'accent
+        shadowColor: "#F8E7B5", // Or clair pour les ombres (Champagne)
+        starsColor: "#FFD700", // Or brillant pour les étoiles (Gold)
         stars: 4,
         icon: null,
       }
@@ -68,11 +69,11 @@ export const useBadge = () => {
       description: "100 à 249 votes",
       votes: 100,
       styleConfig: {
-        backgroundColor: "#E1E1E1",
-        textColor: "#6A6A6A",
-        starsColor: "#919191",
-        shadowColor: "#6A6A6A",
-        borderColor: "#919191",
+        backgroundColor: "#546E7A", // Bleu-gris ardoise élégant
+        textColor: "#263238",
+        borderColor: "#263238", // Bleu-gris foncé pour l'accent
+        shadowColor: "#90A4AE", // Bleu-gris clair pour les ombres
+        starsColor: "#263238", // Presque blanc pour les étoiles
         stars: 3,
         icon: null,
       }
@@ -82,11 +83,11 @@ export const useBadge = () => {
       description: "50 à 99 votes",
       votes: 50,
       styleConfig: {
-        backgroundColor: "#CEA992",
-        textColor: "#853104",
-        starsColor: "#853104",
-        shadowColor: "#853104",
-        borderColor: "#D47637",
+        backgroundColor: "#8D6E63", // Brun-bronze modernisé
+        textColor: "#5D4037",
+        borderColor: "#5D4037", // Brun foncé pour l'accent
+        shadowColor: "#D7CCC8", // Beige pour les ombres
+        starsColor: "#5D4037", // Blanc cassé pour les étoiles
         stars: 2,
         icon: null,
       }
@@ -96,11 +97,11 @@ export const useBadge = () => {
       description: "5 à 49 votes",
       votes: 5,
       styleConfig: {
-        backgroundColor: "#9BD4A2",
-        textColor: "#25562A",
-        starsColor: "#54B65F",
-        borderColor: "#54B65F",
-        shadowColor: "#54B65F",
+        backgroundColor: "#26A69A", // Vert menthe moderne
+        textColor: "#37474F",
+        borderColor: "#00796B", // Vert foncé pour l'accent
+        shadowColor: "#B2DFDB", // Vert menthe clair pour les ombres
+        starsColor: "#00796B", // Blanc verdâtre pour les étoiles
         stars: 1,
         icon: null,
       }
@@ -110,13 +111,13 @@ export const useBadge = () => {
       description: "Moins de 5 votes",
       votes: 0,
       styleConfig: {
-        backgroundColor: "#062C41",
-        textColor: "#fff",
-        borderColor: "#fff",
-        shadowColor: "#062C41",
-        starsColor: "#062C41",
+        backgroundColor: "#37474F", // Bleu-gris profond
+        textColor: "#37474F",
+        borderColor: "#37474F", // Bordure claire pour contraste
+        shadowColor: "#607D8B", // Bleu-gris pour les ombres
+        starsColor: "#37474F", // Bleu-gris clair pour les icônes
         stars: 0,
-        icon: React.createElement(Ionicons, { name: "school", size: 24, color: "#0AAEA8" }),
+        icon: React.createElement(Ionicons, { name: "school", size: 24, color: "#FFFFFF" }),
       }
     },
   ], []);

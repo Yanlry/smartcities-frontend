@@ -312,7 +312,7 @@ export default function MapScreen() {
   const toggleFiltersExpanded = useCallback(() => {
     setFiltersExpanded(prev => !prev);
     filtersHeight.value = withSpring(
-      filtersExpanded ? 56 : 140, 
+      filtersExpanded ? 56 : 170, 
       ANIMATION.spring
     );
     filtersExpandButton.value = withSpring(

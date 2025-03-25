@@ -71,37 +71,36 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
     const positiveFlex = totalFeedback === 0 ? 0.5 : voteSummary.up;
     const negativeFlex = totalFeedback === 0 ? 0.5 : voteSummary.down;
 
-    // Format des données avec mémoïsation pour optimiser les performances
-    const formattedData = useMemo(() => {
-      const formatNumber = (num: number): string => {
-        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-        return num.toString();
-      };
+   const formattedData = useMemo(() => {
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
 
-      const total = voteSummary.up + voteSummary.down;
-      const voteRatio =
-        total === 0 ? 0 : Math.round((voteSummary.up / total) * 100);
-      const negativeRatio = total === 0 ? 0 : 100 - voteRatio;
+  const total = voteSummary.up + voteSummary.down;
+  // Calcul précis du ratio
+  const voteRatio = total === 0 ? 50 : Math.round((voteSummary.up / total) * 100);
+  const negativeRatio = total === 0 ? 50 : 100 - voteRatio;
 
-      return {
-        formattedUpVotes: formatNumber(voteSummary.up),
-        formattedDownVotes: formatNumber(voteSummary.down),
-        voteRatio,
-        negativeRatio,
-        formattedFollowers: formatNumber(user?.followers?.length || 0),
-        formattedFollowing: formatNumber(user?.following?.length || 0),
-      };
-    }, [voteSummary, user?.followers?.length, user?.following?.length]);
+  return {
+    formattedUpVotes: formatNumber(voteSummary.up),
+    formattedDownVotes: formatNumber(voteSummary.down),
+    voteRatio,
+    negativeRatio,
+    formattedFollowers: formatNumber(user?.followers?.length || 0),
+    formattedFollowing: formatNumber(user?.following?.length || 0),
+  };
+}, [voteSummary, user?.followers?.length, user?.following?.length]);
 
     // Couleur dynamique basée sur le ratio de votes
     // Modification de la variable ratingColor
     const ratingColor = useMemo(() => {
       if (totalFeedback === 0) return "#4CAF50"; // Vert par défaut si aucun feedback
       if (formattedData.voteRatio >= 85) return "#4CAF50";
-      if (formattedData.voteRatio >= 70) return "#8BC34A";
+      if (formattedData.voteRatio >= 60) return "#8BC34A";
       if (formattedData.voteRatio >= 50) return "#FF9800";
-      return "#F44336";
+      return "#FF9800";
     }, [formattedData.voteRatio, totalFeedback]);
 
     return (

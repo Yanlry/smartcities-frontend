@@ -29,7 +29,7 @@ if (Platform.OS === "android") {
 
 // Configuration des couleurs pour le thème - Style harmonisé avec teinte violette/indigo
 const THEME = {
-  primary: "#6C63FF", // Indigo principal
+  primary: "#6C63FF", // Indigo principa
   primaryDark: "#4F46E5", // Indigo foncé
   secondary: "#B4ADFF", // Indigo clair
   background: "#F9FAFE", // Fond très légèrement bleuté

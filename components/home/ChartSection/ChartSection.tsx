@@ -16,13 +16,10 @@ import {
   LayoutAnimation
 } from "react-native";
 import { chartColors } from "../../../utils/reportHelpers";
-import { ChartProps as ImportedChartProps } from "./chart.types";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 
-const screenWidth = Dimensions.get("window").width;
 const CHART_HEIGHT = 220;
-const BAR_GAP = 10;
 
 // Configuration des couleurs pour le thème - Style harmonisé avec teinte indigo
 const THEME = {

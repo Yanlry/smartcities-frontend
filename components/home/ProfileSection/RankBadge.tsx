@@ -1,13 +1,6 @@
-// components/home/RankBadge.tsx
+// Chemin: components/home/RankBadge.tsx
 
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-  memo,
-} from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import {
   View,
   Text,
@@ -15,15 +8,15 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  Dimensions,
   LayoutAnimation,
   Platform,
   UIManager,
-  Dimensions,
-  InteractionManager,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BadgeStyle } from "./user.types";
+import CircularProgress from "./CircularProgress";
 
 // Activer LayoutAnimation pour Android
 if (
@@ -33,10 +26,7 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-/**
- * Interface pour les propriétés du composant RankBadge
- */
-// Chemin: components/home/RankBadge.tsx
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 /**
  * Interface pour les propriétés du composant RankBadge
@@ -58,906 +48,792 @@ interface RankBadgeProps {
   showStatsSection?: boolean;
 }
 
-// Constantes pour les animations et le layout
-const PARTICLE_COUNT = 8; 
-const BATCH_SIZE = 8; 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+/**
+ * Constantes CIF pour les animations et transitions
+ */
+const CIF = {
+  TRANSITION_DURATION: 300,
+  EASING: Easing.cubic,
+  SHADOW_COLOR: "rgba(0, 0, 0, 0.2)",
+  HEADER_Z_INDEX: 2,
+  CONTENT_Z_INDEX: 1,
+  GRADIENT_OPACITY: {
+    HIGH: 0.9,
+    MEDIUM: 0.7,
+    LOW: 0.5,
+  },
+};
 
 /**
- * Composant RankBadge - Affiche le rang de l'utilisateur avec des effets visuels
- * Optimisé pour les performances avec des animations fluides
+ * RankBadge - Design entièrement repensé avec indicateur circulaire précis
+ * Implémente les standards CIF pour une interface cohérente et optimisée
  */
-const RankBadge: React.FC<RankBadgeProps> = ({
-  ranking,
-  rankingSuffix,
-  totalUsers,
-  onNavigateToRanking,
-  badgeStyle,
-  onShowBadgeModal,
-  showStatsSection = true
-}) => {
-  // États locaux
-  const [expanded, setExpanded] = useState<boolean>(false);
-  const [glowIntensity, setGlowIntensity] = useState<number>(0.3);
-  const [particles, setParticles] = useState<Particle[]>([]);
-  
-  // Références pour gérer les animations et timers
-  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const glowIncreasing = useRef<boolean>(true);
-  const isInitialRender = useRef<boolean>(true);
-  const animationHandlesRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+const RankBadge: React.FC<RankBadgeProps> = memo(
+  ({
+    ranking,
+    rankingSuffix,
+    totalUsers,
+    onNavigateToRanking,
+    badgeStyle,
+    onShowBadgeModal,
+    showStatsSection = true,
+  }) => {
+    // États locaux
+    const [expanded, setExpanded] = useState<boolean>(false);
 
-  // Valeurs d'animation
-  const pulseAnim = useMemo(() => new Animated.Value(1), []);
-  const bounceAnim = useMemo(() => new Animated.Value(0), []);
+    // Animations
+    const bounceAnim = useRef(new Animated.Value(0)).current;
+    const rotateAnim = useRef(new Animated.Value(0)).current;
+    const headerShadowAnim = useRef(new Animated.Value(0)).current;
+    const decorAnim = useRef(new Animated.Value(0)).current;
 
-  /**
-   * Interface pour les particules d'animation
-   */
-  interface Particle {
-    id: number;
-    x: number;
-    y: number;
-    size: number;
-    opacity: Animated.Value;
-    position: Animated.ValueXY;
-    delay: number;
-  }
+    // Calcul memoïzé du percentile pour optimiser les performances
+    const percentile = useCallback(() => {
+      if (!ranking || !totalUsers) return 0;
+      return ((totalUsers - ranking + 1) / totalUsers) * 100;
+    }, [ranking, totalUsers]);
 
-  // Calcul du percentile (position relative dans le classement)
-  const percentile = useMemo((): number => {
-    if (!ranking || !totalUsers) return 0;
-    return ((totalUsers - ranking + 1) / totalUsers) * 100;
-  }, [ranking, totalUsers]);
+    // Animation d'entrée avec timing CIF standard
+    useEffect(() => {
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    }, []);
 
-  // Définir les couleurs de la barre de progression en fonction du rang
-  const getProgressColors = useMemo(() => {
-    if (ranking === 1) return { 
-      barColor: "#fff", // Or
-      glowColor: "#FFD700",
-      glowOpacity: 0.8
-    };
-    if (ranking === 2) return { 
-      barColor: "#fff", // Argent
-      glowColor: "#C0C0C0",
-      glowOpacity: 0.7
-    };
-    if (ranking === 3) return { 
-      barColor: "#ccc", // Bronze
-      glowColor: "#CD7F32",
-      glowOpacity: 0.6
-    };
-    return { 
-      barColor: "#FFFFFF", // Blanc pour les autres rangs
-      glowColor: "#FFFFFF",
-      glowOpacity: 0.5
-    };
-  }, [ranking]);
-
-  // Configuration des couleurs du gradient en fonction du classement
-  const getGradientColors = useMemo((): [string, string, ...string[]] => {
-    if (ranking === 1) return ["#FFD700", "#FFC107", "#FFB300"]; // dégradé or
-    if (ranking === 2) return ["#C0C0C0", "#D3D3D3", "#E5E4E2"]; // dégradé argent
-    if (ranking === 3) return ["#CD7F32", "#C88B35", "#B87333"]; // dégradé bronze
-    if (ranking && ranking <= 10) {
-      // Pour les rangs 4 à 10, utilisation d'un dégradé violet (modifiable selon vos préférences)
-      return ["#8A2BE2", "#9370DB", "#BA55D3"];
-    }
-    // Pour les rangs au-delà de 10, utilisation d'un dégradé teal
-    return ["#20B2AA", "#3CB371", "#2E8B57"];
-  }, [ranking]);
-
-  // Effet de lueur (shadow) statique basé sur le ranking
-  const getGlowStyle = useMemo(() => {
-    if (ranking === 1) {
-      return {
-        shadowColor: "#FFD700",
-        shadowOpacity: glowIntensity,
-        shadowOffset: { width: 0, height: 1 },
-        shadowRadius: 10,
-      };
-    }
-    if (ranking === 2) {
-      return {
-        shadowColor: "#C0C0C0",
-        shadowOpacity: glowIntensity * 0.8,
-        shadowOffset: { width: 0, height: 1 },
-        shadowRadius: 8,
-      };
-    }
-    if (ranking === 3) {
-      return {
-        shadowColor: "#CD7F32",
-        shadowOpacity: glowIntensity * 0.7,
-        shadowOffset: { width: 0, height: 1 },
-        shadowRadius: 6,
-      };
-    }
-    return {
-      shadowColor: "#000",
-      shadowOpacity: 0.2,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 8,
-    };
-  }, [ranking, glowIntensity]);
-
-  // Configuration de l'icône en fonction du classement
-  const getTrophyIcon = useMemo(() => {
-    if (ranking === 1)
-      return { name: "trophy" as const, color: "#FFD700", size: 24 };
-    if (ranking === 2)
-      return { name: "trophy" as const, color: "#C0C0C0", size: 22 };
-    if (ranking === 3)
-      return { name: "trophy" as const, color: "#CD7F32", size: 22 };
-    if (ranking && ranking <= 10)
-      return { name: "ribbon" as const, color: "#FFFFFF", size: 15 };
-    return { name: "stats-chart" as const, color: "#FFFFFF", size: 15 };
-  }, [ranking]);
-
-  // Obtenir le label pour le classement
-  const getRankLabel = useMemo((): string => {
-    if (ranking === 1) return "Champion";
-    if (ranking === 2) return "Challenger";
-    if (ranking === 3) return "TOP 3";
-    if (ranking && ranking <= 10) return "TOP 10";
-    if (ranking && ranking <= 50) return "TOP 50";
-    return "Classement";
-  }, [ranking]);
-
-  // Effet pour créer et animer les particules avec batching pour améliorer les performances
-  useEffect(() => {
-    if (ranking === 1) {
-      // Nettoyer les anciennes particules et animations lors des re-renders
-      if (!isInitialRender.current) {
-        animationHandlesRef.current.forEach(handle => clearTimeout(handle));
-        animationHandlesRef.current = [];
-        setParticles([]);
-      }
-      
-      isInitialRender.current = false;
-      
-      // Utiliser InteractionManager pour différer la création des particules
-      InteractionManager.runAfterInteractions(() => {
-        // Fonction pour créer un batch de particules
-        const createParticleBatch = (batchIndex: number): void => {
-          const totalBatches = Math.ceil(PARTICLE_COUNT / BATCH_SIZE);
-          if (batchIndex >= totalBatches) return;
-          
-          const batchStartIndex = batchIndex * BATCH_SIZE;
-          const batchEndIndex = Math.min(batchStartIndex + BATCH_SIZE, PARTICLE_COUNT);
-          
-          const newBatchParticles = Array.from(
-            { length: batchEndIndex - batchStartIndex }, 
-            (_, i) => {
-              const particleIndex = batchStartIndex + i;
-              
-              // Distribution optimisée sur toute la surface du badge
-              const quadrant = particleIndex % 4;
-              const quadWidth = SCREEN_WIDTH * 0.15;
-              const quadHeight = 30; // Hauteur réduite
-              
-              // Positionnement par quadrant pour une meilleure distribution visuelle
-              let baseX = 0;
-              let baseY = 0;
-              
-              switch (quadrant) {
-                case 0: // Haut gauche
-                  baseX = 20 + Math.random() * quadWidth;
-                  baseY = 15 + Math.random() * quadHeight;
-                  break;
-                case 1: // Haut droit
-                  baseX = SCREEN_WIDTH * 0.6 - quadWidth + Math.random() * quadWidth;
-                  baseY = 15 + Math.random() * quadHeight;
-                  break;
-                case 2: // Bas gauche
-                  baseX = 20 + Math.random() * quadWidth;
-                  baseY = 35 + Math.random() * quadHeight;
-                  break;
-                case 3: // Bas droit
-                  baseX = SCREEN_WIDTH * 0.6 - quadWidth + Math.random() * quadWidth;
-                  baseY = 35 + Math.random() * quadHeight;
-                  break;
-              }
-              
-              // Tailles variables pour plus de dynamisme visuel - réduites
-              const size = (Math.random() * 2 + 1) * (particleIndex % 3 === 0 ? 1.4 : 1);
-              
-              // Délai d'apparition échelonné pour éviter les pics de performance
-              const delay = particleIndex * (1000 / PARTICLE_COUNT);
-              
-              return {
-                id: particleIndex,
-                x: baseX,
-                y: baseY,
-                size,
-                opacity: new Animated.Value(0),
-                position: new Animated.ValueXY({ x: baseX, y: baseY }),
-                delay,
-              };
-            }
-          );
-          
-          // Mettre à jour l'état avec fusion des particules précédentes
-          setParticles(prev => [...prev, ...newBatchParticles]);
-          
-          // Différer l'animation des particules de ce batch
-          const batchAnimationHandle = setTimeout(() => {
-            newBatchParticles.forEach(particle => {
-              // Animation avec délai pour répartir la charge CPU
-              const animHandle = setTimeout(() => {
-                // Durée variable pour chaque particule (entre 2 et 5 secondes)
-                const randomDuration = Math.random() * 3000 + 2000;
-                
-                // Calcul de mouvement aléatoire avec amplitude proportionnelle à la taille
-                const movementScale = 1 + (particle.size / 3);
-                const moveX = particle.x + (Math.random() * 30 - 15) * movementScale; // Amplitude réduite
-                const moveY = particle.y + (Math.random() * 30 - 15) * movementScale; // Amplitude réduite
-                
-                // Animation en boucle avec séquence sophistiquée
-                Animated.loop(
-                  Animated.sequence([
-                    Animated.timing(particle.opacity, {
-                      toValue: Math.min(0.5 + Math.random() * 0.3, 0.8), // Opacité réduite
-                      duration: randomDuration * 0.25,
-                      useNativeDriver: true,
-                    }),
-                    Animated.parallel([
-                      Animated.timing(particle.position, {
-                        toValue: { x: moveX, y: moveY },
-                        duration: randomDuration * 0.75,
-                        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(particle.opacity, {
-                        toValue: 0,
-                        duration: randomDuration * 0.75,
-                        easing: Easing.linear,
-                        useNativeDriver: true,
-                      }),
-                    ]),
-                  ]),
-                  { iterations: -1 }
-                ).start();
-              }, particle.delay);
-              
-              animationHandlesRef.current.push(animHandle);
-            });
-          }, 100);
-          
-          animationHandlesRef.current.push(batchAnimationHandle);
-          
-          // Planifier le batch suivant après un délai
-          const nextBatchHandle = setTimeout(() => {
-            createParticleBatch(batchIndex + 1);
-          }, 150);
-          
-          animationHandlesRef.current.push(nextBatchHandle);
-        };
-        
-        // Démarrer la création par batch
-        createParticleBatch(0);
+    // Gestion de l'expansion avec animation CIF standard
+    const toggleExpand = useCallback(() => {
+      // Animation layout standardisée CIF
+      LayoutAnimation.configureNext({
+        duration: CIF.TRANSITION_DURATION,
+        update: {
+          type: "easeInEaseOut",
+          property: "scaleXY",
+        },
       });
-    }
-    
-    // Nettoyage des animations lors du démontage
-    return () => {
-      animationHandlesRef.current.forEach(handle => clearTimeout(handle));
-      animationHandlesRef.current = [];
-    };
-  }, [ranking, SCREEN_WIDTH]);
 
-  // Animation de pulsation pour les rangs supérieurs
-  useEffect(() => {
-    if (ranking && ranking <= 3) {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.03, // Amplitude réduite
-            duration: 1200,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1200,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-        ])
-      );
+      // Animation de rotation de la flèche
+      Animated.timing(rotateAnim, {
+        toValue: expanded ? 0 : 1,
+        duration: CIF.TRANSITION_DURATION,
+        easing: CIF.EASING,
+        useNativeDriver: true,
+      }).start();
 
-      pulse.start();
+      // Animation d'ombre du header
+      Animated.timing(headerShadowAnim, {
+        toValue: expanded ? 0 : 1,
+        duration: CIF.TRANSITION_DURATION,
+        easing: CIF.EASING,
+        useNativeDriver: false, // Les shadows ne peuvent pas utiliser le native driver
+      }).start();
 
-      return () => pulse.stop();
-    }
-  }, [ranking, pulseAnim]);
+      // Animation des décorations
+      Animated.timing(decorAnim, {
+        toValue: expanded ? 0 : 1,
+        duration: CIF.TRANSITION_DURATION + 100, // Légèrement plus long pour effet cascade
+        easing: CIF.EASING,
+        useNativeDriver: true,
+      }).start();
 
-  // Animation d'entrée
-  useEffect(() => {
-    Animated.spring(bounceAnim, {
-      toValue: 1,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-  }, [bounceAnim]);
+      setExpanded(!expanded);
+    }, [expanded, rotateAnim, headerShadowAnim, decorAnim]);
 
-  // Animation de lueur (glow) manuelle pour les top 3
-  useEffect(() => {
-    if (ranking && ranking <= 3) {
-      const animateGlow = () => {
-        setGlowIntensity((prev) => {
-          let newValue: number;
-          if (glowIncreasing.current) {
-            newValue = prev + 0.02;
-            if (newValue >= 0.7) glowIncreasing.current = false;
-          } else {
-            newValue = prev - 0.02;
-            if (newValue <= 0.3) glowIncreasing.current = true;
-          }
-          return newValue;
-        });
+    // Récupération de l'icône en fonction du rang
+    const getRankIcon = useCallback(() => {
+      if (ranking === 1) return "crown";
+      if (ranking === 2 || ranking === 3) return "medal";
+      if (ranking && ranking <= 10) return "star-circle";
+      if (ranking && ranking <= 50) return "star-half-full";
+      return "account-multiple";
+    }, [ranking]);
 
-        glowTimerRef.current = setTimeout(animateGlow, 50);
-      };
+    // Récupération de la couleur principale en fonction du rang
+    const getPrimaryColor = useCallback(() => {
+      if (ranking === 1) return "#FFA000"; // Or
+      if (ranking === 2) return "#C0C0C0"; // Argent
+      if (ranking === 3) return "#CD7F32"; // Bronze
+      if (ranking && ranking <= 10) return "#6A0DAD"; // Violet royal
+      if (ranking && ranking <= 50) return "#26A69A"; // Bleu
+      return "#26A69A"; // Teal
+    }, [ranking]);
 
-      animateGlow();
-    }
+    // Récupération des couleurs du dégradé CIF paramétrique
+    const getGradientColors = useCallback((): [string, string] => {
+      const primary = getPrimaryColor();
 
-    return () => {
-      if (glowTimerRef.current) {
-        clearTimeout(glowTimerRef.current);
-      }
-    };
-  }, [ranking]);
+      if (ranking === 1) return [primary, "#FFD700"]; // Or --> Orange foncé
+      if (ranking === 2) return [primary, "#757575"]; // Argent --> Gris foncé
+      if (ranking === 3) return [primary, "#8D6E63"]; // Bronze --> Brun
+      if (ranking && ranking <= 10) return [primary, "#3949AB"]; // Violet --> Indigo
+      if (ranking && ranking <= 50) return [primary, "#00796B"]; // Bleu --> Bleu foncé
+      return [primary, "#00796B"]; // Teal --> Teal foncé
+    }, [ranking, getPrimaryColor]);
 
-  // Gestion de l'expansion du badge avec animation personnalisée
-  const toggleExpand = useCallback((): void => {
-    LayoutAnimation.configureNext({
-      duration: 250, // Durée réduite
-      update: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      delete: {
-        duration: 150, // Durée réduite
-        type: LayoutAnimation.Types.easeOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      create: {
-        duration: 250, // Durée réduite
-        type: LayoutAnimation.Types.easeIn,
-        property: LayoutAnimation.Properties.opacity,
-      },
+    // Récupération du libellé de rang
+    const getRankLabel = useCallback(() => {
+      if (ranking === 1) return "ÉLITE";
+      if (ranking === 2) return "EXPERT";
+      if (ranking === 3) return "MAÎTRE";
+      if (ranking && ranking <= 10) return "VÉTÉRAN";
+      if (ranking && ranking <= 50) return "AVANCÉ";
+      return "CONTRIBUTEUR";
+    }, [ranking]);
+
+    // Animation de rotation standardisée CIF
+    const arrowRotation = rotateAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "180deg"],
     });
-    setExpanded((prev) => !prev);
-  }, []);
 
-  // Optimisation: Rendre les particules par un composant mémoïsé pour réduire les re-renders
-  const ParticlesEffect = useCallback((): React.ReactNode => {
-    if (ranking !== 1 || particles.length === 0) return null;
-    
-    return (
-      <>
-        {particles.map((particle) => (
-          <Animated.View
-            key={particle.id}
-            style={[
-              styles.particle,
-              {
-                width: particle.size,
-                height: particle.size,
-                opacity: particle.opacity,
-                transform: [
-                  { translateX: particle.position.x },
-                  { translateY: particle.position.y },
-                  { rotate: `${(particle.id % 2 === 0 ? '' : '-')}${Math.floor(particle.id % 4) * 15}deg` }
-                ],
-              },
-            ]}
-          />
-        ))}
-      </>
-    );
-  }, [ranking, particles]);
+    // Animation d'ombre du header
+    const headerShadowStyle = {
+      shadowOpacity: headerShadowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.1, 0.3],
+      }),
+      shadowRadius: headerShadowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [2, 6],
+      }),
+    };
 
-  // Génération des étoiles basée sur le nombre défini dans badgeStyle.stars - NOUVEAU STYLE
-  const renderStars = useCallback((): React.ReactNode => {
-    if (!badgeStyle || typeof badgeStyle.stars !== 'number') return null;
-    
-    return (
-      <View style={styles.starsRow}>
-        {Array.from({ length: badgeStyle.stars }).map((_, index) => (
-          <Ionicons
-            key={index}
-            name="star"
-            size={14}
-            color={badgeStyle.starsColor}
-            style={styles.badgeStar}
-          />
-        ))}
-        {badgeStyle.stars === 0 && (
-          <Ionicons 
-            name="school-outline" 
-            size={14}
-            color={badgeStyle.starsColor} 
-          />
-        )}
-      </View>
-    );
-  }, [badgeStyle]);
+    // Animation des éléments décoratifs
+    const leftDecorTranslate = decorAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-20, 0],
+    });
 
-// Chemin: components/home/RankBadge.tsx
+    const rightDecorTranslate = decorAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [20, 0],
+    });
 
-// Optimisation: Rendre le contenu étendu comme composant mémoïsé
-const ExpandedContent = useCallback((): React.ReactNode => {
-  if (!expanded) return null;
-  
-  return (
-    <View style={styles.expandedContent}>
-      {showStatsSection !== false && (
-        <>
-          <View style={styles.progressWrapper}>
-            <View style={styles.progressContainer}>
+    const decorOpacity = decorAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    });
+
+    // Calcul de la couleur d'arc de progression - conforme aux standards CIF
+    const getProgressColor = useCallback(() => {
+      const currentPercentile = percentile();
+
+      if (currentPercentile > 90) return "#4CAF50"; // Vert
+      if (currentPercentile > 70) return "#8BC34A"; // Vert clair
+      if (currentPercentile > 50) return "#FFC107"; // Jaune
+      if (currentPercentile > 30) return "#FF9800"; // Orange
+      return "#F44336"; // Rouge
+    }, [percentile]);
+
+    // Fonction renderStars améliorée avec positionnement conditionnel par nombre d'étoiles
+    const renderStars = useCallback(() => {
+      if (!badgeStyle?.stars) return null;
+
+      const starCount = Math.min(badgeStyle.stars, 6); // Maximum 6 étoiles
+
+      // Si 1, 2 ou 3 étoiles - arrangement linéaire centré au-dessus
+      if (starCount <= 3) {
+        return (
+          <View style={styles.fewStarsContainer}>
+            {Array.from({ length: starCount }).map((_, index) => {
+              // Calcul pour centrer l'arrangement (décalage latéral)
+              const offsetX = (index - (starCount - 1) / 2) * 20; // 20px d'espacement entre étoiles
+
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.linearStarPosition,
+                    { transform: [{ translateX: offsetX }] },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="star"
+                    size={14}
+                    color="#FFFFFF"
+                    style={styles.floatingStarIcon}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        );
+      }
+
+      // Pour 4, 5 ou 6 étoiles - arrangement en arc de cercle
+      return (
+        <View style={styles.manyStarsContainer}>
+          {Array.from({ length: starCount }).map((_, index) => {
+            // Calcul de l'arc de cercle pour 4+ étoiles
+            const angleRange = 100; // Demi-cercle complet
+            const startAngle = -angleRange / 2;
+            const angleStep = angleRange / (starCount - 1);
+            const angle = startAngle + index * angleStep;
+
+            // Convertir l'angle en radians
+            const angleRad = (angle * Math.PI) / 180;
+
+            // Rayon de l'arc - légèrement plus grand que le rayon du cercle d'icône
+            const radius = 40; // Ajusté pour un arc plus prononcé
+
+            // Calculer les positions x et y sur l'arc
+            const x = radius * Math.sin(angleRad);
+            const y = -radius * Math.cos(angleRad); // Négatif pour aller vers le haut
+
+            return (
               <View
+                key={index}
                 style={[
-                  styles.progressBar,
-                  { 
-                    width: `${percentile}%`,
-                    backgroundColor: getProgressColors.barColor
+                  styles.arcStarPosition,
+                  {
+                    transform: [{ translateX: x }, { translateY: y }],
                   },
                 ]}
-              />
-              {/* Effet de lueur sur la barre de progression */}
-              {ranking && ranking <= 3 && (
-                <View
-                  style={[
-                    styles.progressGlow,
-                    {
-                      width: `${percentile}%`,
-                      backgroundColor: getProgressColors.barColor,
-                      shadowColor: getProgressColors.glowColor,
-                      opacity: getProgressColors.glowOpacity
-                    },
-                  ]}
+              >
+                <MaterialCommunityIcons
+                  name="star"
+                  size={14}
+                  color="#FFFFFF"
+                  style={styles.floatingStarIcon}
                 />
-              )}
+              </View>
+            );
+          })}
+        </View>
+      );
+    }, [badgeStyle]);
+
+    // Fonction pour rendre les décorations latérales
+    const renderSideDecorations = useCallback(() => {
+      // Obtenir la couleur primaire pour les décorations
+      const primaryColor = getPrimaryColor();
+      const secondaryColor = getGradientColors()[1];
+      
+      // Calculer la taille dynamique pour les décorations basée sur le niveau
+      const getDecorSize = () => {
+        if (ranking === 1) return { large: 32, medium: 24, small: 16 };
+        if (ranking === 2 || ranking === 3) return { large: 28, medium: 22, small: 14 };
+        return { large: 24, medium: 18, small: 12 };
+      };
+      
+      const decorSize = getDecorSize();
+
+      return (
+        <>
+          {/* Décorations côté gauche */}
+          <Animated.View
+            style={[
+              styles.sideDecorContainer,
+              styles.leftDecor,
+              {
+                opacity: decorOpacity,
+                transform: [{ translateX: leftDecorTranslate }],
+              },
+            ]}
+          >
+            <View style={styles.decorItem}>
+              <MaterialCommunityIcons
+                name={ranking === 1 ? "star-four-points" : "rhombus"}
+                size={decorSize.large}
+                color={primaryColor}
+                style={styles.decorIcon}
+              />
             </View>
             
-            <Text style={styles.percentileText}>
-              {percentile.toFixed(1)}%
-            </Text>
-          </View>
-
-          <Text style={styles.percentileExplanation}>
-            Grâce à vos votes vous dépasser {percentile.toFixed(1)}% des Smarters
-          </Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statsTextWrapper}>
-              <Text style={styles.statsText}>
-                {ranking === 1
-                  ? `Vous êtes classé 1er sur ${totalUsers?.toLocaleString() || "?"} Smarters`
-                  : `#${ranking} / ${totalUsers?.toLocaleString() || "?"}`}
-              </Text>
-              {ranking && ranking <= 10 && ranking !== 1 && (
-                <Text style={styles.prestigeText}>
-                  Statut Privilégié
-                </Text>
-              )}
+            <View style={styles.decorItem}>
+              <View style={[styles.decorCircle, { backgroundColor: secondaryColor, width: 12, height: 12, borderRadius: 6 }]} />
             </View>
-
-            <TouchableOpacity
-              style={styles.detailsButton}
-              onPress={onNavigateToRanking}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.detailsText}>Classement</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={10}
-                color="#FFFFFF"
-                style={styles.detailsIcon}
+            
+            <View style={styles.decorItem}>
+              <MaterialCommunityIcons
+                name="rhombus-outline"
+                size={decorSize.medium}
+                color="rgba(255, 255, 255, 0.6)"
+                style={styles.decorIcon}
               />
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-
-      {/* NOUVEAU STYLE DU BADGE */}
-      {badgeStyle && onShowBadgeModal && (
-        <TouchableOpacity 
-          style={styles.badgeCardContainer}
-          onPress={onShowBadgeModal}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={['#FFFFFF', `${badgeStyle.backgroundColor}50`]}
-            style={styles.badgeCardGradient}
-          >
-            <View style={styles.badgeHeader}>
-              <View style={[
-                styles.badgeCircle, 
-                { borderColor: badgeStyle.borderColor }
-              ]}>
-                {badgeStyle.icon || (
-                  <Ionicons 
-                    name="trophy" 
-                    size={22} 
-                    color={badgeStyle.starsColor} 
-                  />
-                )}
-              </View>
-              
-              <View style={styles.badgeTitleContainer}>
-                <Text style={styles.badgeTitle}>
-                  {badgeStyle.title}
-                </Text>
-                <Text style={styles.badgeDescription}>
-                  Niveau actuel
-                </Text>
-              </View>
-              
-              {renderStars()}
             </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}, [
-  expanded, 
-  percentile, 
-  ranking, 
-  totalUsers, 
-  getProgressColors, 
-  onNavigateToRanking, 
-  badgeStyle,
-  onShowBadgeModal,
-  renderStars,
-  showStatsSection  // Ajoutez cette dépendance
-]);
+          </Animated.View>
 
-  return (
-    <View style={[styles.outerWrapper, getGlowStyle]}>
-      <Animated.View
-        style={[
-          styles.containerWrapper,
-          {
-            transform: [
-              { scale: pulseAnim },
-              { scale: bounceAnim },
+          {/* Décorations côté droit */}
+          <Animated.View
+            style={[
+              styles.sideDecorContainer,
+              styles.rightDecor,
               {
-                translateY: bounceAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [30, 0],
-                }),
+                opacity: decorOpacity,
+                transform: [{ translateX: rightDecorTranslate }],
               },
-            ],
-            opacity: bounceAnim,
-          },
-        ]}
+            ]}
+          >
+            <View style={styles.decorItem}>
+              <View style={[styles.decorCircle, { backgroundColor: secondaryColor, width: 12, height: 12, borderRadius: 6 }]} />
+            </View>
+            
+            <View style={styles.decorItem}>
+              <MaterialCommunityIcons
+                name={ranking === 1 ? "star-four-points" : "rhombus"}
+                size={decorSize.medium}
+                color={primaryColor}
+                style={styles.decorIcon}
+              />
+            </View>
+            
+            <View style={styles.decorItem}>
+              <MaterialCommunityIcons
+                name="rhombus-outline"
+                size={decorSize.small}
+                color="rgba(255, 255, 255, 0.6)"
+                style={styles.decorIcon}
+              />
+            </View>
+          </Animated.View>
+        </>
+      );
+    }, [ranking, getPrimaryColor, getGradientColors, decorOpacity, leftDecorTranslate, rightDecorTranslate]);
+
+    return (
+      <Animated.View
+        style={[styles.container, { transform: [{ scale: bounceAnim }] }]}
       >
         <TouchableOpacity
-          style={styles.container}
+          style={styles.cardContainer}
           onPress={toggleExpand}
           activeOpacity={0.85}
-          onLongPress={onNavigateToRanking}
         >
+          {/* Background gradient - utilise les couleurs CIF paramétriques */}
           <LinearGradient
-            colors={getGradientColors}
+            colors={getGradientColors()}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.gradient}
+            style={styles.gradientBackground}
           >
-            {/* Effet de particules scintillantes pour le rang 1 */}
-            <ParticlesEffect />
+            {/* Header avec z-index standardisé CIF */}
+            <Animated.View
+              style={[
+                styles.header,
+                headerShadowStyle,
+                { zIndex: CIF.HEADER_Z_INDEX },
+              ]}
+            >
+              <View style={styles.rankInfoContainer}>
+                {/* Icon & Label */}
+                <View style={styles.rankIconContainer}>
+                  <MaterialCommunityIcons
+                    name={getRankIcon()}
+                    size={ranking === 1 ? 28 : 24}
+                    color="#FFFFFF"
+                  />
+                </View>
 
-            <View style={styles.badgeContent}>
-              {/* Icône et position */}
-              <View style={styles.badgeHeader}>
-              <View
-  style={[
-    styles.trophyWrapper,
-    ranking === 1 && styles.firstPlaceTrophy,
-    ranking === 2 && styles.secondPlaceTrophy,
-    ranking === 3 && styles.thirdPlaceTrophy,
-  ]}
->
-  <Ionicons
-    name={getTrophyIcon.name}
-    size={getTrophyIcon.size}
-    color={getTrophyIcon.color}
-  />
-</View>
-
-                <View style={styles.rankInfo}>
-                  <Text style={styles.rankLabel}>{getRankLabel}</Text>
-                  <Text style={styles.rankNumber}>
+                <View style={styles.textContainer}>
+                  <Text style={styles.rankLabel}>{getRankLabel()}</Text>
+                  <Text style={styles.rankValue}>
                     #{ranking}
                     {rankingSuffix}
                   </Text>
                 </View>
-
-                <View style={styles.expandButton}>
-                  <Ionicons
-                    name={expanded ? "chevron-up" : "chevron-down"}
-                    size={12}
-                    color="#FFF"
-                  />
-                </View>
               </View>
 
-              {/* Contenu étendu mémoïsé */}
-              <ExpandedContent />
-            </View>
+              {/* Indicateur de progression avec CircularProgress optimisé */}
+              <View style={styles.progressContainer}>
+                <CircularProgress
+                  percentage={percentile()}
+                  size={52}
+                  color={getProgressColor()}
+                  backgroundColor="rgba(255, 255, 255, 0.15)"
+                  thickness={5}
+                  textColor="#FFFFFF"
+                  fontWeight="bold"
+                />
+
+                {/* Bouton d'expansion avec rotation CIF standardisée */}
+                <Animated.View
+                  style={[
+                    styles.expandButton,
+                    { transform: [{ rotate: arrowRotation }] },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="chevron-down"
+                    size={24}
+                    color="#FFFFFF"
+                  />
+                </Animated.View>
+              </View>
+            </Animated.View>
+
+            {/* Contenu développé avec z-index CIF standardisé */}
+            {expanded && (
+              <View
+                style={[
+                  styles.expandedContent,
+                  { zIndex: CIF.CONTENT_Z_INDEX },
+                ]}
+              >
+                <View
+                  style={styles.expandedContentInner}
+                >
+                  {/* Nouvelles décorations latérales */}
+                  {renderSideDecorations()}
+
+                  {/* Badge section bien mise en valeur */}
+                  {badgeStyle && onShowBadgeModal && (
+                    <TouchableOpacity
+                      style={styles.enhancedBadgeButton}
+                      onPress={onShowBadgeModal}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.badgeContainer}>
+                        {/* Icône plus visible */}
+                        <View style={styles.enhancedIconContainer}>
+                          {/* Conteneur d'étoiles positionnées au-dessus */}
+                          {renderStars()}
+
+                          {badgeStyle.icon || (
+                            <MaterialCommunityIcons
+                              name="shield-star"
+                              size={28}
+                              color="#FFFFFF"
+                            />
+                          )}
+                        </View>
+
+                        {/* Contenu du badge */}
+                        <View style={styles.badgeContentWrapper}>
+                          <Text style={styles.badgeTitle}>
+                            {badgeStyle.title}
+                          </Text>
+
+                          <Text style={styles.badgeProgressLabel}>
+                            Voir détails
+                          </Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                        
+                  {/* Stats avec mise en valeur du badge */}
+                  {showStatsSection && (
+                    <View style={styles.statsContainer}>
+                      {/* Statistiques principales en ligne */}
+                      <View style={styles.statsRow}>
+                        <View style={styles.statItem}>
+                          <Text style={styles.statValue}>
+                            {totalUsers?.toLocaleString() || "?"} 
+                          </Text>
+                          <Text style={styles.statLabel}>Total Smarters</Text>
+                        </View>
+
+                        <View style={styles.statDivider} />
+
+                        <TouchableOpacity
+                          style={styles.statItem}
+                          onPress={onNavigateToRanking}
+                          activeOpacity={0.8}
+                        >
+                          <View>
+                            <View style={styles.rankBadge}>
+                              <Text style={styles.rankBadgeText}>
+                                {ranking === 1
+                                  ? "1er"
+                                  : `${ranking}${rankingSuffix}`}
+                              </Text>
+                            </View>
+                            <Text style={styles.statLabel}>Voir le classement</Text>
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
-    </View>
-  );
-};
+    );
+  }
+);
 
-// Styles optimisés et améliorés avec le nouveau design des badges
+// Chemin: components/home/RankBadge.tsx
+
 const styles = StyleSheet.create({
-  outerWrapper: {
-    borderRadius: 16,
-    margin: 6,
-  },
-  containerWrapper: {
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 6,
-  },
+  // ========== CONTENEUR PRINCIPAL ET CARTE ==========
   container: {
+    marginVertical: 12,
+    marginHorizontal: 0,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  cardContainer: {
     borderRadius: 16,
     overflow: "hidden",
   },
-  gradient: {
+  gradientBackground: {
     borderRadius: 16,
+    overflow: "hidden",
   },
-  badgeContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  particle: {
-    position: "absolute",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    zIndex: 1,
-    shadowColor: "#fff",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
-  },
-  trophyWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-    marginLeft: 2,
-    marginTop: 3,
-  },
-  firstPlaceTrophy: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "rgba(255, 215, 0, 0.6)",
-  },
-  secondPlaceTrophy: {
-    backgroundColor: "#fff",
 
-    borderWidth: 1,
-    borderColor: "rgba(192, 192, 192, 0.5)",
-  },
-  thirdPlaceTrophy: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "rgba(205, 127, 50, 0.5)",
-  },
-  rankInfo: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  rankLabel: {
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: 10,
-    marginBottom: 0,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  rankNumber: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 18,
-    letterSpacing: 0.5,
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  expandButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  expandedContent: {
-    marginTop: 8,
-  },
-  progressWrapper: {
+  // ========== HEADER ET ÉLÉMENTS DU HEADER ==========
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    height: 14,
+    justifyContent: "space-between",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  rankInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  rankIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  textContainer: {
+    justifyContent: "center",
+  },
+  rankLabel: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  rankValue: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "bold",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   progressContainer: {
-    height: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 3,
-    overflow: "hidden",
-    flex: 1,
-    marginRight: 8,
-    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
   },
-  progressBar: {
-    height: "100%",
-    borderRadius: 3,
-    position: "absolute",
+  expandButton: {
+    marginLeft: 15,
+    marginTop: 8,
   },
-  progressGlow: {
-    position: "absolute",
-    height: "100%",
-    borderRadius: 3,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
+
+  // ========== CONTENU DÉVELOPPÉ ==========
+  expandedContent: {
+    paddingHorizontal: 10,
+  },
+  expandedContentInner: {
+    position: 'relative',
+  },
+
+  // ========== SECTION DÉCORATIONS LATÉRALES ==========
+  sideDecorContainer: {
+    position: 'absolute',
+    height: '100%',
+    width: 60,
+    top: -40,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  leftDecor: {
     left: 0,
-    top: 0,
+    alignItems: 'center',
   },
-  percentileText: {
+  rightDecor: {
+    right: 0,
+    alignItems: 'center',
+  },
+  decorItem: {
+    marginVertical: 8,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  decorIcon: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  decorCircle: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    alignSelf: 'center',
+  },
+
+  // ========== BADGE SECTION ==========
+  enhancedBadgeButton: {
+    borderRadius: 14,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    marginHorizontal: 70, // Espace élargi pour les décorations latérales
+    zIndex: 2, // Au-dessus des décorations
+  },
+  badgeContainer: {
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 14,
+  },
+  enhancedIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    position: "relative",
+    marginBottom: 10,
+  },
+  badgeContentWrapper: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  badgeTitle: {
     color: "#FFFFFF",
-    fontSize: 11,
+    fontSize: 18,
     fontWeight: "bold",
-    width: 40,
-    textAlign: "right",
-  },
-  percentileExplanation: {
-    color: '#fff',
-    fontSize: 10,
-    fontStyle: 'italic', 
-    marginTop: 2,
     marginBottom: 4,
-    textAlign: 'center',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  badgeProgressLabel: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 12,
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+
+   // ========== SECTION STATISTIQUES ==========
+   statsContainer: {
+    marginBottom: 10,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
-    height: 24,
-  },
-  statsTextWrapper: {
-    flex: 1,
-    marginRight: 6,
-  },
-  statsText: {
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  prestigeText: {
-    color: "#FFD700",
-    fontSize: 9,
-    marginTop: 1,
-    fontWeight: "700",
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  detailsButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  detailsText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  detailsIcon: {
-    marginLeft: 2,
-  },
-  championBadge: {
-    backgroundColor: "rgba(255, 215, 0, 0.3)",
-    borderRadius: 8,
-    padding: 4,
-    marginTop: 6,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 215, 0, 0.5)",
-  },
-  championText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 10,
-    letterSpacing: 0.5,
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  
-  // NOUVEAU STYLE DE BADGE - comme dans BadgeModal
-  badgeCardContainer: {
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
     borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  badgeCardGradient: {
     padding: 12,
-    borderRadius: 12,
   },
-  badgeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statValue: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
     marginBottom: 4,
   },
-  badgeCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  badgeTitleContainer: {
-    flex: 1,
-  },
-  badgeTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#062C41',
-  },
-  badgeDescription: {
-    fontSize: 11,
-    color: '#666666',
-  },
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  badgeStar: {
-    marginHorizontal: 1,
-  },
-  badgeActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginTop: 6,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.06)',
-  },
-  viewDetailsText: {
+  statLabel: {
+    color: "rgba(255, 255, 255, 0.7)",
     fontSize: 10,
-    color: '#666666',
-    marginRight: 3,
+  },
+  statDivider: {
+    width: 1,
+    height: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    marginHorizontal: 8,
+  },
+  rankBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  rankBadgeText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+
+
+  // ========== SYSTÈMES D'ÉTOILES ==========
+  // Pour arrangement linéaire (1-3 étoiles)
+  fewStarsContainer: {
+    position: "absolute",
+    top: -20,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 20,
+    pointerEvents: "none",
+  },
+  linearStarPosition: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+  },
+  // Pour arrangement en arc (4-6 étoiles)
+  manyStarsContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
+  },
+  arcStarPosition: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+    top: 20,
+    left: "50%",
+    marginLeft: -7,
+  },
+  floatingStarIcon: {
+    shadowColor: "rgba(0,0,0,0.5)",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+  },
+
+  // ========== BOUTONS D'ACTION ==========
+  actionButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 8,
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });
 
-export default memo(RankBadge);
+export default RankBadge;
