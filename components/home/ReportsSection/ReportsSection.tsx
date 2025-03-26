@@ -23,7 +23,7 @@ import { hexToRgba, calculateOpacity } from "../../../utils/reductOpacity";
 import { formatCity } from "../../../utils/formatters";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useReportsFilters } from "./useReportsFilters";
+import { useReportsFilters } from "../../../hooks/reports/useReportsFilters";
 import FiltersPanel from "./FiltersPanel";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");

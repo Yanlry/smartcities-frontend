@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Report } from './report.types';
+import { Report } from '../../components/home/ReportsSection/report.types';
 
 /**
  * Options de filtrage pour les signalements

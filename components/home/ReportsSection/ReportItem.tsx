@@ -18,8 +18,9 @@ import {
 import { Report } from "./report.types";
 import { formatDistance } from "../../../utils/formatters";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons, Ionicons, FontAwesome } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { TypeBadge, DistanceBadge, NewBadge } from "./Badges";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -486,66 +487,25 @@ const ReportItem: React.FC<ReportItemProps> = memo(
                 </View>
               )}
 
-              {/* Badge du type de signalement */}
-              <View style={styles.typeBadgeContainer}>
-                <LinearGradient
-                  colors={[typeColor, darkerColor(typeColor)]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.typeBadge}
-                >
-                  {getIconForType(report.type)}
-                  <Text style={styles.typeBadgeText}>{typeLabel}</Text>
-                </LinearGradient>
-              </View>
+<TypeBadge 
+  type={report.type}
+  typeLabel={typeLabel}
+  typeColor={typeColor}
+/>
 
               {/* Badge de distance avec animation */}
-              <Animated.View
-                style={[
-                  styles.distanceBadge,
-                  { transform: [{ scale: distanceBadgeScale }] },
-                ]}
-              >
-                <LinearGradient
-                  colors={["rgba(0, 0, 0, 0.86)", "rgba(20, 20, 20, 0.95)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.distanceBadgeContent}
-                >
-                  <MaterialIcons
-                    name="location-on"
-                    size={14}
-                    color="white"
-                    style={{marginRight: 4}}
-                  />
-                  <Text style={styles.distanceBadgeText}>{distanceText}</Text>
-                </LinearGradient>
-              </Animated.View>
+              <DistanceBadge
+    distanceText={distanceText}
+    scaleAnim={distanceBadgeScale}
+  />
 
               {/* Marqueur de nouveauté avec animation */}
               {isRecent(report.createdAt) && (
-                <Animated.View
-                  style={[
-                    styles.newMarkerContainer,
-                    { transform: [{ rotate: newBadgeRotate }] },
-                  ]}
-                >
-                  <LinearGradient
-                    colors={["#FF5252", "#FF3D71"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.newMarker}
-                  >
-                    <Text style={styles.newMarkerText}>Nouveau</Text>
-                    <Ionicons
-                      name="time"
-                      size={12}
-                      color="white"
-                      style={{ marginLeft: 4 }}
-                    />
-                  </LinearGradient>
-                </Animated.View>
-              )}
+    <NewBadge
+      rotateAnim={newBadgeRotate}
+      labelText="Nouveau"
+    />
+  )}
             </View>
 
             {/* Partie inférieure avec informations et actions */}
