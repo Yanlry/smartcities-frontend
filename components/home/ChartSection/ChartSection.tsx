@@ -136,6 +136,9 @@ const SimpleBarChart = memo(({ data, labels, colors }: SimpleBarChartProps) => {
 /**
  * Interface pour les props du composant SimplePieChart
  */
+/**
+ * Interface pour les props du composant SimplePieChart
+ */
 interface SimplePieChartProps {
   data: number[];
   labels: string[];
@@ -143,106 +146,117 @@ interface SimplePieChartProps {
 }
 
 /**
- * Composant pour afficher un graphique en camembert avec design amélioré
+ * Remplace le composant de camembert par un graphique en barres horizontales
+ * Beaucoup plus fiable et précis en React Native pur
  */
 const SimplePieChart = memo(({ data, labels, colors }: SimplePieChartProps) => {
-  // Animation du camembert
-  const spinAnimation = useRef(new Animated.Value(0)).current;
+  // Animations
+  const barAnimations = useRef(data.map(() => new Animated.Value(0))).current;
   
-  // Animer la rotation à l'entrée
+  // Animer les barres à l'entrée
   useEffect(() => {
-    Animated.timing(spinAnimation, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-      easing: Easing.out(Easing.quad),
-    }).start();
-  }, [spinAnimation]);
+    Animated.stagger(100, 
+      barAnimations.map(anim => 
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: false, // On ne peut pas animer width avec useNativeDriver
+          easing: Easing.out(Easing.cubic),
+        })
+      )
+    ).start();
+  }, [barAnimations]);
   
   const total = data.reduce((sum, val) => sum + val, 0);
-  let currentAngle = 0;
+  
+  // Si aucune donnée, afficher un message
+  if (total === 0) {
+    return (
+      <View style={styles.pieChartContainer}>
+        <View style={styles.pieChartCenter}>
+          <Text style={styles.pieChartTotal}>0</Text>
+          <Text style={styles.pieChartTotalLabel}>Total</Text>
+        </View>
+      </View>
+    );
+  }
+  
+  // Créer des items triés pour un meilleur affichage
+  const items = data
+    .map((value, index) => ({
+      value,
+      label: labels[index],
+      color: colors[labels[index].toLowerCase()] || THEME.primary,
+      percentage: (value / total) * 100
+    }))
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value); // Plus grandes valeurs en premier
   
   return (
-    <View style={styles.pieChartContainer}>
-      <Animated.View style={[
-        styles.pieChart,
-        {
-          transform: [
-            {
-              rotate: spinAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['0deg', '360deg']
-              })
-            }
-          ]
-        }
-      ]}>
-        {data.map((value, index) => {
-          if (value === 0) return null;
-          
-          const label = labels[index];
-          const color = colors[label.toLowerCase()] || THEME.primary;
-          const percentage = (value / total) * 100;
-          const angle = (value / total) * 360;
-          
-          // Créer un segment du camembert
-          const segment: ViewStyle = {
-            position: 'absolute',
-            width: '100%' as DimensionValue,
-            height: '100%' as DimensionValue,
-            transform: [{ rotate: `${currentAngle}deg` }],
-            overflow: 'hidden',
-          };
-          
-          // Mettre à jour l'angle pour le prochain segment
-          currentAngle += angle;
-          
-          return (
-            <View key={`segment-${index}`} style={segment}>
-              <View
-                style={{
-                  position: 'absolute',
-                  width: '200%',
-                  height: '200%',
-                  left: '50%',
-                  backgroundColor: color,
-                  transform: [
-                    { translateX: -50 },
-                    { rotate: `${angle <= 180 ? 0 : 180}deg` },
-                    { translateX: 50 },
-                  ],
-                  opacity: angle <= 180 ? 1 : 0,
-                }}
-              />
-              {angle > 180 && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    width: '200%',
-                    height: '200%',
-                    left: '-100%',
-                    backgroundColor: color,
-                    transform: [
-                      { translateX: 50 },
-                      { rotate: `${180}deg` },
-                      { translateX: -50 },
-                    ],
-                  }}
-                />
-              )}
-            </View>
-          );
-        })}
-      </Animated.View>
-      
-      {/* Cercle central pour effet 3D */}
-      <View style={styles.pieChartCenter} />
-      
-      {/* Légende visuelle dans le camembert */}
-      <View style={styles.pieChartLegend}>
+    <View style={[
+      styles.pieChartContainer,
+      { height: 'auto', alignItems: 'stretch' }
+    ]}>
+      {/* Afficher le total au centre */}
+      <View style={{
+        alignItems: 'center',
+        marginBottom: 15,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        paddingVertical: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      }}>
         <Text style={styles.pieChartTotal}>{total}</Text>
         <Text style={styles.pieChartTotalLabel}>Total</Text>
       </View>
+      
+      {/* Barres de progression pour chaque segment */}
+      {items.map((item, index) => (
+        <View key={`bar-${index}`} style={{
+          marginVertical: 8,
+          borderRadius: 8,
+          overflow: 'hidden',
+          backgroundColor: '#f0f0f0'
+        }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 8,
+            paddingHorizontal: 12
+          }}>
+            {/* Indicateur de couleur */}
+            <View style={{
+              width: 16,
+              height: 16,
+              borderRadius: 8,
+              backgroundColor: item.color,
+              marginRight: 10
+            }} />
+            
+            {/* Étiquette */}
+            <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-between' }}>
+              <Text style={{ fontWeight: '600', color: '#444' }}>{item.label}</Text>
+              <Text style={{ color: '#666' }}>{item.value} ({Math.round(item.percentage)}%)</Text>
+            </View>
+          </View>
+          
+          {/* Barre de progression */}
+          <Animated.View 
+            style={{
+              height: 8,
+              backgroundColor: item.color,
+              width: barAnimations[index].interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0%', `${item.percentage}%`]
+              })
+            }}
+          />
+        </View>
+      ))}
     </View>
   );
 });
@@ -582,43 +596,17 @@ const ChartSection = memo(({ data, loading, nomCommune, isVisible = true, toggle
                       style={styles.switchButtonGradient}
                     >
                       <MaterialIcons 
-                        name={chartType === "bar" ? "pie-chart" : "bar-chart"} 
+                        name={chartType === "bar" ? "dashboard" : "bar-chart"} 
                         size={18} 
                         color="#fff" 
                       />
                       <Text style={styles.switchButtonText}>
                         {chartType === "bar" 
-                          ? "Afficher en diagramme circulaire" 
-                          : "Afficher en diagramme en barres"}
+                          ? "Afficher le résumé des incidents" 
+                          : "Afficher le diagramme en barres"}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
-                  
-                  {/* Légende avec design moderne */}
-                  <View style={styles.legendContainer}>
-                    <Text style={styles.legendTitle}>Légende des signalements</Text>
-                    
-                    <View style={styles.legendItemsContainer}>
-                      {chartData.labels.map((label, index) => {
-                        const count = chartData.validData[index] || 0;
-                        const color = chartColors[label.toLowerCase()] || THEME.primary;
-                        
-                        return (
-                          <View key={`legend-${index}`} style={styles.legendItem}>
-                            <View 
-                              style={[styles.legendColor, { backgroundColor: color }]} 
-                            />
-                            <View style={styles.legendTextContainer}>
-                              <Text style={styles.legendLabel}>{label}</Text>
-                              <Text style={styles.legendCount}>
-                                {count} signalement{count > 1 ? "s" : ""}
-                              </Text>
-                            </View>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  </View>
                 </View>
               </Animated.View>
             </LinearGradient>
@@ -865,7 +853,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   pieChartContainer: {
-    width: 180,
+    width: 300,
     height: 180,
     alignItems: 'center',
     justifyContent: 'center',
@@ -913,6 +901,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+    marginBottom: 15,
+
   },
   switchButtonGradient: {
     flexDirection: 'row',
@@ -925,50 +915,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 14,
     marginLeft: 6,
-  },
-  legendContainer: {
-
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-    padding: 16,
-  },
-  legendTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#444',
-    marginBottom: 12,
-  },
-  legendItemsContainer: {
-    gap: 10,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  legendTextContainer: {
-    flex: 1,
-  },
-  legendLabel: {
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '600',
-  },
-  legendCount: {
-    fontSize: 12,
-    color: '#777',
-    marginTop: 2,
-  },
-  legendText: {
-    fontSize: 13,
-    color: '#444',
   },
   emptyStateContainer: {
     padding: 30,
