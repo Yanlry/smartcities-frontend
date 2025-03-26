@@ -118,7 +118,7 @@ export const useNearbyReports = (latitude: number | undefined, longitude: number
     },
     {
       name: "reparation",
-      label: "Maintenance",
+      label: "Reparation",
       icon: "hammer-outline",
       color: "#345995",
     },

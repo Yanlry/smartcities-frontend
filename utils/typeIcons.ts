@@ -21,7 +21,7 @@ export const typeIcons = {
   },
   reparation: {
     icon: require("../assets/icons/reparation.png"),
-    label: "Réparation",
+    label: "Reparation",
   },
   
 };

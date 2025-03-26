@@ -784,11 +784,11 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   contentWrapper: {
-    gap: 20,
+    gap: 30,
   },
   chartWrapper: {
     alignItems: 'center',
-    marginVertical: 10,
+
   },
   loadingContainer: {
     padding: 40,
@@ -812,7 +812,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '100%',
     height: '100%',
-    paddingBottom: 20,
     paddingHorizontal: 10,
   },
   barColumn: {
@@ -870,7 +869,6 @@ const styles = StyleSheet.create({
     height: 180,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 15,
   },
   pieChart: {
     width: 180,
@@ -910,7 +908,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 25,
     overflow: 'hidden',
-    marginVertical: 5,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -930,7 +927,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   legendContainer: {
-    marginTop: 10,
+
     backgroundColor: '#F9F9F9',
     borderRadius: 12,
     padding: 16,

@@ -316,13 +316,13 @@ const styles = StyleSheet.create({
   },
   profileImageContainer: {
     width: 90,
-    height: 110,
+    height: 125,
     borderRadius: 20,
     marginRight: 16,
   },
   profileImage: {
     width: 90,
-    height: 100,
+    height: 115,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: "#FFFFFF",

@@ -288,16 +288,17 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
 
         {/* Section Signalements */}
         <ReportsSection
-          reports={reports}
-          categories={categories}
-          loading={reportsLoading}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          formatTime={formatTime}
-          onPressReport={handlePressReport}
-          isVisible={isReportsVisible}
-          toggleVisibility={() => setReportsVisible((prev) => !prev)}
-        />
+  reports={reports}
+  categories={categories}
+  loading={reportsLoading}
+  selectedCategory={selectedCategory}
+  setSelectedCategory={setSelectedCategory}
+  formatTime={formatTime}
+  onPressReport={handlePressReport}
+  isVisible={isReportsVisible}
+  toggleVisibility={() => setReportsVisible((prev) => !prev)}
+  userCity={user?.nomCommune}
+/>
 
         {/* Section Événements */}
         <EventsSection

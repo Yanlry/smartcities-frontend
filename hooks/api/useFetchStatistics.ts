@@ -4,7 +4,7 @@ const categoryLabelsMap: { [key: string]: string } = {
   pollution: "Pollution",
   danger: "Danger",
   travaux: "Travaux",
-  reparation: "Réparation",
+  reparation: "Reparation",
   nuisance: "Nuisance",
 };
 

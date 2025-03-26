@@ -13,6 +13,7 @@ import {
   UIManager,
   TouchableOpacity,
   Easing,
+  ActivityIndicator,
 } from "react-native";
 import { SmarterUser } from "../ProfileSection/user.types";
 import SmarterItem from "./SmarterItem";
@@ -183,6 +184,7 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
     // Hooks et états
     const insets = useSafeAreaInsets();
     const [activeIndex, setActiveIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
     const rotateAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const opacityAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const headerScaleAnim = useRef(new Animated.Value(1)).current;
@@ -259,6 +261,17 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
         useNativeDriver: true,
         easing: Easing.out(Easing.cubic),
       }).start();
+    }, [isVisible]);
+
+    // Simuler le chargement du contenu lors de l'ouverture
+    useEffect(() => {
+      if (isVisible) {
+        setIsLoading(true);
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+        }, 1000); // délai de 1s simulant le chargement
+        return () => clearTimeout(timer);
+      }
     }, [isVisible]);
 
     // Animation pour l'effet de pression sur l'en-tête
@@ -509,32 +522,38 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
                     },
                   ]}
                 >
-                  {topUsers.length > 0 ? (
-                    <>
-                      {/* Podium pour les 3 premiers */}
-                      <View>{renderPodium()}</View>
-
-                      {/* Liste des autres utilisateurs */}
-                      {listUsers.length > 0 && (
-                        <View style={styles.rankingListContainer}>
-                          <View style={styles.rankingListHeader}>
-                            <Text style={styles.rankingListTitle}>
-                              Autres contributeurs
-                            </Text>
-                            <TouchableOpacity onPress={onSeeAllPress}>
-                              <Text style={styles.viewAllLink}>
-                                Voir tout
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-
-                          {renderUserList()}
-                          {renderSeeAllButton()}
-                        </View>
-                      )}
-                    </>
+                  {isLoading ? (
+                    <View style={styles.loaderContainer}>
+                      <ActivityIndicator size="large" color={THEME.primary} />
+                    </View>
                   ) : (
-                    renderEmptyState()
+                    topUsers.length > 0 ? (
+                      <>
+                        {/* Podium pour les 3 premiers */}
+                        <View>{renderPodium()}</View>
+
+                        {/* Liste des autres utilisateurs */}
+                        {listUsers.length > 0 && (
+                          <View style={styles.rankingListContainer}>
+                            <View style={styles.rankingListHeader}>
+                              <Text style={styles.rankingListTitle}>
+                                Autres contributeurs
+                              </Text>
+                              <TouchableOpacity onPress={onSeeAllPress}>
+                                <Text style={styles.viewAllLink}>
+                                  Voir tout
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            {renderUserList()}
+                            {renderSeeAllButton()}
+                          </View>
+                        )}
+                      </>
+                    ) : (
+                      renderEmptyState()
+                    )
                   )}
                 </Animated.View>
               </LinearGradient>
@@ -967,6 +986,12 @@ vacantPodiumName: {
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "600",
+  },
+  loaderContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
   },
 });
 

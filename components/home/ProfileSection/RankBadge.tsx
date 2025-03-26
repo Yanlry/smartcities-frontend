@@ -577,8 +577,8 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
 const styles = StyleSheet.create({
   // ========== CONTENEUR PRINCIPAL ET CARTE ==========
   container: {
-    marginVertical: 12,
-    marginHorizontal: 0,
+    marginVertical: 5,
+    marginHorizontal: 5,
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

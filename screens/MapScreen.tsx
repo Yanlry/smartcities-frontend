@@ -82,7 +82,7 @@ const ICONS: Record<string, IconType> = {
   },
   reparation: {
     name: "wrench",
-    label: "Réparation",
+    label: "Reparation",
     color: "#007AFF"
   }
 };
@@ -133,7 +133,7 @@ const ANIMATION = {
 
 // Standardized Type Labels
 const TYPE_LABELS: Record<string, string> = {
-  reparation: "Réparation",
+  reparation: "Reparation",
   nuisance: "Nuisance",
   travaux: "Travaux",
   danger: "Danger",

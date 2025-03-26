@@ -63,6 +63,7 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
   
   // Hooks personnalisés pour les données
   const { 
@@ -123,14 +124,6 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
   const navigateToRanking = useCallback(() => {
     navigation.navigate("RankingScreen");
   }, [navigation]);
-
-  /**
-   * Affiche la modale de badge
-   */
-  const showBadgeModal = useCallback(() => {
-    // Implementer selon vos besoins
-    Alert.alert("Badge", "Informations sur le badge de l'utilisateur");
-  }, []);
 
   /**
    * Récupère le style du badge en fonction des votes de l'utilisateur
@@ -270,7 +263,7 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
             totalUsers={totalUsers}
             onNavigateToRanking={navigateToRanking}
             badgeStyle={badgeStyle}
-            onShowBadgeModal={showBadgeModal}
+            onShowBadgeModal={() => setShowBadgeModal(true)}
             cityName={user?.nomCommune || ""}
           />
         </View>

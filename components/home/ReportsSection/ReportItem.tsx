@@ -69,7 +69,7 @@ const ICONS: Record<string, IconType> = {
   },
   reparation: {
     name: "wrench",
-    label: "Réparation",
+    label: "Reparation",
     color: "#007AFF"
   }
 };

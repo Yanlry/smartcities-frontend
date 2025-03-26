@@ -1,5 +1,5 @@
 // Composant EventsSection avec design harmonisé
-import React, { memo, useRef, useEffect } from 'react';
+import React, { memo, useRef, useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -12,6 +12,7 @@ import {
   Platform,
   UIManager,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -73,6 +74,21 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
   const badgePulse = useRef(new Animated.Value(1)).current;
   const contentSlideAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
   const iconRotateAnim = useRef(new Animated.Value(0)).current;
+
+  // Nouvel état pour gérer le chargement complet du contenu
+  const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
+
+  // Déclenchement du loader lors d'un changement de visibilité
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        setSectionContentLoaded(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setSectionContentLoaded(false);
+    }
+  }, [isVisible]);
 
   // Animation de rotation pour la flèche
   const arrowRotation = rotateAnim.interpolate({
@@ -289,31 +305,36 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
 
         {/* Contenu de la section */}
         {isVisible && (
-          <View
-            style={styles.sectionContentContainer}
-          >
-            <LinearGradient
-              colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
-              style={styles.sectionContent}
-            >
-              <Animated.View
-                style={[
-                  styles.contentInner,
-                  {
-                    opacity: contentSlideAnim,
-                    transform: [{ translateY: contentSlide }],
-                  },
-                ]}
+          sectionContentLoaded ? (
+            <View style={styles.sectionContentContainer}>
+              <LinearGradient
+                colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
+                style={styles.sectionContent}
               >
-                <FeaturedEvents
-                  events={featuredEvents}
-                  loading={loading}
-                  error={error}
-                  onEventPress={onEventPress}
-                />
-              </Animated.View>
-            </LinearGradient>
-          </View>
+                <Animated.View
+                  style={[
+                    styles.contentInner,
+                    {
+                      opacity: contentSlideAnim,
+                      transform: [{ translateY: contentSlide }],
+                    },
+                  ]}
+                >
+                  <FeaturedEvents
+                    events={featuredEvents}
+                    loading={loading}
+                    error={error}
+                    onEventPress={onEventPress}
+                  />
+                </Animated.View>
+              </LinearGradient>
+            </View>
+          ) : (
+            <View style={styles.loaderContainer}>
+              {/* Loader pendant le chargement */}
+              <ActivityIndicator size="large" color={THEME.primary} />
+            </View>
+          )
         )}
       </View>
     </View>
@@ -474,6 +495,11 @@ const styles = StyleSheet.create({
   },
   contentInner: {
     paddingVertical: 10,
+  },
+  loaderContainer: {
+    padding: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

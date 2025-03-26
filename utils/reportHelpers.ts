@@ -137,7 +137,7 @@ export const chartColors: Record<ReportType | string, string> = {
   nuisance: COLORS.categories.nuisance.main,
   pollution: COLORS.categories.pollution.main,
   reparation: COLORS.categories.reparation.main,
-  réparation: COLORS.categories.reparation.main, // Pour la rétrocompatibilité
+
 };
 
 /**
@@ -148,7 +148,7 @@ export const typeLabels: Record<ReportType, string> = {
   travaux: 'Travaux',
   nuisance: 'Nuisance',
   pollution: 'Pollution',
-  reparation: 'Maintenance',
+  reparation: 'Reparation',
 };
 
 /**
@@ -182,7 +182,7 @@ export const categoryDescriptions: Record<ReportType, string> = {
   travaux: "Indique des travaux en cours ou prévus, pouvant impacter la circulation.",
   nuisance: "Signale des nuisances sonores, olfactives ou visuelles affectant le voisinage.",
   pollution: "Informe d'une pollution environnementale comme des déchets ou des émissions toxiques.",
-  reparation: "Indique des infrastructures nécessitant une réparation urgente ou en cours de réparation.",
+  reparation: "Indique des infrastructures nécessitant une reparation urgente ou en cours de reparation.",
 };
 
 /**
@@ -235,10 +235,10 @@ export const categories: ReportCategory[] = [
 - Pollution des ressources naturelles (ex. cours d'eau contaminés, sols pollués)`,
   },
   {
-    name: 'Réparation',
+    name: 'Reparation',
     icon: 'build-outline',
     value: 'reparation',
-    article: 'une réparation',
+    article: 'une reparation',
     description: `Infrastructure nécessitant une maintenance urgente :
 
 - Pannes d'éclairage public (ex. lampadaires non fonctionnels)
