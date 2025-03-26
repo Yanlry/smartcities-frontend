@@ -202,6 +202,13 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
     setIsSubmitting(false);
   }, [handleUnfollow]);
 
+  // Déplacer la définition de displayName avant les retours conditionnels :
+  const displayName = useMemo(() => {
+    if(user?.useFullName && user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user?.username || "Nom d'utilisateur";
+  }, [user]);
 
   // Vérification du chargement et des erreurs
   const isLoading = userLoading || statsLoading || contentLoading;
@@ -246,6 +253,9 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
         <ProfilePhoto 
           photoUrl={user?.profilePhoto?.url}
           ranking={user?.ranking || 999999} // Utiliser une grande valeur par défaut si pas de classement
+          username={displayName}
+          // Ajoutez la date d'inscription
+          createdAt={user?.createdAt}
           isSubmitting={isSubmitting}
           isFollowing={isFollowing}
           onFollow={handleFollowWithSubmitting}
@@ -261,6 +271,7 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
             onNavigateToRanking={navigateToRanking}
             badgeStyle={badgeStyle}
             onShowBadgeModal={showBadgeModal}
+            cityName={user?.nomCommune || ""}
           />
         </View>
         

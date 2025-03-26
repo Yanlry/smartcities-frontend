@@ -1,6 +1,6 @@
 // Chemin: components/home/RankBadge.tsx
 
-import React, { useState, useRef, useEffect, useCallback, memo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BadgeStyle } from "./user.types";
 import CircularProgress from "./CircularProgress";
-
+import { formatCityForDisplay } from "../../../utils/formatters";
 // Activer LayoutAnimation pour Android
 if (
   Platform.OS === "android" &&
@@ -38,6 +38,8 @@ interface RankBadgeProps {
   rankingSuffix: string;
   /** Nombre total d'utilisateurs dans le classement */
   totalUsers: number | null;
+  /** Nom de la commune de l'utilisateur */
+  cityName?: string | null;
   /** Fonction appelée pour naviguer vers l'écran de classement */
   onNavigateToRanking: () => void;
   /** Style du badge utilisateur (optionnel) */
@@ -70,6 +72,7 @@ const CIF = {
  */
 const RankBadge: React.FC<RankBadgeProps> = memo(
   ({
+    cityName,
     ranking,
     rankingSuffix,
     totalUsers,
@@ -86,6 +89,16 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
     const rotateAnim = useRef(new Animated.Value(0)).current;
     const headerShadowAnim = useRef(new Animated.Value(0)).current;
     const decorAnim = useRef(new Animated.Value(0)).current;
+
+    const formattedCityName = useMemo(() => 
+      cityName ? formatCityForDisplay(cityName) : "Ville non spécifiée", 
+    [cityName]);
+    
+    const cityTitle = useMemo(() => 
+      formattedCityName !== "Ville non spécifiée" 
+        ? `Engagé à ${formattedCityName}`
+        : formattedCityName,
+    [formattedCityName]);
 
     // Calcul memoïzé du percentile pour optimiser les performances
     const percentile = useCallback(() => {
@@ -220,6 +233,7 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
     const getProgressColor = useCallback(() => {
       const currentPercentile = percentile();
 
+      if (currentPercentile === 100) return "#fff"; // Vert
       if (currentPercentile > 90) return "#4CAF50"; // Vert
       if (currentPercentile > 70) return "#8BC34A"; // Vert clair
       if (currentPercentile > 50) return "#FFC107"; // Jaune
@@ -518,12 +532,13 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
                   {showStatsSection && (
                     <View style={styles.statsContainer}>
                       {/* Statistiques principales en ligne */}
+                      <Text style={styles.headerTitle}>{cityTitle}</Text>
                       <View style={styles.statsRow}>
                         <View style={styles.statItem}>
                           <Text style={styles.statValue}>
                             {totalUsers?.toLocaleString() || "?"} 
                           </Text>
-                          <Text style={styles.statLabel}>Total Smarters</Text>
+                          <Text style={styles.statLabel}>Smarters dans la ville</Text>
                         </View>
 
                         <View style={styles.statDivider} />
@@ -732,12 +747,20 @@ const styles = StyleSheet.create({
    // ========== SECTION STATISTIQUES ==========
    statsContainer: {
     marginBottom: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 12,
+  },
+  headerTitle: {
+    fontSize: 12,
+    marginTop: 8,
+    color: "rgba(255, 255, 255, 0.7)",
+    textAlign: 'center',
+
+    letterSpacing: 0.3,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
-    borderRadius: 12,
     padding: 12,
   },
   statItem: {

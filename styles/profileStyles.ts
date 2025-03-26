@@ -11,6 +11,7 @@ export const profileStyles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     flexGrow: 1,
   },
+
   center: {
     flex: 1,
     justifyContent: "center",

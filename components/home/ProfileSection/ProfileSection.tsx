@@ -172,7 +172,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
                 />
 
                 <Text style={styles.memberInfo}>
-                  {user?.nomCommune || "Ville inconnu"}{" "}
+                  {user?.nomCommune || "Ville inconnu"}
                 </Text>
               </TouchableOpacity>
 
@@ -267,6 +267,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
               onNavigateToRanking={onNavigateToRanking}
               badgeStyle={badgeStyle}
               onShowBadgeModal={onShowBadgeModal}
+              cityName={user?.nomCommune}
             />
           </View>
         </LinearGradient>

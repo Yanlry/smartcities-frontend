@@ -391,37 +391,62 @@ export default function ProfileScreen({ navigation }) {
     setQuery(`${city.Nom_commune} (${city.Code_postal})`);
   };
 
-  const handleSaveCity = async () => {
-    if (!selectedCity) {
-      Alert.alert(
-        "Erreur",
-        "Veuillez sélectionner une ville avant d'enregistrer."
-      );
-      return;
-    }
-
-    try {
-      const response = await axios.put(`${API_URL}/users/${user?.id}`, {
-        nomCommune: selectedCity.Nom_commune,
-        codePostal: selectedCity.Code_postal,
-      });
-
-      if (response.status === 200) {
-        Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
-        setUser((prev: any) => ({
-          ...prev,
-          nomCommune: selectedCity.Nom_commune,
-          codePostal: selectedCity.Code_postal,
-        }));
-        setIsEditingCity(false);
-      } else {
-        throw new Error("Erreur serveur");
-      }
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour :", error);
-      Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
-    }
+  const normalizeCommune = (communeName: string): string => {
+    if (!communeName) return '';
+    
+    // Étape 1: Nettoyer la chaîne (supprimer caractères spéciaux, espaces multiples)
+    let normalized = communeName
+      .trim()
+      .replace(/\s+/g, ' '); // Remplacer espaces multiples par un seul espace
+    
+    // Étape 2: Remplacer les espaces par des tirets
+    normalized = normalized.replace(/\s/g, '-');
+    
+    return normalized;
   };
+
+const handleSaveCity = async () => {
+  if (!selectedCity) {
+    Alert.alert(
+      "Erreur",
+      "Veuillez sélectionner une ville avant d'enregistrer."
+    );
+    return;
+  }
+
+  try {
+    // Normaliser le nom de la commune avant l'enregistrement
+    const normalizedCommuneName = normalizeCommune(selectedCity.Nom_commune);
+    
+    console.log(`Normalisation: "${selectedCity.Nom_commune}" → "${normalizedCommuneName}"`);
+
+    const response = await axios.put(`${API_URL}/users/${user?.id}`, {
+      nomCommune: normalizedCommuneName, // Utiliser le nom normalisé
+      codePostal: selectedCity.Code_postal,
+    });
+
+    if (response.status === 200) {
+      Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
+      setUser((prev: any) => ({
+        ...prev,
+        nomCommune: normalizedCommuneName, // Mettre à jour l'état local avec le nom normalisé
+        codePostal: selectedCity.Code_postal,
+      }));
+      
+      // Si vous utilisez une navigation avec params, mettre à jour la navigation
+      if (navigation && navigation.setParams) {
+        navigation.setParams({ updatedCity: normalizedCommuneName });
+      }
+      
+      setIsEditingCity(false);
+    } else {
+      throw new Error("Erreur serveur");
+    }
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour :", error);
+    Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
+  }
+};
 
   const handleShowList = (listType: "followers" | "following") => {
     setSelectedList((prev) => (prev === listType ? null : listType));

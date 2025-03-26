@@ -242,7 +242,7 @@ const EventsSection: React.FC<EventsSectionProps> = memo(({
 
               {/* Badge de nombre d'événements et flèche */}
               <View style={styles.headerControls}>
-                {featuredEvents.length > 0 && (
+                {featuredEvents.length >= 0 && (
                   <Animated.View
                     style={[
                       styles.countBadge,

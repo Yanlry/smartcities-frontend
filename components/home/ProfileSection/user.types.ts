@@ -1,6 +1,6 @@
 export interface User {
     id: string;
-    createdAt: string;
+    createdAt?: string;
     ranking: string;
     firstName: string;
     lastName: string;

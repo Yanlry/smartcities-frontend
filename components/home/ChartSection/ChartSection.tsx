@@ -301,25 +301,27 @@ const ChartSection = memo(({ data, loading, nomCommune, isVisible = true, toggle
   
   // Validez et préparez les données
   const chartData = useMemo(() => {
-    if (!data || !data.datasets || !data.datasets[0] || !data.labels) {
-      console.warn("Données de graphique invalides:", data);
-      return { validData: [], labels: [], hasData: false };
-    }
-    
-    const validData = data.datasets[0].data.map(v => 
-      typeof v === "number" && !isNaN(v) ? v : 0
-    );
-    
-    const hasData = validData.some(v => v > 0) && data.labels.length > 0;
-    
-    console.log("Chart processed data:", { 
-      chartType,
-      hasData,
-      labels: data.labels, 
-      validData
+    const defaultCategories = Object.keys(chartColors).slice(0, 5);
+    const inputLabels = data && data.labels ? data.labels : [];
+    const inputData = (data && data.datasets && data.datasets[0] && Array.isArray(data.datasets[0].data)) 
+                     ? data.datasets[0].data 
+                     : [];
+    const validData = inputData.map(v => typeof v === "number" && !isNaN(v) ? v : 0);
+
+    const newLabels: string[] = [];
+    const newValidData: number[] = [];
+    defaultCategories.forEach(cat => {
+      const index = inputLabels.findIndex(l => l.toLowerCase() === cat.toLowerCase());
+      if (index !== -1) {
+        newLabels.push(inputLabels[index]);
+        newValidData.push(validData[index]);
+      } else {
+        newLabels.push(cat);
+        newValidData.push(0);
+      }
     });
-    
-    return { validData, labels: data.labels, hasData };
+    console.log("Chart processed data:", { chartType, labels: newLabels, validData: newValidData });
+    return { validData: newValidData, labels: newLabels };
   }, [data, chartType]);
   
   // Animation pulse et échelle
@@ -550,85 +552,74 @@ const ChartSection = memo(({ data, loading, nomCommune, isVisible = true, toggle
                 ]}
               >
                 {/* Rendu conditionnel basé sur la présence de données */}
-                {!chartData.hasData ? (
-                  <View style={styles.emptyStateContainer}>
-                    <MaterialIcons name="data-usage" size={48} color="#bbb" />
-                    <Text style={styles.emptyStateText}>
-                      Aucun signalement disponible pour cette période.
-                    </Text>
+                <View style={styles.contentWrapper}>
+                  {/* Graphiques personnalisés avec animations */}
+                  <View style={styles.chartWrapper}>
+                    {chartType === "bar" ? (
+                      <SimpleBarChart 
+                        data={chartData.validData}
+                        labels={chartData.labels}
+                        colors={chartColors}
+                      />
+                    ) : (
+                      <SimplePieChart 
+                        data={chartData.validData}
+                        labels={chartData.labels}
+                        colors={chartColors}
+                      />
+                    )}
                   </View>
-                ) : (
-                  <View style={styles.contentWrapper}>
-                    {/* Graphiques personnalisés avec animations */}
-                    <View style={styles.chartWrapper}>
-                      {chartType === "bar" ? (
-                        <SimpleBarChart 
-                          data={chartData.validData}
-                          labels={chartData.labels}
-                          colors={chartColors}
-                        />
-                      ) : (
-                        <SimplePieChart 
-                          data={chartData.validData}
-                          labels={chartData.labels}
-                          colors={chartColors}
-                        />
-                      )}
-                    </View>
-                    
-                    {/* Switch button avec design amélioré */}
-                    <TouchableOpacity
-                      style={styles.switchButton}
-                      onPress={() => setChartType(prev => prev === "bar" ? "pie" : "bar")}
+                  
+                  {/* Switch button avec design amélioré */}
+                  <TouchableOpacity
+                    style={styles.switchButton}
+                    onPress={() => setChartType(prev => prev === "bar" ? "pie" : "bar")}
+                  >
+                    <LinearGradient
+                      colors={[THEME.primaryDark, THEME.primary]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.switchButtonGradient}
                     >
-                      <LinearGradient
-                        colors={[THEME.primaryDark, THEME.primary]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.switchButtonGradient}
-                      >
-                        <MaterialIcons 
-                          name={chartType === "bar" ? "pie-chart" : "bar-chart"} 
-                          size={18} 
-                          color="#fff" 
-                        />
-                        <Text style={styles.switchButtonText}>
-                          {chartType === "bar" 
-                            ? "Afficher en diagramme circulaire" 
-                            : "Afficher en diagramme en barres"}
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
+                      <MaterialIcons 
+                        name={chartType === "bar" ? "pie-chart" : "bar-chart"} 
+                        size={18} 
+                        color="#fff" 
+                      />
+                      <Text style={styles.switchButtonText}>
+                        {chartType === "bar" 
+                          ? "Afficher en diagramme circulaire" 
+                          : "Afficher en diagramme en barres"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  {/* Légende avec design moderne */}
+                  <View style={styles.legendContainer}>
+                    <Text style={styles.legendTitle}>Légende des signalements</Text>
                     
-                    {/* Légende avec design moderne */}
-                    <View style={styles.legendContainer}>
-                      <Text style={styles.legendTitle}>Légende des signalements</Text>
-                      
-                      <View style={styles.legendItemsContainer}>
-                        {chartData.labels.map((label, index) => {
-                          const count = chartData.validData[index] || 0;
-                          const color = chartColors[label.toLowerCase()] || THEME.primary;
-                          
-                          if (count === 0) return null;
-                          
-                          return (
-                            <View key={`legend-${index}`} style={styles.legendItem}>
-                              <View 
-                                style={[styles.legendColor, { backgroundColor: color }]} 
-                              />
-                              <View style={styles.legendTextContainer}>
-                                <Text style={styles.legendLabel}>{label}</Text>
-                                <Text style={styles.legendCount}>
-                                  {count} signalement{count > 1 ? "s" : ""}
-                                </Text>
-                              </View>
+                    <View style={styles.legendItemsContainer}>
+                      {chartData.labels.map((label, index) => {
+                        const count = chartData.validData[index] || 0;
+                        const color = chartColors[label.toLowerCase()] || THEME.primary;
+                        
+                        return (
+                          <View key={`legend-${index}`} style={styles.legendItem}>
+                            <View 
+                              style={[styles.legendColor, { backgroundColor: color }]} 
+                            />
+                            <View style={styles.legendTextContainer}>
+                              <Text style={styles.legendLabel}>{label}</Text>
+                              <Text style={styles.legendCount}>
+                                {count} signalement{count > 1 ? "s" : ""}
+                              </Text>
                             </View>
-                          );
-                        })}
-                      </View>
+                          </View>
+                        );
+                      })}
                     </View>
                   </View>
-                )}
+                </View>
               </Animated.View>
             </LinearGradient>
           </View>

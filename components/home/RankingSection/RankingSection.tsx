@@ -18,6 +18,7 @@ import { SmarterUser } from "../ProfileSection/user.types";
 import SmarterItem from "./SmarterItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 // Configuration pour Android
@@ -29,7 +30,7 @@ if (Platform.OS === "android") {
 
 // Configuration des couleurs pour le thème - Style harmonisé avec teinte violette/indigo
 const THEME = {
-  primary: "#6C63FF", // Indigo principa
+  primary: "#6C63FF", // Indigo principal
   primaryDark: "#4F46E5", // Indigo foncé
   secondary: "#B4ADFF", // Indigo clair
   background: "#F9FAFE", // Fond très légèrement bleuté
@@ -57,11 +58,122 @@ interface RankingSectionProps {
   toggleVisibility: () => void;
 }
 
+/**
+ * Interface pour les propriétés du composant EmptyPodiumPosition
+ */
+interface EmptyPodiumPositionProps {
+  position: "left" | "center" | "right";
+  rank: number;
+}
+
 const { width: WINDOW_WIDTH } = Dimensions.get("window");
 
 // Nombre maximum d'utilisateurs à afficher avant le bouton "Voir tout"
 const MAX_DISPLAY_USERS = 10;
 
+/**
+ * EmptyPodiumPosition - Composant pour afficher une position vacante sur le podium
+ * Design harmonisé avec le composant SmarterItem
+ */
+// Composant pour les positions de podium vacantes
+const EmptyPodiumPosition = memo(({ 
+  position, 
+  rank 
+}: { 
+  position: "left" | "center" | "right"; 
+  rank: number;
+}) => {
+  // Déterminer la couleur d'accent et de fond en fonction du rang
+  const getStyles = () => {
+    switch (rank) {
+      case 2:
+        return {
+          accent: "#D5D5D5", // Argent
+          background: "#F5F5F5", // Fond clair argenté
+          containerStyle: styles.secondPlaceContainer,
+          avatarBorderColor: "#D5D5D5"
+        };
+      case 3:
+        return {
+          accent: "#CD7F32", // Bronze
+          background: "#F9EAE0", // Fond clair bronze
+          containerStyle: styles.thirdPlaceContainer,
+          avatarBorderColor: "#CD7F32"
+        };
+      default:
+        return {
+          accent: "#FFD700", // Or
+          background: "#FFECB3", // Fond clair doré
+          avatarBorderColor: "#FFD700"
+        };
+    }
+  };
+
+  const { accent, background, containerStyle, avatarBorderColor } = getStyles();
+
+  // Animation d'entrée avec timing standard
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    // Délai d'entrée basé sur la position
+    const entryDelay = 400 + (position === "center" ? 0 : position === "left" ? 100 : 200);
+    
+    Animated.sequence([
+      Animated.delay(entryDelay),
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        position === "left" && styles.podiumLeft,
+        position === "center" && styles.podiumCenter,
+        position === "right" && styles.podiumRight,
+        {
+          opacity: bounceAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 1]
+          }),
+          transform: [
+            { scale: bounceAnim },
+            { translateY: bounceAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [20, 0]
+              })
+            }
+          ]
+        }
+      ]}
+    >
+      <View style={[styles.vacantPodiumCard, { backgroundColor: background }, containerStyle]}>
+        {/* Badge de rang */}
+        <View style={[styles.rankBadgeCircle, { backgroundColor: accent }]}>
+          <Text style={styles.rankBadgeText}>{rank}</Text>
+        </View>
+
+        {/* Placeholder d'avatar avec bordure */}
+        <View style={styles.podiumAvatarContainer}>
+          <View style={[styles.podiumAvatarBorder, { borderColor: avatarBorderColor }]}>
+            <View style={styles.emptyPodiumAvatar}>
+              <MaterialIcons name="help" size={28} color="#CCCCCC" />
+            </View>
+          </View>
+        </View>
+
+        {/* Texte de position vacante */}
+        <Text style={styles.vacantPodiumName}>
+          {rank === 2 ? "2ème place vacante" : "3ème place vacante"}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+});
 /**
  * RankingSection - Composant de classement avec design premium
  * Optimisé pour une utilisation dans un ScrollView parent
@@ -167,32 +279,39 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
       }).start();
     };
 
-    // Rendu du podium avec les 3 premiers
+    // Rendu du podium avec les 3 premiers et gestion des positions vacantes
     const renderPodium = useCallback(() => {
-      if (podiumUsers.length === 0) return null;
-
-      // Réarranger pour mettre la 1ère place au milieu
-      const orderedPodium = [...podiumUsers];
-      if (orderedPodium.length >= 3) {
-        [orderedPodium[0], orderedPodium[1]] = [
-          orderedPodium[1],
-          orderedPodium[0],
-        ];
-      }
-
-      const positions: ("left" | "center" | "right")[] = [
-        "left",
-        "center",
-        "right",
+      // Créer un tableau fixe pour représenter les 3 positions du podium
+      const podiumPositions: Array<{user: SmarterUser | null, position: "left" | "center" | "right", rank: number}> = [
+        { user: null, position: "left", rank: 2 },
+        { user: null, position: "center", rank: 1 },
+        { user: null, position: "right", rank: 3 }
       ];
+      
+      // Placement des utilisateurs disponibles dans l'ordre correct
+      podiumUsers.forEach((user, index) => {
+        if (index === 0) {
+          // Premier utilisateur va au centre (position 1)
+          podiumPositions[1].user = user;
+        } else if (index === 1) {
+          // Deuxième utilisateur va à gauche (position 2)
+          podiumPositions[0].user = user;
+        } else if (index === 2) {
+          // Troisième utilisateur va à droite (position 3)
+          podiumPositions[2].user = user;
+        }
+      });
 
       return (
         <View style={styles.podiumContainer}>
-          {orderedPodium.map((user, index) => {
-            const position = positions[index];
-            const actualRank = index === 0 ? 1 : index === 1 ? 0 : index;
-
-            return (
+          {podiumPositions.map((item, displayIndex) => {
+            const { user, position, rank } = item;
+            
+            // Calcul de l'index pour SmarterItem (0-based)
+            const actualRank = rank - 1;
+            
+            return user ? (
+              // Rendu d'utilisateur réel
               <SmarterItem
                 key={user.id}
                 user={user}
@@ -201,6 +320,13 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
                 isActive={actualRank === activeIndex}
                 isPodium={true}
                 podiumPosition={position}
+              />
+            ) : (
+              // Rendu d'une position vacante
+              <EmptyPodiumPosition 
+                key={`empty-${position}`} 
+                position={position} 
+                rank={rank}
               />
             );
           })}
@@ -553,7 +679,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   sectionContent: {
-    paddingTop:15,
+    paddingTop: 15,
     borderRadius: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -573,12 +699,195 @@ const styles = StyleSheet.create({
   contentInner: {
     padding: 15,
   },
-  // Styles existants pour le contenu
+  // Styles pour le podium
   podiumContainer: {
     flexDirection: "row",
     justifyContent: "center",
     paddingBottom: 20,
   },
+  podiumLeft: {
+    marginTop: 40,
+  },
+  podiumCenter: {
+    marginTop: 0,
+    width: 10,
+  },
+  podiumRight: {
+    marginTop: 60,
+  },
+  // Styles pour les positions vacantes du podium
+  emptyPodiumCard: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+    borderStyle: "dashed",
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(0, 0, 0, 0.1)",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  emptyPodiumGlow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+    opacity: 0.1,
+  },
+  emptyPodiumBadge: {
+    position: "absolute",
+    top: -15,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#F2BD57",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(0, 0, 0, 0.2)",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.7,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+
+  emptyPodiumName: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#9E9E9E",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  emptyPodiumScore: {
+    fontSize: 13,
+    fontWeight: "600",
+    opacity: 0.5,
+  },
+  crownInner: {
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  // Styles pour les éléments réels du podium (référencés par EmptyPodiumPosition)
+  podiumBadgeText: {
+    fontSize: 14,
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+// Styles pour les positions vacantes du podium
+vacantPodiumCard: {
+  width: "100%",
+  alignItems: "center",
+  paddingVertical: 16,
+  paddingHorizontal: 8,
+  borderRadius: 16,
+  ...Platform.select({
+    ios: {
+      shadowColor: "rgba(0, 0, 0, 0.1)",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
+    },
+    android: {
+      elevation: 2,
+    },
+  }),
+},
+secondPlaceContainer: {
+  width: 120,
+  height: 160,
+  borderRadius: 16,
+},
+thirdPlaceContainer: {
+  width: 120,
+  height: 160,
+  borderRadius: 16,
+},
+rankBadgeCircle: {
+  position: "absolute",
+  top: -15,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  justifyContent: "center",
+  alignItems: "center",
+  borderWidth: 2,
+  borderColor: "#FFFFFF",
+  zIndex: 1,
+},
+rankBadgeText: {
+  fontSize: 16,
+  color: "#FFFFFF",
+  fontWeight: "bold",
+},
+podiumAvatarContainer: {
+  marginTop: 15,
+  marginBottom: 12,
+},
+podiumAvatarBorder: {
+  width: 70,
+  height: 70,
+  borderRadius: 35,
+  borderWidth: 3,
+  padding: 2,
+  alignItems: "center",
+  justifyContent: "center",
+},
+emptyPodiumAvatar: {
+  width: 60,
+  height: 60,
+  borderRadius: 30,
+  backgroundColor: "#F8F8F8",
+  justifyContent: "center",
+  alignItems: "center",
+},
+vacantPodiumName: {
+  fontSize: 14,
+  fontWeight: "500",
+  color: "#666666",
+  textAlign: "center",
+},
+  podiumScoreContainer: {
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  crownContainer: {
+    position: "absolute",
+    top: -15,
+    left: "50%",
+    marginLeft: -2,
+  },
+  // Styles pour la liste de classement
   rankingListContainer: {
     marginBottom: 16,
   },
@@ -600,8 +909,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   rankingListItems: {
-    marginBottom: 10,
   },
+  // Styles pour l'état vide
   emptyStateContainer: {
     paddingHorizontal: 16,
     paddingVertical: 30,
@@ -636,6 +945,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+  // Styles pour le bouton "Voir tout"
   seeAllButton: {
     marginVertical: 10,
     borderRadius: 14,

@@ -1,5 +1,6 @@
 export interface User {
   id: string | number;
+  createdAt?: string;
   firstName?: string;
   lastName?: string;
   username?: string;

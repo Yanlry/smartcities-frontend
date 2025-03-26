@@ -25,8 +25,9 @@ const PROFILE_SIZE = width * 0.30; // 30% de la largeur de l'écran
 export const ProfilePhoto: React.FC<ProfilePhotoProps> = memo(({ 
   photoUrl, 
   ranking,
-  username = "Utilisateur",
-  bio = "Membre de la communauté",
+  username,
+  bio,
+  createdAt,
   isFollowing, 
   isSubmitting,
   onFollow, 
@@ -204,6 +205,21 @@ export const ProfilePhoto: React.FC<ProfilePhotoProps> = memo(({
     }
   };
   
+  // Fonctions pour formater la date d'inscription
+  const getMembershipText = () => {
+    if (createdAt) {
+      const date = new Date(createdAt);
+      // Formatez selon la locale française
+      const formattedDate = date.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      return `Membre depuis le ${formattedDate}`;
+    }
+    return bio || "Membre de la communauté";
+  };
+
   // Lancer les animations au montage du composant
   useEffect(() => {
     // Animation d'entrée en séquence
@@ -341,7 +357,7 @@ export const ProfilePhoto: React.FC<ProfilePhotoProps> = memo(({
         {/* Infos utilisateur */}
         <View style={styles.userInfoContainer}>
           <Text style={styles.username}>{username}</Text>
-          <Text style={styles.bio}>{bio}</Text>
+          <Text style={styles.bio}>{getMembershipText()}</Text>
         </View>
         
         {/* Bouton d'action */}
@@ -510,11 +526,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   username: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#212529",
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
   },
+  
   bio: {
     fontSize: 14,
     color: "#6C757D",
