@@ -18,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { AddressSuggestion } from './types';
+import { AddressSuggestion } from '../../../types/entities/report.types';
 
 /**
  * Props d'interface pour le composant AddressSuggestionModal

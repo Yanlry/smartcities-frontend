@@ -1,4 +1,4 @@
 // components/profile/Photo/index.ts
 
 export * from './ProfilePhoto';
-export * from './types';
+export { ProfilePhotoProps } from "../../../types/features/profile/tabs.types";

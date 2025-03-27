@@ -5,7 +5,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { profileStyles } from "../../../styles/profileStyles";
 
-import { PostsTabProps } from "./types";
+import { PostsTabProps } from "../../../types/features/profile/tabs.types";
 
 /**
  * Composant affichant la liste des publications d'un utilisateur

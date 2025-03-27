@@ -10,7 +10,8 @@ import { useLocation } from '../../../hooks/location/useLocation';
 import { useLocationSearch } from '../../../hooks/location/useLocationSearch';
 // @ts-ignore
 import { OPEN_CAGE_API_KEY } from '@env';
-import { LocationSelectorProps, LocationData } from './types';
+import { LocationSelectorProps } from '../../../types/features/events/creation.types';
+import { LocationData } from '../../../types/entities/event.types';
 import AddressSuggestionModal from './AddressSuggestionModal';
 
 /**
@@ -68,7 +69,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = memo(({
       return;
     }
 
-    const result = await reverseGeocode(location);
+    const result = await reverseGeocode(location.latitude, location.longitude);
     
     if (result) {
       const address = result.formatted;
@@ -101,7 +102,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = memo(({
   const handleMapPress = useCallback(async (event: any) => {
     const { latitude, longitude } = event.nativeEvent.coordinate;
 
-    const result = await reverseGeocode({ latitude, longitude });
+    const result = await reverseGeocode(latitude, longitude);
     
     if (result) {
       const address = result.formatted;

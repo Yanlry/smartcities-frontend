@@ -1,7 +1,7 @@
 // src/hooks/reports/useNearbyReports.ts
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Report, ReportCategory } from '../../components/home/ReportsSection/report.types';
+import { Report, ReportCategory } from '../../types/features/reports/report.types'
 import { processReports } from '../../services/reportService';
 import { getTypeLabel, typeColors } from '../../utils/reportHelpers';
 import { hexToRgba, calculateOpacity } from '../../utils/reductOpacity';

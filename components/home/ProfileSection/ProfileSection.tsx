@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { User, UserStats as UserStatsType } from "./user.types";
+import { User, UserStats as UserStatsType } from "../../../types/entities/user.types";
 import { useBadge } from "../../../hooks/ui/useBadge";
 import RankBadge from "./RankBadge";
 

@@ -15,7 +15,7 @@ import {
   Easing,
   ActivityIndicator,
 } from "react-native";
-import { SmarterUser } from "../ProfileSection/user.types";
+import { SmarterUser } from "../../../types/entities/user.types";
 import SmarterItem from "./SmarterItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";

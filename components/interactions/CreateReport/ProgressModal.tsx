@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
-import { ProgressStep } from './types';
+import { ProgressStep } from '../../../types/entities/report.types';
 
 interface ProgressModalProps {
   visible: boolean;

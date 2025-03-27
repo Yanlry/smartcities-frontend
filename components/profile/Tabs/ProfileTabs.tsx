@@ -4,7 +4,7 @@ import React, { memo } from "react";
 import { ScrollView, TouchableOpacity, Text } from "react-native";
 import { profileStyles } from "../../../styles/profileStyles";
 
-import { ProfileTabsProps } from "./types";
+import { ProfileTabsProps } from "../../../types/features/profile/tabs.types";
 
 /**
  * Composant pour afficher les onglets de navigation du profil

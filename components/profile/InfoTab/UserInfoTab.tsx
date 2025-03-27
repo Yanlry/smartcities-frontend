@@ -15,7 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useTheme } from '@react-navigation/native';
-import { UserInfoTabProps } from "./types";
+import { UserInfoTabProps } from '../../../types/features/profile/tabs.types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**

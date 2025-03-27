@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SmarterUser, UserRanking, TopUser } from '../../components/home/ProfileSection/user.types';
+import { SmarterUser, TopUser } from '../../types/entities/user.types';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 // @ts-ignore
 import { API_URL } from '@env';

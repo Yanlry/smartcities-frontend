@@ -1,7 +1,7 @@
 // hooks/profile/useUserContent.ts
 
 import { useState, useEffect } from "react";
-import { Post, Report, Event } from "../../types/profile.types";
+import { Post, Report, Event } from "../../types/entities";
 import axios from "axios";
 // @ts-ignore
 import { API_URL } from "@env";

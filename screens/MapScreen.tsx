@@ -23,7 +23,7 @@ import {
   Event as ReportEvent,
 } from "../services/reportService";
 import { useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "../types/navigation";
+import { RootStackParamList } from "../types/navigation/routes.types";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { PanGestureHandler } from "react-native-gesture-handler";

@@ -6,7 +6,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { Report, VoteType } from "../../../types/report.types";
+import { Report, VoteType } from  "../../../types/entities/report.types";
 import ReportMetadata from "./ReportMetadata";
 import VotingSection from "./VotingSection";
 import PhotoGallery from "./PhotoGallery";

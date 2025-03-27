@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { User } from "../../../types/report.types";
+import { User } from "../../../types/entities/report.types";
 
 interface UserInfoSectionProps {
   user: User;

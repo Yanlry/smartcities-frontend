@@ -1,7 +1,7 @@
 // hooks/profile/useUserProfile.ts
 
 import { useState, useEffect, useCallback } from "react";
-import { User } from "../../types/profile.types";
+import { User } from "../../types/features/profile/user.types";
 import { getUserIdFromToken } from "../../utils/tokenUtils";
 // @ts-ignore
 import { API_URL } from "@env";

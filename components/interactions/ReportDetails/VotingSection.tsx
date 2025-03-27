@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { VoteType } from "../../../types/report.types";
+import { VoteType } from "../../../types/entities/report.types";
 
 interface VotingButtonsProps {
   votes: { upVotes: number; downVotes: number };

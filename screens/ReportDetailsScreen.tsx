@@ -13,7 +13,7 @@ import { useReportVoting } from "../hooks/reports/useReportVoting";
 import { usePhotoGallery } from "../hooks/reports/usePhotoGallery";
 import { useTabNavigation } from "../hooks/reports/useTabNavigation";
 import { useTooltip } from "../hooks/reports/useTooltip";
-import { ReportDetailsProps } from "../types/report.types";
+import { ReportDetailsProps } from "../types/navigation/params.types";
 
 // Import des composants modulaires
 import {

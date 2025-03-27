@@ -1,6 +1,6 @@
 // hooks/profile/useBadgeStyles.ts
 
-import { BadgeStyle } from "../../types/profile.types";
+import { BadgeStyle } from "../../types/entities/user.types";
 
 /**
  * Hook personnalisé pour déterminer le style du badge basé sur le nombre de votes

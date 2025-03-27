@@ -1,20 +1,19 @@
-// Chemin: screens/UserProfileScreen.tsx
-
+// screens/UserProfileScreen.tsx
 import React, { useState, useCallback, useMemo } from "react";
 import { View, ActivityIndicator, Text, ScrollView, Alert } from "react-native";
 import Sidebar from "../components/common/Sidebar";
 import { profileStyles } from "../styles/profileStyles";
 import { useToken } from "../hooks/auth/useToken";
-import { useBadge } from "../hooks/ui/useBadge"; // Import du hook useBadge
+import { useBadge } from "../hooks/ui/useBadge";
 
 import { 
   useUserProfile, 
   useUserStats, 
   useUserContent,
-
 } from "../hooks/profile/index";
-import { useUserRanking } from "../hooks/user/useUserRanking"; // Import du hook useUserRanking
-// Imports des autres composants
+import { useUserRanking } from "../hooks/user/useUserRanking";
+
+// Composants
 import {
   ProfileHeader,
   ProfilePhoto,
@@ -27,8 +26,9 @@ import {
 } from "../components/profile";
 import RankBadge from "../components/home/ProfileSection/RankBadge";
 
-// Import des types
-import { TabType } from "../types/profile.types";
+// Types
+import { TabType } from "../types/features/profile/user.types";
+import { User as EntityUser } from "../types/entities/user.types"; // Import pour l'adaptation
 import { StackScreenProps } from "@react-navigation/stack";
 // @ts-ignore
 import { API_URL } from "@env";
@@ -36,10 +36,6 @@ import { ParamListBase } from "@react-navigation/native";
 
 type UserProfileScreenNavigationProps = StackScreenProps<ParamListBase, "UserProfileScreen">;
 
-
-/**
- * Interface pour les props du composant UserProfileScreen
- */
 interface UserProfileScreenProps {
   route: {
     params: {
@@ -49,25 +45,21 @@ interface UserProfileScreenProps {
   navigation: any;
 }
 
-
-/**
- * Écran de profil utilisateur
- */
 const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, navigation }) => {
   const { userId } = route.params as UserProfileScreenProps["route"]["params"];
   const { getToken, getUserId } = useToken();
-  const { getBadgeStyles } = useBadge(); // Utilisation du hook useBadge
+  const { getBadgeStyles } = useBadge();
   
-  // États locaux
+  // États
   const [selectedTab, setSelectedTab] = useState<TabType>("info");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   
-  // Hooks personnalisés pour les données
+  // Hooks pour les données
   const { 
-    user, 
+    user: rawUser, 
     loading: userLoading, 
     error: userError, 
     isFollowing,
@@ -86,55 +78,60 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
     error: contentError 
   } = useUserContent(userId);
 
-  // Hooks pour récupérer le ranking et totalUsers (similaire à HomeScreen)
-  const { ranking: rankingFromRanking, totalUsers: totalUsersFromRanking, getRankingSuffix } = useUserRanking(user?.nomCommune || "");
+  // Hooks pour le classement
+  const { 
+    ranking: rankingFromRanking, 
+    totalUsers: totalUsersFromRanking, 
+    getRankingSuffix 
+  } = useUserRanking(rawUser?.nomCommune || "");
 
-  // Vous pouvez conserver le calcul du suffixe pour le cas où user?.ranking est défini localement,
-  // ou utiliser directement getRankingSuffix(rankingFromRanking)
-  const rankingSuffix = useMemo(() => getRankingSuffix(rankingFromRanking), [getRankingSuffix, rankingFromRanking]);
+  // Adaptation du user pour le composant UserInfoTab
+  const user = useMemo(() => {
+    if (!rawUser) return null;
 
-  // Remplacer la récupération de totalUsers :
-  // const totalUsers = stats?.totalUsers || 0;
+    return {
+      ...rawUser,
+      // Garantir que useFullName est toujours défini (jamais undefined)
+      useFullName: rawUser.useFullName === undefined ? false : rawUser.useFullName
+    } as EntityUser;
+  }, [rawUser]);
+
+  // États dérivés
+  const rankingSuffix = useMemo(() => 
+    getRankingSuffix(rankingFromRanking), 
+    [getRankingSuffix, rankingFromRanking]
+  );
+  
   const totalUsers = totalUsersFromRanking;
   
-  /**
-   * Bascule l'état du sidebar
-   */
+  const displayName = useMemo(() => {
+    if(rawUser?.useFullName && rawUser.firstName && rawUser.lastName) {
+      return `${rawUser.firstName} ${rawUser.lastName}`;
+    }
+    return rawUser?.username || "Nom d'utilisateur";
+  }, [rawUser]);
+
+  // Handlers
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
   }, []);
 
-  /**
-   * Ouvre la modale de signalement
-   */
   const openReportModal = useCallback(() => {
     setReportModalVisible(true);
   }, []);
 
-  /**
-   * Ferme la modale de signalement
-   */
   const closeReportModal = useCallback(() => {
     setReportModalVisible(false);
   }, []);
 
-  /**
-   * Navigation vers l'écran de classement
-   */
   const navigateToRanking = useCallback(() => {
     navigation.navigate("RankingScreen");
   }, [navigation]);
 
-  /**
-   * Récupère le style du badge en fonction des votes de l'utilisateur
-   */
   const badgeStyle = useMemo(() => {
     return getBadgeStyles(stats?.votes?.length || 0);
   }, [getBadgeStyles, stats?.votes?.length]);
 
-  /**
-   * Envoie un signalement au serveur
-   */
   const handleSendReport = useCallback(async (reason: string) => {
     if (!reason.trim()) {
       Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
@@ -177,37 +174,23 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
     }
   }, [userId, getUserId, getToken, closeReportModal]);
 
-  /**
-   * Gère l'action de suivre un utilisateur avec indication de chargement
-   */
   const handleFollowWithSubmitting = useCallback(async () => {
     setIsSubmitting(true);
     await handleFollow();
     setIsSubmitting(false);
   }, [handleFollow]);
 
-  /**
-   * Gère l'action de se désabonner d'un utilisateur avec indication de chargement
-   */
   const handleUnfollowWithSubmitting = useCallback(async () => {
     setIsSubmitting(true);
     await handleUnfollow();
     setIsSubmitting(false);
   }, [handleUnfollow]);
 
-  // Déplacer la définition de displayName avant les retours conditionnels :
-  const displayName = useMemo(() => {
-    if(user?.useFullName && user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
-    }
-    return user?.username || "Nom d'utilisateur";
-  }, [user]);
-
-  // Vérification du chargement et des erreurs
+  // États de l'application
   const isLoading = userLoading || statsLoading || contentLoading;
   const error = userError || statsError || contentError;
 
-  // Affichage pendant le chargement
+  // Rendu conditionnel
   if (isLoading) {
     return (
       <View style={profileStyles.center}>
@@ -217,7 +200,6 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
     );
   }
 
-  // Affichage en cas d'erreur
   if (error) {
     return (
       <View style={profileStyles.center}>
@@ -228,13 +210,11 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
 
   return (
     <View>
-      {/* En-tête avec boutons de menu et signalement */}
       <ProfileHeader 
         toggleSidebar={toggleSidebar} 
         openReportModal={openReportModal} 
       />
       
-      {/* Modale pour signaler un utilisateur */}
       <ReportModal 
         isVisible={isReportModalVisible}
         onClose={closeReportModal}
@@ -242,39 +222,34 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
       />
 
       <ScrollView contentContainerStyle={profileStyles.container}>
-        {/* Photo de profil avec médaille si dans le top 3 */}
         <ProfilePhoto 
-          photoUrl={user?.profilePhoto?.url}
-          ranking={user?.ranking || 999999} // Utiliser une grande valeur par défaut si pas de classement
+          photoUrl={rawUser?.profilePhoto?.url}
+          ranking={rawUser?.ranking || 999999}
           username={displayName}
-          // Ajoutez la date d'inscription
-          createdAt={user?.createdAt}
+          createdAt={rawUser?.createdAt}
           isSubmitting={isSubmitting}
           isFollowing={isFollowing}
           onFollow={handleFollowWithSubmitting}
           onUnfollow={handleUnfollowWithSubmitting}
         />
 
-        {/* Badge de classement - Intégration du composant RankBadge */}
         <View>
           <RankBadge
-            ranking={user?.ranking || null}
+            ranking={rawUser?.ranking || null}
             rankingSuffix={rankingSuffix}
             totalUsers={totalUsers}
             onNavigateToRanking={navigateToRanking}
             badgeStyle={badgeStyle}
             onShowBadgeModal={() => setShowBadgeModal(true)}
-            cityName={user?.nomCommune || ""}
+            cityName={rawUser?.nomCommune || ""}
           />
         </View>
         
-        {/* Onglets de navigation entre les sections */}
         <ProfileTabs 
           selectedTab={selectedTab} 
           onSelectTab={setSelectedTab} 
         />
 
-        {/* Contenu de l'onglet sélectionné */}
         {selectedTab === "info" && (
           <UserInfoTab 
             user={user}
@@ -313,7 +288,6 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
         <View style={profileStyles.separator} />
       </ScrollView>
 
-      {/* Menu latéral */}
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
     </View>
   );

@@ -11,7 +11,7 @@ import {
   TextInput
 } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { UserFollower } from '../ProfileSection/user.types';
+import { UserFollower } from '../../../types/entities/user.types';
 
 interface FollowersModalProps {
   visible: boolean;

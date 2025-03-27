@@ -4,7 +4,7 @@ import React, { memo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import profileStyles  from "../../../screens/styles/ProfileScreen.styles";
-import { ProfileHeaderProps } from "./types";
+import { ProfileHeaderProps }  from '../../../types/features/profile/tabs.types';
 
 /**
  * Composant d'en-tête pour l'écran de profil utilisateur

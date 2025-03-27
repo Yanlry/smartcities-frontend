@@ -4,7 +4,7 @@ import React, { memo } from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { profileStyles } from "../../../styles/profileStyles";
 
-import { ReportsTabProps } from "./types";
+import { ReportsTabProps } from "../../../types/features/profile/tabs.types";
 
 /**
  * Composant affichant la liste des signalements d'un utilisateur

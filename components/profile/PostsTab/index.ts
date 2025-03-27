@@ -1,4 +1,4 @@
 // components/profile/PostsTab/index.ts
 
 export * from './PostsTab';
-export * from './types';
+export { PostsTabProps } from "../../../types/features/profile/tabs.types";

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
-import { ReportFormData, LocationCoordinates, Photo } from '../../components/interactions/CreateReport/types';
+import { ReportFormData, LocationCoordinates, Photo } from '../../types/entities';
 // @ts-ignore - Ignorer l'erreur d'importation des variables d'environnement
 import { API_URL } from '@env';
 

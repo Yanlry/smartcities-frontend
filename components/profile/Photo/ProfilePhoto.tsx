@@ -15,7 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { profileStyles } from "../../../styles/profileStyles";
-import { ProfilePhotoProps } from "./types";
+import { ProfilePhotoProps } from "../../../types/features/profile/tabs.types";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 const { width } = Dimensions.get("window");

@@ -23,7 +23,7 @@ import {
   Conversation, 
   ConversationItemProps, 
   ArchivedConversationItemProps 
-} from "../types/conversation.types";
+} from "../types/features/conversations/item.types";
 
 // Constantes
 import { COLORS } from "../utils/colors";

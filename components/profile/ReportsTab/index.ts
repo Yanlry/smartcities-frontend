@@ -1,4 +1,4 @@
 // components/profile/ReportsTab/index.ts
 
 export * from './ReportsTab';
-export * from './types';
+export { ReportsTabProps } from "../../../types/features/profile/tabs.types";

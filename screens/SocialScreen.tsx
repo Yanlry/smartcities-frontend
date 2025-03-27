@@ -29,7 +29,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../types/navigation";
+import { RootStackParamList } from "../types/navigation/routes.types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**

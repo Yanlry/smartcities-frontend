@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Animated } from 'react-native';
 import { Dimensions } from 'react-native';
-import { TABS } from '../../types/report.types';
+import { TABS } from '../../types/entities/report.types';
 
 const { width } = Dimensions.get('window');
 

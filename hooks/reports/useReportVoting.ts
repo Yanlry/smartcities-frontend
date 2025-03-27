@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { Report, VoteType } from '../../types/report.types';
+import { Report, VoteType } from '../../types/entities/report.types';
 // @ts-ignore
 import { API_URL } from '@env';
 

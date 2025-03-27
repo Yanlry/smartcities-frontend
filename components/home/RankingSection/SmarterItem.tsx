@@ -14,7 +14,7 @@ import {
   UIManager,
   Dimensions,
 } from "react-native";
-import { SmarterUser } from "../ProfileSection/user.types";
+import { SmarterUser } from "../../../types/entities/user.types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Configuration pour Android

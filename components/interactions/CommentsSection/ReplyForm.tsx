@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { ReplyFormProps } from './types';
+import { ReplyFormProps } from '../../../types/entities/comment.types';
 
 const ReplyForm: React.FC<ReplyFormProps> = memo(({ 
   parentId, 

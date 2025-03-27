@@ -5,15 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Animated,
   Dimensions,
   Platform,
   ViewStyle,
   TextStyle,
 } from "react-native";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { ReportCategory } from "./report.types";
+import { MaterialIcons } from "@expo/vector-icons";
+import { ReportCategory } from "../../../types/entities/report.types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 

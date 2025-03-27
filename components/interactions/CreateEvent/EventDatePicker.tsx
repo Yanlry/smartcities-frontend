@@ -2,7 +2,7 @@
 import React, { useState, memo } from 'react';
 import { View, Text, Button, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { EventDatePickerProps } from './types';
+import { EventDatePickerProps } from '../../../types/features/events/creation.types';
 
 /**
  * Composant pour la sélection de date d'un événement

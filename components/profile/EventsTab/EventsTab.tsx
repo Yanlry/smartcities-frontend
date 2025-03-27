@@ -5,7 +5,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { profileStyles } from "../../../styles/profileStyles";
 
-import { EventsTabProps } from "./types";
+import { EventsTabProps } from "../../../types/features/profile/tabs.types";
 
 /**
  * Composant affichant la liste des événements d'un utilisateur

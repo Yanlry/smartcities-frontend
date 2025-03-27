@@ -1,5 +1,4 @@
-// Chemin: screens/HomeScreen.tsx
-import React, { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,9 +6,9 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
-  StyleSheet,
   Modal,
   Linking,
+  StyleSheet,
 } from "react-native";
 import { useLocation } from "../hooks/location/useLocation";
 import { useUserProfile } from "../hooks/user/useUserProfile";
@@ -21,6 +20,7 @@ import GlobalToggleButton from "../components/common/ShakeButton/GlobalToggleBut
 // @ts-ignore
 import { API_URL } from "@env";
 
+// Composants de sections
 import ProfileSection from "../components/home/ProfileSection/ProfileSection";
 import RankingSection from "../components/home/RankingSection/RankingSection";
 import ReportsSection from "../components/home/ReportsSection/ReportsSection";
@@ -30,7 +30,10 @@ import CategorySelector from "../components/home/CategorySelector/CategorySelect
 import MayorInfoSection from "../components/home/MayorInfoSection/MayorInfoSection";
 import Chart from "../components/home/ChartSection/ChartSection";
 
-// Modaux
+// Import des types d'entité pour la conversion
+import { Report as EntityReport, ReportCategory as EntityReportCategory } from "../types/entities/report.types";
+
+// Composants modaux
 import {
   NameModal,
   BadgeModal,
@@ -44,9 +47,13 @@ interface HomeScreenProps {
   handleScroll: (event: any) => void;
 }
 
+/**
+ * Écran d'accueil principal de l'application
+ * Affiche plusieurs sections avec données utilisateur, rapports, événements et statistiques
+ */
 const HomeScreen: React.FC<HomeScreenProps> = memo(
   ({ navigation, handleScroll }) => {
-    // Hooks
+    // ===== HOOKS =====
     const { location, loading: locationLoading } = useLocation();
 
     const {
@@ -62,8 +69,8 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     } = useUserProfile();
 
     const {
-      reports,
-      categories,
+      reports: rawReports,
+      categories: rawCategories,
       selectedCategory,
       setSelectedCategory,
       loading: reportsLoading,
@@ -90,14 +97,42 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       getMarkedDatesForMonth
     } = useEvents(user?.nomCommune || "");
 
-    // Graphique
+    // ===== ADAPTATION DES TYPES =====
+    
+    // Adaptation des reports pour correspondre au type attendu par ReportsSection
+    const reports = useMemo<EntityReport[]>(() => {
+      return rawReports.map(report => ({
+        ...report,
+        // Ajout de la propriété user requise par le type EntityReport
+        user: {
+          id: parseInt(report.userId || '0'),
+          username: report.userId || '',
+          firstName: '',
+          lastName: '',
+          useFullName: true
+        }
+      })) as EntityReport[];
+    }, [rawReports]);
+
+    // Adaptation des categories pour correspondre au type attendu
+    const categories = useMemo<EntityReportCategory[]>(() => {
+      return rawCategories.map(category => ({
+        ...category,
+        // Ajout des propriétés obligatoires
+        value: category.name.toLowerCase(),
+        description: category.label || category.name
+      })) as EntityReportCategory[];
+    }, [rawCategories]);
+
+    // ===== DONNÉES STATISTIQUES =====
     const nomCommune = user?.nomCommune || "";
     const { data: statsData } = useFetchStatistics(
       `${API_URL}/reports/statistics`,
       nomCommune
     );
 
-    // États modal
+    // ===== ÉTATS UI =====
+    // États modaux
     const [showNameModal, setShowNameModal] = useState(false);
     const [showBadgeModal, setShowBadgeModal] = useState(false);
     const [showLikeInfoModal, setShowLikeInfoModal] = useState(false);
@@ -109,8 +144,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     const [isReportsVisible, setReportsVisible] = useState(false);
     const [isEventsVisible, setEventsVisible] = useState(false);
     const [isCalendarVisible, setCalendarVisible] = useState(false);
-    const [isCategoryReportsVisible, setCategoryReportsVisible] =
-      useState(false);
+    const [isCategoryReportsVisible, setCategoryReportsVisible] = useState(false);
     const [isMayorInfoVisible, setMayorInfoVisible] = useState(false);
     const [isChartVisible, setChartVisible] = useState(false);
     const [areAllSectionsVisible, setAllSectionsVisible] = useState(false);
@@ -118,11 +152,12 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     // État de rafraîchissement
     const [refreshing, setRefreshing] = useState(false);
 
-    // Loader
-    const isLoading =
-      locationLoading || userLoading || reportsLoading || rankingLoading;
+    // Indicateur de chargement global
+    const isLoading = locationLoading || userLoading || reportsLoading || rankingLoading;
 
-    // Préférence d'affichage du nom
+    // ===== GESTIONNAIRES D'ÉVÉNEMENTS =====
+    
+    // Préférence d'affichage du nom d'utilisateur
     const handleOptionChange = useCallback(
       async (option: "fullName" | "username") => {
         setShowNameModal(false);
@@ -131,7 +166,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [updateUserDisplayPreference]
     );
 
-    // Rafraîchissement écran
+    // Rafraîchissement de l'écran
     const onRefresh = useCallback(async () => {
       setRefreshing(true);
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -139,7 +174,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       navigation.replace("Main");
     }, [navigation]);
 
-    // Inverse la visibilité de toutes les sections
+    // Contrôle de la visibilité de toutes les sections
     const toggleAllSections = useCallback(() => {
       const newVisibility = !areAllSectionsVisible;
       setAllSectionsVisible(newVisibility);
@@ -152,19 +187,18 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       setChartVisible(newVisibility);
     }, [areAllSectionsVisible]);
 
-    // Ouvre le modal des abonnés
+    // Modaux sociaux
     const toggleFollowersList = useCallback(() => {
       setShowFollowersModal((prev) => !prev);
       setShowFollowingModal(false);
     }, []);
 
-    // Ouvre le modal des abonnement
     const toggleFollowingList = useCallback(() => {
       setShowFollowingModal((prev) => !prev);
       setShowFollowersModal(false);
     }, []);
 
-    // Gère l'appuis sur un rapport
+    // Navigation
     const handlePressReport = useCallback(
       (id: number) => {
         navigation.navigate("ReportDetailsScreen", { reportId: id });
@@ -172,7 +206,6 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [navigation]
     );
 
-    // Gère l'appuis sur une catégorie
     const handleCategoryClick = useCallback(
       (category: string) => {
         navigation.navigate("CategoryReportsScreen", { category });
@@ -180,7 +213,6 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [navigation]
     );
 
-    // Gère l'appuis sur un événement
     const handleEventPress = useCallback(
       (id: string) => {
         navigation.navigate("EventDetailsScreen", { eventId: id });
@@ -188,7 +220,6 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [navigation]
     );
 
-    // Gère l'appuis sur un utilisateur
     const handleUserPress = useCallback(
       (id: string) => {
         navigation.navigate("UserProfileScreen", { userId: id });
@@ -196,7 +227,6 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [navigation]
     );
 
-    // Gère l'appuis sur le numéro de téléphone
     const handlePressPhoneNumber = useCallback(() => {
       Linking.openURL("tel:0320440251");
     }, []);
@@ -212,7 +242,9 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [navigation]
     );
 
-    // Si localisation indisponible, affiche un modal d'erreur
+    // ===== RENDU CONDITIONNEL =====
+    
+    // Modal d'erreur de localisation
     if (!location && !locationLoading) {
       return (
         <Modal transparent animationType="slide">
@@ -233,7 +265,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       );
     }
 
-    // Loader si les données sont en cours de chargement
+    // Indicateur de chargement
     if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
@@ -243,6 +275,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       );
     }
 
+    // ===== RENDU PRINCIPAL =====
     return (
       <ScrollView
         style={styles.container}
@@ -286,19 +319,19 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           toggleVisibility={() => setSectionVisible((prev) => !prev)}
         />
 
-        {/* Section Signalements */}
+        {/* Section Signalements - Utilise les données adaptées */}
         <ReportsSection
-  reports={reports}
-  categories={categories}
-  loading={reportsLoading}
-  selectedCategory={selectedCategory}
-  setSelectedCategory={setSelectedCategory}
-  formatTime={formatTime}
-  onPressReport={handlePressReport}
-  isVisible={isReportsVisible}
-  toggleVisibility={() => setReportsVisible((prev) => !prev)}
-  userCity={user?.nomCommune}
-/>
+          reports={reports}
+          categories={categories}
+          loading={reportsLoading}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          formatTime={formatTime}
+          onPressReport={handlePressReport}
+          isVisible={isReportsVisible}
+          toggleVisibility={() => setReportsVisible((prev) => !prev)}
+          userCity={user?.nomCommune}
+        />
 
         {/* Section Événements */}
         <EventsSection
@@ -331,7 +364,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           getMarkedDatesForMonth={getMarkedDatesForMonth}
         />
 
-        {/* Section Catégories de signalements */}
+        {/* Section Catégories de signalements - Utilise les données adaptées */}
         <CategorySelector
           categories={categories}
           onCategoryPress={handleCategoryClick}

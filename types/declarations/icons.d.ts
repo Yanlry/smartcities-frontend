@@ -10,4 +10,3 @@ declare module 'react-native-vector-icons/Ionicons' {
   
     export default class Ionicons extends Component<IconProps> {}
   }
-  

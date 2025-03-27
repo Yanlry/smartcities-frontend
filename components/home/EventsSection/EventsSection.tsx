@@ -17,7 +17,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import FeaturedEvents from './FeaturedEvents';
-import { FeaturedEvent } from './event.types';
+import { FeaturedEvent } from '../../../types/entities/event.types';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android') {

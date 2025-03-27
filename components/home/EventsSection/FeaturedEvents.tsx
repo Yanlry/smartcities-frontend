@@ -13,7 +13,7 @@ import {
   ViewToken,
   Platform,
 } from 'react-native';
-import { FeaturedEvent } from './event.types';
+import { FeaturedEvent } from '../../../types/entities/event.types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 

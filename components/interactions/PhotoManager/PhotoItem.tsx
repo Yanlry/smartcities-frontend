@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { PhotoItemProps } from './types';
+import { PhotoItemProps } from '../../../types/components/photo/photo-manager.types';
 
 const PhotoItem: React.FC<PhotoItemProps> = memo(({ photo, onRemove }) => {
   return (

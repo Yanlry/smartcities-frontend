@@ -11,7 +11,7 @@ import {
   Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SidebarItemProps } from './types';
+import { SidebarItemProps } from '../../../types/components/common/sidebar.types';
 
 // Thème cohérent avec le composant Sidebar
 const THEME = {
@@ -67,6 +67,10 @@ interface EnhancedSidebarItemProps extends SidebarItemProps {
   isActive?: boolean;
   isSecondary?: boolean;
   badge?: number;
+  icon: React.ReactNode;
+  label: string;
+  onPress: () => void;
+
 }
 
 /**

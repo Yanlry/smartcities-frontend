@@ -15,7 +15,7 @@ import {
   TextStyle,
   ImageStyle,
 } from "react-native";
-import { Report } from "./report.types";
+import { Report } from "../../../types/entities/report.types";
 import { formatDistance } from "../../../utils/formatters";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";

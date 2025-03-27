@@ -1,5 +1,8 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
+/**
+ * Paramètres de navigation pour la pile principale
+ */
 export type RootStackParamList = {
   Main: NavigatorScreenParams<TabParamList>;
   Login: undefined;
@@ -18,6 +21,9 @@ export type RootStackParamList = {
   PostDetailsScreen: { postId: number };
 };
 
+/**
+ * Paramètres de navigation pour les onglets
+ */
 export type TabParamList = {
   Accueil: undefined;
   Conversations: undefined;

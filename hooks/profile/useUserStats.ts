@@ -1,7 +1,7 @@
 // hooks/profile/useUserStats.ts
 
 import { useState, useEffect } from "react";
-import { UserStats } from "../../types/profile.types";
+import { UserStats } from "../../types/features/profile/user.types";
 import axios from "axios";
 // @ts-ignore
 import { API_URL } from "@env";

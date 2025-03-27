@@ -1,8 +1,8 @@
-// src/components/home/CategoryReportsSection/types.ts
-import { ReportCategory } from '../ReportsSection/report.types';
+import { Animated } from 'react-native';
+import { ReportCategory } from '../../entities/report.types';
 
 /**
- * Interface pour les props du composant principal CategoryReportsSection
+ * Props pour le composant CategoryReportsSection
  */
 export interface CategoryReportsSectionProps {
   /** Liste des catégories disponibles */
@@ -16,7 +16,7 @@ export interface CategoryReportsSectionProps {
 }
 
 /**
- * Interface pour les props du composant d'en-tête
+ * Props pour le composant SectionHeader
  */
 export interface SectionHeaderProps {
   /** Fonction pour basculer la visibilité */
@@ -26,7 +26,7 @@ export interface SectionHeaderProps {
 }
 
 /**
- * Interface pour les props de l'item de catégorie
+ * Props pour le composant CategoryItem
  */
 export interface CategoryItemProps {
   /** Données de la catégorie */
@@ -42,7 +42,7 @@ export interface CategoryItemProps {
 }
 
 /**
- * Interface pour les props du panneau d'information
+ * Props pour le composant InfoPanel
  */
 export interface InfoPanelProps {
   /** Catégorie sélectionnée */
@@ -52,7 +52,7 @@ export interface InfoPanelProps {
 }
 
 /**
- * Interface pour les options du hook
+ * Options pour le hook useCategorySelector
  */
 export interface UseCategorySelectorOptions {
   /** Initialiser avec une catégorie */
@@ -64,7 +64,7 @@ export interface UseCategorySelectorOptions {
 }
 
 /**
- * Interface pour les valeurs retournées par le hook
+ * Interface pour les valeurs retournées par le hook useCategorySelector
  */
 export interface UseCategorySelectorResult {
   /** Catégorie actuellement sélectionnée */
@@ -89,5 +89,3 @@ export interface UseCategorySelectorResult {
   scrollX: Animated.Value;
 }
 
-// Exporter les types nécessaires pour les fichiers importants
-import { Animated } from 'react-native';

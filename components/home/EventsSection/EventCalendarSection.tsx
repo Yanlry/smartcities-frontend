@@ -27,7 +27,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
-import { Event } from "./event.types";
+import { Event } from '../../../types/entities/event.types';
 
 // Enable LayoutAnimation for Android
 if (

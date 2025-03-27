@@ -4,7 +4,8 @@ import { Alert } from 'react-native';
 // @ts-ignore
 import { API_URL } from '@env';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
-import { EventFormData, SubmissionStep } from '../../components/interactions/EventCreation/types';
+// Chemin corrigé
+import { EventFormData, SubmissionStep } from '../../types/entities/event.types';
 
 /**
  * Hook gérant la soumission des événements à l'API

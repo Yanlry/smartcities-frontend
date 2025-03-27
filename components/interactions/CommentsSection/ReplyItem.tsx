@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, Image, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ReplyItemProps } from './types';
+import { ReplyItemProps } from '../../../types/entities/comment.types';
 import LikeButton from './LikeButton';
 
 const ReplyItem: React.FC<ReplyItemProps> = memo(({ 

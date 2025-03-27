@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PhotoManager from '../../interactions/PhotoManager';
-import { Photo } from './types';
+import { Photo } from '../../../types/entities/photo.types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Activer LayoutAnimation pour Android

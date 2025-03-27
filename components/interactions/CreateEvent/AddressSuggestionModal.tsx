@@ -4,7 +4,7 @@ import {
   Modal, View, Text, TouchableOpacity, 
   ScrollView, StyleSheet 
 } from 'react-native';
-import { AddressSuggestionModalProps } from './types';
+import { AddressSuggestionModalProps } from '../../../types/features/events/creation.types';
 
 /**
  * Modal affichant les suggestions d'adresses

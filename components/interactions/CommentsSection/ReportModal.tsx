@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { ReportModalProps } from './types';
+import { ReportModalProps } from '../../../types/entities/comment.types';
 
 
 const ReportModal: React.FC<ReportModalProps> = memo(({ 

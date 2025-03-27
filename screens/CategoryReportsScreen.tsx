@@ -13,7 +13,7 @@ import {
 import * as Location from "expo-location";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../types/navigation";
+import { RootStackParamList } from "../types/navigation/routes.types";
 import { processReports } from "../services/reportService";
 import { formatCity } from "../utils/formatters";
 import { typeColors, categoryDescriptions } from "../utils/reportHelpers";
@@ -36,7 +36,7 @@ type Report = {
   city: string;
   latitude: number;
   longitude: number;
-  distance?: number;
+  distance?: number | null;
   photos?: { url: string }[];
   createdAt: string;
 };
@@ -187,7 +187,7 @@ export default function CategoryReportsScreen() {
                   <View style={styles.distanceContainer}>
                     <Text style={styles.reportDistance}>
                       {report.distance !== undefined
-                        ? `${report.distance.toFixed(2)} km`
+                        ? `${report.distance !== null && report.distance !== undefined ? report.distance.toFixed(2) : "0.00"} km`
                         : "Distance inconnue"}
                     </Text>
                   </View>

@@ -2,7 +2,7 @@
 import React, { memo, useMemo } from 'react';
 import { Modal, View, Text, StyleSheet } from 'react-native';
 import * as Progress from 'react-native-progress';
-import { ProgressModalProps } from './types';
+import { ProgressModalProps }from '../../../types/features/events/creation.types';
 
 /**
  * Modal affichant la progression du téléversement

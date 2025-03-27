@@ -19,7 +19,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { PhotoManagerProps } from './types';
+import { PhotoManagerProps } from '../../../types/components/photo/photo-manager.types';
 
 const { width } = Dimensions.get('window');
 const AVATAR_SIZE = 140;

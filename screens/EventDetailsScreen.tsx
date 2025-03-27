@@ -16,7 +16,7 @@ import { Share } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import { useToken } from "../hooks/auth/useToken";
-import { RootStackParamList } from "../types/navigation";
+import { RootStackParamList } from "../types/navigation/routes.types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";

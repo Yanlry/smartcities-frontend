@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
-import { LocationCoordinates } from './types';
+import { LocationCoordinates } from '../../../types/entities/report.types';
 import AddressSuggestionModal from './AddressSuggestionModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';

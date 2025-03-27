@@ -1,7 +1,7 @@
 // hooks/user/useUserProfile.ts
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, UserStats } from '../../components/home/ProfileSection/user.types';
+import { User, UserStats } from '../../types/entities/user.types';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 // @ts-ignore
 import { API_URL } from '@env';

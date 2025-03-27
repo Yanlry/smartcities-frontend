@@ -9,7 +9,7 @@ import {
   StyleSheet,
   TextInput
 } from 'react-native';
-import { UserFollowing } from '../ProfileSection/user.types';
+import { UserFollowing } from '../../../types/entities/user.types';
 import { Ionicons } from "@expo/vector-icons";
 
 interface FollowingModalProps {

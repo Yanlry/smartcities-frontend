@@ -17,7 +17,7 @@ import {
   TextStyle,
 } from "react-native";
 import ReportItem from "./ReportItem";
-import { Report, ReportCategory } from "./report.types";
+import { Report, ReportCategory } from "../../../types/entities/report.types";
 import { getTypeLabel, typeColors } from "../../../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../../../utils/reductOpacity";
 import { formatCity } from "../../../utils/formatters";

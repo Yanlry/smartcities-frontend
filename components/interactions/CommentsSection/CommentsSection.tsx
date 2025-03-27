@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 // @ts-ignore
 import { API_URL } from '@env';
 import { useToken } from '../../../hooks/auth/useToken';
-import { CommentsSectionProps, Comment } from './types';
+import { CommentsSectionProps, Comment } from '../../../types/entities/comment.types';
 import CommentItem from './CommentItem';
 import ReportModal from './ReportModal';
 

@@ -16,7 +16,7 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ReportCategory } from './types';
+import { ReportCategory } from '../../../types/entities/report.types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   getTypeVisuals, 

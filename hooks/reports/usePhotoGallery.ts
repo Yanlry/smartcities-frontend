@@ -1,7 +1,6 @@
 // src/hooks/reports/usePhotoGallery.ts
 
 import { useState, useCallback } from 'react';
-import { Photo } from '../../types/report.types';
 
 /**
  * Hook personnalisé pour gérer la galerie photo et son modal

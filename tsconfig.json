@@ -13,7 +13,20 @@
     "noEmit": true,
     "isolatedModules": true,
     "typeRoots": ["./node_modules/@types", "./types"],
-    "types": ["react-native-dotenv"]
+    "types": ["react-native-dotenv"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "include": ["types/**/.d.ts", "src/**/*", "./env.d.ts", "types/react-native-dotenv.d.ts"]
+  "include": [
+    "types/**/*.d.ts", 
+    "types/**/*.ts", 
+    "types/**/*.tsx", 
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "node_modules/expo/**"
+  ]
 }

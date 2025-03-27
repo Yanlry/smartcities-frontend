@@ -1,7 +1,7 @@
 import React, { useState, memo } from 'react';
 import { View, Text, TouchableOpacity, TouchableWithoutFeedback, Image, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { CommentItemProps } from './types';
+import { CommentItemProps } from '../../../types/entities/comment.types';
 import ReplyItem from './ReplyItem';
 import ReplyForm from './ReplyForm';
 import LikeButton from './LikeButton';

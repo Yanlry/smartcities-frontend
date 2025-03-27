@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { BadgeStyle } from "./user.types";
+import { BadgeStyle } from "../../../types/entities/user.types";
 import CircularProgress from "./CircularProgress";
 import { formatCityForDisplay } from "../../../utils/formatters";
 // Activer LayoutAnimation pour Android

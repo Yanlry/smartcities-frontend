@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Report } from "../../../types/report.types";
+import { Report } from "../../../types/entities/report.types";
 import { formatCity } from "../../../utils/formatters";
 import { getTypeIcon } from "../../../utils/typeIcons";
 

@@ -13,7 +13,7 @@ import {
   Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Photo } from "../../../types/report.types";
+import { Photo } from "../../../types/entities/photo.types";
 
 const { width, height } = Dimensions.get("window");
 

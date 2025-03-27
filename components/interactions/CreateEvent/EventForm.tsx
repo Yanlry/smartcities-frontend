@@ -1,8 +1,7 @@
 // components/interactions/EventCreation/EventForm.tsx
 import React, { memo } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { EventFormProps } from './types';
-
+import { EventFormProps } from '../../../types/features/events/creation.types';
 /**
  * Composant pour la saisie des informations de base de l'événement
  */

@@ -1,4 +1,3 @@
-// src/types/conversation.types.ts
 import { Animated } from 'react-native';
 
 /**

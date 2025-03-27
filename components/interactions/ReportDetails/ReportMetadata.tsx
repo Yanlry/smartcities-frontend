@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Report } from "../../../types/report.types";
+import { Report } from "../../../types/entities/report.types";
 import { formatCity, formatDate } from "../../../utils/formatters";
 import { getTypeIcon } from "../../../utils/typeIcons";
 

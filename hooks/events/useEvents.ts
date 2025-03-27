@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios, { AxiosError } from 'axios';
-import { Event, FeaturedEvent } from '../../components/home/EventsSection/event.types';
+import { Event, FeaturedEvent } from '../../types/entities/event.types';
 // Importation des fonctions de normalisation
 import { citiesMatch, normalizeCityName } from '../../utils/formatters';
 // @ts-ignore - Récupération des variables d'environnement

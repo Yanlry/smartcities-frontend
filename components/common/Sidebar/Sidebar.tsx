@@ -21,7 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../context/AuthContext';
-import { SidebarProps } from './types';
+import { SidebarProps } from '../../../types/components/common/sidebar.types';
 import SidebarItem from './SidebarItem';
 import { BlurView } from 'expo-blur'; // Si disponible, sinon utilisez une View standard
 

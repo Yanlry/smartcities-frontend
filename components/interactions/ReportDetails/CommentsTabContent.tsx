@@ -6,7 +6,7 @@ import {
   StyleSheet,
 } from "react-native";
 import CommentsSection from "../../interactions/CommentsSection/CommentsSection";
-import { Report } from "../../../types/report.types";
+import { Report } from "../../../types/entities/report.types";
 
 // Interface pour le type attendu par le composant CommentsSection
 interface CommentsSectionReport {

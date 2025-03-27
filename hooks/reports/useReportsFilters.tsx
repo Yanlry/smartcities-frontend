@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Report } from '../../components/home/ReportsSection/report.types';
+import { Report } from '../../types/entities/report.types';
 import { compareReportsByDistance } from '../../utils/formatters';
 
 /**

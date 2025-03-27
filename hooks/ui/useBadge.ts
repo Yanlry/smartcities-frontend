@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BadgeStyle } from '../../components/home/ProfileSection/user.types';
+import { BadgeStyle } from '../../types/entities/user.types';
 
 interface BadgeTier {
   name: string;

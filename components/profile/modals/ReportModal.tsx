@@ -4,7 +4,7 @@ import React, { memo, useState, useCallback } from "react";
 import { View, Text, Modal, TextInput, TouchableOpacity, Alert } from "react-native";
 import { profileStyles } from "../../../styles/profileStyles";
 
-import { ReportModalProps } from "./types";
+import { ReportModalProps } from "../../../types/features/profile/modals.types";
 
 /**
  * Composant modal pour signaler un profil utilisateur

@@ -17,7 +17,7 @@ import {
 } from '../components/interactions/CreateReport';
 
 // Import du type attendu par CategorySelection
-import { ReportCategory as ComponentReportCategory } from '../components/interactions/CreateReport/types';
+import { ReportCategory as ComponentReportCategory } from '../types/entities/report.types';
 
 /**
  * Écran de création d'un nouveau signalement
@@ -68,15 +68,30 @@ const CreateReportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   });
 
   // Adaptation des catégories globales au format attendu par le composant
-  const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
-    return globalCategories.map(category => ({
-      ...category,
-      // Assertion de type pour l'icône - utiliser avec précaution
-      // Cette assertion est valide seulement si toutes les icônes dans globalCategories
-      // sont compatibles avec les icônes attendues par le composant
-      icon: category.icon as ComponentReportCategory['icon']
-    }));
-  }, []);
+// Définir un mapping des valeurs de catégorie aux couleurs
+// Mapping optimisé des couleurs principales pour chaque type de signalement
+const typeColors: { [key: string]: string } = {
+  danger: "#E05263",     // Rouge rubis pour situations dangereuses
+  travaux: "#FFBC42",    // Jaune vif pour travaux
+  nuisance: "#9C64D6",   // Violet contemporain pour nuisances
+  pollution: "#41A894",  // Turquoise professionnel pour pollution
+  reparation: "#4A87DB", // Bleu azur pour réparations
+};
+
+// Adaptation des catégories globales au format attendu par le composant
+// Adaptation des catégories globales au format attendu par le composant
+// Adaptation des catégories globales au format attendu par le composant
+const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
+  return globalCategories.map(category => ({
+    ...category,
+    // Utilisation des couleurs réelles correspondant à chaque catégorie
+    color: typeColors[category.value] || "#8E8E93", // Fallback à un gris neutre
+    // Conversion du type d'icône
+    icon: category.icon as ComponentReportCategory['icon'],
+    // Garantie que label est défini
+    label: category.label || category.name,
+  }));
+}, [globalCategories]);
 
   // Gestion de la position actuelle
   const handleUseLocation = async () => {

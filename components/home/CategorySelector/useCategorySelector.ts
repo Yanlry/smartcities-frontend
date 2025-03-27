@@ -1,7 +1,7 @@
 // src/components/home/CategoryReportsSection/useCategorySelector.ts
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Animated, Easing } from 'react-native';
-import { UseCategorySelectorOptions, UseCategorySelectorResult } from './types';
+import { UseCategorySelectorOptions, UseCategorySelectorResult } from '../../../types/features/reports/category.types';
 
 /**
  * Hook personnalisé pour gérer l'état et les animations du sélecteur de catégories

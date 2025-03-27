@@ -81,6 +81,7 @@ export interface User {
   }
   
   export type TabType = "info" | "publications" | "signalement" | "evenement";
+
   
   export interface BadgeStyle {
     title: string;
