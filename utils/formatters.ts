@@ -1,6 +1,6 @@
 // src/utils/formatters.ts
 
-// Fonction existante conservée telle quelle
+// Fonctions existantes pour le formatage des villes
 export const formatCity = (city: string): string => {
   return city
     .replace(/, France/g, '') 
@@ -10,7 +10,6 @@ export const formatCity = (city: string): string => {
     .trim();
 };
 
-// Nouvelle fonction pour normaliser les noms de ville pour la comparaison
 export const normalizeCityName = (cityName: string): string[] => {
   if (!cityName || typeof cityName !== 'string') {
     return [];
@@ -42,12 +41,6 @@ export const normalizeCityName = (cityName: string): string[] => {
   return [...new Set(variants)].filter(v => v.length > 0);
 };
 
-/**
- * Compare deux noms de ville pour déterminer s'ils font référence à la même localité
- * @param city1 Premier nom de ville à comparer
- * @param city2 Second nom de ville à comparer
- * @returns true si les villes correspondent, false sinon
- */
 export const citiesMatch = (city1: string, city2: string): boolean => {
   if (!city1 || !city2) return false;
   
@@ -69,7 +62,6 @@ export const citiesMatch = (city1: string, city2: string): boolean => {
   return false;
 };
 
-// Fonction spécifique pour l'affichage stylisé dans RankBadge
 export const formatCityForDisplay = (city: string | null | undefined): string => {
   if (!city || city.trim() === '') {
     return "Ville non spécifiée";
@@ -103,7 +95,6 @@ export const formatCityForDisplay = (city: string | null | undefined): string =>
   return formattedWords.join('-');
 };
 
-// Fonctions existantes inchangées
 export const formatDate = (date: string | Date): string => {
   const parsedDate = new Date(date);
   return parsedDate.toLocaleDateString("fr-FR", {
@@ -137,4 +128,52 @@ export function formatDistance(distance: number | undefined): string {
 
   // Distance >= 1km : afficher en km avec 1 décimale
   return `${distance.toFixed(1)} km`;
+}
+
+/**
+ * Convertit une distance brute en valeur de priorité pour le tri
+ * Les valeurs de retour garantissent le tri dans cet ordre:
+ * 1. Position actuelle (distance = 0)
+ * 2. Très proche (distance < 0.01km / 10m)
+ * 3. Toutes les autres distances par ordre croissant
+ * 4. Distances indéfinies ou invalides (en dernier)
+ * 
+ * @param distance Distance en kilomètres
+ * @returns Valeur numérique pour le tri (plus petite = plus prioritaire)
+ */
+export function getDistanceSortValue(distance: number | undefined): number {
+  // Cas 1: Position actuelle (exactement 0)
+  if (distance === 0) {
+    return -2;
+  }
+  
+  // Cas 2: Très proche mais non nul (< 10m)
+  if (distance !== undefined && distance < 0.01) {
+    return -1;
+  }
+  
+  // Cas 3: Distance valide
+  if (distance !== undefined && isFinite(distance)) {
+    return distance;
+  }
+  
+  // Cas 4: Distance invalide ou non définie
+  return Number.MAX_VALUE;
+}
+
+/**
+ * Fonction de comparaison pour trier un tableau de signalements par distance
+ * Utilise getDistanceSortValue pour garantir l'ordre de priorité correct
+ * 
+ * @param a Premier signalement à comparer
+ * @param b Second signalement à comparer
+ * @returns Valeur négative si a est plus prioritaire, positive si b est plus prioritaire
+ */
+export function compareReportsByDistance(
+  a: { distance?: number },
+  b: { distance?: number }
+): number {
+  const valueA = getDistanceSortValue(a.distance);
+  const valueB = getDistanceSortValue(b.distance);
+  return valueA - valueB;
 }

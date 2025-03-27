@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Report } from '../../components/home/ReportsSection/report.types';
+import { compareReportsByDistance } from '../../utils/formatters';
 
 /**
  * Options de filtrage pour les signalements
@@ -12,6 +13,8 @@ interface FilterOptions {
 
 /**
  * Hook personnalisé pour gérer le filtrage et le tri des signalements
+ * avec un tri par distance optimisé et robuste
+ * 
  * @param reports Liste complète des signalements
  * @returns Signalements filtrés et méthodes de gestion des filtres
  */
@@ -20,7 +23,7 @@ export function useReportsFilters(reports: Report[]) {
   const [filters, setFilters] = useState<FilterOptions>({
     category: 'Tous',
     city: null,
-    sortOrder: 'distance', // modifié de 'date' à 'distance'
+    sortOrder: 'distance',
   });
 
   /**
@@ -37,7 +40,7 @@ export function useReportsFilters(reports: Report[]) {
     setFilters({
       category: 'Tous',
       city: null,
-      sortOrder: 'distance', // modifié de 'date' à 'distance'
+      sortOrder: 'distance',
     });
   }, []);
 
@@ -45,7 +48,6 @@ export function useReportsFilters(reports: Report[]) {
    * Calcule les signalements filtrés en fonction des filtres actifs
    */
   const filteredReports = useMemo(() => {
-
     // Clone pour éviter de modifier l'original
     let result = [...reports];
 
@@ -58,7 +60,6 @@ export function useReportsFilters(reports: Report[]) {
 
     // 2. Filtrer par ville si une ville est sélectionnée
     if (filters.city !== null) {
-      
       // Vérifier si la ville existe et qu'elle est non nulle
       result = result.filter(report => {
         // Si la ville sélectionnée est 'utilisateur', on ne filtre pas
@@ -70,7 +71,6 @@ export function useReportsFilters(reports: Report[]) {
         const filterCity = filters.city || '';
         
         // Extraction du nom de la ville à partir de l'adresse complète
-        // Format français typique: "Rue X, 59320 Haubourdin, France"
         let reportCity = '';
         
         // Méthode 1: Chercher le format "code postal Ville"
@@ -100,26 +100,21 @@ export function useReportsFilters(reports: Report[]) {
         }
         
         // Comparaison exacte des noms de ville (insensible à la casse)
-        const match = reportCity.toLowerCase() === filterCity.toLowerCase();
-        
-        return match;
+        return reportCity.toLowerCase() === filterCity.toLowerCase();
       });
     }
 
     // 3. Trier selon le mode de tri sélectionné
     if (filters.sortOrder === 'distance') {
-      result.sort((a, b) => {
-        const distanceA = a.distance || Number.MAX_VALUE;
-        const distanceB = b.distance || Number.MAX_VALUE;
-        return distanceA - distanceB; // Tri croissant (plus proche au plus loin)
-      });
+      // Utilisation de la fonction de comparaison optimisée
+      result.sort(compareReportsByDistance);
     } 
     // Tri par date (plus récent en premier)
     else {
       result.sort((a, b) => {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA; // Toujours du plus récent au plus ancien
+        return dateB - dateA; // Du plus récent au plus ancien
       });
     }
 
@@ -131,7 +126,7 @@ export function useReportsFilters(reports: Report[]) {
     let count = 0;
     if (filters.category !== 'Tous') count++;
     if (filters.city !== null) count++;
-    // Ne considérer le tri que comme filtre actif si "Plus récent" est sélectionné (et pas le tri par défaut "Plus proche")
+    // Ne considérer le tri que comme filtre actif si "Plus récent" est sélectionné
     if (filters.sortOrder !== 'distance') count++;
     return count;
   }, [filters.category, filters.city, filters.sortOrder]);

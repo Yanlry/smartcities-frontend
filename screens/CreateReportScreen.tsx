@@ -1,12 +1,12 @@
-// Chemin : screens/CreateReportScreen.tsx
+// src/screens/CreateReportScreen.tsx
+
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Platform, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { categories } from '../utils/reportHelpers';
+import { categories as globalCategories } from '../utils/reportHelpers';
 import { useLocation } from '../hooks/location/useLocation';
 import { useReportForm } from '../hooks/reports/useReportForm';
 import { useReportLocation } from '../hooks/reports/useReportLocation';
-import { CURRENT_LOCATION_LABEL } from '../components/interactions/CreateReport/LocationSelectionStep';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CategorySelection,
@@ -15,6 +15,9 @@ import {
   ProgressModal,
   StepNavigation,
 } from '../components/interactions/CreateReport';
+
+// Import du type attendu par CategorySelection
+import { ReportCategory as ComponentReportCategory } from '../components/interactions/CreateReport/types';
 
 /**
  * Écran de création d'un nouveau signalement
@@ -63,6 +66,17 @@ const CreateReportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     updateCoordinates(coords.latitude, coords.longitude);
     setAddress(address);
   });
+
+  // Adaptation des catégories globales au format attendu par le composant
+  const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
+    return globalCategories.map(category => ({
+      ...category,
+      // Assertion de type pour l'icône - utiliser avec précaution
+      // Cette assertion est valide seulement si toutes les icônes dans globalCategories
+      // sont compatibles avec les icônes attendues par le composant
+      icon: category.icon as ComponentReportCategory['icon']
+    }));
+  }, []);
 
   // Gestion de la position actuelle
   const handleUseLocation = async () => {
@@ -138,7 +152,7 @@ const CreateReportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       case 1:
         return (
           <CategorySelection
-            categories={categories}
+            categories={adaptedCategories}
             selectedCategory={formData.category}
             onCategorySelect={setCategory}
             onBack={() => navigation.goBack()}

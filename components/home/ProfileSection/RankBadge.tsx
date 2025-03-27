@@ -586,7 +586,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   cardContainer: {
-    borderRadius: 16,
+    padding: 5,
+    borderRadius: 56,
     overflow: "hidden",
   },
   gradientBackground: {
