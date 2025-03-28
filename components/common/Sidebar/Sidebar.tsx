@@ -4,24 +4,21 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Platform,
-  StatusBar,
   ScrollView,
   Easing,
   Image,
   Pressable,
   useWindowDimensions,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../context/AuthContext';
 import { SidebarProps } from '../../../types/components/common/sidebar.types';
 import SidebarItem from './SidebarItem';
-// Import du hook depuis le contexte global au lieu des props
 import { useUserProfile } from "../../../context/UserProfileContext";
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -34,7 +31,8 @@ import {
   FollowingModal,
 } from "../../../components/home/modals";
 
-// Système de design pour réseau social moderne
+// Theme system with colors, spacing, etc.
+// Theme system with colors, spacing, etc.
 const THEME = {
   colors: {
     primary: {
@@ -116,57 +114,40 @@ const THEME = {
   },
 };
 
-// Helper pour les ombres multi-plateforme
-const getShadow = (elevation = 4) => {
-  return Platform.select({
-    ios: {
-      shadowColor: THEME.colors.neutral.darkest,
-      shadowOffset: { width: 0, height: elevation / 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: elevation * 0.75,
-    },
-    android: {
-      elevation,
-    },
-    default: {
-      shadowColor: THEME.colors.neutral.darkest,
-      shadowOffset: { width: 0, height: elevation / 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: elevation * 0.75,
-      elevation,
-    }
-  });
-};
 
 /**
- * Sidebar moderne pour réseau social
- * Design immersif avec une gestion optimisée des animations
+ * Modern sidebar component for social network
+ * Immersive design with optimized animation management
  */
-const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSummary }) => {
-  // Utilisation du contexte global pour obtenir les données utilisateur
+const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
+  // Use global context to get user data INCLUDING voteSummary
   const { 
     user, 
     displayName, 
+    voteSummary: contextVoteSummary,
     updateProfileImage, 
     updateUserDisplayPreference,
     refreshUserData 
   } = useUserProfile();
 
-  // IMPORTANT: Rafraîchir les données quand la sidebar s'ouvre
+  // IMPORTANT: Refresh user data when sidebar opens
   useEffect(() => {
     if (isOpen) {
       refreshUserData();
     }
   }, [isOpen, refreshUserData]);
 
-  // Ajout des états locaux pour les modaux
+  // Local states for modals
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showLikeInfoModal, setShowLikeInfoModal] = useState(false);
 
-  // Ajout d'une valeur par défaut pour voteSummary
-  const safeVoteSummary = voteSummary || { up: 0, down: 0 };
+  // Ensure we have valid numbers for voteSummary
+  const safeVoteSummary = {
+    up: typeof contextVoteSummary?.up === 'number' ? contextVoteSummary.up : 0,
+    down: typeof contextVoteSummary?.down === 'number' ? contextVoteSummary.down : 0
+  };
 
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -175,14 +156,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
   const { handleLogout } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   
-  // Animations avec valeurs initiales
+  // Animations with initial values
   const sidebarTranslateX = useRef(new Animated.Value(-width)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const avatarScale = useRef(new Animated.Value(0.8)).current;
   const nameOpacity = useRef(new Animated.Value(0)).current;
   const statOpacity = useRef(new Animated.Value(0)).current;
   
-  // Animation pour les éléments de menu - tableau d'animations
+  // Animation for menu items - array of animations
   const mainItemsAnimations = useRef(
     Array(6).fill(0).map(() => new Animated.Value(-50))
   ).current;
@@ -196,15 +177,15 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
     translateY: new Animated.Value(20)
   }).current;
   
-  // Gestion de toutes les animations d'entrée/sortie
+  // Managing all entrance/exit animations
   useEffect(() => {
     if (isOpen) {
-      // Reset position du scroll
+      // Reset scroll position
       if (scrollViewRef.current) {
         scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
       }
       
-      // Animation de l'entrée du sidebar avec timing optimisé
+      // Sidebar entry animation with optimized timing
       Animated.timing(sidebarTranslateX, {
         toValue: 0,
         duration: THEME.animation.duration.normal,
@@ -212,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         useNativeDriver: true,
       }).start();
       
-      // Overlay avec légère décélération
+      // Overlay with slight deceleration
       Animated.timing(overlayOpacity, {
         toValue: 1,
         duration: THEME.animation.duration.fast,
@@ -220,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         useNativeDriver: true,
       }).start();
       
-      // Animation de l'avatar avec effet de scale spring
+      // Avatar animation with spring scale effect
       Animated.timing(avatarScale, {
         toValue: 1,
         duration: THEME.animation.duration.slow,
@@ -228,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         useNativeDriver: true,
       }).start();
       
-      // Animation d'opacité pour les informations utilisateur
+      // User information opacity animation
       Animated.sequence([
         Animated.delay(150),
         Animated.timing(nameOpacity, {
@@ -238,7 +219,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         }),
       ]).start();
       
-      // Animation des statistiques utilisateur
+      // User statistics animation
       Animated.sequence([
         Animated.delay(250),
         Animated.timing(statOpacity, {
@@ -248,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         }),
       ]).start();
       
-      // Animation séquentielle des éléments de menu principal
+      // Sequential animation of main menu items
       mainItemsAnimations.forEach((anim, index) => {
         Animated.sequence([
           Animated.delay(350 + (index * 50)),
@@ -261,7 +242,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         ]).start();
       });
       
-      // Animation séquentielle des éléments de menu secondaire
+      // Sequential animation of secondary menu items
       secondaryItemsAnimations.forEach((anim, index) => {
         Animated.sequence([
           Animated.delay(700 + (index * 50)),
@@ -274,7 +255,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         ]).start();
       });
       
-      // Animation du bouton de déconnexion
+      // Logout button animation
       Animated.sequence([
         Animated.delay(900),
         Animated.parallel([
@@ -293,7 +274,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
       ]).start();
       
     } else {
-      // Animation de fermeture - plus rapide que l'ouverture
+      // Closing animation - faster than opening
       Animated.timing(sidebarTranslateX, {
         toValue: -width,
         duration: THEME.animation.duration.fast,
@@ -308,7 +289,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         useNativeDriver: true,
       }).start();
       
-      // Réinitialisation des animations d'items
+      // Reset item animations
       avatarScale.setValue(0.8);
       nameOpacity.setValue(0);
       statOpacity.setValue(0);
@@ -326,13 +307,13 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
     }
   }, [isOpen, width]);
 
-  // Navigation avec mémorisation
+  // Navigation with memoization
   const handleNavigation = useCallback((screen: string) => {
     navigation.navigate(screen as never);
     toggleSidebar();
   }, [navigation, toggleSidebar]);
 
-  // Gestion de la déconnexion
+  // Logout handling
   const handleLogoutWithSidebarClose = useCallback(() => {
     toggleSidebar();
     setTimeout(() => {
@@ -340,7 +321,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
     }, THEME.animation.duration.normal);
   }, [toggleSidebar, handleLogout]);
 
-  // Définition des éléments de menu avec icônes adaptées à un réseau social
+  // Menu item definitions with icons adapted for a social network
   const mainMenuItems = [
     {
       icon: <FontAwesome5 name="home" size={18} color={THEME.colors.neutral.white} />,
@@ -408,7 +389,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
     [navigation]
   );
 
-  // Préférence d'affichage du nom d'utilisateur
+  // User display preference
   const handleOptionChange = useCallback(
     async (option: "fullName" | "username") => {
       setShowNameModal(false);
@@ -419,7 +400,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
 
   return (
     <>
-      {/* Overlay animé avec effet de flou */}
+      {/* Animated overlay with blur effect */}
       {isOpen && (
         <Animated.View 
           style={[
@@ -438,7 +419,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         </Animated.View>
       )}
 
-      {/* Sidebar principal avec animation de translation */}
+      {/* Main sidebar with translation animation */}
       <Animated.View
         style={[
           styles.sidebar,
@@ -449,18 +430,18 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
           },
         ]}
       >
-        {/* Arrière-plan avec dégradé */}
+        {/* Background gradient */}
         <LinearGradient
           colors={['#062C41', '#062C41', '#0F3460']}
           style={styles.sidebarBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          {/* Conteneur principal */}
+          {/* Main container */}
           <View style={styles.contentContainer}>
-            {/* En-tête avec avatar et statistiques utilisateur */}
+            {/* Header with avatar and user stats */}
             <View style={styles.userProfileSection}>
-              {/* Bouton de fermeture en haut à droite */}
+              {/* Close button in the top right */}
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={toggleSidebar}
@@ -471,7 +452,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
                 </View>
               </TouchableOpacity>
               
-              {/* Avatar animé */}
+              {/* Animated avatar */}
               <Animated.View style={[
                 styles.avatarContainer, 
                 { transform: [{ scale: avatarScale }] }
@@ -490,18 +471,18 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
                       />
                     ) : (
                       <View style={styles.avatarImage}>
-                        {/* Vous pouvez ajouter ici une icône ou un style par défaut */}
+                        {/* Default avatar icon or style */}
                       </View>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
-                {/* Bouton réglages pour contrôler la visibilité du nom */}
+                {/* Settings button to control name visibility */}
                 <TouchableOpacity style={styles.iconButton} onPress={() => setShowNameModal(true)} activeOpacity={0.8}>
                   <Ionicons name="settings-outline" size={14} color="#FFF" />
                 </TouchableOpacity>
               </Animated.View>
               
-              {/* Nom et ville */}
+              {/* Name and city */}
               <Animated.View style={{ opacity: nameOpacity }}>
                 <Text style={styles.userName} numberOfLines={1}>{displayName}</Text>
                 <Text style={styles.userHandle} onPress={() => navigation.navigate("ProfileScreen", { userId: user?.id || "" })}>
@@ -509,7 +490,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
                 </Text>
               </Animated.View>
               
-              {/* Statistiques : Abonnés, Abonnements et Publications */}
+              {/* Statistics: Followers, Following and Posts */}
               <Animated.View style={[styles.statsContainer, { opacity: statOpacity }]}>
                 <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
                   <Text style={styles.statValue}>{user?.followers?.length || 0}</Text>
@@ -527,23 +508,35 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
                 </View>
               </Animated.View>
               
-              {/* Barre de feedback à la place de la progression du profil */}
+              {/* Feedback bar instead of profile progress */}
               <Animated.View style={{ opacity: statOpacity }}>
                 {(() => {
+                  // Sécurisation des calculs pour éviter des valeurs NaN
                   const totalFeedback = safeVoteSummary.up + safeVoteSummary.down;
-                  const positiveFlex = totalFeedback === 0 ? 0.5 : safeVoteSummary.up;
-                  const negativeFlex = totalFeedback === 0 ? 0.5 : safeVoteSummary.down;
-                  const voteRatio = totalFeedback === 0 ? 50 : Math.round((safeVoteSummary.up / totalFeedback) * 100);
-                  const negativeRatio = totalFeedback === 0 ? 50 : 100 - voteRatio;
-                  const ratingColor = totalFeedback === 0 
-                    ? "#4CAF50" 
+                  const hasData = totalFeedback > 0;
+                  
+                  // Par défaut à 50/50 s'il n'y a aucun vote
+                  const voteRatio = !hasData 
+                    ? 50 
+                    : Math.round((safeVoteSummary.up / totalFeedback) * 100);
+                  
+                  const negativeRatio = 100 - voteRatio;
+                  
+                  // Valeurs flex pour la barre de progression
+                  const positiveFlex = !hasData ? 1 : Math.max(0.1, safeVoteSummary.up);
+                  const negativeFlex = !hasData ? 1 : Math.max(0.1, safeVoteSummary.down);
+                  
+                  // Couleur basée sur le ratio
+                  const ratingColor = !hasData
+                    ? "#8BC34A"  // Vert par défaut
                     : voteRatio >= 85 
-                      ? "#4CAF50" 
+                      ? "#4CAF50" // Très positif
                       : voteRatio >= 60 
-                        ? "#8BC34A" 
+                        ? "#8BC34A" // Positif
                         : voteRatio >= 50 
-                          ? "#FF9800" 
-                          : "#4CAF50";
+                          ? "#FF9800" // Neutre
+                          : "#F44336"; // Négatif
+                  
                   return (
                     <View>
                       <View style={styles.ratingLabelsContainer}>
@@ -564,14 +557,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
               </Animated.View>
             </View>
             
-            {/* Zone de scroll pour le menu */}
+            {/* Scroll area for menu */}
             <ScrollView
               ref={scrollViewRef}
               showsVerticalScrollIndicator={false}
               style={styles.menuScrollView}
               contentContainerStyle={styles.menuScrollContent}
             >
-              {/* Menu principal */}
+              {/* Main menu */}
               <Text style={styles.menuSectionTitle}>MENU</Text>
               {mainMenuItems.map((item, index) => (
                 <Animated.View 
@@ -593,7 +586,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
                 </Animated.View>
               ))}
               
-              {/* Menu secondaire */}
+              {/* Secondary menu */}
               <Text style={[styles.menuSectionTitle, styles.secondaryTitle]}>PARAMÈTRES</Text>
               {secondaryMenuItems.map((item, index) => (
                 <Animated.View 
@@ -616,7 +609,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
                 </Animated.View>
               ))}
               
-              {/* Numéro de version avec badge moderne */}
+              {/* Version number with modern badge */}
               <View style={styles.versionContainer}>
                 <LinearGradient
                   colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
@@ -630,7 +623,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
             </ScrollView>
           </View>
           
-          {/* Footer avec bouton de déconnexion */}
+          {/* Footer with logout button */}
           <Animated.View style={[
             styles.footerContainer,
             {
@@ -657,7 +650,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
         </LinearGradient>
       </Animated.View>
 
-      {/* Rendu conditionnel des modaux */}
+      {/* Conditional modal rendering */}
       <NameModal 
          visible={showNameModal} 
          onClose={() => setShowNameModal(false)} 
@@ -665,7 +658,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
          onOptionChange={handleOptionChange}
       />
       <BadgeModal 
-         visible={false}  // Exemple, à lever si nécessaire
+         visible={false}  // Example, to be raised if needed
          onClose={() => {}}
          userVotes={0}
       />
@@ -689,6 +682,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSumma
   );
 });
 
+
 /**
  * Styles optimisés pour interface de réseau social moderne
  * Design avec hiérarchie visuelle claire et esthétique contemporaine
@@ -706,7 +700,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderTopRightRadius: 30,
     borderBottomRightRadius: 30,
-    ...getShadow(15),
+
   },
   sidebarBackground: {
     flex: 1,
@@ -902,7 +896,6 @@ const styles = StyleSheet.create({
   logoutButton: {
     borderRadius: THEME.borderRadius.lg,
     overflow: 'hidden',
-    ...getShadow(6),
   },
   logoutButtonGradient: {
     flexDirection: 'row',

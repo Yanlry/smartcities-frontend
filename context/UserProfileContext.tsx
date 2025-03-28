@@ -34,6 +34,22 @@ interface VoteSummary {
   down: number;
 }
 
+// Interface for user stats
+interface UserStats {
+  numberOfReports: number;
+  trustRate: number;
+  numberOfVotes: number;
+  numberOfComments: number;
+  numberOfEventsCreated: number;
+  numberOfPosts: number;
+  numberOfEventsAttended: number;
+  votes: {
+    type: 'up' | 'down';
+    reportId: number;
+    createdAt: string;
+  }[];
+}
+
 interface UserProfileContextType {
   user: User | null;
   displayName: string;
@@ -90,6 +106,23 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
+  // Transform votes array to voteSummary format
+  const transformVotes = (votes: UserStats['votes']): VoteSummary => {
+    const summary = { up: 0, down: 0 };
+    
+    if (!votes || !Array.isArray(votes)) {
+      return summary;
+    }
+    
+    // Count up and down votes
+    votes.forEach(vote => {
+      if (vote.type === 'up') summary.up += 1;
+      if (vote.type === 'down') summary.down += 1;
+    });
+    
+    return summary;
+  };
+
   // Function to refresh user data
   const refreshUserData = useCallback(async () => {
     try {
@@ -105,17 +138,29 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const response = await axios.get(`${API_URL}/users/${userId}`);
       setUser(response.data);
 
-      // Fetch vote summary
+      // Fetch user stats which includes votes
       try {
-        const voteResponse = await axios.get(`${API_URL}/users/votes/${userId}`);
-        setVoteSummary(voteResponse.data);
-      } catch (voteError: any) {
-        if (voteError.response && voteError.response.status === 404) {
-          // 没 de résumé, initialiser par défaut
+        console.log(`Fetching user stats from ${API_URL}/users/stats/${userId}`);
+        const statsResponse = await axios.get<UserStats>(`${API_URL}/users/stats/${userId}`);
+        
+        if (statsResponse.data && statsResponse.data.votes) {
+          // Transform votes to summary format
+          const summary = transformVotes(statsResponse.data.votes);
+          console.log('Transformed vote summary:', summary);
+          setVoteSummary(summary);
+        } else {
+          console.log('No votes data in stats response, using defaults');
+          setVoteSummary({ up: 0, down: 0 });
+        }
+      } catch (statsError: any) {
+        console.error('Error fetching user stats:', statsError);
+        
+        if (statsError.response && statsError.response.status === 404) {
+          console.log('Stats endpoint not found, using default votes');
           setVoteSummary({ up: 0, down: 0 });
         } else {
-          console.error('Error fetching vote summary:', voteError);
-          setVoteSummary({ up: 0, down: 0 });
+          // Keep existing vote summary in case of other errors
+          console.error('Unexpected error fetching stats:', statsError);
         }
       }
 
