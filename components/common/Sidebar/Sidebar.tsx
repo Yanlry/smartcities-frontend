@@ -1,5 +1,3 @@
-// Chemin : components/Sidebar/Sidebar.tsx
-
 import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import {
   Animated,
@@ -23,7 +21,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../context/AuthContext';
 import { SidebarProps } from '../../../types/components/common/sidebar.types';
 import SidebarItem from './SidebarItem';
-import { BlurView } from 'expo-blur'; // Si disponible, sinon utilisez une View standard
+// Import du hook depuis le contexte global au lieu des props
+import { useUserProfile } from "../../../context/UserProfileContext";
+
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../types/navigation/routes.types';
+import {
+  NameModal,
+  BadgeModal,
+  LikeInfoModal,
+  FollowersModal,
+  FollowingModal,
+} from "../../../components/home/modals";
 
 // Système de design pour réseau social moderne
 const THEME = {
@@ -133,10 +142,36 @@ const getShadow = (elevation = 4) => {
  * Sidebar moderne pour réseau social
  * Design immersif avec une gestion optimisée des animations
  */
-const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
+const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar, voteSummary }) => {
+  // Utilisation du contexte global pour obtenir les données utilisateur
+  const { 
+    user, 
+    displayName, 
+    updateProfileImage, 
+    updateUserDisplayPreference,
+    refreshUserData 
+  } = useUserProfile();
+
+  // IMPORTANT: Rafraîchir les données quand la sidebar s'ouvre
+  useEffect(() => {
+    if (isOpen) {
+      refreshUserData();
+    }
+  }, [isOpen, refreshUserData]);
+
+  // Ajout des états locaux pour les modaux
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [showLikeInfoModal, setShowLikeInfoModal] = useState(false);
+
+  // Ajout d'une valeur par défaut pour voteSummary
+  const safeVoteSummary = voteSummary || { up: 0, down: 0 };
+
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { handleLogout } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   
@@ -160,14 +195,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     opacity: new Animated.Value(0),
     translateY: new Animated.Value(20)
   }).current;
-  
-  // Simulation des statistiques utilisateur pour réseau social
-  const userStats = {
-    followers: "4,285",
-    following: "1,367",
-    posts: "297",
-    profileProgress: 85,
-  };
   
   // Gestion de toutes les animations d'entrée/sortie
   useEffect(() => {
@@ -370,6 +397,26 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     }
   ];
 
+  const handleFollowingUserPress = useCallback(
+    (id: string) => {
+      setShowFollowingModal(false);
+      setShowFollowersModal(false);
+      setTimeout(() => {
+        navigation.navigate("UserProfileScreen", { userId: id });
+      }, 300);
+    },
+    [navigation]
+  );
+
+  // Préférence d'affichage du nom d'utilisateur
+  const handleOptionChange = useCallback(
+    async (option: "fullName" | "username") => {
+      setShowNameModal(false);
+      await updateUserDisplayPreference(option === "fullName");
+    },
+    [updateUserDisplayPreference]
+  );
+
   return (
     <>
       {/* Overlay animé avec effet de flou */}
@@ -429,54 +476,91 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                 styles.avatarContainer, 
                 { transform: [{ scale: avatarScale }] }
               ]}>
-                <LinearGradient
-                  colors={THEME.colors.primary.gradient}
-                  style={styles.avatarGradientBorder}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Image 
-                    source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }} 
-                    style={styles.avatarImage}
-                  />
-                </LinearGradient>
-                
-                {/* Badge de statut en ligne */}
-                <View style={styles.onlineStatusBadge}>
-                  <View style={styles.onlineStatusIndicator} />
-                </View>
+                <TouchableOpacity onPress={() => updateProfileImage("")}>
+                  <LinearGradient
+                    colors={THEME.colors.primary.gradient}
+                    style={styles.avatarGradientBorder}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    {user?.profilePhoto?.url ? (
+                      <Image 
+                        source={{ uri: user.profilePhoto.url }}
+                        style={styles.avatarImage}
+                      />
+                    ) : (
+                      <View style={styles.avatarImage}>
+                        {/* Vous pouvez ajouter ici une icône ou un style par défaut */}
+                      </View>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+                {/* Bouton réglages pour contrôler la visibilité du nom */}
+                <TouchableOpacity style={styles.iconButton} onPress={() => setShowNameModal(true)} activeOpacity={0.8}>
+                  <Ionicons name="settings-outline" size={14} color="#FFF" />
+                </TouchableOpacity>
               </Animated.View>
               
-              {/* Nom d'utilisateur avec animation d'opacité */}
+              {/* Nom et ville */}
               <Animated.View style={{ opacity: nameOpacity }}>
-                <Text style={styles.userName}>Claire Duvergé</Text>
-                <Text style={styles.userHandle}>@clairduv</Text>
+                <Text style={styles.userName} numberOfLines={1}>{displayName}</Text>
+                <Text style={styles.userHandle} onPress={() => navigation.navigate("ProfileScreen", { userId: user?.id || "" })}>
+                  {user?.nomCommune || "Ville inconnue"}
+                </Text>
               </Animated.View>
               
-              {/* Statistiques de profil avec animation */}
+              {/* Statistiques : Abonnés, Abonnements et Publications */}
               <Animated.View style={[styles.statsContainer, { opacity: statOpacity }]}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{userStats.followers}</Text>
+                <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
+                  <Text style={styles.statValue}>{user?.followers?.length || 0}</Text>
                   <Text style={styles.statLabel}>Abonnés</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{userStats.following}</Text>
+                <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
+                  <Text style={styles.statValue}>{user?.following?.length || 0}</Text>
                   <Text style={styles.statLabel}>Abonnements</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{userStats.posts}</Text>
+                  <Text style={styles.statValue}>297</Text>
                   <Text style={styles.statLabel}>Publications</Text>
                 </View>
               </Animated.View>
               
-              {/* Barre de progression du profil */}
-              <Animated.View style={[styles.progressContainer, { opacity: statOpacity }]}>
-                <Text style={styles.progressText}>Profil complété à {userStats.profileProgress}%</Text>
-                <View style={styles.progressBarBackground}>
-                  <View style={[styles.progressBarFill, { width: `${userStats.profileProgress}%` }]} />
-                </View>
+              {/* Barre de feedback à la place de la progression du profil */}
+              <Animated.View style={{ opacity: statOpacity }}>
+                {(() => {
+                  const totalFeedback = safeVoteSummary.up + safeVoteSummary.down;
+                  const positiveFlex = totalFeedback === 0 ? 0.5 : safeVoteSummary.up;
+                  const negativeFlex = totalFeedback === 0 ? 0.5 : safeVoteSummary.down;
+                  const voteRatio = totalFeedback === 0 ? 50 : Math.round((safeVoteSummary.up / totalFeedback) * 100);
+                  const negativeRatio = totalFeedback === 0 ? 50 : 100 - voteRatio;
+                  const ratingColor = totalFeedback === 0 
+                    ? "#4CAF50" 
+                    : voteRatio >= 85 
+                      ? "#4CAF50" 
+                      : voteRatio >= 60 
+                        ? "#8BC34A" 
+                        : voteRatio >= 50 
+                          ? "#FF9800" 
+                          : "#4CAF50";
+                  return (
+                    <View>
+                      <View style={styles.ratingLabelsContainer}>
+                        <Text style={styles.ratingPercentage}>{voteRatio}% positif</Text>
+                        <Text style={styles.voteCount}>({safeVoteSummary.up} votes)</Text>
+                      </View>
+                      <View style={styles.progressBarMini}>
+                        <View style={[styles.positiveProgressMini, { flex: positiveFlex, backgroundColor: ratingColor }]} />
+                        <View style={[styles.negativeProgressMini, { flex: negativeFlex }]} />
+                      </View>
+                      <View style={styles.ratingLabelsContainer}>
+                        <Text style={styles.ratingPercentage}>{negativeRatio}% négatif</Text>
+                        <Text style={styles.voteCount}>({safeVoteSummary.down} votes)</Text>
+                      </View>
+                    </View>
+                  );
+                })()}
               </Animated.View>
             </View>
             
@@ -572,6 +656,35 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           </Animated.View>
         </LinearGradient>
       </Animated.View>
+
+      {/* Rendu conditionnel des modaux */}
+      <NameModal 
+         visible={showNameModal} 
+         onClose={() => setShowNameModal(false)} 
+         useFullName={user?.useFullName || false}
+         onOptionChange={handleOptionChange}
+      />
+      <BadgeModal 
+         visible={false}  // Exemple, à lever si nécessaire
+         onClose={() => {}}
+         userVotes={0}
+      />
+      <LikeInfoModal 
+         visible={showLikeInfoModal} 
+         onClose={() => setShowLikeInfoModal(false)}
+      />
+      <FollowersModal 
+         visible={showFollowersModal} 
+         onClose={() => setShowFollowersModal(false)}
+         followers={user?.followers || []}
+         onUserPress={handleFollowingUserPress}
+      />
+      <FollowingModal 
+         visible={showFollowingModal} 
+         onClose={() => setShowFollowingModal(false)}
+         following={user?.following || []}
+         onUserPress={handleFollowingUserPress}
+      />
     </>
   );
 });
@@ -806,6 +919,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  ratingLabelsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  ratingPercentage: {
+    color: THEME.colors.neutral.light,
+    fontSize: 12,
+  },
+  voteCount: {
+    color: THEME.colors.neutral.light,
+    fontSize: 12,
+  },
+  progressBarMini: {
+    flexDirection: 'row',
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  positiveProgressMini: {
+    height: '100%',
+  },
+  negativeProgressMini: {
+    height: '100%',
+    backgroundColor: '#F44336',
+  },
+  iconButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default Sidebar;
+

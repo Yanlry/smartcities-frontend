@@ -7,8 +7,8 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<TabParamList>;
   Login: undefined;
   Register: undefined;
-  ProfileScreen: undefined;
   UserProfileScreen: { userId: string };
+  ProfileScreen: { userId: string };
   ReportDetailsScreen: { reportId: number };
   CategoryReportsScreen: { category: string; city?: string }; 
   EventDetailsScreen: { eventId: string };
@@ -19,6 +19,7 @@ export type RootStackParamList = {
   ConversationsScreen: undefined; 
   CityScreen: undefined; 
   PostDetailsScreen: { postId: number };
+
 };
 
 /**

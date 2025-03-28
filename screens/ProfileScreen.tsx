@@ -28,6 +28,7 @@ import { useNotification } from "../context/NotificationContext";
 import franceCitiesRaw from "../assets/france.json";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useUserProfile } from "../context/UserProfileContext"; // Ajoutez cette ligne
 
 const franceCities: City[] = franceCitiesRaw as City[];
 const { width } = Dimensions.get('window');
@@ -68,15 +69,9 @@ interface HandleInputChange {
   (field: keyof FormData, value: string): void;
 }
 
-type User = {
-  id: string;
-  createdAt: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  showEmail: boolean;
-  username?: string;
-  trustRate?: number;
+import { User as ImportedUser } from "../types/entities/user.types";
+
+type User = ImportedUser & {
   followers?: any[];
   following?: any[];
   reports?: any[];
@@ -84,13 +79,6 @@ type User = {
   posts?: any[];
   organizedEvents?: any[];
   attendedEvents?: any[];
-  nomCommune?: string;
-  codePostal?: string;
-  latitude?: number;
-  longitude?: number;
-  profilePhoto?: { url: string };
-  isSubscribed: boolean;
-  isMunicipality: boolean;
 };
 
 export default function ProfileScreen({ navigation }) {
@@ -98,15 +86,7 @@ export default function ProfileScreen({ navigation }) {
 
   // Désactivation du fade: initialisation avec 1
   const fadeAnim = useState(new Animated.Value(1))[0];
-  
-  // Supprimez ou commentez l’animation de fade-in
-  // useEffect(() => {
-  //   Animated.timing(fadeAnim, {
-  //     toValue: 1,
-  //     duration: 800,
-  //     useNativeDriver: true,
-  //   }).start();
-  // }, [fadeAnim]);
+
 
   // Ajout d’un listener pour réinitialiser la Sidebar lors du blur du screen
   useEffect(() => {
@@ -144,6 +124,9 @@ export default function ProfileScreen({ navigation }) {
     "followers" | "following" | null
   >(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  // Importez les fonctions du context
+  const { updateUserCity, refreshUserData } = useUserProfile();
 
   useEffect(() => {
     navigation.setOptions({
@@ -405,48 +388,32 @@ export default function ProfileScreen({ navigation }) {
     return normalized;
   };
 
-const handleSaveCity = async () => {
-  if (!selectedCity) {
-    Alert.alert(
-      "Erreur",
-      "Veuillez sélectionner une ville avant d'enregistrer."
-    );
-    return;
-  }
-
-  try {
-    // Normaliser le nom de la commune avant l'enregistrement
-    const normalizedCommuneName = normalizeCommune(selectedCity.Nom_commune);
-    
-    console.log(`Normalisation: "${selectedCity.Nom_commune}" → "${normalizedCommuneName}"`);
-
-    const response = await axios.put(`${API_URL}/users/${user?.id}`, {
-      nomCommune: normalizedCommuneName, // Utiliser le nom normalisé
-      codePostal: selectedCity.Code_postal,
-    });
-
-    if (response.status === 200) {
-      Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
-      setUser((prev: any) => ({
-        ...prev,
-        nomCommune: normalizedCommuneName, // Mettre à jour l'état local avec le nom normalisé
-        codePostal: selectedCity.Code_postal,
-      }));
-      
-      // Si vous utilisez une navigation avec params, mettre à jour la navigation
-      if (navigation && navigation.setParams) {
-        navigation.setParams({ updatedCity: normalizedCommuneName });
-      }
-      
-      setIsEditingCity(false);
-    } else {
-      throw new Error("Erreur serveur");
+  const handleSaveCity = async () => {
+    if (!selectedCity) {
+      Alert.alert("Erreur", "Veuillez sélectionner une ville avant d'enregistrer.");
+      return;
     }
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour :", error);
-    Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
-  }
-};
+  
+    try {
+      // Normaliser le nom de la commune
+      const normalizedCommuneName = normalizeCommune(selectedCity.Nom_commune);
+      console.log(`Normalisation: "${selectedCity.Nom_commune}" → "${normalizedCommuneName}"`);
+      
+      // Utilisez la fonction du context pour mettre à jour la ville
+      await updateUserCity(normalizedCommuneName, selectedCity.Code_postal);
+      
+      // Optionnel : rafraîchir les données pour s'assurer que le profil est à jour
+      await refreshUserData();
+      
+      Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
+      
+      // Recharger la page ProfileScreen pour actualiser le champ localisation
+      navigation.replace("ProfileScreen");
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour :", error);
+      Alert.alert("Erreur", "Impossible de mettre à jour la ville.");
+    }
+  };
 
   const handleShowList = (listType: "followers" | "following") => {
     setSelectedList((prev) => (prev === listType ? null : listType));
@@ -633,9 +600,74 @@ const handleSaveCity = async () => {
               </View>
             </View>
           </View>
+          
 
           {/* Cartes d'information */}
           <View style={styles.cardsContainer}>
+            
+              {/* Localisation */}
+              <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Icon name="location-on" size={22} color={COLORS.secondary.base} />
+                <Text style={styles.cardTitle}>Localisation</Text>
+                <TouchableOpacity
+                  style={styles.editIconButton}
+                  onPress={() => setIsEditingCity(true)}
+                >
+                  <Icon name="edit" size={20} color={COLORS.secondary.base} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.cardContent}>
+                <View style={styles.locationDisplay}>
+                  <Icon name="place" size={32} color={COLORS.secondary.base} />
+                  <View style={styles.locationInfo}>
+                    <Text style={styles.locationCity}>
+                      {user?.nomCommune || "Aucune ville définie"}
+                    </Text>
+                    <Text style={styles.locationPostal}>
+                      {user?.codePostal || ""}
+                    </Text>
+                  </View>
+                </View>
+
+                {isEditingCity && (
+                  <View style={styles.cityEditContainer}>
+                    <View style={styles.searchBar}>
+                      <TextInput
+                        style={styles.searchInput}
+                        placeholder="Rechercher par ville ou code postal"
+                        placeholderTextColor={COLORS.neutral[400]}
+                        value={query}
+                        onChangeText={setQuery}
+                      />
+                      <TouchableOpacity
+                        style={styles.searchButton}
+                        onPress={handleSearchCity}
+                      >
+                        <Icon name="search" size={20} color={COLORS.primary.contrast} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.cityActionButtons}>
+                      <TouchableOpacity
+                        style={styles.cityActionButton}
+                        onPress={handleSaveCity}
+                      >
+                        <Text style={styles.cityActionButtonText}>Enregistrer</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.cityActionButton, styles.cityActionButtonCancel]}
+                        onPress={() => setIsEditingCity(false)}
+                      >
+                        <Text style={styles.cityActionButtonTextCancel}>Annuler</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+
             {/* Informations personnelles */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
@@ -847,69 +879,6 @@ const handleSaveCity = async () => {
                   <Icon name="vpn-key" size={16} color={COLORS.primary.contrast} />
                   <Text style={styles.actionButtonText}>Changer mon mot de passe</Text>
                 </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Localisation */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Icon name="location-on" size={22} color={COLORS.secondary.base} />
-                <Text style={styles.cardTitle}>Localisation</Text>
-                <TouchableOpacity
-                  style={styles.editIconButton}
-                  onPress={() => setIsEditingCity(true)}
-                >
-                  <Icon name="edit" size={20} color={COLORS.secondary.base} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.cardContent}>
-                <View style={styles.locationDisplay}>
-                  <Icon name="place" size={32} color={COLORS.secondary.base} />
-                  <View style={styles.locationInfo}>
-                    <Text style={styles.locationCity}>
-                      {user?.nomCommune || "Aucune ville définie"}
-                    </Text>
-                    <Text style={styles.locationPostal}>
-                      {user?.codePostal || ""}
-                    </Text>
-                  </View>
-                </View>
-
-                {isEditingCity && (
-                  <View style={styles.cityEditContainer}>
-                    <View style={styles.searchBar}>
-                      <TextInput
-                        style={styles.searchInput}
-                        placeholder="Rechercher par ville ou code postal"
-                        placeholderTextColor={COLORS.neutral[400]}
-                        value={query}
-                        onChangeText={setQuery}
-                      />
-                      <TouchableOpacity
-                        style={styles.searchButton}
-                        onPress={handleSearchCity}
-                      >
-                        <Icon name="search" size={20} color={COLORS.primary.contrast} />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.cityActionButtons}>
-                      <TouchableOpacity
-                        style={styles.cityActionButton}
-                        onPress={handleSaveCity}
-                      >
-                        <Text style={styles.cityActionButtonText}>Enregistrer</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.cityActionButton, styles.cityActionButtonCancel]}
-                        onPress={() => setIsEditingCity(false)}
-                      >
-                        <Text style={styles.cityActionButtonTextCancel}>Annuler</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
               </View>
             </View>
 
@@ -1160,7 +1129,24 @@ const handleSaveCity = async () => {
         </Modal>
       )}
       
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        toggleSidebar={toggleSidebar} 
+        navigation={navigation} 
+        user={user} 
+        stats={stats} 
+        displayName={`${formData.firstName} ${formData.lastName}`} 
+        unreadCount={unreadCount} 
+        voteSummary={stats?.voteSummary || {}} 
+        onShowFollowers={() => handleShowList("followers")} 
+        onShowFollowing={() => handleShowList("following")} 
+        onShowNameModal={() => setIsEditingCity(true)} 
+        onLogout={() => navigation.replace("LoginScreen")} 
+        onNavigateToSettings={() => navigation.navigate("SettingsScreen")} 
+        onShowVoteInfoModal={() => console.log("Show vote info modal")} 
+        onNavigateToCity={() => console.log("Navigate to city")} 
+        updateProfileImage={handleProfileImageUpdate} 
+      />
     </View>
   );
 }

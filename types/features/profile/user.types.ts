@@ -78,6 +78,9 @@ export interface User {
     numberOfEventsCreated: number;
     numberOfEventsAttended: number;
     totalUsers?: number;
+    posts?: number;
+    comments: number;
+    likes: number;
   }
   
   export type TabType = "info" | "publications" | "signalement" | "evenement";

@@ -56,6 +56,8 @@ import Animated, {
 import { useFonts } from "expo-font";
 import { BlurView } from "expo-blur";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useUserProfile } from "./hooks/user/useUserProfile"; // Ajoutez cette ligne
+import { UserProfileProvider } from "./context/UserProfileContext";
 
 // Enhanced color system with semantic naming
 const COLORS = {
@@ -186,7 +188,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get("window");
 
-export default function App() {
+export default function App({navigation}) {
   const { getToken } = useToken();
   const previousOffset = useRef(0);
 
@@ -197,6 +199,17 @@ export default function App() {
   const threshold = 10;
   const headerTranslateY = useSharedValue(0);
   const headerOpacity = useSharedValue(1);
+
+  // Récupération des infos utilisateur
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+  // Fonctions dummy pour Sidebar (à adapter au besoin)
+  const dummyFn = () => {};
 
   // Enhanced header animation
   const headerAnimatedStyle = useAnimatedStyle(() => {
@@ -458,6 +471,7 @@ export default function App() {
       initializeUserId();
     }, []);
 
+    
     if (loading) {
       return (
         <View style={styles.loaderContainer}>
@@ -833,6 +847,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider handleLogout={handleLogout}>
+      <UserProfileProvider> 
         <NotificationProvider>
           <StatusBar
             barStyle="light-content"
@@ -933,11 +948,27 @@ export default function App() {
                     </>
                   )}
                 </Stack.Navigator>
-                <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+                {/* Sidebar moved inside NavigationContainer */}
+                <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
               </>
             </KeyboardWrapper>
           </NavigationContainer>
         </NotificationProvider>
+        </UserProfileProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

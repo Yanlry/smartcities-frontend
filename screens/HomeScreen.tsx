@@ -256,7 +256,9 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
             </Text>
             <TouchableOpacity
               style={styles.button}
-              onPress={() => useLocation()}
+              onPress={() => {
+                console.warn("Location request functionality is not implemented.");
+              }}
             >
               <Text style={styles.buttonText}>Réessayer</Text>
             </TouchableOpacity>
