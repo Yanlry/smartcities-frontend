@@ -1,3 +1,7 @@
+
+
+
+
 // src/components/interactions/ReportDetails/TitleTooltip.tsx
 
 import React, { memo } from "react";
@@ -9,9 +13,63 @@ import {
   Animated,
   StyleSheet,
   Dimensions,
+  Platform,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { height, width } = Dimensions.get("window");
+
+/**
+ * Système de couleurs harmonieux pour le tooltip
+ */
+const COLORS = {
+  // Gradient principal
+  gradient: ["#2E5BFF", "#1E40AF"] as const,
+  
+  // Texte & accents
+  text: {
+    light: "rgba(255, 255, 255, 0.95)",
+    secondary: "rgba(255, 255, 255, 0.7)",
+  },
+  
+  // Arrière-plan
+  backdrop: "rgba(0, 0, 0, 0.45)",
+  
+  // Effets visuels
+  glass: {
+    border: "rgba(255, 255, 255, 0.15)",
+  },
+};
+
+/**
+ * Système d'ombres optimisé par plateforme
+ */
+const SHADOWS = {
+  tooltip: Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.25,
+      shadowRadius: 16,
+    },
+    android: {
+      elevation:
+      12,
+    },
+  }),
+  
+  content: Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 5,
+    },
+    android: {
+      elevation: 4,
+    },
+  }),
+};
 
 interface TitleTooltipProps {
   visible: boolean;
@@ -28,8 +86,7 @@ interface TitleTooltipProps {
 }
 
 /**
- * Composant de tooltip pour afficher le titre complet
- * avec animations fluides et positionnement intelligent
+ * Tooltip élégant avec design premium pour afficher le titre complet
  */
 const TitleTooltip: React.FC<TitleTooltipProps> = ({
   visible,
@@ -41,30 +98,50 @@ const TitleTooltip: React.FC<TitleTooltipProps> = ({
 }) => {
   if (!visible) return null;
   
+  // Calcul de la position optimale pour le tooltip
+  const tooltipTop = Math.min(layout.y + 65, height - 170);
+  
   return (
     <Modal
       visible={visible}
       transparent={true}
       animationType="none"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.tooltipOverlay}>
           <Animated.View 
             style={[
-              styles.titleTooltip,
+              styles.tooltipContainer,
               {
                 opacity: animatedOpacity,
                 transform: [{ scale: animatedScale }],
-                top: Math.min(layout.y + 60, height - 150), // Éviter de sortir de l'écran
+                top: tooltipTop,
                 left: 20,
                 right: 20,
                 maxWidth: width - 40
               }
             ]}
           >
-            <View style={styles.tooltipArrow} />
-            <Text style={styles.tooltipText}>{title}</Text>
+            <LinearGradient
+              colors={COLORS.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.tooltipContent}
+            >
+              {/* Triangle pointant vers le titre */}
+              <View style={styles.tooltipArrow} />
+              
+              {/* Contenu du tooltip */}
+              <Text style={styles.tooltipTitle}>Titre complet</Text>
+              <Text style={styles.tooltipText}>{title}</Text>
+              
+              {/* Message d'aide */}
+              <View style={styles.tooltipFooter}>
+                <Text style={styles.tooltipHint}>Appuyez n'importe où pour fermer</Text>
+              </View>
+            </LinearGradient>
           </Animated.View>
         </View>
       </TouchableWithoutFeedback>
@@ -75,23 +152,25 @@ const TitleTooltip: React.FC<TitleTooltipProps> = ({
 const styles = StyleSheet.create({
   tooltipOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: COLORS.backdrop,
   },
-  titleTooltip: {
+  tooltipContainer: {
     position: "absolute",
-    backgroundColor: "rgba(33, 33, 33, 0.95)",
-    borderRadius: 8,
-    padding: 16,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
+    borderRadius: 20,
+    ...SHADOWS.tooltip,
+    overflow: 'hidden',
+  },
+  tooltipContent: {
+    padding: 22,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    ...SHADOWS.content,
   },
   tooltipArrow: {
     position: "absolute",
     top: -10,
-    left: 20,
+    left: width / 2 - 40,
     width: 0,
     height: 0,
     borderLeftWidth: 10,
@@ -99,12 +178,34 @@ const styles = StyleSheet.create({
     borderBottomWidth: 10,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderBottomColor: "rgba(33, 33, 33, 0.95)",
+    borderBottomColor: COLORS.gradient[0],
+  },
+  tooltipTitle: {
+    color: COLORS.text.secondary,
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   tooltipText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    lineHeight: 20,
+    color: COLORS.text.light,
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: "600",
+    marginBottom: 16,
+    letterSpacing: 0.2,
+  },
+  tooltipFooter: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  tooltipHint: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: "400",
+    opacity: 0.8,
   },
 });
 
