@@ -22,6 +22,7 @@ import { useLocation } from "../hooks/location/useLocation";
 import MapView from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
+import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 type Report = {
   id: number;
@@ -47,6 +48,15 @@ export default function ReportScreen({ navigation }) {
   const [currentReport, setCurrentReport] = useState<Report | null>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
+
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+const dummyFn = () => {};
 
   useEffect(() => {
     const fetchUserReports = async () => {
@@ -526,7 +536,21 @@ export default function ReportScreen({ navigation }) {
         </TouchableWithoutFeedback>
       </Modal>
 
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
     </View>
   );
 }

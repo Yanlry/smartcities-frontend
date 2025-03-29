@@ -1,548 +1,496 @@
-
-import React, { memo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from 'react';
 import {
+  Modal,
   View,
   Text,
-  Image,
-  StyleSheet,
-  Animated,
-  Easing,
   TouchableOpacity,
-  Dimensions,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
   Platform,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { profileStyles } from "../../../styles/profileStyles";
-import { ProfilePhotoProps } from "../../../types/features/profile/tabs.types";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+  Alert,
+} from 'react-native';
+import { BlurView } from 'expo-blur';
+import { FontAwesome5 } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
+// @ts-ignore
+import { API_URL } from "@env";
 
-const { width } = Dimensions.get("window");
-const PROFILE_SIZE = width * 0.3; // 30% de la largeur de l'écran
+/**
+ * Interface pour les propriétés du composant ProfilePhotoModal
+ */
+interface ProfilePhotoModalProps {
+  visible: boolean;
+  onClose: () => void;
+  currentPhotoUrl?: string | null;
+  onSuccess?: () => void; // Callback appelé après une mise à jour réussie
+  photoUrl?: string;
 
-export const ProfilePhoto: React.FC<ProfilePhotoProps> = memo(
-  ({
-    photoUrl,
-    ranking,
-    username,
-    bio,
-    createdAt,
-    isFollowing,
-    isSubmitting,
-    onFollow,
-    onUnfollow,
-  }) => {
-    interface ActionButtonProps {
-      label: string;
-      onPress: () => void;
-      isPrimary?: boolean;
-      disabled?: boolean;
-      icon?: string;
+
+  username: string;
+
+  createdAt?: string;
+
+  isSubmitting: boolean;
+
+  isFollowing: boolean;
+
+  onFollow: () => Promise<void>;
+
+  onUnfollow: () => Promise<void>;
+
+  ranking?: number; 
+}
+
+/**
+ * Modal permettant la mise à jour de la photo de profil utilisateur
+ * Intègre les fonctionnalités de prise de photo, sélection depuis la galerie, et suppression
+ */
+const ProfilePhotoModal: React.FC<ProfilePhotoModalProps> = ({
+  visible,
+  onClose,
+  currentPhotoUrl,
+  onSuccess,
+}) => {
+  // États locaux pour gérer le chargement et les erreurs
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Réinitialiser l'erreur quand le modal est ouvert
+  useEffect(() => {
+    if (visible) {
+      setError(null);
     }
+  }, [visible]);
 
-    /**
-     * Composant ActionButton modernisé avec animations avancées et design adaptatif
-     */
-    const ActionButton: React.FC<ActionButtonProps> = memo(
-      ({ label, onPress, isPrimary = true, disabled = false, icon }) => {
-        const scale = useRef(new Animated.Value(1)).current;
-        const opacity = useRef(new Animated.Value(1)).current;
-        const shadowOpacity = useRef(
-          new Animated.Value(isPrimary ? 0.4 : 0.2)
-        ).current;
+  /**
+   * Traitement d'une photo sélectionnée ou prise
+   * @param photoUri URI de la photo à traiter
+   */
+  const processSelectedPhoto = useCallback(async (photoUri: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const handlePressIn = () => {
-          Animated.spring(scale, {
-            toValue: 0.95,
-            friction: 5,
-            useNativeDriver: true,
-          }).start();
-        };
+      // Création du FormData pour l'envoi de l'image
+      const formData = new FormData();
+      
+      // Obtenir l'extension du fichier
+      const fileExtension = photoUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
+      
+      // Ajouter l'image au formData
+      formData.append("profileImage", {
+        uri: photoUri,
+        type: mimeType,
+        name: `profile.${fileExtension}`,
+      } as any);
 
-        const handlePressOut = () => {
-          Animated.spring(scale, {
-            toValue: 1,
-            friction: 5,
-            useNativeDriver: true,
-          }).start();
-        };
+      console.log("Préparation de l'envoi avec URI:", photoUri.substring(0, 50) + "...");
+      
+      // Récupérer l'ID utilisateur
+      const userId = await getUserIdFromToken();
+      if (!userId) {
+        throw new Error("ID utilisateur non trouvé. Veuillez vous reconnecter.");
+      }
 
-        // Couleurs selon le thème et l'état du bouton
-        const getColors = () => {
-          if (disabled) {
-            return {
-              bgStart: "#E5E5E5",
-              bgEnd: "#D9D9D9",
-              textColor: "#999999",
-              borderColor: "#CCCCCC",
-            };
-          }
+      // Envoi de la requête
+      const response = await fetch(`${API_URL}/users/${userId}/profile-image`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
 
-          if (isPrimary) {
-            return {
-              bgStart: "#0F84FE", // Bleu iOS plus clair en haut
-              bgEnd: "#0A64CE", // Bleu iOS plus foncé en bas
-              textColor: "#FFFFFF",
-              borderColor: "#0960C0",
-            };
-          }
+      console.log("Statut de la réponse:", response.status);
 
-          return {
-            bgStart: "#FFFFFF",
-            bgEnd: "#F7F7F9",
-            textColor: "#0F84FE", // Texte en bleu iOS
-            borderColor: "#E1E3E8",
-          };
-        };
+      // Gestion des erreurs de la requête
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erreur de réponse:", errorText);
+        throw new Error(`Échec de la mise à jour (${response.status}): ${errorText}`);
+      }
 
-        const colors = getColors();
+      // Analyse de la réponse
+      const result = await response.json();
+      console.log("Mise à jour réussie:", result);
 
-        // Style d'ombre dynamique pour les animations
-        const shadowStyle = {
-          shadowColor: isPrimary ? "#0A64CE" : "#000000",
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: shadowOpacity,
-          shadowRadius: 6,
-          elevation: isPrimary ? 5 : 3,
-        };
+      // Notification du succès
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Fermeture du modal
+      onClose();
+    } catch (err: any) {
+      // Gestion des erreurs
+      const errorMessage = err.message || "Une erreur inconnue s'est produite";
+      console.error("Erreur lors du traitement de la photo:", errorMessage);
+      setError(errorMessage);
+      
+      // Afficher une alerte à l'utilisateur
+      Alert.alert(
+        "Erreur",
+        `Impossible de mettre à jour la photo: ${errorMessage}`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onClose, onSuccess]);
 
-        return (
-          <Animated.View
-            style={[
-              buttonStyles.buttonContainer,
-              {
-                transform: [{ scale }],
-                opacity: disabled ? 0.7 : opacity,
-              },
-              shadowStyle,
-            ]}
-          >
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={disabled ? undefined : onPress}
-              onPressIn={disabled ? undefined : handlePressIn}
-              onPressOut={disabled ? undefined : handlePressOut}
-              style={buttonStyles.touchableArea}
-              disabled={disabled}
-              accessibilityRole="button"
-              accessibilityState={{ disabled }}
-              accessibilityLabel={label}
-            >
-              <LinearGradient
-                colors={[colors.bgStart, colors.bgEnd]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={[
-                  buttonStyles.gradientBackground,
-                  { borderColor: colors.borderColor },
-                ]}
-              >
-                {icon && (
-                  <Icon
-                    name={icon}
-                    size={18}
-                    color={colors.textColor}
-                    style={buttonStyles.buttonIcon}
-                  />
-                )}
-                <Text
-                  style={[buttonStyles.buttonText, { color: colors.textColor }]}
-                  numberOfLines={1}
-                >
-                  {label}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+  /**
+   * Handler pour la prise de photo avec l'appareil photo
+   */
+  const handleTakePhoto = useCallback(async () => {
+    try {
+      // Demande de permission
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (cameraPermission.status !== 'granted') {
+        Alert.alert(
+          "Permission requise",
+          "L'application a besoin d'accéder à votre appareil photo pour prendre une photo de profil."
         );
+        return;
       }
-    );
-    ActionButton.displayName = "ActionButton";
-
-    // Animations
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
-    const opacityAnim = useRef(new Animated.Value(0)).current;
-    const rotateAnim = useRef(new Animated.Value(0)).current;
-
-    // Badge dynamique selon le classement
-    const getBadgeColors = (): [string, string, ...string[]] => {
-      if (ranking === 1) return ["#FFD700", "#FFC400", "#E2B100"]; // Or
-      if (ranking === 2) return ["#E0E0E0", "#C0C0C0", "#A9A9A9"]; // Argent
-      if (ranking === 3) return ["#CD7F32", "#B87333", "#A0522D"]; // Bronze
-      return ["#4B9CD3", "#3F87F5", "#1A73E8"]; // Bleu par défaut
-    };
-
-    const getRankingEmoji = () => {
-      if (ranking === 1) return "👑"; // Couronne pour le 1er
-      if (ranking === 2) return "🥈"; // Médaille d'argent
-      if (ranking === 3) return "🥉"; // Médaille de bronze
-      if (ranking && ranking <= 10) return "⭐"; // Étoile pour top 10
-      return "👤"; // Utilisateur standard
-    };
-
-    const getRankingText = () => {
-      if (ranking === 1) return "TOP 1";
-      if (ranking === 2) return "TOP 2";
-      if (ranking === 3) return "TOP 3";
-      if (ranking && ranking <= 10) return `TOP ${ranking}`;
-      if (ranking) return `#${ranking}`;
-      return "";
-    };
-
-    // Gestion des actions d'abonnement/désabonnement
-    const handleFollowAction = () => {
-      if (isFollowing && onUnfollow) {
-        onUnfollow();
-      } else if (!isFollowing && onFollow) {
-        onFollow();
+      
+      // Lancement de l'appareil photo
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      
+      // Traitement du résultat
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const photoUri = result.assets[0].uri;
+        await processSelectedPhoto(photoUri);
       }
-    };
+    } catch (error) {
+      console.error('Erreur lors de la prise de photo:', error);
+      setError("Impossible d'utiliser l'appareil photo");
+    }
+  }, [processSelectedPhoto]);
 
-    // Fonctions pour formater la date d'inscription
-    const getMembershipText = () => {
-      if (createdAt) {
-        const date = new Date(createdAt);
-        // Formatez selon la locale française
-        const formattedDate = date.toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
-        return `Membre depuis le ${formattedDate}`;
+  /**
+   * Handler pour la sélection d'image depuis la galerie
+   */
+  const handleChooseFromGallery = useCallback(async () => {
+    try {
+      // Demande de permission
+      const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (mediaLibraryPermission.status !== 'granted') {
+        Alert.alert(
+          "Permission requise",
+          "L'application a besoin d'accéder à votre galerie pour sélectionner une photo de profil."
+        );
+        return;
       }
-      return bio || "Membre de la communauté";
-    };
-
-    // Lancer les animations au montage du composant
-    useEffect(() => {
-      // Animation d'entrée en séquence
-      Animated.sequence([
-        // Fade in
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        // Scaling avec rebond
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Animation de rotation subtile pour les badges de top 3
-      if (ranking && ranking <= 3) {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(rotateAnim, {
-              toValue: 1,
-              duration: 2000,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(rotateAnim, {
-              toValue: -1,
-              duration: 2000,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(rotateAnim, {
-              toValue: 0,
-              duration: 2000,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ])
-        ).start();
+      
+      // Lancement de la galerie
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      
+      // Traitement du résultat
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const photoUri = result.assets[0].uri;
+        await processSelectedPhoto(photoUri);
       }
-    }, []);
+    } catch (error) {
+      console.error('Erreur lors de la sélection de la photo:', error);
+      setError("Impossible d'accéder à la galerie");
+    }
+  }, [processSelectedPhoto]);
 
-    // Transformation pour la rotation
-    const rotate = rotateAnim.interpolate({
-      inputRange: [-1, 0, 1],
-      outputRange: ["-2deg", "0deg", "2deg"],
-    });
+  /**
+   * Handler pour la suppression de la photo de profil
+   */
+  const handleRemovePhoto = useCallback(async () => {
+    try {
+      // Confirmation avant suppression
+      Alert.alert(
+        "Supprimer la photo",
+        "Êtes-vous sûr de vouloir supprimer votre photo de profil ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          { 
+            text: "Supprimer", 
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setIsLoading(true);
+                setError(null);
+                
+                // Récupération de l'ID utilisateur
+                const userId = await getUserIdFromToken();
+                if (!userId) {
+                  throw new Error("ID utilisateur non trouvé");
+                }
+                
+                // Envoi de la requête de suppression
+                const response = await fetch(`${API_URL}/users/${userId}/profile-image`, {
+                  method: "DELETE",
+                });
+                
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(`Échec de la suppression: ${errorText}`);
+                }
+                
+                // Notification du succès
+                if (onSuccess) {
+                  onSuccess();
+                }
+                
+                // Fermeture du modal
+                onClose();
+              } catch (error: any) {
+                console.error('Erreur lors de la suppression:', error);
+                setError(error.message || "Erreur lors de la suppression");
+              } finally {
+                setIsLoading(false);
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Erreur lors de la préparation de la suppression:', error);
+      setError("Erreur lors de l'initialisation de la suppression");
+    }
+  }, [onClose, onSuccess]);
 
-    return (
-      <View style={styles.container}>
-        {/* Fond stylisé */}
-        <LinearGradient
-          colors={["#F8F9FA", "#E9ECEF"]}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {/* Effet décoratif pour le profile */}
-          <View style={styles.decorativeBubble} />
-          <View style={[styles.decorativeBubble, styles.decorativeBubbleAlt]} />
-        </LinearGradient>
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <BlurView intensity={Platform.OS === 'ios' ? 50 : 100} style={styles.blurContainer}>
+          <View style={styles.modalContent}>
+            {/* Header avec titre et bouton de fermeture */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Photo de profil</Text>
+              <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={onClose}
+                disabled={isLoading}
+              >
+                <FontAwesome5 name="times" size={20} color="#FFF" />
+              </TouchableOpacity>
+            </View>
 
-        {/* Profil principal */}
-        <View style={styles.profileContent}>
-          {/* Photo de profil avec animations */}
-          <Animated.View
-            style={[
-              styles.profileImageWrapper,
-              {
-                transform: [{ scale: scaleAnim }, { rotate }],
-                opacity: opacityAnim,
-              },
-            ]}
-          >
-            {ranking && ranking <= 3 && (
+            {/* Affichage de l'image actuelle ou placeholder */}
+            <View style={styles.photoPreviewContainer}>
               <LinearGradient
-                colors={getBadgeColors()}
-                style={styles.gradientBorder}
+                colors={['#8E2DE2', '#4A00E0']}
+                style={styles.photoGradientBorder}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <View style={styles.innerContainer}>
-                  {photoUrl ? (
-                    <Image
-                      source={{ uri: photoUrl }}
-                      style={styles.profileImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles.placeholderContainer}>
-                      <Ionicons
-                        name="person"
-                        size={PROFILE_SIZE / 2}
-                        color="#CED4DA"
-                      />
-                    </View>
-                  )}
-                </View>
-              </LinearGradient>
-            )}
-
-            {(!ranking || ranking > 3) && (
-              <View style={styles.regularProfileContainer}>
-                {photoUrl ? (
-                  <Image
-                    source={{ uri: photoUrl }}
-                    style={styles.profileImage}
-                    resizeMode="cover"
+                {currentPhotoUrl ? (
+                  <Image 
+                    source={{ uri: currentPhotoUrl }} 
+                    style={styles.photoPreview}
+                    defaultSource={require('../../../assets/images/1.jpg')}
                   />
                 ) : (
-                  <View style={styles.placeholderContainer}>
-                    <Ionicons
-                      name="person"
-                      size={PROFILE_SIZE / 2}
-                      color="#CED4DA"
-                    />
+                  <View style={styles.photoPlaceholder}>
+                    <FontAwesome5 name="user" size={40} color="#CED4DA" />
                   </View>
                 )}
+              </LinearGradient>
+            </View>
+
+            {/* Affichage d'erreur éventuelle */}
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
 
-            {/* Badge de classement */}
-            {ranking && (
-              <Animated.View
-                style={[
-                  styles.rankingBadge,
-                  ranking <= 3 && styles.topRankingBadge,
-                ]}
+            {/* Boutons d'action */}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleTakePhoto}
+                disabled={isLoading}
               >
-                <BlurView intensity={80} style={styles.badgeBlur}>
-                  <Text style={styles.rankingEmoji}>{getRankingEmoji()}</Text>
-                  <Text style={styles.rankingText}>{getRankingText()}</Text>
-                </BlurView>
-              </Animated.View>
+                <LinearGradient
+                  colors={['#0F84FE', '#0A64CE']}
+                  style={[
+                    styles.actionButtonGradient,
+                    isLoading && styles.disabledButton
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                >
+                  <FontAwesome5 name="camera" size={16} color="#FFFFFF" style={styles.buttonIcon} />
+                  <Text style={styles.buttonText}>Prendre une photo</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={handleChooseFromGallery}
+                disabled={isLoading}
+              >
+                <LinearGradient
+                  colors={['#0F84FE', '#0A64CE']}
+                  style={[
+                    styles.actionButtonGradient,
+                    isLoading && styles.disabledButton
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                >
+                  <FontAwesome5 name="images" size={16} color="#FFFFFF" style={styles.buttonIcon} />
+                  <Text style={styles.buttonText}>Choisir dans la galerie</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            {/* Indicateur de chargement */}
+            {isLoading && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color="#8E2DE2" />
+                <Text style={styles.loadingText}>Mise à jour en cours...</Text>
+              </View>
             )}
-          </Animated.View>
-
-          {/* Infos utilisateur */}
-          <View style={styles.userInfoContainer}>
-            <Text style={styles.username}>{username}</Text>
-            <Text style={styles.bio}>{getMembershipText()}</Text>
           </View>
-
-          {/* Bouton d'action */}
-          <View style={styles.actionContainer}>
-            <ActionButton
-              label={isFollowing ? "Se désabonner" : "S'abonner"}
-              icon={isFollowing ? "account-remove" : "account-plus"}
-              onPress={handleFollowAction}
-              disabled={isSubmitting}
-              isPrimary={!isFollowing}
-            />
-          </View>
-        </View>
+        </BlurView>
       </View>
-    );
-  }
-);
+    </Modal>
+  );
+};
 
-// Styles pour le composant ActionButton
-const buttonStyles = StyleSheet.create({
-  buttonContainer: {
-    width: "100%",
-    marginVertical: 6,
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  blurContainer: {
+    width: '90%',
+    maxWidth: 360,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalContent: {
+    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+    padding: 20,
+    borderRadius: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  photoPreviewContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  photoGradientBorder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoPreview: {
+    width: 114,
+    height: 114,
+    borderRadius: 57,
+    backgroundColor: '#1E1E1E',
+  },
+  photoPlaceholder: {
+    width: 114,
+    height: 114,
+    borderRadius: 57,
+    backgroundColor: '#1E1E1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 76, 76, 0.1)',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 76, 76, 0.3)',
+  },
+  errorText: {
+    color: '#FF4C4C',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  actionButtonsContainer: {
+    gap: 16,
+  },
+  actionButton: {
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
-  touchableArea: {
-    width: "100%",
-  },
-  gradientBackground: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  actionButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.3,
-    textAlign: "center",
+  disabledButton: {
+    opacity: 0.6,
   },
   buttonIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
-});
-
-// Styles pour le composant ProfilePhoto
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    overflow: "hidden",
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
-  headerGradient: {
-    height: PROFILE_SIZE * 0.65,
-    width: "100%",
-    position: "absolute",
+  removeButton: {
+    marginTop: 8,
+  },
+  loadingOverlay: {
+    position: 'absolute',
     top: 0,
-    overflow: "hidden",
-  },
-  decorativeBubble: {
-    position: "absolute",
-    width: PROFILE_SIZE * 1.5,
-    height: PROFILE_SIZE * 1.5,
-    borderRadius: PROFILE_SIZE * 0.75,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    top: -PROFILE_SIZE * 0.75,
-    right: PROFILE_SIZE * 0.25,
-  },
-  decorativeBubbleAlt: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE * 0.5,
-    left: -PROFILE_SIZE * 0.3,
-    top: PROFILE_SIZE * 0.2,
-  },
-  profileContent: {
-    alignItems: "center",
-    paddingTop: PROFILE_SIZE * 0.25,
-    paddingBottom: 20,
-  },
-  profileImageWrapper: {
-    marginTop: 10,
-    marginBottom: 16,
-  },
-  gradientBorder: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 4,
-  },
-  innerContainer: {
-    width: "93%",
-    height: "93%",
-    borderRadius: PROFILE_SIZE / 2,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-  },
-  regularProfileContainer: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE / 2,
-    overflow: "hidden",
-    backgroundColor: "#F8F9FA",
-    borderWidth: 3,
-    borderColor: "#DEE2E6",
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  placeholderContainer: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F8F9FA",
-  },
-  rankingBadge: {
-    position: "absolute",
-    bottom: 0,
+    left: 0,
     right: 0,
-    borderRadius: 14,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
   },
-  topRankingBadge: {
-    backgroundColor: "rgba(0, 0, 0, 0.01)",
-  },
-  badgeBlur: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  rankingEmoji: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  rankingText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#495057",
-  },
-  userInfoContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-  username: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  bio: {
-    fontSize: 14,
-    color: "#6C757D",
-    textAlign: "center",
-  },
-  actionContainer: {
-    width: "100%",
-    paddingHorizontal: 20,
-    paddingTop: 8,
+  loadingText: {
+    color: '#FFFFFF',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 
-ProfilePhoto.displayName = "ProfilePhoto";
+export default ProfilePhotoModal;

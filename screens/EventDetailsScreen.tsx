@@ -23,6 +23,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 interface Event {
   photos: { url: string }[];
@@ -56,6 +57,15 @@ export default function EventDetails({ route }) {
   const [currentIndex, setCurrentIndex] = useState(0); 
   const [event, setEvent] = useState<Event | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); 
+
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+const dummyFn = () => {};
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -434,7 +444,21 @@ export default function EventDetails({ route }) {
   )}
 </View>
       </ScrollView>
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
     </View>
   );
 }

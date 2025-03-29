@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from "react";
 import {
   Animated,
   View,
@@ -11,18 +11,18 @@ import {
   Image,
   Pressable,
   useWindowDimensions,
-} from 'react-native';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../../../context/AuthContext';
-import { SidebarProps } from '../../../types/components/common/sidebar.types';
-import SidebarItem from './SidebarItem';
+} from "react-native";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../../../context/AuthContext";
+import { SidebarProps } from "../../../types/components/common/sidebar.types";
+import SidebarItem from "./SidebarItem";
 import { useUserProfile } from "../../../context/UserProfileContext";
-
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../types/navigation/routes.types';
+import ProfilePhotoModal from "../../profile/Photo/ProfilePhoto";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../../types/navigation/routes.types";
 import {
   NameModal,
   BadgeModal,
@@ -40,21 +40,21 @@ const THEME = {
       dark: "#2E1A47",
       main: "#5D3FD3",
       light: "#8E72E1",
-      ultraLight: "#EFE9FF"
+      ultraLight: "#EFE9FF",
     },
     secondary: {
       gradient: ["#FF416C", "#FF4B2B"], // Gradient rose-orange
       dark: "#B22A49",
       main: "#FF416C",
       light: "#FF7A9C",
-      ultraLight: "#FFECF1"
+      ultraLight: "#FFECF1",
     },
     accent: {
       gradient: ["#00C6FB", "#005BEA"], // Gradient bleu clair-bleu
       dark: "#005BEA",
       main: "#1DA1F2",
       light: "#70C4F9",
-      ultraLight: "#E8F5FE"
+      ultraLight: "#E8F5FE",
     },
     success: {
       main: "#4CD964",
@@ -78,7 +78,7 @@ const THEME = {
       dark: "rgba(0, 0, 0, 0.75)",
       medium: "rgba(0, 0, 0, 0.5)",
       light: "rgba(0, 0, 0, 0.25)",
-    }
+    },
   },
   spacing: {
     xs: 4,
@@ -114,20 +114,19 @@ const THEME = {
   },
 };
 
-
 /**
  * Modern sidebar component for social network
  * Immersive design with optimized animation management
  */
 const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   // Use global context to get user data INCLUDING voteSummary
-  const { 
-    user, 
-    displayName, 
+  const {
+    user,
+    displayName,
     voteSummary: contextVoteSummary,
-    updateProfileImage, 
+    updateProfileImage,
     updateUserDisplayPreference,
-    refreshUserData 
+    refreshUserData,
   } = useUserProfile();
 
   // IMPORTANT: Refresh user data when sidebar opens
@@ -137,6 +136,9 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     }
   }, [isOpen, refreshUserData]);
 
+  const [showProfilePhotoModal, setShowProfilePhotoModal] =
+    useState<boolean>(false);
+
   // Local states for modals
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -145,38 +147,46 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
 
   // Ensure we have valid numbers for voteSummary
   const safeVoteSummary = {
-    up: typeof contextVoteSummary?.up === 'number' ? contextVoteSummary.up : 0,
-    down: typeof contextVoteSummary?.down === 'number' ? contextVoteSummary.down : 0
+    up: typeof contextVoteSummary?.up === "number" ? contextVoteSummary.up : 0,
+    down:
+      typeof contextVoteSummary?.down === "number"
+        ? contextVoteSummary.down
+        : 0,
   };
 
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { handleLogout } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   // Animations with initial values
   const sidebarTranslateX = useRef(new Animated.Value(-width)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const avatarScale = useRef(new Animated.Value(0.8)).current;
   const nameOpacity = useRef(new Animated.Value(0)).current;
   const statOpacity = useRef(new Animated.Value(0)).current;
-  
+
   // Animation for menu items - array of animations
   const mainItemsAnimations = useRef(
-    Array(6).fill(0).map(() => new Animated.Value(-50))
+    Array(6)
+      .fill(0)
+      .map(() => new Animated.Value(-50))
   ).current;
-  
+
   const secondaryItemsAnimations = useRef(
-    Array(4).fill(0).map(() => new Animated.Value(-40))
+    Array(4)
+      .fill(0)
+      .map(() => new Animated.Value(-40))
   ).current;
-  
+
   const logoutButtonAnimation = useRef({
     opacity: new Animated.Value(0),
-    translateY: new Animated.Value(20)
+    translateY: new Animated.Value(20),
   }).current;
-  
+
   // Managing all entrance/exit animations
   useEffect(() => {
     if (isOpen) {
@@ -184,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
       if (scrollViewRef.current) {
         scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false });
       }
-      
+
       // Sidebar entry animation with optimized timing
       Animated.timing(sidebarTranslateX, {
         toValue: 0,
@@ -192,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         easing: THEME.animation.easing.standard,
         useNativeDriver: true,
       }).start();
-      
+
       // Overlay with slight deceleration
       Animated.timing(overlayOpacity, {
         toValue: 1,
@@ -200,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         easing: THEME.animation.easing.decelerate,
         useNativeDriver: true,
       }).start();
-      
+
       // Avatar animation with spring scale effect
       Animated.timing(avatarScale, {
         toValue: 1,
@@ -208,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         easing: THEME.animation.easing.spring,
         useNativeDriver: true,
       }).start();
-      
+
       // User information opacity animation
       Animated.sequence([
         Animated.delay(150),
@@ -218,7 +228,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       // User statistics animation
       Animated.sequence([
         Animated.delay(250),
@@ -228,11 +238,11 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       // Sequential animation of main menu items
       mainItemsAnimations.forEach((anim, index) => {
         Animated.sequence([
-          Animated.delay(350 + (index * 50)),
+          Animated.delay(350 + index * 50),
           Animated.timing(anim, {
             toValue: 0,
             duration: THEME.animation.duration.fast,
@@ -241,11 +251,11 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           }),
         ]).start();
       });
-      
+
       // Sequential animation of secondary menu items
       secondaryItemsAnimations.forEach((anim, index) => {
         Animated.sequence([
-          Animated.delay(700 + (index * 50)),
+          Animated.delay(700 + index * 50),
           Animated.timing(anim, {
             toValue: 0,
             duration: THEME.animation.duration.fast,
@@ -254,7 +264,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           }),
         ]).start();
       });
-      
+
       // Logout button animation
       Animated.sequence([
         Animated.delay(900),
@@ -272,7 +282,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           }),
         ]),
       ]).start();
-      
     } else {
       // Closing animation - faster than opening
       Animated.timing(sidebarTranslateX, {
@@ -281,37 +290,40 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         easing: THEME.animation.easing.accelerate,
         useNativeDriver: true,
       }).start();
-      
+
       Animated.timing(overlayOpacity, {
         toValue: 0,
         duration: THEME.animation.duration.fast,
         easing: THEME.animation.easing.accelerate,
         useNativeDriver: true,
       }).start();
-      
+
       // Reset item animations
       avatarScale.setValue(0.8);
       nameOpacity.setValue(0);
       statOpacity.setValue(0);
-      
-      mainItemsAnimations.forEach(anim => {
+
+      mainItemsAnimations.forEach((anim) => {
         anim.setValue(-50);
       });
-      
-      secondaryItemsAnimations.forEach(anim => {
+
+      secondaryItemsAnimations.forEach((anim) => {
         anim.setValue(-40);
       });
-      
+
       logoutButtonAnimation.opacity.setValue(0);
       logoutButtonAnimation.translateY.setValue(20);
     }
   }, [isOpen, width]);
 
   // Navigation with memoization
-  const handleNavigation = useCallback((screen: string) => {
-    navigation.navigate(screen as never);
-    toggleSidebar();
-  }, [navigation, toggleSidebar]);
+  const handleNavigation = useCallback(
+    (screen: string) => {
+      navigation.navigate(screen as never);
+      toggleSidebar();
+    },
+    [navigation, toggleSidebar]
+  );
 
   // Logout handling
   const handleLogoutWithSidebarClose = useCallback(() => {
@@ -324,58 +336,114 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   // Menu item definitions with icons adapted for a social network
   const mainMenuItems = [
     {
-      icon: <FontAwesome5 name="home" size={18} color={THEME.colors.neutral.white} />,
+      icon: (
+        <FontAwesome5
+          name="home"
+          size={18}
+          color={THEME.colors.neutral.white}
+        />
+      ),
       label: "Fil d'actualité",
-      screen: "Main"
+      screen: "Main",
     },
     {
-      icon: <FontAwesome5 name="map-marker-alt" size={18} color={THEME.colors.neutral.white} />,
+      icon: (
+        <FontAwesome5
+          name="map-marker-alt"
+          size={18}
+          color={THEME.colors.neutral.white}
+        />
+      ),
       label: "Explorer ma ville",
-      screen: "CityScreen"
+      screen: "CityScreen",
     },
     {
-      icon: <FontAwesome5 name="trophy" size={18} color={THEME.colors.neutral.white} />,
+      icon: (
+        <FontAwesome5
+          name="trophy"
+          size={18}
+          color={THEME.colors.neutral.white}
+        />
+      ),
       label: "Classements",
-      screen: "RankingScreen"
+      screen: "RankingScreen",
     },
     {
-      icon: <FontAwesome5 name="user" size={18} color={THEME.colors.neutral.white} />,
+      icon: (
+        <FontAwesome5
+          name="user"
+          size={18}
+          color={THEME.colors.neutral.white}
+        />
+      ),
       label: "Mon profil",
-      screen: "ProfileScreen"
+      screen: "ProfileScreen",
     },
     {
-      icon: <FontAwesome5 name="bell" size={18} color={THEME.colors.neutral.white} />,
+      icon: (
+        <FontAwesome5
+          name="bell"
+          size={18}
+          color={THEME.colors.neutral.white}
+        />
+      ),
       label: "Mes notifications",
-      screen: "ReportScreen"
+      screen: "ReportScreen",
     },
     {
-      icon: <FontAwesome5 name="calendar-alt" size={18} color={THEME.colors.neutral.white} />,
+      icon: (
+        <FontAwesome5
+          name="calendar-alt"
+          size={18}
+          color={THEME.colors.neutral.white}
+        />
+      ),
       label: "Événements",
-      screen: "EventsScreen"
-    }
+      screen: "EventsScreen",
+    },
   ];
 
   const secondaryMenuItems = [
     {
-      icon: <FontAwesome5 name="cog" size={18} color={THEME.colors.neutral.light} />,
+      icon: (
+        <FontAwesome5 name="cog" size={18} color={THEME.colors.neutral.light} />
+      ),
       label: "Paramètres",
-      screen: "PreferencesScreen"
+      screen: "PreferencesScreen",
     },
     {
-      icon: <FontAwesome5 name="question-circle" size={18} color={THEME.colors.neutral.light} />,
+      icon: (
+        <FontAwesome5
+          name="question-circle"
+          size={18}
+          color={THEME.colors.neutral.light}
+        />
+      ),
       label: "Aide et support",
-      screen: "FAQScreen"
+      screen: "FAQScreen",
     },
     {
-      icon: <FontAwesome5 name="file-alt" size={18} color={THEME.colors.neutral.light} />,
+      icon: (
+        <FontAwesome5
+          name="file-alt"
+          size={18}
+          color={THEME.colors.neutral.light}
+        />
+      ),
       label: "Conditions d'utilisation",
-      screen: "TermsScreen"
+      screen: "TermsScreen",
     },
     {
-      icon: <FontAwesome5 name="shield-alt" size={18} color={THEME.colors.neutral.light} />,
+      icon: (
+        <FontAwesome5
+          name="shield-alt"
+          size={18}
+          color={THEME.colors.neutral.light}
+        />
+      ),
       label: "Confidentialité",
-      screen: "PrivacyScreen"
-    }
+      screen: "PrivacyScreen",
+    },
   ];
 
   const handleFollowingUserPress = useCallback(
@@ -398,23 +466,50 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     [updateUserDisplayPreference]
   );
 
+  const handleOpenPhotoModal = useCallback(() => {
+    setShowProfilePhotoModal(true);
+  }, []);
+
+  const handleProfilePhotoUpdate = useCallback(
+    async (photoUri: string) => {
+      try {
+        await updateProfileImage(photoUri);
+        // Refresh user data after photo update
+        await refreshUserData();
+      } catch (error) {
+        console.error("Error updating profile photo:", error);
+      }
+    },
+    [updateProfileImage, refreshUserData]
+  );
+
+  const handlePhotoUpdateSuccess = useCallback(() => {
+    // Rafraîchir les données utilisateur après une mise à jour réussie
+    refreshUserData();
+    // Fermer le sidebar après une modification réussie
+    toggleSidebar();
+  }, [refreshUserData, toggleSidebar]);
+
   return (
     <>
       {/* Animated overlay with blur effect */}
       {isOpen && (
-        <Animated.View 
+        <Animated.View
           style={[
             styles.overlay,
-            { 
+            {
               opacity: overlayOpacity,
               top: 0,
-            }
+            },
           ]}
         >
-          <Pressable 
-            style={styles.overlayTouch} 
+          <Pressable
+            style={styles.overlayTouch}
             onPress={toggleSidebar}
-            android_ripple={{ color: 'rgba(255,255,255,0.1)', borderless: true }}
+            android_ripple={{
+              color: "rgba(255,255,255,0.1)",
+              borderless: true,
+            }}
           />
         </Animated.View>
       )}
@@ -423,7 +518,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
       <Animated.View
         style={[
           styles.sidebar,
-          { 
+          {
             transform: [{ translateX: sidebarTranslateX }],
             paddingTop: insets.top || 0,
             paddingBottom: insets.bottom || 0,
@@ -432,7 +527,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
       >
         {/* Background gradient */}
         <LinearGradient
-          colors={['#062C41', '#062C41', '#0F3460']}
+          colors={["#062C41", "#062C41", "#0F3460"]}
           style={styles.sidebarBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -442,22 +537,26 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
             {/* Header with avatar and user stats */}
             <View style={styles.userProfileSection}>
               {/* Close button in the top right */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.closeButton}
                 onPress={toggleSidebar}
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
               >
                 <View style={styles.closeButtonInner}>
-                  <FontAwesome5 name="times" size={16} color={THEME.colors.neutral.light} />
+                  <FontAwesome5
+                    name="times"
+                    size={16}
+                    color={THEME.colors.neutral.light}
+                  />
                 </View>
               </TouchableOpacity>
-              
-              {/* Animated avatar */}
-              <Animated.View style={[
-                styles.avatarContainer, 
-                { transform: [{ scale: avatarScale }] }
-              ]}>
-                <TouchableOpacity onPress={() => updateProfileImage("")}>
+              <Animated.View
+                style={[
+                  styles.avatarContainer,
+                  { transform: [{ scale: avatarScale }] },
+                ]}
+              >
+                <TouchableOpacity onPress={handleOpenPhotoModal}>
                   <LinearGradient
                     colors={THEME.colors.primary.gradient}
                     style={styles.avatarGradientBorder}
@@ -465,40 +564,65 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                     end={{ x: 1, y: 1 }}
                   >
                     {user?.profilePhoto?.url ? (
-                      <Image 
+                      <Image
                         source={{ uri: user.profilePhoto.url }}
                         style={styles.avatarImage}
                       />
                     ) : (
                       <View style={styles.avatarImage}>
-                        {/* Default avatar icon or style */}
+                        <FontAwesome5 name="user" size={30} color="#CED4DA" />
                       </View>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
                 {/* Settings button to control name visibility */}
-                <TouchableOpacity style={styles.iconButton} onPress={() => setShowNameModal(true)} activeOpacity={0.8}>
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={() => setShowNameModal(true)}
+                  activeOpacity={0.8}
+                >
                   <Ionicons name="settings-outline" size={14} color="#FFF" />
                 </TouchableOpacity>
               </Animated.View>
-              
+
               {/* Name and city */}
               <Animated.View style={{ opacity: nameOpacity }}>
-                <Text style={styles.userName} numberOfLines={1}>{displayName}</Text>
-                <Text style={styles.userHandle} onPress={() => navigation.navigate("ProfileScreen", { userId: user?.id || "" })}>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {displayName}
+                </Text>
+                <Text
+                  style={styles.userHandle}
+                  onPress={() =>
+                    navigation.navigate("ProfileScreen", {
+                      userId: user?.id || "",
+                    })
+                  }
+                >
                   {user?.nomCommune || "Ville inconnue"}
                 </Text>
               </Animated.View>
-              
+
               {/* Statistics: Followers, Following and Posts */}
-              <Animated.View style={[styles.statsContainer, { opacity: statOpacity }]}>
-                <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
-                  <Text style={styles.statValue}>{user?.followers?.length || 0}</Text>
+              <Animated.View
+                style={[styles.statsContainer, { opacity: statOpacity }]}
+              >
+                <TouchableOpacity
+                  style={styles.statItem}
+                  onPress={() => setShowFollowersModal(true)}
+                >
+                  <Text style={styles.statValue}>
+                    {user?.followers?.length || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Abonnés</Text>
                 </TouchableOpacity>
                 <View style={styles.statDivider} />
-                <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
-                  <Text style={styles.statValue}>{user?.following?.length || 0}</Text>
+                <TouchableOpacity
+                  style={styles.statItem}
+                  onPress={() => setShowFollowingModal(true)}
+                >
+                  <Text style={styles.statValue}>
+                    {user?.following?.length || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Abonnements</Text>
                 </TouchableOpacity>
                 <View style={styles.statDivider} />
@@ -507,56 +631,82 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                   <Text style={styles.statLabel}>Publications</Text>
                 </View>
               </Animated.View>
-              
+
               {/* Feedback bar instead of profile progress */}
               <Animated.View style={{ opacity: statOpacity }}>
                 {(() => {
                   // Sécurisation des calculs pour éviter des valeurs NaN
-                  const totalFeedback = safeVoteSummary.up + safeVoteSummary.down;
+                  const totalFeedback =
+                    safeVoteSummary.up + safeVoteSummary.down;
                   const hasData = totalFeedback > 0;
-                  
+
                   // Par défaut à 50/50 s'il n'y a aucun vote
-                  const voteRatio = !hasData 
-                    ? 50 
+                  const voteRatio = !hasData
+                    ? 50
                     : Math.round((safeVoteSummary.up / totalFeedback) * 100);
-                  
+
                   const negativeRatio = 100 - voteRatio;
-                  
+
                   // Valeurs flex pour la barre de progression
-                  const positiveFlex = !hasData ? 1 : Math.max(0.1, safeVoteSummary.up);
-                  const negativeFlex = !hasData ? 1 : Math.max(0.1, safeVoteSummary.down);
-                  
+                  const positiveFlex = !hasData
+                    ? 1
+                    : Math.max(0.1, safeVoteSummary.up);
+                  const negativeFlex = !hasData
+                    ? 1
+                    : Math.max(0.1, safeVoteSummary.down);
+
                   // Couleur basée sur le ratio
                   const ratingColor = !hasData
-                    ? "#8BC34A"  // Vert par défaut
-                    : voteRatio >= 85 
-                      ? "#4CAF50" // Très positif
-                      : voteRatio >= 60 
-                        ? "#8BC34A" // Positif
-                        : voteRatio >= 50 
-                          ? "#FF9800" // Neutre
-                          : "#F44336"; // Négatif
-                  
+                    ? "#8BC34A" // Vert par défaut
+                    : voteRatio >= 85
+                    ? "#4CAF50" // Très positif
+                    : voteRatio >= 60
+                    ? "#8BC34A" // Positif
+                    : voteRatio >= 50
+                    ? "#FF9800" // Neutre
+                    : "#F44336"; // Négatif
+
                   return (
                     <View>
                       <View style={styles.ratingLabelsContainer}>
-                        <Text style={styles.ratingPercentage}>{voteRatio}% positif</Text>
-                        <Text style={styles.voteCount}>({safeVoteSummary.up} votes)</Text>
+                        <Text style={styles.ratingPercentage}>
+                          {voteRatio}% positif
+                        </Text>
+                        <Text style={styles.voteCount}>
+                          ({safeVoteSummary.up} votes)
+                        </Text>
                       </View>
                       <View style={styles.progressBarMini}>
-                        <View style={[styles.positiveProgressMini, { flex: positiveFlex, backgroundColor: ratingColor }]} />
-                        <View style={[styles.negativeProgressMini, { flex: negativeFlex }]} />
+                        <View
+                          style={[
+                            styles.positiveProgressMini,
+                            {
+                              flex: positiveFlex,
+                              backgroundColor: ratingColor,
+                            },
+                          ]}
+                        />
+                        <View
+                          style={[
+                            styles.negativeProgressMini,
+                            { flex: negativeFlex },
+                          ]}
+                        />
                       </View>
                       <View style={styles.ratingLabelsContainer}>
-                        <Text style={styles.ratingPercentage}>{negativeRatio}% négatif</Text>
-                        <Text style={styles.voteCount}>({safeVoteSummary.down} votes)</Text>
+                        <Text style={styles.ratingPercentage}>
+                          {negativeRatio}% négatif
+                        </Text>
+                        <Text style={styles.voteCount}>
+                          ({safeVoteSummary.down} votes)
+                        </Text>
                       </View>
                     </View>
                   );
                 })()}
               </Animated.View>
             </View>
-            
+
             {/* Scroll area for menu */}
             <ScrollView
               ref={scrollViewRef}
@@ -567,14 +717,14 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
               {/* Main menu */}
               <Text style={styles.menuSectionTitle}>MENU</Text>
               {mainMenuItems.map((item, index) => (
-                <Animated.View 
+                <Animated.View
                   key={`main-${index}`}
-                  style={{ 
+                  style={{
                     transform: [{ translateX: mainItemsAnimations[index] }],
                     opacity: mainItemsAnimations[index].interpolate({
                       inputRange: [-50, 0],
-                      outputRange: [0, 1]
-                    })
+                      outputRange: [0, 1],
+                    }),
                   }}
                 >
                   <SidebarItem
@@ -585,18 +735,22 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                   />
                 </Animated.View>
               ))}
-              
+
               {/* Secondary menu */}
-              <Text style={[styles.menuSectionTitle, styles.secondaryTitle]}>PARAMÈTRES</Text>
+              <Text style={[styles.menuSectionTitle, styles.secondaryTitle]}>
+                PARAMÈTRES
+              </Text>
               {secondaryMenuItems.map((item, index) => (
-                <Animated.View 
+                <Animated.View
                   key={`secondary-${index}`}
-                  style={{ 
-                    transform: [{ translateX: secondaryItemsAnimations[index] }],
+                  style={{
+                    transform: [
+                      { translateX: secondaryItemsAnimations[index] },
+                    ],
                     opacity: secondaryItemsAnimations[index].interpolate({
                       inputRange: [-40, 0],
-                      outputRange: [0, 1]
-                    })
+                      outputRange: [0, 1],
+                    }),
                   }}
                 >
                   <SidebarItem
@@ -608,11 +762,11 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                   />
                 </Animated.View>
               ))}
-              
+
               {/* Version number with modern badge */}
               <View style={styles.versionContainer}>
                 <LinearGradient
-                  colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+                  colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
                   style={styles.versionBadge}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
@@ -622,27 +776,40 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
               </View>
             </ScrollView>
           </View>
-          
+
           {/* Footer with logout button */}
-          <Animated.View style={[
-            styles.footerContainer,
-            {
-              opacity: logoutButtonAnimation.opacity,
-              transform: [{ translateY: logoutButtonAnimation.translateY }]
-            }
-          ]}>
+          <Animated.View
+            style={[
+              styles.footerContainer,
+              {
+                opacity: logoutButtonAnimation.opacity,
+                transform: [{ translateY: logoutButtonAnimation.translateY }],
+              },
+            ]}
+          >
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogoutWithSidebarClose}
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={THEME.colors.secondary.gradient as [string, string, ...string[]]}
+                colors={
+                  THEME.colors.secondary.gradient as [
+                    string,
+                    string,
+                    ...string[]
+                  ]
+                }
                 style={styles.logoutButtonGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <FontAwesome5 name="sign-out-alt" size={16} color="#FFFFFF" style={styles.logoutIcon} />
+                <FontAwesome5
+                  name="sign-out-alt"
+                  size={16}
+                  color="#FFFFFF"
+                  style={styles.logoutIcon}
+                />
                 <Text style={styles.logoutText}>Déconnexion</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -650,38 +817,50 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         </LinearGradient>
       </Animated.View>
 
+      <ProfilePhotoModal
+        visible={showProfilePhotoModal}
+        onClose={() => setShowProfilePhotoModal(false)}
+        currentPhotoUrl={user?.profilePhoto?.url || null}
+        onSuccess={handlePhotoUpdateSuccess}
+        // Ajout des props manquantes pour respecter ProfilePhotoModalProps :
+        username={user?.username || "Utilisateur"}
+        isSubmitting={false}
+        isFollowing={false}
+        onFollow={() => Promise.resolve()}
+        onUnfollow={() => Promise.resolve()}
+      />
+
       {/* Conditional modal rendering */}
-      <NameModal 
-         visible={showNameModal} 
-         onClose={() => setShowNameModal(false)} 
-         useFullName={user?.useFullName || false}
-         onOptionChange={handleOptionChange}
+      <NameModal
+        visible={showNameModal}
+        onClose={() => setShowNameModal(false)}
+        useFullName={user?.useFullName || false}
+        onOptionChange={handleProfilePhotoUpdate}
       />
-      <BadgeModal 
-         visible={false}  // Example, to be raised if needed
-         onClose={() => {}}
-         userVotes={0}
+      <BadgeModal
+        visible={false} // Example, to be raised if needed
+        onClose={() => {}}
+        userVotes={0}
       />
-      <LikeInfoModal 
-         visible={showLikeInfoModal} 
-         onClose={() => setShowLikeInfoModal(false)}
+      <LikeInfoModal
+        visible={showLikeInfoModal}
+        onClose={() => setShowLikeInfoModal(false)}
       />
-      <FollowersModal 
-         visible={showFollowersModal} 
-         onClose={() => setShowFollowersModal(false)}
-         followers={user?.followers || []}
-         onUserPress={handleFollowingUserPress}
+      <FollowersModal
+        visible={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        followers={user?.followers || []}
+        onUserPress={handleFollowingUserPress}
       />
-      <FollowingModal 
-         visible={showFollowingModal} 
-         onClose={() => setShowFollowingModal(false)}
-         following={user?.following || []}
-         onUserPress={handleFollowingUserPress}
+      <FollowingModal
+        visible={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        following={user?.following || []}
+        onUserPress={handleFollowingUserPress}
       />
     </>
   );
 });
-
 
 /**
  * Styles optimisés pour interface de réseau social moderne
@@ -697,10 +876,9 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     height: "100%",
     zIndex: 1000,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderTopRightRadius: 30,
     borderBottomRightRadius: 30,
-
   },
   sidebarBackground: {
     flex: 1,
@@ -709,7 +887,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   overlay: {
     position: "absolute",
@@ -730,11 +908,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.lg,
     paddingBottom: THEME.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-    position: 'relative',
+    borderBottomColor: "rgba(255,255,255,0.1)",
+    position: "relative",
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: THEME.spacing.lg,
     right: THEME.spacing.lg,
     zIndex: 10,
@@ -743,22 +921,22 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarContainer: {
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: THEME.spacing.md,
-    position: 'relative',
+    position: "relative",
   },
   avatarGradientBorder: {
     width: 100,
     height: 100,
     borderRadius: 50,
     padding: 3, // épaisseur de la bordure
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarImage: {
     width: 94,
@@ -766,15 +944,15 @@ const styles = StyleSheet.create({
     borderRadius: 47,
   },
   onlineStatusBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 5,
     right: 5,
     width: 24,
     height: 24,
     borderRadius: 12,
     backgroundColor: THEME.colors.neutral.dark,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: THEME.colors.neutral.dark,
   },
@@ -787,32 +965,32 @@ const styles = StyleSheet.create({
   userName: {
     color: THEME.colors.neutral.white,
     fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginBottom: 2,
   },
   userHandle: {
     color: THEME.colors.neutral.light,
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   // Statistiques de l'utilisateur
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.xs,
     marginBottom: THEME.spacing.md,
   },
   statItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   statValue: {
     color: THEME.colors.neutral.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   statLabel: {
     color: THEME.colors.neutral.light,
@@ -821,7 +999,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
     marginHorizontal: THEME.spacing.xs,
   },
 
@@ -833,16 +1011,16 @@ const styles = StyleSheet.create({
     color: THEME.colors.neutral.light,
     fontSize: 12,
     marginBottom: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   progressBarBackground: {
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 2,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.accent.main,
     borderRadius: 2,
   },
@@ -859,7 +1037,7 @@ const styles = StyleSheet.create({
   menuSectionTitle: {
     color: THEME.colors.neutral.light,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 1,
     marginBottom: THEME.spacing.md,
     paddingLeft: THEME.spacing.xs,
@@ -870,7 +1048,7 @@ const styles = StyleSheet.create({
 
   // Version badge
   versionContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: THEME.spacing.xl,
   },
   versionBadge: {
@@ -878,7 +1056,7 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.xs,
     borderRadius: THEME.borderRadius.round,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: "rgba(255,255,255,0.08)",
   },
   versionText: {
     color: THEME.colors.neutral.light,
@@ -891,16 +1069,16 @@ const styles = StyleSheet.create({
     paddingBottom: THEME.spacing.lg,
     paddingTop: THEME.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
   logoutButton: {
     borderRadius: THEME.borderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   logoutButtonGradient: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: THEME.spacing.md,
     borderRadius: THEME.borderRadius.lg,
   },
@@ -910,12 +1088,12 @@ const styles = StyleSheet.create({
   logoutText: {
     color: THEME.colors.neutral.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   ratingLabelsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 4,
   },
   ratingPercentage: {
     color: THEME.colors.neutral.light,
@@ -926,31 +1104,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   progressBarMini: {
-    flexDirection: 'row',
+    flexDirection: "row",
     height: 4,
     borderRadius: 2,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   positiveProgressMini: {
-    height: '100%',
+    height: "100%",
   },
   negativeProgressMini: {
-    height: '100%',
-    backgroundColor: '#F44336',
+    height: "100%",
+    backgroundColor: "#F44336",
   },
   iconButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
 export default Sidebar;
-

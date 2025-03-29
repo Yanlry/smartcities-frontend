@@ -22,6 +22,7 @@ import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/common/Sidebar";
 import { useToken } from "../hooks/auth/useToken";
 import { Share } from "react-native";
+import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 interface Post {
   likedByUser: any;
@@ -67,6 +68,15 @@ export default function PostDetailsScreen({ navigation }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+const dummyFn = () => {};
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -694,7 +704,21 @@ export default function PostDetailsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
       <ScrollView>
         <View style={styles.postContainer}>
           {/* En-tête du post */}

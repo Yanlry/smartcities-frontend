@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
    statsContainer: {
     marginBottom: 10,
     backgroundColor: "rgba(0, 0, 0, 0.1)",
-    borderRadius: 12,
+    borderRadius: 50,
   },
   headerTitle: {
     fontSize: 12,

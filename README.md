@@ -79,3 +79,18 @@ L'idée générale est de créer une structure claire où chaque dossier a un r�
 - 🗺️ `navigation/` : Les chemins
 - ⚙️ `declarations/` : Les réglages techniques
 
+
+
+
+src/
+└── components/
+    └── badge/
+        ├── index.ts                     // Export des composants publics
+        ├── BadgeModal.tsx               // Composant principal orchestrateur
+        ├── InfoModal.tsx                // Modal d'informations
+        ├── TierItem.tsx                 // Composant pour chaque niveau de badge
+        ├── HeroSection.tsx              // Section héro du modal 
+        ├── types/
+        │   ├── index.ts                 // Export des types
+        │   ├── BadgeTypes.ts            // Types liés aux badges
+        │   └── StyleTypes.ts            // Types pour les styles

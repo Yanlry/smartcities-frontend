@@ -16,7 +16,7 @@ import { useUserRanking } from "../hooks/user/useUserRanking";
 // Composants
 import {
   ProfileHeader,
-  ProfilePhoto,
+  // ProfilePhoto, // Removed as it is not exported from "../components/profile"
   ProfileTabs,
   UserInfoTab,
   ReportsTab,
@@ -25,7 +25,7 @@ import {
   ReportModal,
 } from "../components/profile";
 import RankBadge from "../components/home/ProfileSection/RankBadge";
-
+import ProfilePhoto from "../components/profile/Photo/ProfilePhoto";
 // Types
 import { TabType } from "../types/features/profile/user.types";
 import { User as EntityUser } from "../types/entities/user.types"; // Import pour l'adaptation
@@ -33,6 +33,7 @@ import { StackScreenProps } from "@react-navigation/stack";
 // @ts-ignore
 import { API_URL } from "@env";
 import { ParamListBase } from "@react-navigation/native";
+// Removed duplicate and incorrect import
 
 type UserProfileScreenNavigationProps = StackScreenProps<ParamListBase, "UserProfileScreen">;
 
@@ -57,6 +58,12 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   
+
+const dummyFn = () => {};
+const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
+  return true;
+};
+
   // Hooks pour les données
   const { 
     user: rawUser, 
@@ -231,6 +238,8 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
           isFollowing={isFollowing}
           onFollow={handleFollowWithSubmitting}
           onUnfollow={handleUnfollowWithSubmitting}
+          visible={false} // Add required props for ProfilePhotoModalProps
+          onClose={() => {}} // Provide a default onClose handler
         />
 
         <View>
@@ -288,7 +297,20 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, 
         <View style={profileStyles.separator} />
       </ScrollView>
 
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        stats={{ posts: 0, likes: 0 }} // Suppression de la propriété 'comments'
+        onShowFollowers={dummyFn}
+        onShowFollowing={dummyFn}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+        updateProfileImage={dummyUpdateProfileImage} // Fonction conforme à la signature demandée
+        onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+      />
     </View>
   );
 };

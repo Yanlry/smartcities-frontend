@@ -187,16 +187,31 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Update user display preference
   const updateUserDisplayPreference = async (useFullName: boolean) => {
+    if (!user) return;
+    
     try {
-      if (!user?.id) return;
-
-      await axios.put(`${API_URL}/users/${user.id}`, {
-        useFullName,
+      const response = await fetch(`${API_URL}/users/display-preference`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          useFullName
+        }),
       });
 
-      setUser(prev => prev ? { ...prev, useFullName } : null);
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour de la préférence.");
+      }
+
+      setUser((prevUser) => ({
+        ...prevUser!,
+        useFullName
+      }));
+      
     } catch (error) {
-      console.error('Error updating display preference:', error);
+      console.error("Erreur lors de la mise à jour de la préférence", error);
     }
   };
 

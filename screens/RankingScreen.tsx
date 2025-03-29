@@ -24,6 +24,7 @@ import UserCard from "../components/ranking/UserCard";
 import RankingHeader from "../components/ranking/RankingHeader";
 import TopUsersSection from "../components/ranking/TopUsersSection";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 // Color palette
 const COLORS = {
@@ -78,6 +79,15 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+const dummyFn = () => {};
+
   // Animation values
   const scrollY = new Animated.Value(0);
   const headerOpacity = scrollY.interpolate({
@@ -298,7 +308,21 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         />
         
         {/* Sidebar */}
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+        <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
       </View>
     </SafeAreaView>
   );

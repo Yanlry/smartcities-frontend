@@ -258,6 +258,12 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const handleProfileImageUpdateWrapper = async (uri: string): Promise<boolean> => {
+    // Vous pouvez ignorer le paramètre 'uri' si votre fonction existante ne l'utilise pas
+    await handleProfileImageUpdate();
+    return true;
+  };
+
   const handleInputChange: HandleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
@@ -1145,7 +1151,7 @@ export default function ProfileScreen({ navigation }) {
         onNavigateToSettings={() => navigation.navigate("SettingsScreen")} 
         onShowVoteInfoModal={() => console.log("Show vote info modal")} 
         onNavigateToCity={() => console.log("Navigate to city")} 
-        updateProfileImage={handleProfileImageUpdate} 
+        updateProfileImage={handleProfileImageUpdateWrapper} 
       />
     </View>
   );

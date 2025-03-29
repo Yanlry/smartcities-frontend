@@ -24,6 +24,7 @@ import PhotoManager from "../components/interactions/PhotoManager";
 import { useLocation } from "../hooks/location/useLocation";
 import MapView from "react-native-maps";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 export default function EventsScreen({ navigation }) {
   const { unreadCount } = useNotification();
@@ -53,6 +54,15 @@ export default function EventsScreen({ navigation }) {
       photos: { url: string }[];
     }[]
   >([]);
+
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+const dummyFn = () => {};
   
   useEffect(() => {
     const fetchUserEvents = async () => {
@@ -401,7 +411,21 @@ export default function EventsScreen({ navigation }) {
           contentContainerStyle={styles.eventsList}
         />
       )}
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+  <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
       <Modal
         visible={isModalVisible}
         animationType="slide"

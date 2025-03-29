@@ -11,11 +11,21 @@ import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/common/Sidebar";
 import { Linking } from "react-native";
 import MayorInfoCard from '../components/home/MayorInfoSection/MayorInfoCard';
+import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 export default function CityScreen({ navigation }) {
   const { unreadCount } = useNotification();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const {
+    user,
+    displayName,
+    voteSummary,
+    updateProfileImage,
+  } = useUserProfile();
+
+const dummyFn = () => {};
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
@@ -65,7 +75,21 @@ export default function CityScreen({ navigation }) {
       <ScrollView>
         <MayorInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
       </ScrollView>
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar
+                  isOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  user={user}
+                  displayName={displayName}
+                  voteSummary={voteSummary}
+                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
+                  onShowFollowers={dummyFn}
+                  onShowFollowing={dummyFn}
+                  onShowNameModal={dummyFn}
+                  onShowVoteInfoModal={dummyFn}
+                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+                  updateProfileImage={updateProfileImage}
+                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+                />
     </View>
   );
 }
