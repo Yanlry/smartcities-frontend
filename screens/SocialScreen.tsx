@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   Image,
   TextInput,
@@ -12,11 +11,13 @@ import {
   Dimensions,
   ScrollView,
   Modal,
-  RefreshControl,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Animated,
 } from "react-native";
+import RefreshControl from "../components/common/Loader/RefreshControl";
+import RefreshSuccessAnimation from "../components/common/Loader/RefreshSuccessAnimation";
 // @ts-ignore
 import { API_URL } from "@env";
 import { useToken } from "../hooks/auth/useToken";
@@ -139,6 +140,8 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   const [expandedPostContent, setExpandedPostContent] = useState<
     Record<number, boolean>
   >({});
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [showRefreshSuccess, setShowRefreshSuccess] = useState<boolean>(false);
 
   // Screen dimensions for responsive design
   const { width: screenWidth } = Dimensions.get("window");
@@ -407,29 +410,26 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
         throw new Error("Erreur lors de l'ajout du commentaire");
       }
 
-      // Clear input and refresh posts
+      // Clear input
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
 
       // Get the new comment data
       const newComment = await response.json();
 
-      // Update posts with optimistic response
+      // Correction : ajouter la photo de profil (ou une URL par défaut) au nouveau commentaire.
+      const commentWithPhoto = {
+        ...newComment,
+        userProfilePhoto: newComment.userProfilePhoto || "https://via.placeholder.com/150",
+        replies: [],
+      };
+
+      // Mise à jour du state pour afficher immédiatement l'image du commentaire
       setPosts((prevPosts) =>
-        prevPosts.map((post) => {
-          if (post.id === postId) {
-            return {
-              ...post,
-              comments: [
-                ...post.comments,
-                {
-                  ...newComment,
-                  replies: [],
-                },
-              ],
-            };
-          }
-          return post;
-        })
+        prevPosts.map((post) =>
+          post.id === postId
+            ? { ...post, comments: [...post.comments, commentWithPhoto] }
+            : post
+        )
       );
     } catch (error) {
       Alert.alert(
@@ -890,10 +890,18 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   /**
    * Handle pull-to-refresh
    */
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    // Simulez un délai afin d'afficher l'animation
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Rafraîchissez vos données ici, par exemple :
     fetchPosts();
-  }, []);
+    setRefreshing(false);
+    setShowRefreshSuccess(true);
+    setTimeout(() => {
+      setShowRefreshSuccess(false);
+    }, 1000);
+  }, [fetchPosts]);
 
   // Available filters
   const filters: Filter[] = useMemo(
@@ -1361,6 +1369,14 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     );
   };
 
+  /**
+   * Handle animated scroll
+   */
+  const handleAnimatedScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    { useNativeDriver: false, listener: handleScroll }
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -1368,23 +1384,22 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
       <StatusBar barStyle="dark-content" />
-
-      {/* Main Content */}
-      <FlatList
+      <RefreshControl
+        refreshing={refreshing}
+        scrollY={scrollY}
+        onRefreshStarted={onRefresh}
+      />
+      <RefreshSuccessAnimation
+        visible={showRefreshSuccess}
+        message="✓ Mis à jour avec succès!"
+      />
+      <Animated.FlatList
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        onScroll={handleScroll}
+        onScroll={handleAnimatedScroll}
         scrollEventThrottle={16}
         contentContainerStyle={styles.feedContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#1976D2"]}
-            tintColor="#1976D2"
-          />
-        }
         ListHeaderComponent={
           <View style={styles.headerContainer}>
             {/* Post Creation Card */}

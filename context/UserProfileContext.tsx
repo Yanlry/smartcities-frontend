@@ -56,6 +56,7 @@ interface UserProfileContextType {
   voteSummary: VoteSummary;
   loading: boolean;
   error: string | null;
+  isAuthenticated: boolean; // Ajout d'un état d'authentification explicite
   updateProfileImage: (imageUrl: string) => Promise<void>;
   updateUserDisplayPreference: (useFullName: boolean) => Promise<void>;
   refreshUserData: () => Promise<void>;
@@ -69,6 +70,7 @@ const UserProfileContext = createContext<UserProfileContextType>({
   voteSummary: { up: 0, down: 0 },
   loading: false,
   error: null,
+  isAuthenticated: false,
   updateProfileImage: async () => {},
   updateUserDisplayPreference: async () => {},
   refreshUserData: async () => {},
@@ -84,6 +86,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [voteSummary, setVoteSummary] = useState<VoteSummary>({ up: 0, down: 0 });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Compute display name from user data
   const displayName = user 
@@ -92,17 +95,38 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       : user.username
     : '';
 
-  // Get user ID from storage
-  const getUserIdFromToken = async (): Promise<string | null> => {
+  // Vérifier la validité du token JWT
+  const isTokenValid = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000; // convertir en millisecondes
+      return Date.now() < expirationTime;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Get user ID from token with improved error handling
+  const getUserIdFromToken = async (): Promise<{ userId: string | null; isValid: boolean }> => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      if (!token) return null;
+      
+      // Aucun token trouvé, l'utilisateur n'est pas connecté (ce n'est pas une erreur)
+      if (!token) {
+        return { userId: null, isValid: false };
+      }
+      
+      // Vérifier si le token est valide
+      if (!isTokenValid(token)) {
+        return { userId: null, isValid: false };
+      }
       
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.userId;
+      return { userId: payload.userId, isValid: true };
     } catch (error) {
-      console.error('Error extracting user ID from token:', error);
-      return null;
+      // Une erreur dans la lecture ou le décodage du token
+      console.warn('Erreur lors de l\'extraction de l\'ID utilisateur du token:', error);
+      return { userId: null, isValid: false };
     }
   };
 
@@ -123,16 +147,39 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return summary;
   };
 
-  // Function to refresh user data
+  // Configuration axios avec intercepteur pour ajouter le token
+  const setupAxiosInterceptors = useCallback(async () => {
+    axios.interceptors.request.use(
+      async (config) => {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+  }, []);
+
+  // Function to refresh user data with improved error handling
   const refreshUserData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const userId = await getUserIdFromToken();
-      if (!userId) {
-        throw new Error('User ID not found');
+      // Vérifier l'état d'authentification
+      const { userId, isValid } = await getUserIdFromToken();
+      
+      // Si pas de token valide, ne pas générer d'erreur, juste indiquer que l'utilisateur n'est pas connecté
+      if (!userId || !isValid) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setVoteSummary({ up: 0, down: 0 });
+        return;
       }
+
+      // L'utilisateur est authentifié
+      setIsAuthenticated(true);
 
       // Fetch user data
       const response = await axios.get(`${API_URL}/users/${userId}`);
@@ -140,37 +187,35 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       // Fetch user stats which includes votes
       try {
-        console.log(`Fetching user stats from ${API_URL}/users/stats/${userId}`);
         const statsResponse = await axios.get<UserStats>(`${API_URL}/users/stats/${userId}`);
         
         if (statsResponse.data && statsResponse.data.votes) {
           // Transform votes to summary format
           const summary = transformVotes(statsResponse.data.votes);
-          console.log('Transformed vote summary:', summary);
           setVoteSummary(summary);
         } else {
-          console.log('No votes data in stats response, using defaults');
           setVoteSummary({ up: 0, down: 0 });
         }
       } catch (statsError: any) {
-        console.error('Error fetching user stats:', statsError);
-        
+        // Gestion silencieuse des erreurs de stats
         if (statsError.response && statsError.response.status === 404) {
-          console.log('Stats endpoint not found, using default votes');
           setVoteSummary({ up: 0, down: 0 });
         } else {
-          // Keep existing vote summary in case of other errors
-          console.error('Unexpected error fetching stats:', statsError);
+          // Log l'erreur mais ne perturbe pas l'expérience utilisateur
+          console.warn('Erreur lors de la récupération des statistiques utilisateur:', statsError);
         }
       }
 
     } catch (error) {
-      console.error('Error refreshing user data:', error);
-      setError('Failed to load user profile');
+      // Erreur seulement pour les cas où l'utilisateur est authentifié mais une erreur survient
+      if (isAuthenticated) {
+        console.error('Erreur lors du rafraîchissement des données utilisateur:', error);
+        setError('Impossible de charger le profil utilisateur');
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Update profile image
   const updateProfileImage = async (imageUrl: string) => {
@@ -190,10 +235,13 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!user) return;
     
     try {
+      const token = await AsyncStorage.getItem('authToken');
+      
       const response = await fetch(`${API_URL}/users/display-preference`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({
           userId: user.id,
@@ -215,14 +263,20 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  // Update user city - key function for fixing the city update issue
+  // Update user city with improved error handling
   const updateUserCity = async (nomCommune: string, codePostal: string) => {
     try {
-      if (!user?.id) return;
+      if (!user?.id || !isAuthenticated) return;
 
+      const token = await AsyncStorage.getItem('authToken');
+      
       await axios.put(`${API_URL}/users/${user.id}`, {
         nomCommune,
         codePostal,
+      }, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        }
       });
 
       // Update local state immediately to reflect changes across the app
@@ -233,10 +287,27 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  // Initial data load
+  // Initial setup
   useEffect(() => {
+    setupAxiosInterceptors();
     refreshUserData();
-  }, [refreshUserData]);
+    
+    // Ajouter un listener pour les changements d'état d'authentification
+    const checkAuthStatusInterval = setInterval(() => {
+      // Vérifier périodiquement si l'état d'authentification a changé
+      getUserIdFromToken().then(({ userId, isValid }) => {
+        const newAuthState = !!(userId && isValid);
+        if (newAuthState !== isAuthenticated) {
+          // Si l'état a changé, rafraîchir les données
+          refreshUserData();
+        }
+      });
+    }, 60000); // Vérifier toutes les minutes
+    
+    return () => {
+      clearInterval(checkAuthStatusInterval);
+    };
+  }, [refreshUserData, setupAxiosInterceptors, isAuthenticated]);
 
   // Context value
   const value = {
@@ -245,6 +316,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     voteSummary,
     loading,
     error,
+    isAuthenticated,
     updateProfileImage,
     updateUserDisplayPreference,
     refreshUserData,

@@ -17,6 +17,7 @@ import {
   StatusBar,
   Keyboard,
   Easing,
+  Pressable,
 } from "react-native";
 import { useAuth } from "../../hooks/auth/useAuth";
 import { BlurView } from "expo-blur";
@@ -38,7 +39,13 @@ interface ForgotPasswordState {
   step: number;
 }
 
+// Configuration des mesures et constantes
 const { width, height } = Dimensions.get("window");
+const BORDER_RADIUS = 24; // On utilise le border-radius de l'original
+const NEON_PRIMARY = '#FF3A8D';
+const NEON_SECONDARY = '#00DFFF';
+const NEON_TERTIARY = '#00FFB3';
+const ACCENT_COLOR = '#1a759f';
 
 export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
   // Hooks d'authentification
@@ -68,38 +75,144 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Animations
+  // Animations améliorées - combinaison des deux approches
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(-100)).current; // Animation slide du haut
+  const formSlideAnim = useRef(new Animated.Value(50)).current; // Animation du formulaire de bas en haut
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   
+  // Animation de fond
+  const bgCircleScale1 = useRef(new Animated.Value(1)).current;
+  const bgCircleScale2 = useRef(new Animated.Value(1)).current;
+  const bgCircleOpacity1 = useRef(new Animated.Value(0.5)).current;
+  const bgCircleOpacity2 = useRef(new Animated.Value(0.3)).current;
+  
   // Référence aux inputs pour focus
   const passwordInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
   
-  // Animation d'entrée
+  // Animation des cercles de fond - effet glassmorphique subtil
   useEffect(() => {
-    // Séquence d'animations parallèles
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.elastic(1)),
-      }),
-    ]).start();
+    const animateBackground = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(bgCircleScale1, {
+              toValue: 1.2,
+              duration: 8000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+            Animated.timing(bgCircleOpacity1, {
+              toValue: 0.4,
+              duration: 8000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+            Animated.timing(bgCircleScale2, {
+              toValue: 0.9,
+              duration: 10000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+            Animated.timing(bgCircleOpacity2, {
+              toValue: 0.6,
+              duration: 10000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(bgCircleScale1, {
+              toValue: 1,
+              duration: 8000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+            Animated.timing(bgCircleOpacity1, {
+              toValue: 0.7,
+              duration: 8000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+            Animated.timing(bgCircleScale2, {
+              toValue: 1,
+              duration: 10000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+            Animated.timing(bgCircleOpacity2, {
+              toValue: 0.5,
+              duration: 10000,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.sin),
+            }),
+          ]),
+        ])
+      ).start();
+    };
+
+    animateBackground();
+  }, []);
+  
+  // Animation d'entrée avec séquence améliorée
+  useEffect(() => {
+    const startupAnimation = () => {
+      Animated.sequence([
+        // Fade in du background
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }),
+        // Séquence parallèle d'animations
+        Animated.parallel([
+          // Logo slide down + rotation
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.elastic(1)),
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.back(1.5)),
+          }),
+          // Formulaire slide up
+          Animated.timing(formSlideAnim, {
+            toValue: 0,
+            duration: 800,
+            delay: 200,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.cubic),
+          }),
+          // Opacity in
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 1000,
+            delay: 300,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.cubic),
+          }),
+          // Scale up
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 1000,
+            delay: 300,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.elastic(1)),
+          }),
+        ]),
+      ]).start();
+    };
+    
+    startupAnimation();
     
     // Listeners de clavier
     const keyboardDidShowListener = Keyboard.addListener(
@@ -123,6 +236,13 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
       setEmailError("Veuillez saisir votre adresse email");
       return false;
     }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(text)) {
+      setEmailError("Format d'email invalide");
+      return false;
+    }
+    
     setEmailError(null);
     return true;
   }, []);
@@ -136,33 +256,50 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
     return true;
   }, []);
 
-  // Animation de secousse pour erreur
+  // Animation de secousse améliorée
   const shakeAnimation = useCallback(() => {
     Animated.sequence([
       Animated.timing(shakeAnim, {
-        toValue: 10,
-        duration: 50,
+        toValue: 15,
+        duration: 80,
         useNativeDriver: true,
+        easing: Easing.cubic,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -15,
+        duration: 80,
+        useNativeDriver: true,
+        easing: Easing.cubic,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 10,
+        duration: 80,
+        useNativeDriver: true,
+        easing: Easing.cubic,
       }),
       Animated.timing(shakeAnim, {
         toValue: -10,
-        duration: 50,
+        duration: 80,
         useNativeDriver: true,
+        easing: Easing.cubic,
       }),
       Animated.timing(shakeAnim, {
-        toValue: 10,
-        duration: 50,
+        toValue: 5,
+        duration: 80,
         useNativeDriver: true,
+        easing: Easing.cubic,
       }),
       Animated.timing(shakeAnim, {
-        toValue: -10,
-        duration: 50,
+        toValue: -5,
+        duration: 80,
         useNativeDriver: true,
+        easing: Easing.cubic,
       }),
       Animated.timing(shakeAnim, {
         toValue: 0,
-        duration: 50,
+        duration: 80,
         useNativeDriver: true,
+        easing: Easing.cubic,
       }),
     ]).start();
   }, [shakeAnim]);
@@ -178,7 +315,7 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
       return;
     }
     
-    // Animation de pression du bouton
+    // Animation de pression du bouton avec meilleure fluidité
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 0.95,
@@ -203,20 +340,35 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
     if (passwordError) validatePassword(text);
   }, [passwordError, setPassword, validatePassword]);
 
+  // Animation de transition améliorée
   const handleRegisterNavigation = useCallback(() => {
     setIsRegisterClicked(true);
     
-    // Animation de sortie
+    // Animation de sortie plus élaborée
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 400,
         useNativeDriver: true,
+        easing: Easing.inOut(Easing.cubic),
+      }),
+      Animated.timing(formSlideAnim, {
+        toValue: 50,
+        duration: 500,
+        useNativeDriver: true,
+        easing: Easing.inOut(Easing.cubic),
       }),
       Animated.timing(slideAnim, {
-        toValue: -50,
+        toValue: -100,
+        duration: 400,
+        useNativeDriver: true,
+        easing: Easing.inOut(Easing.cubic),
+      }),
+      Animated.timing(rotateAnim, {
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
+        easing: Easing.inOut(Easing.cubic),
       }),
     ]).start(() => {
       navigation.navigate("Register");
@@ -224,22 +376,59 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
         setIsRegisterClicked(false);
         // Reset animations for when we come back
         fadeAnim.setValue(0);
-        slideAnim.setValue(50);
-        Animated.parallel([
+        slideAnim.setValue(-100);
+        formSlideAnim.setValue(50);
+        opacityAnim.setValue(0);
+        rotateAnim.setValue(0);
+        scaleAnim.setValue(0.9);
+        
+        // Ré-animer l'entrée
+        Animated.sequence([
           Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 800,
             useNativeDriver: true,
+            easing: Easing.out(Easing.cubic),
           }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 800,
-            useNativeDriver: true,
-          }),
+          Animated.parallel([
+            Animated.timing(slideAnim, {
+              toValue: 0,
+              duration: 1000,
+              useNativeDriver: true,
+              easing: Easing.out(Easing.elastic(1)),
+            }),
+            Animated.timing(rotateAnim, {
+              toValue: 1,
+              duration: 1200,
+              useNativeDriver: true,
+              easing: Easing.out(Easing.back(1.5)),
+            }),
+            Animated.timing(formSlideAnim, {
+              toValue: 0,
+              duration: 800,
+              delay: 200,
+              useNativeDriver: true,
+              easing: Easing.out(Easing.cubic),
+            }),
+            Animated.timing(opacityAnim, {
+              toValue: 1,
+              duration: 1000,
+              delay: 300,
+              useNativeDriver: true,
+              easing: Easing.inOut(Easing.cubic),
+            }),
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 1000,
+              delay: 300,
+              useNativeDriver: true,
+              easing: Easing.out(Easing.elastic(1)),
+            }),
+          ]),
         ]).start();
-      }, 500);
+      }, 100);
     });
-  }, [fadeAnim, slideAnim, navigation]);
+  }, [fadeAnim, formSlideAnim, navigation, opacityAnim, rotateAnim, scaleAnim, slideAnim]);
 
   const updateForgotPasswordState = useCallback((field: keyof ForgotPasswordState, value: string | number) => {
     setForgotPasswordState(prev => ({ ...prev, [field]: value }));
@@ -372,13 +561,19 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
     );
   }, [forgotPasswordState.token]);
 
-  // Function pour le focus progressif entre les champs
+  // Fonction pour le focus progressif entre les champs
   const focusNextInput = useCallback(() => {
     if (email && passwordInputRef.current) {
       passwordInputRef.current.focus();
     }
   }, [email]);
 
+  // Conversion des valeurs animées pour les rotations
+  const rotateDegrees = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+  
   // Élément pour la modale de réinitialisation de mot de passe
   const renderModalContent = () => {
     const { step, email, token, newPassword } = forgotPasswordState;
@@ -572,10 +767,42 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
         style={styles.background}
         imageStyle={styles.backgroundImage}
       >
-        <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
-          style={styles.overlay}
-        />
+        {/* Overlay amélioré avec animation */}
+        <View style={styles.overlay}>
+          <View style={styles.backgroundEffects}>
+            {/* Premier cercle animé */}
+            <Animated.View style={[
+              styles.bgCircle1,
+              {
+                transform: [{ scale: bgCircleScale1 }],
+                opacity: bgCircleOpacity1
+              }
+            ]}>
+              <LinearGradient
+                colors={[NEON_PRIMARY, 'transparent']}
+                style={styles.bgGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+            </Animated.View>
+            
+            {/* Deuxième cercle animé */}
+            <Animated.View style={[
+              styles.bgCircle2,
+              {
+                transform: [{ scale: bgCircleScale2 }],
+                opacity: bgCircleOpacity2
+              }
+            ]}>
+              <LinearGradient
+                colors={[NEON_SECONDARY, 'transparent']}
+                style={styles.bgGradient}
+                start={{ x: 1, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              />
+            </Animated.View>
+          </View>
+        </View>
 
         {/* Logo et titre animés */}
         <Animated.View
@@ -590,14 +817,19 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
             },
           ]}
         >
-          <View style={styles.logoContainer}>
+          <Animated.View style={[
+            styles.logoContainer,
+            {
+              transform: [{ rotate: rotateDegrees }]
+            }
+          ]}>
             <LinearGradient
               colors={['#062C41', '#1d3e53']}
               style={styles.logoBackground}
             >
               <Icon name="location-city" size={40} color="#fff" />
             </LinearGradient>
-          </View>
+          </Animated.View>
           <Text style={styles.appName}>Smartcities</Text>
           <Text style={styles.appTagline}>Connectez-vous avec votre ville</Text>
         </Animated.View>
@@ -609,7 +841,7 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
             {
               opacity: fadeAnim,
               transform: [
-                { translateY: slideAnim },
+                { translateY: formSlideAnim },
                 { scale: scaleAnim },
                 { translateX: shakeAnim }
               ],
@@ -811,6 +1043,43 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  backgroundEffects: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  bgCircle1: {
+    position: 'absolute',
+    width: width * 1.5,
+    height: width * 1.5,
+    borderRadius: width * 0.75,
+    top: -width * 0.5,
+    left: -width * 0.25,
+    overflow: 'hidden',
+    shadowColor: NEON_SECONDARY,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 25,
+    elevation: 15,
+  },
+  bgCircle2: {
+    position: 'absolute',
+    width: width * 1.2,
+    height: width * 1.2,
+    borderRadius: width * 0.6,
+    bottom: -width * 0.3,
+    right: -width * 0.2,
+    overflow: 'hidden',
+    shadowColor: NEON_PRIMARY,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 25,
+    elevation: 15,
+  },
+  bgGradient: {
+    width: '100%',
+    height: '100%',
   },
   headerContainer: {
     alignItems: 'center',
@@ -857,7 +1126,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 400,
     alignSelf: 'center',
-    borderRadius: 24,
+    borderRadius: BORDER_RADIUS,
     overflow: 'hidden',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -867,7 +1136,7 @@ const styles = StyleSheet.create({
   },
   blurContainer: {
     overflow: 'hidden',
-    borderRadius: 24,
+    borderRadius: BORDER_RADIUS,
     padding: 30,
   },
   gradientOverlay: {
@@ -876,7 +1145,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 24,
+    borderRadius: BORDER_RADIUS,
   },
   welcomeTitle: {
     fontSize: 28,
@@ -1026,7 +1295,7 @@ const styles = StyleSheet.create({
     width: "90%",
     maxWidth: 400,
     backgroundColor: "#fff",
-    borderRadius: 24,
+    borderRadius: BORDER_RADIUS,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -1036,8 +1305,8 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     padding: 20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: BORDER_RADIUS,
+    borderTopRightRadius: BORDER_RADIUS,
   },
   modalTitle: {
     fontSize: 20,
