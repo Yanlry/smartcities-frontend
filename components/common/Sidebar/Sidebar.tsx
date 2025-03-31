@@ -533,19 +533,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     setShowProfilePhotoModal(true);
   }, []);
 
-  const handleProfilePhotoUpdate = useCallback(
-    async (photoUri: string) => {
-      try {
-        await updateProfileImage(photoUri);
-        // Refresh user data after photo update
-        await refreshUserData();
-      } catch (error) {
-        console.error("Error updating profile photo:", error);
-      }
-    },
-    [updateProfileImage, refreshUserData]
-  );
-
   const handlePhotoUpdateSuccess = useCallback(() => {
     // Rafraîchir les données utilisateur après une mise à jour réussie
     refreshUserData();
@@ -647,11 +634,10 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
               </Text>
               <Text
                 style={styles.userHandle}
-                onPress={() =>
-                  navigation.navigate("ProfileScreen", {
-                    userId: user?.id || "",
-                  })
-                }
+                onPress={() => {
+                  toggleSidebar();
+                  navigation.navigate("ProfileScreen", { userId: user?.id || "" });
+                }}
               >
                 {user?.nomCommune || "Ville inconnue"}
               </Text>
@@ -689,6 +675,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
               </View>
             </Animated.View>
 
+
+            <TouchableOpacity onPress={() => setShowLikeInfoModal(true)}>
             {/* Feedback bar instead of profile progress */}
             <Animated.View style={{ opacity: statOpacity }}>
               {(() => {
@@ -762,6 +750,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                 );
               })()}
             </Animated.View>
+            </TouchableOpacity>
           </View>
 
           {/* Scroll area for menu */}
@@ -939,7 +928,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         visible={showNameModal}
         onClose={() => setShowNameModal(false)}
         useFullName={user?.useFullName || false}
-        onOptionChange={handleProfilePhotoUpdate}
+        onOptionChange={handleOptionChange}
       />
       <BadgeModal visible={false} onClose={() => {}} userVotes={0} />
       <LikeInfoModal
@@ -948,13 +937,19 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
       />
       <FollowersModal
         visible={showFollowersModal}
-        onClose={() => setShowFollowersModal(false)}
+        onClose={() => {
+          toggleSidebar();
+          setShowFollowersModal(false)
+        }}
         followers={user?.followers || []}
         onUserPress={handleFollowingUserPress}
       />
       <FollowingModal
         visible={showFollowingModal}
-        onClose={() => setShowFollowingModal(false)}
+        onClose={() => {
+          toggleSidebar();
+          setShowFollowingModal(false)
+        }}
         following={user?.following || []}
         onUserPress={handleFollowingUserPress}
       />

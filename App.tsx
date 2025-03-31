@@ -186,9 +186,9 @@ const LAYOUT = {
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
-export default function App({ navigation }) {
+export default function App() {
   const { getToken } = useToken();
   const previousOffset = useRef(0);
 
@@ -956,8 +956,6 @@ export default function App({ navigation }) {
                     user={user}
                     displayName={displayName}
                     voteSummary={voteSummary}
-                    onShowFollowers={dummyFn}
-                    onShowFollowing={dummyFn}
                     onShowNameModal={dummyFn}
                     onShowVoteInfoModal={dummyFn}
                     onNavigateToCity={() => {

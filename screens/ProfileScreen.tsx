@@ -28,24 +28,50 @@ import { useNotification } from "../context/NotificationContext";
 import franceCitiesRaw from "../assets/france.json";
 import { LinearGradient } from "expo-linear-gradient";
 import { useUserProfile } from "../context/UserProfileContext"; // Ajoutez cette ligne
-import {
-  FollowersModal,
-  FollowingModal,
-} from "../components/home/modals";
+import { FollowersModal, FollowingModal } from "../components/home/modals";
+import ProfilePhotoModal from "../components/profile/Photo/ProfilePhoto";
 
 const franceCities: City[] = franceCitiesRaw as City[];
 
 // Définition de la palette de couleurs officielle
 const COLORS = {
-  primary: { base: "#062C41", light: "#1B5D85", dark: "#041E2D", contrast: "#FFFFFF" },
-  secondary: { base: "#2A93D5", light: "#50B5F5", dark: "#1C7AB5", contrast: "#FFFFFF" },
-  accent: { base: "#FF5A5F", light: "#FF7E82", dark: "#E04347", contrast: "#FFFFFF" },
-  neutral: { 
-    50: "#F9FAFC", 100: "#F0F4F8", 200: "#E1E8EF", 300: "#C9D5E3", 400: "#A3B4C6", 
-    500: "#7D91A7", 600: "#5C718A", 700: "#465670", 800: "#2E3B4E", 900: "#1C2536" 
+  primary: {
+    base: "#062C41",
+    light: "#1B5D85",
+    dark: "#041E2D",
+    contrast: "#FFFFFF",
   },
-  state: { success: "#10B981", warning: "#F59E0B", error: "#EF4444", info: "#3B82F6" },
-  overlay: "rgba(0,0,0,0.7)"
+  secondary: {
+    base: "#2A93D5",
+    light: "#50B5F5",
+    dark: "#1C7AB5",
+    contrast: "#FFFFFF",
+  },
+  accent: {
+    base: "#FF5A5F",
+    light: "#FF7E82",
+    dark: "#E04347",
+    contrast: "#FFFFFF",
+  },
+  neutral: {
+    50: "#F9FAFC",
+    100: "#F0F4F8",
+    200: "#E1E8EF",
+    300: "#C9D5E3",
+    400: "#A3B4C6",
+    500: "#7D91A7",
+    600: "#5C718A",
+    700: "#465670",
+    800: "#2E3B4E",
+    900: "#1C2536",
+  },
+  state: {
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+    info: "#3B82F6",
+  },
+  overlay: "rgba(0,0,0,0.7)",
 };
 
 interface City {
@@ -89,7 +115,8 @@ export default function ProfileScreen({ navigation }) {
   // Désactivation du fade: initialisation avec 1
   const fadeAnim = useState(new Animated.Value(1))[0];
 
-
+  const [showProfilePhotoModal, setShowProfilePhotoModal] =
+    useState<boolean>(false);
   // Ajout d’un listener pour réinitialiser la Sidebar lors du blur du screen
   useEffect(() => {
     const unsubscribe = navigation.addListener("blur", () => {
@@ -123,7 +150,7 @@ export default function ProfileScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
 
- // Local states for modals
+  // Local states for modals
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   // Importez les fonctions du context
@@ -197,16 +224,16 @@ export default function ProfileScreen({ navigation }) {
     fetchStats();
   }, [user]);
 
-    const handleFollowingUserPress = useCallback(
-      (id: string) => {
-        setShowFollowingModal(false);
-        setShowFollowersModal(false);
-        setTimeout(() => {
-          navigation.navigate("UserProfileScreen", { userId: id });
-        }, 300);
-      },
-      [navigation]
-    );
+  const handleFollowingUserPress = useCallback(
+    (id: string) => {
+      setShowFollowingModal(false);
+      setShowFollowersModal(false);
+      setTimeout(() => {
+        navigation.navigate("UserProfileScreen", { userId: id });
+      }, 300);
+    },
+    [navigation]
+  );
 
   const handleProfileImageUpdate = async () => {
     try {
@@ -270,7 +297,9 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  const handleProfileImageUpdateWrapper = async (uri: string): Promise<boolean> => {
+  const handleProfileImageUpdateWrapper = async (
+    uri: string
+  ): Promise<boolean> => {
     // Vous pouvez ignorer le paramètre 'uri' si votre fonction existante ne l'utilise pas
     await handleProfileImageUpdate();
     return true;
@@ -393,38 +422,41 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const normalizeCommune = (communeName: string): string => {
-    if (!communeName) return '';
-    
+    if (!communeName) return "";
+
     // Étape 1: Nettoyer la chaîne (supprimer caractères spéciaux, espaces multiples)
-    let normalized = communeName
-      .trim()
-      .replace(/\s+/g, ' '); // Remplacer espaces multiples par un seul espace
-    
+    let normalized = communeName.trim().replace(/\s+/g, " "); // Remplacer espaces multiples par un seul espace
+
     // Étape 2: Remplacer les espaces par des tirets
-    normalized = normalized.replace(/\s/g, '-');
-    
+    normalized = normalized.replace(/\s/g, "-");
+
     return normalized;
   };
 
   const handleSaveCity = async () => {
     if (!selectedCity) {
-      Alert.alert("Erreur", "Veuillez sélectionner une ville avant d'enregistrer.");
+      Alert.alert(
+        "Erreur",
+        "Veuillez sélectionner une ville avant d'enregistrer."
+      );
       return;
     }
-  
+
     try {
       // Normaliser le nom de la commune
       const normalizedCommuneName = normalizeCommune(selectedCity.Nom_commune);
-      console.log(`Normalisation: "${selectedCity.Nom_commune}" → "${normalizedCommuneName}"`);
-      
+      console.log(
+        `Normalisation: "${selectedCity.Nom_commune}" → "${normalizedCommuneName}"`
+      );
+
       // Utilisez la fonction du context pour mettre à jour la ville
       await updateUserCity(normalizedCommuneName, selectedCity.Code_postal);
-      
+
       // Optionnel : rafraîchir les données pour s'assurer que le profil est à jour
       await refreshUserData();
-      
+
       Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
-      
+
       // Recharger la page ProfileScreen pour actualiser le champ localisation
       navigation.replace("ProfileScreen");
     } catch (error) {
@@ -433,14 +465,22 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const handlePhotoUpdateSuccess = useCallback(() => {
+    refreshUserData();
+
+    navigation.replace("ProfileScreen");
+  }, [refreshUserData, navigation]);
+
+  const handleOpenPhotoModal = useCallback(() => {
+    setShowProfilePhotoModal(true);
+  }, []);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={COLORS.secondary.base} />
-          <Text style={styles.loadingText}>
-            Chargement de votre profil...
-          </Text>
+          <Text style={styles.loadingText}>Chargement de votre profil...</Text>
         </View>
       </View>
     );
@@ -452,7 +492,7 @@ export default function ProfileScreen({ navigation }) {
         <Icon name="error-outline" size={60} color={COLORS.state.error} />
         <Text style={styles.errorTitle}>Oups !</Text>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.errorButton}
           onPress={() => navigation.replace("ProfileScreen")}
         >
@@ -471,8 +511,8 @@ export default function ProfileScreen({ navigation }) {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <TouchableOpacity 
-          style={styles.iconButton} 
+        <TouchableOpacity
+          style={styles.iconButton}
           onPress={toggleSidebar}
           activeOpacity={0.7}
         >
@@ -483,12 +523,16 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.headerTitle}>MON PROFIL</Text>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.iconButton}
           onPress={() => navigation.navigate("NotificationsScreen")}
           activeOpacity={0.7}
         >
-          <Icon name="notifications" size={24} color={COLORS.primary.contrast} />
+          <Icon
+            name="notifications"
+            size={24}
+            color={COLORS.primary.contrast}
+          />
           {unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -497,7 +541,7 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
       </LinearGradient>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -519,12 +563,13 @@ export default function ProfileScreen({ navigation }) {
                 ) : (
                   <View style={styles.placeholderImage}>
                     <Text style={styles.placeholderText}>
-                      {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                      {formData.firstName.charAt(0)}
+                      {formData.lastName.charAt(0)}
                     </Text>
                   </View>
                 )}
               </View>
-              
+
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>
                   {formData.firstName} {formData.lastName}
@@ -532,58 +577,70 @@ export default function ProfileScreen({ navigation }) {
                 <Text style={styles.profileUsername}>
                   @{formData.username || "username"}
                 </Text>
-                
+
                 <TouchableOpacity
                   style={styles.photoButton}
-                  onPress={handleProfileImageUpdate}
+                  onPress={handleOpenPhotoModal}
                   disabled={isSubmitting}
                   activeOpacity={0.8}
                 >
-                  <Icon name="photo-camera" size={16} color={COLORS.neutral[50]} />
+                  <Icon
+                    name="photo-camera"
+                    size={16}
+                    color={COLORS.neutral[50]}
+                  />
                   <Text style={styles.photoButtonText}>
                     {isSubmitting ? "Modification..." : "Modifier la photo"}
                   </Text>
                 </TouchableOpacity>
               </View>
             </LinearGradient>
-            
+
             {/* Stats rapides */}
             <View style={styles.quickStats}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.quickStatItem}
                 onPress={() => setShowFollowersModal(true)}
               >
-                <Text style={styles.quickStatNumber}>{user?.followers?.length || 0}</Text>
+                <Text style={styles.quickStatNumber}>
+                  {user?.followers?.length || 0}
+                </Text>
                 <Text style={styles.quickStatLabel}>Abonnés</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.statDivider} />
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.quickStatItem}
                 onPress={() => setShowFollowingModal(true)}
               >
-                <Text style={styles.quickStatNumber}>{user?.following?.length || 0}</Text>
+                <Text style={styles.quickStatNumber}>
+                  {user?.following?.length || 0}
+                </Text>
                 <Text style={styles.quickStatLabel}>Abonnements</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.statDivider} />
-              
+
               <View style={styles.quickStatItem}>
-                <Text style={styles.quickStatNumber}>{stats?.numberOfReports || 0}</Text>
+                <Text style={styles.quickStatNumber}>
+                  {stats?.numberOfReports || 0}
+                </Text>
                 <Text style={styles.quickStatLabel}>Signalements</Text>
               </View>
             </View>
           </View>
-          
 
           {/* Cartes d'information */}
           <View style={styles.cardsContainer}>
-            
-              {/* Localisation */}
-              <View style={styles.card}>
+            {/* Localisation */}
+            <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Icon name="location-on" size={22} color={COLORS.secondary.base} />
+                <Icon
+                  name="location-on"
+                  size={22}
+                  color={COLORS.secondary.base}
+                />
                 <Text style={styles.cardTitle}>Localisation</Text>
                 <TouchableOpacity
                   style={styles.editIconButton}
@@ -620,7 +677,11 @@ export default function ProfileScreen({ navigation }) {
                         style={styles.searchButton}
                         onPress={handleSearchCity}
                       >
-                        <Icon name="search" size={20} color={COLORS.primary.contrast} />
+                        <Icon
+                          name="search"
+                          size={20}
+                          color={COLORS.primary.contrast}
+                        />
                       </TouchableOpacity>
                     </View>
 
@@ -629,13 +690,20 @@ export default function ProfileScreen({ navigation }) {
                         style={styles.cityActionButton}
                         onPress={handleSaveCity}
                       >
-                        <Text style={styles.cityActionButtonText}>Enregistrer</Text>
+                        <Text style={styles.cityActionButtonText}>
+                          Enregistrer
+                        </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.cityActionButton, styles.cityActionButtonCancel]}
+                        style={[
+                          styles.cityActionButton,
+                          styles.cityActionButtonCancel,
+                        ]}
                         onPress={() => setIsEditingCity(false)}
                       >
-                        <Text style={styles.cityActionButtonTextCancel}>Annuler</Text>
+                        <Text style={styles.cityActionButtonTextCancel}>
+                          Annuler
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -649,7 +717,10 @@ export default function ProfileScreen({ navigation }) {
                 <Icon name="person" size={22} color={COLORS.secondary.base} />
                 <Text style={styles.cardTitle}>Informations personnelles</Text>
                 <TouchableOpacity
-                  style={[styles.editIconButton, editable && styles.saveIconButton]}
+                  style={[
+                    styles.editIconButton,
+                    editable && styles.saveIconButton,
+                  ]}
                   onPress={() => {
                     if (editable) {
                       handleSave();
@@ -665,10 +736,12 @@ export default function ProfileScreen({ navigation }) {
                     }
                   }}
                 >
-                  <Icon 
-                    name={editable ? "check" : "edit"} 
-                    size={20} 
-                    color={editable ? COLORS.state.success : COLORS.secondary.base} 
+                  <Icon
+                    name={editable ? "check" : "edit"}
+                    size={20}
+                    color={
+                      editable ? COLORS.state.success : COLORS.secondary.base
+                    }
                   />
                 </TouchableOpacity>
               </View>
@@ -680,21 +753,23 @@ export default function ProfileScreen({ navigation }) {
                   <TextInput
                     style={[
                       styles.fieldInput,
-                      !editable && styles.fieldInputDisabled
+                      !editable && styles.fieldInputDisabled,
                     ]}
                     value={formData.firstName}
-                    onChangeText={(text) => handleInputChange("firstName", text)}
+                    onChangeText={(text) =>
+                      handleInputChange("firstName", text)
+                    }
                     editable={editable}
                     placeholderTextColor={COLORS.neutral[400]}
                   />
                 </View>
-                
+
                 <View style={styles.formField}>
                   <Text style={styles.fieldLabel}>Nom</Text>
                   <TextInput
                     style={[
                       styles.fieldInput,
-                      !editable && styles.fieldInputDisabled
+                      !editable && styles.fieldInputDisabled,
                     ]}
                     value={formData.lastName}
                     onChangeText={(text) => handleInputChange("lastName", text)}
@@ -702,13 +777,13 @@ export default function ProfileScreen({ navigation }) {
                     placeholderTextColor={COLORS.neutral[400]}
                   />
                 </View>
-                
+
                 <View style={styles.formField}>
                   <Text style={styles.fieldLabel}>Nom d'utilisateur</Text>
                   <TextInput
                     style={[
                       styles.fieldInput,
-                      !editable && styles.fieldInputDisabled
+                      !editable && styles.fieldInputDisabled,
                     ]}
                     value={formData.username}
                     onChangeText={(text) => handleInputChange("username", text)}
@@ -716,14 +791,14 @@ export default function ProfileScreen({ navigation }) {
                     placeholderTextColor={COLORS.neutral[400]}
                   />
                 </View>
-                
+
                 {formData.showEmail && (
                   <View style={styles.formField}>
                     <Text style={styles.fieldLabel}>Email</Text>
                     <TextInput
                       style={[
                         styles.fieldInput,
-                        !editable && styles.fieldInputDisabled
+                        !editable && styles.fieldInputDisabled,
                       ]}
                       value={formData.email}
                       onChangeText={(text) => handleInputChange("email", text)}
@@ -736,7 +811,11 @@ export default function ProfileScreen({ navigation }) {
 
                 <View style={styles.switchContainer}>
                   <View style={styles.switchInfo}>
-                    <Icon name="visibility" size={20} color={COLORS.secondary.base} />
+                    <Icon
+                      name="visibility"
+                      size={20}
+                      color={COLORS.secondary.base}
+                    />
                     <Text style={styles.switchLabel}>
                       Partager mon email avec les autres utilisateurs
                     </Text>
@@ -780,7 +859,11 @@ export default function ProfileScreen({ navigation }) {
                       false: COLORS.neutral[300],
                       true: COLORS.secondary.light,
                     }}
-                    thumbColor={formData.showEmail ? COLORS.secondary.base : COLORS.neutral[50]}
+                    thumbColor={
+                      formData.showEmail
+                        ? COLORS.secondary.base
+                        : COLORS.neutral[50]
+                    }
                     ios_backgroundColor={COLORS.neutral[300]}
                   />
                 </View>
@@ -810,10 +893,14 @@ export default function ProfileScreen({ navigation }) {
                     />
                     <TouchableOpacity
                       style={styles.eyeIcon}
-                      onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                      onPress={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
                     >
                       <Icon
-                        name={showCurrentPassword ? "visibility-off" : "visibility"}
+                        name={
+                          showCurrentPassword ? "visibility-off" : "visibility"
+                        }
                         size={20}
                         color={COLORS.neutral[500]}
                       />
@@ -851,8 +938,14 @@ export default function ProfileScreen({ navigation }) {
                   style={styles.actionButton}
                   onPress={handleChangePassword}
                 >
-                  <Icon name="vpn-key" size={16} color={COLORS.primary.contrast} />
-                  <Text style={styles.actionButtonText}>Changer mon mot de passe</Text>
+                  <Icon
+                    name="vpn-key"
+                    size={16}
+                    color={COLORS.primary.contrast}
+                  />
+                  <Text style={styles.actionButtonText}>
+                    Changer mon mot de passe
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -860,119 +953,176 @@ export default function ProfileScreen({ navigation }) {
             {/* Statistiques */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Icon name="bar-chart" size={22} color={COLORS.secondary.base} />
+                <Icon
+                  name="bar-chart"
+                  size={22}
+                  color={COLORS.secondary.base}
+                />
                 <Text style={styles.cardTitle}>Statistiques</Text>
               </View>
 
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
-                  <Icon name="thumb-up" size={20} color={COLORS.secondary.base} />
-                  <Text style={styles.statValue}>{stats?.numberOfVotes || 0}</Text>
+                  <Icon
+                    name="thumb-up"
+                    size={20}
+                    color={COLORS.secondary.base}
+                  />
+                  <Text style={styles.statValue}>
+                    {stats?.numberOfVotes || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Votes</Text>
-                
                 </View>
 
                 <View style={styles.statCard}>
-                  <Icon name="comment" size={20} color={COLORS.secondary.base} />
-                  <Text style={styles.statValue}>{stats?.numberOfComments || 0}</Text>
+                  <Icon
+                    name="comment"
+                    size={20}
+                    color={COLORS.secondary.base}
+                  />
+                  <Text style={styles.statValue}>
+                    {stats?.numberOfComments || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Commentaires</Text>
                 </View>
 
                 <View style={styles.statCard}>
                   <Icon name="flag" size={20} color={COLORS.secondary.base} />
-                  <Text style={styles.statValue}>{stats?.numberOfReports || 0}</Text>
+                  <Text style={styles.statValue}>
+                    {stats?.numberOfReports || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Signalements</Text>
                 </View>
 
                 <View style={styles.statCard}>
-                  <Icon name="article" size={20} color={COLORS.secondary.base} />
-                  <Text style={styles.statValue}>{stats?.numberOfPosts || 0}</Text>
+                  <Icon
+                    name="article"
+                    size={20}
+                    color={COLORS.secondary.base}
+                  />
+                  <Text style={styles.statValue}>
+                    {stats?.numberOfPosts || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Publications</Text>
                 </View>
 
                 <View style={styles.statCard}>
                   <Icon name="event" size={20} color={COLORS.secondary.base} />
-                  <Text style={styles.statValue}>{stats?.numberOfEventsCreated || 0}</Text>
+                  <Text style={styles.statValue}>
+                    {stats?.numberOfEventsCreated || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Événements créés</Text>
                 </View>
 
                 <View style={styles.statCard}>
                   <Icon name="people" size={20} color={COLORS.secondary.base} />
-                  <Text style={styles.statValue}>{stats?.numberOfEventsAttended || 0}</Text>
+                  <Text style={styles.statValue}>
+                    {stats?.numberOfEventsAttended || 0}
+                  </Text>
                   <Text style={styles.statLabel}>Participations</Text>
                 </View>
               </View>
             </View>
 
-         {/* Adhésions */}
-<View style={styles.card}>
-  <View style={styles.cardHeader}>
-    <Icon name="card-membership" size={22} color={COLORS.secondary.base} />
-    <Text style={styles.cardTitle}>Options d'adhésion</Text>
-  </View>
+            {/* Adhésions */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Icon
+                  name="card-membership"
+                  size={22}
+                  color={COLORS.secondary.base}
+                />
+                <Text style={styles.cardTitle}>Options d'adhésion</Text>
+              </View>
 
-  <View style={styles.cardContent}>
-    <View style={styles.membershipItem}>
-      <View style={styles.membershipInfo}>
-        <View style={styles.membershipBadge}>
-          <Icon 
-            name="star" 
-            size={16} 
-            color={user?.isSubscribed ? COLORS.state.warning : COLORS.neutral[400]} 
-          />
-        </View>
-        <View>
-          <Text style={styles.membershipTitle}>SMART+</Text>
-          <Text style={styles.membershipDescription}>
-            Accès à toutes les services de l'application
-          </Text>
-        </View>
-      </View>
-      <View style={[
-        styles.membershipStatus, 
-        user?.isSubscribed ? styles.membershipActive : styles.membershipInactive
-      ]}>
-        <Text style={[
-          styles.membershipStatusText,
-          user?.isSubscribed ? styles.membershipActiveText : styles.membershipInactiveText
-        ]}>
-          {user?.isSubscribed ? "Actif" : "Inactif"}
-        </Text>
-      </View>
-    </View>
+              <View style={styles.cardContent}>
+                <View style={styles.membershipItem}>
+                  <View style={styles.membershipInfo}>
+                    <View style={styles.membershipBadge}>
+                      <Icon
+                        name="star"
+                        size={16}
+                        color={
+                          user?.isSubscribed
+                            ? COLORS.state.warning
+                            : COLORS.neutral[400]
+                        }
+                      />
+                    </View>
+                    <View>
+                      <Text style={styles.membershipTitle}>SMART+</Text>
+                      <Text style={styles.membershipDescription}>
+                        Accès à toutes les services de l'application
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={[
+                      styles.membershipStatus,
+                      user?.isSubscribed
+                        ? styles.membershipActive
+                        : styles.membershipInactive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.membershipStatusText,
+                        user?.isSubscribed
+                          ? styles.membershipActiveText
+                          : styles.membershipInactiveText,
+                      ]}
+                    >
+                      {user?.isSubscribed ? "Actif" : "Inactif"}
+                    </Text>
+                  </View>
+                </View>
 
-    <View style={styles.membershipDivider} />
+                <View style={styles.membershipDivider} />
 
-    <View style={styles.membershipItem}>
-      <View style={styles.membershipInfo}>
-        <View style={styles.membershipBadge}>
-          <Icon 
-            name="apartment" 
-            size={16} 
-            color={user?.isMunicipality ? COLORS.state.info : COLORS.neutral[400]} 
-          />
-        </View>
-        <View>
-          <Text style={styles.membershipTitle}>Affiliation mairie</Text>
-          <Text style={styles.membershipDescription}>
-            Statut officiel pour les comptes municipaux
-          </Text>
-        </View>
-      </View>
-      <View style={[
-        styles.membershipStatus, 
-        user?.isMunicipality ? styles.membershipActive : styles.membershipInactive
-      ]}>
-        <Text style={[
-          styles.membershipStatusText,
-          user?.isMunicipality ? styles.membershipActiveText : styles.membershipInactiveText
-        ]}>
-          {user?.isMunicipality ? "Vérifié" : "Non vérifié"}
-        </Text>
-      </View>
-    </View>
-  </View>
-</View>
+                <View style={styles.membershipItem}>
+                  <View style={styles.membershipInfo}>
+                    <View style={styles.membershipBadge}>
+                      <Icon
+                        name="apartment"
+                        size={16}
+                        color={
+                          user?.isMunicipality
+                            ? COLORS.state.info
+                            : COLORS.neutral[400]
+                        }
+                      />
+                    </View>
+                    <View>
+                      <Text style={styles.membershipTitle}>
+                        Affiliation mairie
+                      </Text>
+                      <Text style={styles.membershipDescription}>
+                        Statut officiel pour les comptes municipaux
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={[
+                      styles.membershipStatus,
+                      user?.isMunicipality
+                        ? styles.membershipActive
+                        : styles.membershipInactive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.membershipStatusText,
+                        user?.isMunicipality
+                          ? styles.membershipActiveText
+                          : styles.membershipInactiveText,
+                      ]}
+                    >
+                      {user?.isMunicipality ? "Vérifié" : "Non vérifié"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
           </View>
         </Animated.View>
       </ScrollView>
@@ -988,17 +1138,19 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Sélectionner une ville</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setModalVisible(false)}
               >
                 <Icon name="close" size={24} color={COLORS.neutral[600]} />
               </TouchableOpacity>
             </View>
-            
+
             <FlatList
               data={suggestions}
-              keyExtractor={(item, index) => `${item.Code_commune_INSEE}-${index}`}
+              keyExtractor={(item, index) =>
+                `${item.Code_commune_INSEE}-${index}`
+              }
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.suggestionItem}
@@ -1007,37 +1159,58 @@ export default function ProfileScreen({ navigation }) {
                 >
                   <Icon name="place" size={18} color={COLORS.secondary.base} />
                   <View style={styles.suggestionContent}>
-                    <Text style={styles.suggestionCity}>{item.Nom_commune}</Text>
-                    <Text style={styles.suggestionPostal}>{item.Code_postal}</Text>
+                    <Text style={styles.suggestionCity}>
+                      {item.Nom_commune}
+                    </Text>
+                    <Text style={styles.suggestionPostal}>
+                      {item.Code_postal}
+                    </Text>
                   </View>
-                  <Icon name="chevron-right" size={20} color={COLORS.neutral[400]} />
+                  <Icon
+                    name="chevron-right"
+                    size={20}
+                    color={COLORS.neutral[400]}
+                  />
                 </TouchableOpacity>
               )}
-              ItemSeparatorComponent={() => <View style={styles.suggestionDivider} />}
+              ItemSeparatorComponent={() => (
+                <View style={styles.suggestionDivider} />
+              )}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.suggestionsList}
             />
           </View>
         </View>
       </Modal>
-      
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        toggleSidebar={toggleSidebar} 
-        navigation={navigation} 
-        user={user} 
-        stats={stats} 
-        displayName={`${formData.firstName} ${formData.lastName}`} 
-        unreadCount={unreadCount} 
-        voteSummary={stats?.voteSummary || {}} 
-        onShowNameModal={() => setIsEditingCity(true)} 
-        onLogout={() => navigation.replace("LoginScreen")} 
-        onNavigateToSettings={() => navigation.navigate("SettingsScreen")} 
-        onShowVoteInfoModal={() => console.log("Show vote info modal")} 
-        onNavigateToCity={() => console.log("Navigate to city")} 
-        updateProfileImage={handleProfileImageUpdateWrapper} 
+
+      <ProfilePhotoModal
+        visible={showProfilePhotoModal}
+        onClose={() => setShowProfilePhotoModal(false)}
+        currentPhotoUrl={user?.profilePhoto?.url || null}
+        onSuccess={handlePhotoUpdateSuccess}
+        username={user?.username || "Utilisateur"}
+        isSubmitting={false}
+        isFollowing={false}
+        onFollow={() => Promise.resolve()}
+        onUnfollow={() => Promise.resolve()}
       />
-       <FollowersModal
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        navigation={navigation}
+        user={user}
+        stats={stats}
+        displayName={`${formData.firstName} ${formData.lastName}`}
+        unreadCount={unreadCount}
+        voteSummary={stats?.voteSummary || {}}
+        onShowNameModal={() => setIsEditingCity(true)}
+        onLogout={() => navigation.replace("LoginScreen")}
+        onNavigateToSettings={() => navigation.navigate("SettingsScreen")}
+        onShowVoteInfoModal={() => console.log("Show vote info modal")}
+        onNavigateToCity={() => console.log("Navigate to city")}
+        updateProfileImage={handleProfileImageUpdateWrapper}
+      />
+      <FollowersModal
         visible={showFollowersModal}
         onClose={() => setShowFollowersModal(false)}
         followers={user?.followers || []}
@@ -1059,7 +1232,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.neutral[500],
   },
-  
+
   // Header styles
   header: {
     flexDirection: "row",
@@ -1111,7 +1284,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-  
+
   // Loading and error styles
   loadingContainer: {
     flex: 1,
@@ -1167,7 +1340,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-  
+
   // Main content styles
   scrollContent: {
     paddingBottom: 30,
@@ -1175,7 +1348,7 @@ const styles = StyleSheet.create({
   fadeIn: {
     width: "100%",
   },
-  
+
   // Profile section
   profileSection: {
     marginBottom: 16,
@@ -1245,7 +1418,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontWeight: "500",
   },
-  
+
   // Quick stats row
   quickStats: {
     flexDirection: "row",
@@ -1281,7 +1454,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.neutral[300],
     alignSelf: "center",
   },
-  
+
   // Cards container
   cardsContainer: {
     paddingHorizontal: 16,
@@ -1297,7 +1470,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     overflow: "hidden",
-    padding:5,
+    padding: 5,
   },
   cardHeader: {
     flexDirection: "row",
@@ -1328,7 +1501,7 @@ const styles = StyleSheet.create({
   cardContent: {
     padding: 16,
   },
-  
+
   // Form fields
   formField: {
     marginBottom: 16,
@@ -1370,7 +1543,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  
+
   // Password fields
   passwordInputContainer: {
     flexDirection: "row",
@@ -1390,7 +1563,7 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: 10,
   },
-  
+
   // Action buttons
   actionButton: {
     backgroundColor: COLORS.secondary.base,
@@ -1409,7 +1582,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 8,
   },
-  
+
   // Location display
   locationDisplay: {
     flexDirection: "row",
@@ -1429,7 +1602,7 @@ const styles = StyleSheet.create({
     color: COLORS.neutral[600],
     marginTop: 2,
   },
-  
+
   // City edit
   cityEditContainer: {
     marginTop: 20,
@@ -1483,7 +1656,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
-  
+
   // Stats grid
   statsGrid: {
     flexDirection: "row",
@@ -1511,73 +1684,73 @@ const styles = StyleSheet.create({
     color: COLORS.neutral[600],
     textAlign: "center",
   },
-  
+
   // Membership section
   // Styles pour la section d'adhésion
-membershipItem: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  paddingVertical: 12,
-},
-membershipInfo: {
-  flexDirection: "row",
-  alignItems: "center",
-  flex: 1,
-},
-membershipBadge: {
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-  backgroundColor: COLORS.neutral[200],
-  justifyContent: "center",
-  alignItems: "center",
-  marginRight: 14,
-},
-membershipTitle: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: COLORS.neutral[800],
-  marginBottom: 3,
-},
-membershipDescription: {
-  fontSize: 13,
-  paddingRight: 50,
-  color: COLORS.neutral[600],
-},
-membershipStatus: {
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-  minWidth: 80,
-  alignItems: "center",
-},
-membershipActive: {
-  backgroundColor: "rgba(16, 185, 129, 0.15)",
-  borderWidth: 1,
-  borderColor: "rgba(16, 185, 129, 0.3)",
-},
-membershipInactive: {
-  backgroundColor: "rgba(114, 114, 114, 0.15)",
-  borderWidth: 1,
-  borderColor: COLORS.neutral[300],
-},
-membershipStatusText: {
-  fontSize: 13,
-  fontWeight: "600",
-},
-membershipActiveText: {
-  color: COLORS.state.success,
-},
-membershipInactiveText: {
-  color: COLORS.neutral[800],  // Couleur plus foncée pour une meilleure lisibilité
-},
-membershipDivider: {
-  height: 1,
-  backgroundColor: COLORS.neutral[200],
-  marginVertical: 10,
-},
-  
+  membershipItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  membershipInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  membershipBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.neutral[200],
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  membershipTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.neutral[800],
+    marginBottom: 3,
+  },
+  membershipDescription: {
+    fontSize: 13,
+    paddingRight: 50,
+    color: COLORS.neutral[600],
+  },
+  membershipStatus: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  membershipActive: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.3)",
+  },
+  membershipInactive: {
+    backgroundColor: "rgba(114, 114, 114, 0.15)",
+    borderWidth: 1,
+    borderColor: COLORS.neutral[300],
+  },
+  membershipStatusText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  membershipActiveText: {
+    color: COLORS.state.success,
+  },
+  membershipInactiveText: {
+    color: COLORS.neutral[800], // Couleur plus foncée pour une meilleure lisibilité
+  },
+  membershipDivider: {
+    height: 1,
+    backgroundColor: COLORS.neutral[200],
+    marginVertical: 10,
+  },
+
   // Modal styles
   modalOverlay: {
     flex: 1,
@@ -1590,7 +1763,6 @@ membershipDivider: {
     borderTopRightRadius: 20,
     maxHeight: "100%",
     paddingBottom: 20,
-
   },
   modalHeader: {
     flexDirection: "row",
@@ -1614,7 +1786,7 @@ membershipDivider: {
     justifyContent: "center",
     alignItems: "center",
   },
-  
+
   // Suggestion items
   suggestionsList: {
     paddingHorizontal: 20,
@@ -1642,7 +1814,7 @@ membershipDivider: {
     height: 1,
     backgroundColor: COLORS.neutral[200],
   },
-  
+
   // User list items
   userListItem: {
     flexDirection: "row",
