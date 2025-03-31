@@ -671,7 +671,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                 <Text style={styles.statValue}>
                   {stats?.numberOfReports || 0}
                 </Text>
-                <Text style={styles.statLabel}>Publications</Text>
+                <Text style={styles.statLabel}>Signalements</Text>
               </View>
             </Animated.View>
 

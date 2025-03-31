@@ -7,7 +7,7 @@ export const getUserIdFromToken = async (): Promise<number | null> => {
     const token = await AsyncStorage.getItem('authToken');
 
     if (!token) {
-      console.error('Aucun token trouvé dans AsyncStorage.');
+      console.warn('Aucun token trouvé dans AsyncStorage.');
       return null;
     }
  

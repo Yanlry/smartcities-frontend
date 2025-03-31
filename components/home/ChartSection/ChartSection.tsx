@@ -136,9 +136,6 @@ const SimpleBarChart = memo(({ data, labels, colors }: SimpleBarChartProps) => {
 /**
  * Interface pour les props du composant SimplePieChart
  */
-/**
- * Interface pour les props du composant SimplePieChart
- */
 interface SimplePieChartProps {
   data: number[];
   labels: string[];
@@ -148,6 +145,7 @@ interface SimplePieChartProps {
 /**
  * Remplace le composant de camembert par un graphique en barres horizontales
  * Beaucoup plus fiable et précis en React Native pur
+ * Affiche toutes les catégories, même celles avec 0 incident
  */
 const SimplePieChart = memo(({ data, labels, colors }: SimplePieChartProps) => {
   // Animations
@@ -169,27 +167,14 @@ const SimplePieChart = memo(({ data, labels, colors }: SimplePieChartProps) => {
   
   const total = data.reduce((sum, val) => sum + val, 0);
   
-  // Si aucune donnée, afficher un message
-  if (total === 0) {
-    return (
-      <View style={styles.pieChartContainer}>
-        <View style={styles.pieChartCenter}>
-          <Text style={styles.pieChartTotal}>0</Text>
-          <Text style={styles.pieChartTotalLabel}>Total</Text>
-        </View>
-      </View>
-    );
-  }
-  
-  // Créer des items triés pour un meilleur affichage
+  // Créer des items triés pour un meilleur affichage, sans filtrer les valeurs à 0
   const items = data
     .map((value, index) => ({
       value,
       label: labels[index],
       color: colors[labels[index].toLowerCase()] || THEME.primary,
-      percentage: (value / total) * 100
+      percentage: total > 0 ? (value / total) * 100 : 0 // Évite division par zéro
     }))
-    .filter(item => item.value > 0)
     .sort((a, b) => b.value - a.value); // Plus grandes valeurs en premier
   
   return (
@@ -251,7 +236,7 @@ const SimplePieChart = memo(({ data, labels, colors }: SimplePieChartProps) => {
               backgroundColor: item.color,
               width: barAnimations[index].interpolate({
                 inputRange: [0, 1],
-                outputRange: ['0%', `${item.percentage}%`]
+                outputRange: ['0%', `${total > 0 ? item.percentage : 0}%`]
               })
             }}
           />
@@ -502,7 +487,7 @@ const ChartSection = memo(({ data, loading, nomCommune, isVisible = true, toggle
 
               {/* Badge de nombre et flèche */}
               <View style={styles.headerControls}>
-                {totalReports > 0 && (
+                {totalReports >= 0 && (
                   <Animated.View
                     style={[
                       styles.countBadge,

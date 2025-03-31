@@ -42,7 +42,7 @@ export const useUserProfile = () => {
         
         setStats(statsData);
       } catch (error: any) {
-        console.error("Erreur lors de la récupération du profil :", error.message || error);
+        console.warn("Erreur lors de la récupération du profil :", error.message || error);
         setError(error.message || "Erreur inconnue.");
       } finally {
         setLoading(false);

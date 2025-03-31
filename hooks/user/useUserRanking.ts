@@ -59,7 +59,7 @@ export const useUserRanking = (cityName: string) => {
         formattedData.sort((a, b) => a.ranking - b.ranking);
         setTopUsers(formattedData);
       } catch (error: any) {
-        console.error("Erreur lors de la récupération du classement :", error.message || error);
+        console.warn("Erreur lors de la récupération du classement :", error.message || error);
         setError(error.message || "Erreur inconnue.");
       } finally {
         setLoading(false);

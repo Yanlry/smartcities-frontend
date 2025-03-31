@@ -819,7 +819,7 @@ const EventCalendarSection: React.FC<EventCalendarProps> = memo(
                           />
                         </LinearGradient>
                         <Text style={styles.noEventsTitle}>
-                          Aucun événement à venir
+                          Aucun événement dans votre ville
                         </Text>
                         <Text style={styles.noEventsText}>
                           {selectedDate
