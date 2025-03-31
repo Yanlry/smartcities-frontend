@@ -1,10 +1,10 @@
-import React, { useState, useCallback, memo, useMemo } from "react";
+import React, { useState, useCallback, memo, useMemo, useRef } from "react";
 import {
   View,
   Text,
   ScrollView,
   ActivityIndicator,
-  RefreshControl,
+  Animated,
   TouchableOpacity,
   Modal,
   Linking,
@@ -20,6 +20,11 @@ import GlobalToggleButton from "../components/common/ShakeButton/GlobalToggleBut
 // @ts-ignore
 import { API_URL } from "@env";
 
+// Import du contrôle de rafraîchissement personnalisé
+import RefreshSuccessAnimation from "../components/common/Loader/RefreshSuccessAnimation";
+import JoyfulLoader from "../components/common/Loader/JoyfulLoader";
+import RefreshControl from "../components/common/Loader/RefreshControl";
+
 // Composants de sections
 import ProfileSection from "../components/home/ProfileSection/ProfileSection";
 import RankingSection from "../components/home/RankingSection/RankingSection";
@@ -31,7 +36,10 @@ import MayorInfoSection from "../components/home/MayorInfoSection/MayorInfoSecti
 import Chart from "../components/home/ChartSection/ChartSection";
 
 // Import des types d'entité pour la conversion
-import { Report as EntityReport, ReportCategory as EntityReportCategory } from "../types/entities/report.types";
+import {
+  Report as EntityReport,
+  ReportCategory as EntityReportCategory,
+} from "../types/entities/report.types";
 
 // Composants modaux
 import {
@@ -94,33 +102,36 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       error: eventsError,
       fetchEventsByDate,
       getEventsForMonth,
-      getMarkedDatesForMonth
+      getMarkedDatesForMonth,
     } = useEvents(user?.nomCommune || "");
 
+    // ===== ANIMATION DE SCROLL =====
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     // ===== ADAPTATION DES TYPES =====
-    
+
     // Adaptation des reports pour correspondre au type attendu par ReportsSection
     const reports = useMemo<EntityReport[]>(() => {
-      return rawReports.map(report => ({
+      return rawReports.map((report) => ({
         ...report,
         // Ajout de la propriété user requise par le type EntityReport
         user: {
-          id: parseInt(report.userId || '0'),
-          username: report.userId || '',
-          firstName: '',
-          lastName: '',
-          useFullName: true
-        }
+          id: parseInt(report.userId || "0"),
+          username: report.userId || "",
+          firstName: "",
+          lastName: "",
+          useFullName: true,
+        },
       })) as EntityReport[];
     }, [rawReports]);
 
     // Adaptation des categories pour correspondre au type attendu
     const categories = useMemo<EntityReportCategory[]>(() => {
-      return rawCategories.map(category => ({
+      return rawCategories.map((category) => ({
         ...category,
         // Ajout des propriétés obligatoires
         value: category.name.toLowerCase(),
-        description: category.label || category.name
+        description: category.label || category.name,
       })) as EntityReportCategory[];
     }, [rawCategories]);
 
@@ -144,19 +155,22 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     const [isReportsVisible, setReportsVisible] = useState(false);
     const [isEventsVisible, setEventsVisible] = useState(false);
     const [isCalendarVisible, setCalendarVisible] = useState(false);
-    const [isCategoryReportsVisible, setCategoryReportsVisible] = useState(false);
+    const [isCategoryReportsVisible, setCategoryReportsVisible] =
+      useState(false);
     const [isMayorInfoVisible, setMayorInfoVisible] = useState(false);
     const [isChartVisible, setChartVisible] = useState(false);
     const [areAllSectionsVisible, setAllSectionsVisible] = useState(false);
 
     // État de rafraîchissement
     const [refreshing, setRefreshing] = useState(false);
+    const [showRefreshSuccess, setShowRefreshSuccess] = useState(false);
 
     // Indicateur de chargement global
-    const isLoading = locationLoading || userLoading || reportsLoading || rankingLoading;
+    const isLoading =
+      locationLoading || userLoading || reportsLoading || rankingLoading;
 
     // ===== GESTIONNAIRES D'ÉVÉNEMENTS =====
-    
+
     // Préférence d'affichage du nom d'utilisateur
     const handleOptionChange = useCallback(
       async (option: "fullName" | "username") => {
@@ -166,13 +180,29 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
       [updateUserDisplayPreference]
     );
 
-    // Rafraîchissement de l'écran
+    // Rafraîchissement de l'écran avec animation
     const onRefresh = useCallback(async () => {
       setRefreshing(true);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Simuler un délai pour montrer l'animation
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Montrer l'animation de succès
       setRefreshing(false);
-      navigation.replace("Main");
+      setShowRefreshSuccess(true);
+
+      // Masquer l'animation de succès après quelques secondes
+      setTimeout(() => {
+        setShowRefreshSuccess(false);
+        navigation.replace("Main");
+      }, 1000);
     }, [navigation]);
+
+    // Gérer le scroll pour les animations
+    const handleAnimatedScroll = Animated.event(
+      [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+      { useNativeDriver: false, listener: handleScroll }
+    );
 
     // Contrôle de la visibilité de toutes les sections
     const toggleAllSections = useCallback(() => {
@@ -243,7 +273,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     );
 
     // ===== RENDU CONDITIONNEL =====
-    
+
     // Modal d'erreur de localisation
     if (!location && !locationLoading) {
       return (
@@ -257,7 +287,9 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
             <TouchableOpacity
               style={styles.button}
               onPress={() => {
-                console.warn("Location request functionality is not implemented.");
+                console.warn(
+                  "Location request functionality is not implemented."
+                );
               }}
             >
               <Text style={styles.buttonText}>Réessayer</Text>
@@ -271,120 +303,135 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#102542" />
-          <Text style={styles.loadingText}>Chargement en cours...</Text>
+          <JoyfulLoader
+            message="Chargement de votre fil d'actualité..."
+            color="#062C41"
+            size="medium"
+          />
         </View>
       );
     }
 
     // ===== RENDU PRINCIPAL =====
     return (
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {/* Section Profil Utilisateur */}
-        <ProfileSection
-          user={user}
-          stats={stats}
-          displayName={displayName}
-          memberSince={memberSince}
-          voteSummary={voteSummary}
-          ranking={ranking}
-          totalUsers={totalUsers}
-          rankingSuffix={getRankingSuffix(ranking)}
-          onShowFollowers={toggleFollowersList}
-          onShowFollowing={toggleFollowingList}
-          onShowNameModal={() => setShowNameModal(true)}
-          onShowBadgeModal={() => setShowBadgeModal(true)}
-          onShowVoteInfoModal={() => setShowLikeInfoModal(true)}
-          onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-          onNavigateToCity={() => navigation.navigate("CityScreen")}
-          updateProfileImage={updateProfileImage}
+      <View style={styles.mainContainer}>
+        {/* Contrôle de rafraîchissement personnalisé */}
+        <RefreshControl
+          refreshing={refreshing}
+          scrollY={scrollY}
+          onRefreshStarted={onRefresh}
         />
 
-        <GlobalToggleButton
-          areAllSectionsVisible={areAllSectionsVisible}
-          onToggle={toggleAllSections}
+        <RefreshSuccessAnimation
+          visible={showRefreshSuccess}
+          message="✓ Mis à jour avec succès!"
         />
+        <Animated.ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+          onScroll={handleAnimatedScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Section Profil Utilisateur */}
+          <ProfileSection
+            user={user}
+            stats={stats}
+            displayName={displayName}
+            memberSince={memberSince}
+            voteSummary={voteSummary}
+            ranking={ranking}
+            totalUsers={totalUsers}
+            rankingSuffix={getRankingSuffix(ranking)}
+            onShowFollowers={toggleFollowersList}
+            onShowFollowing={toggleFollowingList}
+            onShowNameModal={() => setShowNameModal(true)}
+            onShowBadgeModal={() => setShowBadgeModal(true)}
+            onShowVoteInfoModal={() => setShowLikeInfoModal(true)}
+            onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+            onNavigateToCity={() => navigation.navigate("CityScreen")}
+            updateProfileImage={updateProfileImage}
+          />
 
-        {/* Section Classement */}
-        <RankingSection
-          topUsers={topUsers}
-          onUserPress={handleUserPress}
-          onSeeAllPress={() => navigation.navigate("RankingScreen")}
-          isVisible={isSectionVisible}
-          toggleVisibility={() => setSectionVisible((prev) => !prev)}
-        />
+          <GlobalToggleButton
+            areAllSectionsVisible={areAllSectionsVisible}
+            onToggle={toggleAllSections}
+          />
 
-        {/* Section Signalements - Utilise les données adaptées */}
-        <ReportsSection
-          reports={reports}
-          categories={categories}
-          loading={reportsLoading}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          formatTime={formatTime}
-          onPressReport={handlePressReport}
-          isVisible={isReportsVisible}
-          toggleVisibility={() => setReportsVisible((prev) => !prev)}
-          userCity={user?.nomCommune}
-        />
+          {/* Section Classement */}
+          <RankingSection
+            topUsers={topUsers}
+            onUserPress={handleUserPress}
+            onSeeAllPress={() => navigation.navigate("RankingScreen")}
+            isVisible={isSectionVisible}
+            toggleVisibility={() => setSectionVisible((prev) => !prev)}
+          />
 
-        {/* Section Événements */}
-        <EventsSection
-          featuredEvents={featuredEvents}
-          loading={eventsLoading}
-          error={eventsError}
-          onEventPress={handleEventPress}
-          isVisible={isEventsVisible}
-          toggleVisibility={() => setEventsVisible((prev) => !prev)}
-        />
+          {/* Section Signalements - Utilise les données adaptées */}
+          <ReportsSection
+            reports={reports}
+            categories={categories}
+            loading={reportsLoading}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            formatTime={formatTime}
+            onPressReport={handlePressReport}
+            isVisible={isReportsVisible}
+            toggleVisibility={() => setReportsVisible((prev) => !prev)}
+            userCity={user?.nomCommune}
+          />
 
-        {/* Section Statistiques */}
-        <Chart
-          data={statsData}
-          loading={userLoading}
-          nomCommune={nomCommune}
-          isVisible={isChartVisible}
-          toggleVisibility={() => setChartVisible((prev) => !prev)}
-        />
+          {/* Section Événements */}
+          <EventsSection
+            featuredEvents={featuredEvents}
+            loading={eventsLoading}
+            error={eventsError}
+            onEventPress={handleEventPress}
+            isVisible={isEventsVisible}
+            toggleVisibility={() => setEventsVisible((prev) => !prev)}
+          />
 
-        {/* Section Calendrier d'événements */}
-        <EventCalendar
-          events={events}
-          onDateChange={fetchEventsByDate}
-          onEventPress={handleEventPress}
-          isVisible={isCalendarVisible}
-          toggleVisibility={() => setCalendarVisible((prev) => !prev)}
-          cityName={user?.nomCommune}
-          getEventsForMonth={getEventsForMonth}
-          getMarkedDatesForMonth={getMarkedDatesForMonth}
-        />
+          {/* Section Statistiques */}
+          <Chart
+            data={statsData}
+            loading={userLoading}
+            nomCommune={nomCommune}
+            isVisible={isChartVisible}
+            toggleVisibility={() => setChartVisible((prev) => !prev)}
+          />
 
-        {/* Section Catégories de signalements - Utilise les données adaptées */}
-        <CategorySelector
-          categories={categories}
-          onCategoryPress={handleCategoryClick}
-          isVisible={isCategoryReportsVisible}
-          toggleVisibility={() => setCategoryReportsVisible((prev) => !prev)}
-        />
+          {/* Section Calendrier d'événements */}
+          <EventCalendar
+            events={events}
+            onDateChange={fetchEventsByDate}
+            onEventPress={handleEventPress}
+            isVisible={isCalendarVisible}
+            toggleVisibility={() => setCalendarVisible((prev) => !prev)}
+            cityName={user?.nomCommune}
+            getEventsForMonth={getEventsForMonth}
+            getMarkedDatesForMonth={getMarkedDatesForMonth}
+          />
 
-        {/* Section Informations Mairie */}
-        <MayorInfoSection
-          isVisible={isMayorInfoVisible}
-          toggleVisibility={() => setMayorInfoVisible((prev) => !prev)}
-          onPhonePress={handlePressPhoneNumber}
-        />
+          {/* Section Catégories de signalements - Utilise les données adaptées */}
+          <CategorySelector
+            categories={categories}
+            onCategoryPress={handleCategoryClick}
+            isVisible={isCategoryReportsVisible}
+            toggleVisibility={() => setCategoryReportsVisible((prev) => !prev)}
+          />
 
-        {/* Footer */}
-        <Text style={styles.footerCopyrightText}>
-          © 2025 SmartCities. Tous droits réservés.
-        </Text>
+          {/* Section Informations Mairie */}
+          <MayorInfoSection
+            isVisible={isMayorInfoVisible}
+            toggleVisibility={() => setMayorInfoVisible((prev) => !prev)}
+            onPhonePress={handlePressPhoneNumber}
+          />
+
+          {/* Footer */}
+          <Text style={styles.footerCopyrightText}>
+            © 2025 SmartCities. Tous droits réservés.
+          </Text>
+        </Animated.ScrollView>
 
         {/* Modaux */}
         <NameModal
@@ -418,15 +465,22 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           following={user?.following || []}
           onUserPress={handleFollowingUserPress}
         />
-      </ScrollView>
+      </View>
     );
   }
 );
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+  },
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  scrollContent: {
+    paddingTop: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -434,10 +488,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#F5F5F5",
   },
-  loadingText: {
-    marginTop: 10,
+  refreshSuccessContainer: {
+    position: "absolute",
+    top: 20,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1001,
+  },
+  refreshSuccessText: {
+    backgroundColor: "rgba(76, 217, 100, 0.9)", // Vert semi-transparent
+    color: "white",
     fontSize: 16,
-    color: "#102542",
+    fontWeight: "bold",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
   globalToggleButton: {
     backgroundColor: "#062C41",

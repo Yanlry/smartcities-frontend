@@ -1,11 +1,7 @@
 // src/screens/ReportDetailsScreen.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-} from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { useLocation } from "../hooks/location/useLocation";
 import { useFetchReportDetails } from "../hooks/reports/useFetchReportDetails";
 import { useToken } from "../hooks/auth/useToken";
@@ -31,7 +27,10 @@ import {
  * Écran de détails du signalement - Version refactorisée
  * Suit une approche modulaire avec séparation des responsabilités
  */
-const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }) => {
+const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
+  route,
+  navigation,
+}) => {
   // Récupération des paramètres et initialisation des hooks
   const { reportId } = route.params;
   const { location } = useLocation();
@@ -47,10 +46,16 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
   const { votes, selectedVote, handleVote } = useReportVoting({
     report,
     currentUserId,
-    location
+    location,
   });
-  const { photoModalVisible, selectedPhotoIndex, openPhotoModal, closePhotoModal } = usePhotoGallery();
-  const { activeTab, mapReady, indicatorPosition, changeTab, handleMapReady } = useTabNavigation();
+  const {
+    photoModalVisible,
+    selectedPhotoIndex,
+    openPhotoModal,
+    closePhotoModal,
+  } = usePhotoGallery();
+  const { activeTab, mapReady, indicatorPosition, changeTab, handleMapReady } =
+    useTabNavigation();
   const {
     titleTooltipVisible,
     titleLayout,
@@ -58,7 +63,7 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
     animatedTooltipScale,
     showTooltip,
     hideTooltip,
-    measureLayout
+    measureLayout,
   } = useTooltip();
 
   // Effet pour charger l'ID de l'utilisateur au montage du composant
@@ -68,17 +73,23 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
         const userId = await getUserId();
         setCurrentUserId(userId);
       } catch (error) {
-        console.error("Erreur lors de la récupération de l'ID utilisateur:", error);
+        console.error(
+          "Erreur lors de la récupération de l'ID utilisateur:",
+          error
+        );
       }
     };
-    
+
     fetchUserId();
   }, [getUserId]);
 
   // Navigation vers l'écran de profil utilisateur
-  const handleUserPress = useCallback((userId: number) => {
-    navigation.navigate("UserProfileScreen", { userId });
-  }, [navigation]);
+  const handleUserPress = useCallback(
+    (userId: number) => {
+      navigation.navigate("UserProfileScreen", { userId });
+    },
+    [navigation]
+  );
 
   // Rendu conditionnel pour l'état de chargement
   if (loading || !location) {
@@ -87,18 +98,14 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
 
   // Rendu conditionnel pour l'état d'erreur
   if (!report) {
-    return (
-      <ErrorState
-        onRetry={() => navigation.goBack()}
-      />
-    );
+    return <ErrorState onRetry={() => navigation.goBack()} />;
   }
 
   // Rendu principal
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-      
+
       {/* En-tête */}
       <HeaderSection
         title={report.title}
@@ -107,7 +114,7 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
         onTitlePress={showTooltip}
         onTitleLayout={measureLayout}
       />
-      
+
       {/* Tooltip pour le titre complet */}
       <TitleTooltip
         visible={titleTooltipVisible}
@@ -117,14 +124,14 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
         animatedScale={animatedTooltipScale}
         onClose={hideTooltip}
       />
-      
+
       {/* Navigation par onglets */}
       <TabNavigation
         activeTab={activeTab}
         indicatorPosition={indicatorPosition}
         onTabChange={changeTab}
       />
-      
+
       {/* Contenu des onglets */}
       {activeTab === 0 && (
         <DetailsTabContent
@@ -139,7 +146,7 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
           onUserPress={handleUserPress}
         />
       )}
-      
+
       {activeTab === 1 && (
         <MapTabContent
           report={report}
@@ -148,12 +155,8 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({ route, navigation }
           onMapReady={handleMapReady}
         />
       )}
-      
-      {activeTab === 2 && (
-        <CommentsTabContent
-          report={report}
-        />
-      )}
+
+      {activeTab === 2 && <CommentsTabContent report={report} />}
     </SafeAreaView>
   );
 };

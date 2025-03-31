@@ -1,14 +1,13 @@
-import { PhotoAsset } from '../../entities/photo.types';
-import { ImagePickerAsset } from 'expo-image-picker';
+import { Photo } from '../../entities/photo.types'; // Modification d'import
 
 /**
  * Props pour le composant PhotoManager
  */
 export interface PhotoManagerProps {
   /** Liste des photos à gérer */
-  photos: PhotoAsset[];
+  photos: Photo[]; // Modification du type
   /** Fonction pour mettre à jour les photos */
-  setPhotos: (photos: PhotoAsset[]) => void;
+  setPhotos: (photos: Photo[]) => void; // Modification du type des paramètres
   /** Nombre maximum de photos autorisé */
   maxPhotos?: number;
 }
@@ -18,7 +17,7 @@ export interface PhotoManagerProps {
  */
 export interface PhotoItemProps {
   /** Photo à afficher */
-  photo: ImagePickerAsset;
+  photo: Photo; // Modification du type
   /** Fonction pour supprimer la photo */
   onRemove: () => void;
 }

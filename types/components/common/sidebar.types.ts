@@ -1,28 +1,26 @@
 import React from 'react';
-import { UserSocialStats } from '../../entities/user.types';
+
 
 /**
  * Props pour le composant Sidebar
  */
 export interface SidebarProps {
-  
   isOpen: boolean;
-  navigation: any;
   toggleSidebar: () => void;
-  // Propriétés de profil utilisateur
   user: User | null;
-  stats: UserStats | null;
   displayName: string;
   voteSummary: { up: number; down: number };
-  onShowFollowers: () => void;
-  onShowFollowing: () => void;
   onShowNameModal: () => void;
   onShowVoteInfoModal: () => void;
   onNavigateToCity: () => void;
   updateProfileImage: (uri: string) => Promise<boolean>;
-  unreadCount: number;
-  onLogout: () => any;
-  onNavigateToSettings: () => any;
+  stats?: any;
+  navigation?: any;
+  unreadCount?: number;
+  onLogout?: () => void;
+  onNavigateToSettings?: () => void;
+
+
 }
 
 /**

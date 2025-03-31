@@ -11,7 +11,7 @@ import {
   Image,
   Pressable,
   useWindowDimensions,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -35,7 +35,7 @@ import {
 // @ts-ignore
 import { API_URL } from "@env";
 import axios from "axios";
-
+import JoyfulLoader from "../../common/Loader/JoyfulLoader";
 // Theme system with colors, spacing, etc.
 // Theme system with colors, spacing, etc.
 const THEME = {
@@ -177,31 +177,60 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   const nameOpacity = useRef(new Animated.Value(0)).current;
   const statOpacity = useRef(new Animated.Value(0)).current;
 
-   useEffect(() => {
-      const fetchStats = async () => {
-        if (!user?.id) return;
-  
-        try {
-          setLoading(true);
-          setError(null);
-  
-          const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
-          if (response.status !== 200) {
-            throw new Error(`Erreur API : ${response.statusText}`);
-          }
-  
-          const data = response.data;
-          setStats(data);
-        } catch (error: any) {
-          console.error("Erreur dans fetchStats :", error.message || error);
-          setError("Impossible de récupérer les statistiques.");
-        } finally {
-          setLoading(false);
+  // Modifiez la partie de chargement des données dans votre Sidebar
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id || !isOpen) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Réinitialiser les animations lors du chargement
+        avatarScale.setValue(0.8);
+        nameOpacity.setValue(0);
+        statOpacity.setValue(0);
+
+        const response = await axios.get(`${API_URL}/users/stats/${user.id}`);
+        if (response.status !== 200) {
+          throw new Error(`Erreur API : ${response.statusText}`);
         }
-      };
-  
-      fetchStats();
-    }, [user]);
+
+        const data = response.data;
+        setStats(data);
+      } catch (error: any) {
+        console.error("Erreur dans fetchStats :", error.message || error);
+        setError("Impossible de récupérer les statistiques.");
+      } finally {
+        setLoading(false);
+
+        // Forcer l'animation à s'exécuter correctement après le chargement
+        avatarScale.setValue(1);
+
+        // Délai progressif pour l'apparition des différents éléments
+        setTimeout(() => nameOpacity.setValue(1), 150);
+        setTimeout(() => statOpacity.setValue(1), 300);
+
+        // Réinitialiser les animations des éléments du menu
+        mainItemsAnimations.forEach((anim, index) => {
+          setTimeout(() => anim.setValue(0), 350 + index * 50);
+        });
+
+        secondaryItemsAnimations.forEach((anim, index) => {
+          setTimeout(() => anim.setValue(0), 700 + index * 50);
+        });
+
+        // Réinitialiser l'animation du bouton de déconnexion
+        setTimeout(() => {
+          logoutButtonAnimation.opacity.setValue(1);
+          logoutButtonAnimation.translateY.setValue(0);
+        }, 900);
+      }
+    };
+
+    fetchStats();
+  }, [user, isOpen]);
 
   // Animation for menu items - array of animations
   const mainItemsAnimations = useRef(
@@ -524,17 +553,303 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     toggleSidebar();
   }, [refreshUserData, toggleSidebar]);
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <JoyfulLoader
+            message="Chargement de votre profil..."
+            color="#FFFFFF"
+          />
+        </View>
+      );
+    } else if (error) {
+      return (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Icon name="error-outline" size={60} color="#333" />
+          <Text style={styles.errorTitle}>Oups !</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.errorButton}
+            onPress={() =>
+              navigation.navigate("ProfileScreen", {
+                userId: user?.id || "",
+              })
+            }
+          >
+            <Text style={styles.errorButtonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.contentContainer}>
+          {/* Intégrez ici l'ensemble du contenu réel de la sidebar */}
+          {/* Header with avatar and user stats */}
+          <View style={styles.userProfileSection}>
+            {/* Close button in the top right */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={toggleSidebar}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            >
+              <View style={styles.closeButtonInner}>
+                <FontAwesome5
+                  name="times"
+                  size={16}
+                  color={THEME.colors.neutral.light}
+                />
+              </View>
+            </TouchableOpacity>
+            <Animated.View
+              style={[
+                styles.avatarContainer,
+                { transform: [{ scale: avatarScale }] },
+              ]}
+            >
+              <TouchableOpacity onPress={handleOpenPhotoModal}>
+                <LinearGradient
+                  colors={THEME.colors.primary.gradient}
+                  style={styles.avatarGradientBorder}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  {user?.profilePhoto?.url ? (
+                    <Image
+                      source={{ uri: user.profilePhoto.url }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <View style={styles.avatarImage}>
+                      <FontAwesome5 name="user" size={30} color="#CED4DA" />
+                    </View>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+              {/* Settings button to control name visibility */}
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setShowNameModal(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="settings-outline" size={14} color="#FFF" />
+              </TouchableOpacity>
+            </Animated.View>
+
+            {/* Name and city */}
+            <Animated.View style={{ opacity: nameOpacity }}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {displayName}
+              </Text>
+              <Text
+                style={styles.userHandle}
+                onPress={() =>
+                  navigation.navigate("ProfileScreen", {
+                    userId: user?.id || "",
+                  })
+                }
+              >
+                {user?.nomCommune || "Ville inconnue"}
+              </Text>
+            </Animated.View>
+
+            {/* Statistics: Followers, Following and Posts */}
+            <Animated.View
+              style={[styles.statsContainer, { opacity: statOpacity }]}
+            >
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={() => setShowFollowersModal(true)}
+              >
+                <Text style={styles.statValue}>
+                  {user?.followers?.length || 0}
+                </Text>
+                <Text style={styles.statLabel}>Abonnés</Text>
+              </TouchableOpacity>
+              <View style={styles.statDivider} />
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={() => setShowFollowingModal(true)}
+              >
+                <Text style={styles.statValue}>
+                  {user?.following?.length || 0}
+                </Text>
+                <Text style={styles.statLabel}>Abonnements</Text>
+              </TouchableOpacity>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>
+                  {stats?.numberOfReports || 0}
+                </Text>
+                <Text style={styles.statLabel}>Publications</Text>
+              </View>
+            </Animated.View>
+
+            {/* Feedback bar instead of profile progress */}
+            <Animated.View style={{ opacity: statOpacity }}>
+              {(() => {
+                // Sécurisation des calculs pour éviter des valeurs NaN
+                const totalFeedback =
+                  safeVoteSummary.up + safeVoteSummary.down;
+                const hasData = totalFeedback > 0;
+
+                // Par défaut à 50/50 s'il n'y a aucun vote
+                const voteRatio = !hasData
+                  ? 50
+                  : Math.round((safeVoteSummary.up / totalFeedback) * 100);
+
+                const negativeRatio = 100 - voteRatio;
+
+                // Valeurs flex pour la barre de progression
+                const positiveFlex = !hasData
+                  ? 1
+                  : Math.max(0.1, safeVoteSummary.up);
+                const negativeFlex = !hasData
+                  ? 1
+                  : Math.max(0.1, safeVoteSummary.down);
+
+                // Couleur basée sur le ratio
+                const ratingColor = !hasData
+                  ? "#8BC34A" // Vert par défaut
+                  : voteRatio >= 85
+                  ? "#4CAF50" // Très positif
+                  : voteRatio >= 60
+                  ? "#8BC34A" // Positif
+                  : voteRatio >= 50
+                  ? "#FF9800" // Neutre
+                  : "#F44336"; // Négatif
+
+                return (
+                  <View>
+                    <View style={styles.ratingLabelsContainer}>
+                      <Text style={styles.ratingPercentage}>
+                        {voteRatio}% positif
+                      </Text>
+                      <Text style={styles.voteCount}>
+                        ({safeVoteSummary.up} votes)
+                      </Text>
+                    </View>
+                    <View style={styles.progressBarMini}>
+                      <View
+                        style={[
+                          styles.positiveProgressMini,
+                          {
+                            flex: positiveFlex,
+                            backgroundColor: ratingColor,
+                          },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.negativeProgressMini,
+                          { flex: negativeFlex },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.ratingLabelsContainer}>
+                      <Text style={styles.ratingPercentage}>
+                        {negativeRatio}% négatif
+                      </Text>
+                      <Text style={styles.voteCount}>
+                        ({safeVoteSummary.down} votes)
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
+            </Animated.View>
+          </View>
+
+          {/* Scroll area for menu */}
+          <ScrollView
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+            style={styles.menuScrollView}
+            contentContainerStyle={styles.menuScrollContent}
+          >
+            {/* Main menu */}
+            <Text style={styles.menuSectionTitle}>MENU</Text>
+            {mainMenuItems.map((item, index) => (
+              <Animated.View
+                key={`main-${index}`}
+                style={{
+                  transform: [{ translateX: mainItemsAnimations[index] }],
+                  opacity: mainItemsAnimations[index].interpolate({
+                    inputRange: [-50, 0],
+                    outputRange: [0, 1],
+                  }),
+                }}
+              >
+                <SidebarItem
+                  icon={item.icon}
+                  label={item.label}
+                  onPress={() => handleNavigation(item.screen)}
+                  isActive={false}
+                />
+              </Animated.View>
+            ))}
+
+            {/* Secondary menu */}
+            <Text
+              style={[styles.menuSectionTitle, styles.secondaryTitle]}
+            >
+              PARAMÈTRES
+            </Text>
+            {secondaryMenuItems.map((item, index) => (
+              <Animated.View
+                key={`secondary-${index}`}
+                style={{
+                  transform: [
+                    { translateX: secondaryItemsAnimations[index] },
+                  ],
+                  opacity: secondaryItemsAnimations[index].interpolate({
+                    inputRange: [-40, 0],
+                    outputRange: [0, 1],
+                  }),
+                }}
+              >
+                <SidebarItem
+                  icon={item.icon}
+                  label={item.label}
+                  onPress={() => handleNavigation(item.screen)}
+                  isActive={false}
+                  isSecondary={true}
+                />
+              </Animated.View>
+            ))}
+
+            {/* Version number with modern badge */}
+            <View style={styles.versionContainer}>
+              <LinearGradient
+                colors={[
+                  "rgba(255,255,255,0.1)",
+                  "rgba(255,255,255,0.05)",
+                ]}
+                style={styles.versionBadge}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <Text style={styles.versionText}>v1.07.23</Text>
+              </LinearGradient>
+            </View>
+          </ScrollView>
+        </View>
+      );
+    }
+  };
+
   return (
     <>
-      {/* Animated overlay with blur effect */}
+      {/* Animated overlay */}
       {isOpen && (
         <Animated.View
           style={[
             styles.overlay,
-            {
-              opacity: overlayOpacity,
-              top: 0,
-            },
+            { opacity: overlayOpacity, top: 0 },
           ]}
         >
           <Pressable
@@ -548,7 +863,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         </Animated.View>
       )}
 
-      {/* Main sidebar with translation animation */}
+      {/* Main sidebar */}
       <Animated.View
         style={[
           styles.sidebar,
@@ -559,287 +874,22 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           },
         ]}
       >
-        {/* Background gradient */}
         <LinearGradient
           colors={["#062C41", "#062C41", "#0F3460"]}
           style={styles.sidebarBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          {/* Main container */}
-          {loading || error ? (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-              {loading ? (
-                <>
-                  <ActivityIndicator size="large" color="#333" />
-                  <Text style={styles.loadingText}>Chargement de votre profil...</Text>
-                </>
-              ) : (
-                <>
-                  <Icon name="error-outline" size={60} color="#333" />
-                  <Text style={styles.errorTitle}>Oups !</Text>
-                  <Text style={styles.errorText}>{error}</Text>
-                  <TouchableOpacity 
-                    style={styles.errorButton}
-                    onPress={() => navigation.navigate("ProfileScreen", { userId: user?.id || "" })}
-                  >
-                    <Text style={styles.errorButtonText}>Réessayer</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          ) : (
-            <View style={styles.contentContainer}>
-              {/* Header with avatar and user stats */}
-              <View style={styles.userProfileSection}>
-                {/* Close button in the top right */}
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={toggleSidebar}
-                  hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                >
-                  <View style={styles.closeButtonInner}>
-                    <FontAwesome5
-                      name="times"
-                      size={16}
-                      color={THEME.colors.neutral.light}
-                    />
-                  </View>
-                </TouchableOpacity>
-                <Animated.View
-                  style={[
-                    styles.avatarContainer,
-                    { transform: [{ scale: avatarScale }] },
-                  ]}
-                >
-                  <TouchableOpacity onPress={handleOpenPhotoModal}>
-                    <LinearGradient
-                      colors={THEME.colors.primary.gradient}
-                      style={styles.avatarGradientBorder}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      {user?.profilePhoto?.url ? (
-                        <Image
-                          source={{ uri: user.profilePhoto.url }}
-                          style={styles.avatarImage}
-                        />
-                      ) : (
-                        <View style={styles.avatarImage}>
-                          <FontAwesome5 name="user" size={30} color="#CED4DA" />
-                        </View>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  {/* Settings button to control name visibility */}
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() => setShowNameModal(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="settings-outline" size={14} color="#FFF" />
-                  </TouchableOpacity>
-                </Animated.View>
-
-                {/* Name and city */}
-                <Animated.View style={{ opacity: nameOpacity }}>
-                  <Text style={styles.userName} numberOfLines={1}>
-                    {displayName}
-                  </Text>
-                  <Text
-                    style={styles.userHandle}
-                    onPress={() =>
-                      navigation.navigate("ProfileScreen", {
-                        userId: user?.id || "",
-                      })
-                    }
-                  >
-                    {user?.nomCommune || "Ville inconnue"}
-                  </Text>
-                </Animated.View>
-
-                {/* Statistics: Followers, Following and Posts */}
-                <Animated.View
-                  style={[styles.statsContainer, { opacity: statOpacity }]}
-                >
-                  <TouchableOpacity
-                    style={styles.statItem}
-                    onPress={() => setShowFollowersModal(true)}
-                  >
-                    <Text style={styles.statValue}>
-                      {user?.followers?.length || 0}
-                    </Text>
-                    <Text style={styles.statLabel}>Abonnés</Text>
-                  </TouchableOpacity>
-                  <View style={styles.statDivider} />
-                  <TouchableOpacity
-                    style={styles.statItem}
-                    onPress={() => setShowFollowingModal(true)}
-                  >
-                    <Text style={styles.statValue}>
-                      {user?.following?.length || 0}
-                    </Text>
-                    <Text style={styles.statLabel}>Abonnements</Text>
-                  </TouchableOpacity>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{stats?.numberOfReports || 0}</Text>
-                    <Text style={styles.statLabel}>Publications</Text>
-                  </View>
-                </Animated.View>
-
-                {/* Feedback bar instead of profile progress */}
-                <Animated.View style={{ opacity: statOpacity }}>
-                  {(() => {
-                    // Sécurisation des calculs pour éviter des valeurs NaN
-                    const totalFeedback =
-                      safeVoteSummary.up + safeVoteSummary.down;
-                    const hasData = totalFeedback > 0;
-
-                    // Par défaut à 50/50 s'il n'y a aucun vote
-                    const voteRatio = !hasData
-                      ? 50
-                      : Math.round((safeVoteSummary.up / totalFeedback) * 100);
-
-                    const negativeRatio = 100 - voteRatio;
-
-                    // Valeurs flex pour la barre de progression
-                    const positiveFlex = !hasData
-                      ? 1
-                      : Math.max(0.1, safeVoteSummary.up);
-                    const negativeFlex = !hasData
-                      ? 1
-                      : Math.max(0.1, safeVoteSummary.down);
-
-                    // Couleur basée sur le ratio
-                    const ratingColor = !hasData
-                      ? "#8BC34A" // Vert par défaut
-                      : voteRatio >= 85
-                      ? "#4CAF50" // Très positif
-                      : voteRatio >= 60
-                      ? "#8BC34A" // Positif
-                      : voteRatio >= 50
-                      ? "#FF9800" // Neutre
-                      : "#F44336"; // Négatif
-
-                    return (
-                      <View>
-                        <View style={styles.ratingLabelsContainer}>
-                          <Text style={styles.ratingPercentage}>
-                            {voteRatio}% positif
-                          </Text>
-                          <Text style={styles.voteCount}>
-                            ({safeVoteSummary.up} votes)
-                          </Text>
-                        </View>
-                        <View style={styles.progressBarMini}>
-                          <View
-                            style={[
-                              styles.positiveProgressMini,
-                              {
-                                flex: positiveFlex,
-                                backgroundColor: ratingColor,
-                              },
-                            ]}
-                          />
-                          <View
-                            style={[
-                              styles.negativeProgressMini,
-                              { flex: negativeFlex },
-                            ]}
-                          />
-                        </View>
-                        <View style={styles.ratingLabelsContainer}>
-                          <Text style={styles.ratingPercentage}>
-                            {negativeRatio}% négatif
-                          </Text>
-                          <Text style={styles.voteCount}>
-                            ({safeVoteSummary.down} votes)
-                          </Text>
-                        </View>
-                      </View>
-                    );
-                  })()}
-                </Animated.View>
-              </View>
-
-              {/* Scroll area for menu */}
-              <ScrollView
-                ref={scrollViewRef}
-                showsVerticalScrollIndicator={false}
-                style={styles.menuScrollView}
-                contentContainerStyle={styles.menuScrollContent}
-              >
-                {/* Main menu */}
-                <Text style={styles.menuSectionTitle}>MENU</Text>
-                {mainMenuItems.map((item, index) => (
-                  <Animated.View
-                    key={`main-${index}`}
-                    style={{
-                      transform: [{ translateX: mainItemsAnimations[index] }],
-                      opacity: mainItemsAnimations[index].interpolate({
-                        inputRange: [-50, 0],
-                        outputRange: [0, 1],
-                      }),
-                    }}
-                  >
-                    <SidebarItem
-                      icon={item.icon}
-                      label={item.label}
-                      onPress={() => handleNavigation(item.screen)}
-                      isActive={false}
-                    />
-                  </Animated.View>
-                ))}
-
-                {/* Secondary menu */}
-                <Text style={[styles.menuSectionTitle, styles.secondaryTitle]}>
-                  PARAMÈTRES
-                </Text>
-                {secondaryMenuItems.map((item, index) => (
-                  <Animated.View
-                    key={`secondary-${index}`}
-                    style={{
-                      transform: [
-                        { translateX: secondaryItemsAnimations[index] },
-                      ],
-                      opacity: secondaryItemsAnimations[index].interpolate({
-                        inputRange: [-40, 0],
-                        outputRange: [0, 1],
-                      }),
-                    }}
-                  >
-                    <SidebarItem
-                      icon={item.icon}
-                      label={item.label}
-                      onPress={() => handleNavigation(item.screen)}
-                      isActive={false}
-                      isSecondary={true}
-                    />
-                  </Animated.View>
-                ))}
-
-                {/* Version number with modern badge */}
-                <View style={styles.versionContainer}>
-                  <LinearGradient
-                    colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
-                    style={styles.versionBadge}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                  >
-                    <Text style={styles.versionText}>v1.07.23</Text>
-                  </LinearGradient>
-                </View>
-              </ScrollView>
-            </View>
-          )}
+          {renderContent()}
           {/* Footer with logout button */}
           <Animated.View
             style={[
               styles.footerContainer,
               {
                 opacity: logoutButtonAnimation.opacity,
-                transform: [{ translateY: logoutButtonAnimation.translateY }],
+                transform: [
+                  { translateY: logoutButtonAnimation.translateY },
+                ],
               },
             ]}
           >
@@ -873,31 +923,25 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         </LinearGradient>
       </Animated.View>
 
+      {/* Modals */}
       <ProfilePhotoModal
         visible={showProfilePhotoModal}
         onClose={() => setShowProfilePhotoModal(false)}
         currentPhotoUrl={user?.profilePhoto?.url || null}
         onSuccess={handlePhotoUpdateSuccess}
-        // Ajout des props manquantes pour respecter ProfilePhotoModalProps :
         username={user?.username || "Utilisateur"}
         isSubmitting={false}
         isFollowing={false}
         onFollow={() => Promise.resolve()}
         onUnfollow={() => Promise.resolve()}
       />
-
-      {/* Conditional modal rendering */}
       <NameModal
         visible={showNameModal}
         onClose={() => setShowNameModal(false)}
         useFullName={user?.useFullName || false}
         onOptionChange={handleProfilePhotoUpdate}
       />
-      <BadgeModal
-        visible={false} // Example, to be raised if needed
-        onClose={() => {}}
-        userVotes={0}
-      />
+      <BadgeModal visible={false} onClose={() => {}} userVotes={0} />
       <LikeInfoModal
         visible={showLikeInfoModal}
         onClose={() => setShowLikeInfoModal(false)}
@@ -1185,54 +1229,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-    // Loading and error styles
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    loadingContent: {
-      borderRadius: 16,
-      padding: 30,
-      alignItems: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-      elevation: 5,
-    },
-    loadingText: {
-      marginTop: 20,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      padding: 20,
-    },
-    errorTitle: {
-      fontSize: 22,
-      fontWeight: "700",
-      marginTop: 16,
-      marginBottom: 8,
-    },
-    errorText: {
-      fontSize: 16,
-      textAlign: "center",
-      marginBottom: 24,
-    },
-    errorButton: {
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-    },
-    errorButtonText: {
-      fontWeight: "600",
-      fontSize: 16,
-    },
-
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginHorizontal: 32,
+    marginBottom: 24,
+  },
+  errorButton: {
+    backgroundColor: "#6200EE",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  errorButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
+  },
 });
 
 export default Sidebar;

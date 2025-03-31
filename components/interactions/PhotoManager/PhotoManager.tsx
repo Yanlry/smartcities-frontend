@@ -194,7 +194,14 @@ const PhotoManager: React.FC<PhotoManagerProps> = memo(({
         });
         
         if (validPhotos.length > 0) {
-          let newPhotos = [...photos, ...validPhotos];
+          // Transformation des validPhotos en Photo en ajoutant une propriété id
+          const photosToAdd = validPhotos.map(photo => ({
+            ...photo,
+            id: photo.uri, // utilisation de uri comme identifiant unique
+            fileName: photo.fileName ?? undefined, // Convert null to undefined
+          }));
+          
+          let newPhotos = [...photos, ...photosToAdd];
           
           // Limitation du nombre total de photos
           if (newPhotos.length > maxPhotos) {

@@ -1,5 +1,5 @@
 // Chemin : screens/ProfileScreen.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -26,12 +26,14 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import franceCitiesRaw from "../assets/france.json";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useUserProfile } from "../context/UserProfileContext"; // Ajoutez cette ligne
+import {
+  FollowersModal,
+  FollowingModal,
+} from "../components/home/modals";
 
 const franceCities: City[] = franceCitiesRaw as City[];
-const { width } = Dimensions.get('window');
 
 // Définition de la palette de couleurs officielle
 const COLORS = {
@@ -120,11 +122,10 @@ export default function ProfileScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [selectedList, setSelectedList] = useState<
-    "followers" | "following" | null
-  >(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
+ // Local states for modals
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
   // Importez les fonctions du context
   const { updateUserCity, refreshUserData } = useUserProfile();
 
@@ -135,7 +136,7 @@ export default function ProfileScreen({ navigation }) {
     async function fetchUser() {
       try {
         const userId = await getUserIdFromToken();
-        setCurrentUserId(userId);
+
         if (!userId) throw new Error("ID utilisateur non trouvé");
 
         const response = await fetch(`${API_URL}/users/${userId}`);
@@ -195,6 +196,17 @@ export default function ProfileScreen({ navigation }) {
 
     fetchStats();
   }, [user]);
+
+    const handleFollowingUserPress = useCallback(
+      (id: string) => {
+        setShowFollowingModal(false);
+        setShowFollowersModal(false);
+        setTimeout(() => {
+          navigation.navigate("UserProfileScreen", { userId: id });
+        }, 300);
+      },
+      [navigation]
+    );
 
   const handleProfileImageUpdate = async () => {
     try {
@@ -421,49 +433,6 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  const handleShowList = (listType: "followers" | "following") => {
-    setSelectedList((prev) => (prev === listType ? null : listType));
-  };
-
-  const handleCloseModal = () => {
-    setSelectedList(null);
-  };
-
-  const handleUnfollow = async (followingUserId) => {
-    if (!currentUserId) return;
-
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(
-        `${API_URL}/users/${followingUserId}/unfollow`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ followerId: currentUserId }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erreur lors du désuivi de cet utilisateur.");
-      }
-
-      setUser((prevUser) =>
-        prevUser
-          ? {
-              ...prevUser,
-              following: (prevUser.following || []).filter(
-                (following) => following.id !== followingUserId
-              ),
-            }
-          : null
-      );
-    } catch (error) {
-      console.error(error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -582,7 +551,7 @@ export default function ProfileScreen({ navigation }) {
             <View style={styles.quickStats}>
               <TouchableOpacity 
                 style={styles.quickStatItem}
-                onPress={() => handleShowList("followers")}
+                onPress={() => setShowFollowersModal(true)}
               >
                 <Text style={styles.quickStatNumber}>{user?.followers?.length || 0}</Text>
                 <Text style={styles.quickStatLabel}>Abonnés</Text>
@@ -592,7 +561,7 @@ export default function ProfileScreen({ navigation }) {
               
               <TouchableOpacity 
                 style={styles.quickStatItem}
-                onPress={() => handleShowList("following")}
+                onPress={() => setShowFollowingModal(true)}
               >
                 <Text style={styles.quickStatNumber}>{user?.following?.length || 0}</Text>
                 <Text style={styles.quickStatLabel}>Abonnements</Text>
@@ -1051,89 +1020,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-
-      {/* Modal pour les listes de followers/following */}
-      {selectedList && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={handleCloseModal}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {selectedList === "followers" 
-                    ? "Abonnés" 
-                    : "Abonnements"}
-                </Text>
-                <TouchableOpacity 
-                  style={styles.modalCloseButton}
-                  onPress={handleCloseModal}
-                >
-                  <Icon name="close" size={24} color={COLORS.neutral[600]} />
-                </TouchableOpacity>
-              </View>
-              
-              <FlatList
-                data={selectedList === "followers" ? user?.followers : user?.following}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <View style={styles.userListItem}>
-                    <View style={styles.userListItemLeft}>
-                      {item.profilePhoto ? (
-                        <Image
-                          source={{ uri: item.profilePhoto }}
-                          style={styles.userListAvatar}
-                        />
-                      ) : (
-                        <View style={styles.userListAvatarPlaceholder}>
-                          <Text style={styles.userListAvatarText}>
-                            {item.username?.charAt(0) || "?"}
-                          </Text>
-                        </View>
-                      )}
-                      <View style={styles.userListInfo}>
-                        <Text style={styles.userListName}>{item.username}</Text>
-                        {item.firstName && item.lastName && (
-                          <Text style={styles.userListDetail}>
-                            {item.firstName} {item.lastName}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    
-                    {selectedList === "following" && (
-                      <TouchableOpacity
-                        style={styles.unfollowButton}
-                        onPress={() => handleUnfollow(item.id)}
-                      >
-                        <Text style={styles.unfollowButtonText}>Se désabonner</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.userListDivider} />}
-                ListEmptyComponent={() => (
-                  <View style={styles.emptyListContainer}>
-                    <Icon 
-                      name={selectedList === "followers" ? "person-add-disabled" : "group-off"} 
-                      size={48} 
-                      color={COLORS.neutral[400]} 
-                    />
-                    <Text style={styles.emptyListText}>
-                      {selectedList === "followers" 
-                        ? "Vous n'avez pas encore d'abonnés" 
-                        : "Vous ne suivez personne pour le moment"}
-                    </Text>
-                  </View>
-                )}
-              />
-            </View>
-          </View>
-        </Modal>
-      )}
       
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -1144,14 +1030,24 @@ export default function ProfileScreen({ navigation }) {
         displayName={`${formData.firstName} ${formData.lastName}`} 
         unreadCount={unreadCount} 
         voteSummary={stats?.voteSummary || {}} 
-        onShowFollowers={() => handleShowList("followers")} 
-        onShowFollowing={() => handleShowList("following")} 
         onShowNameModal={() => setIsEditingCity(true)} 
         onLogout={() => navigation.replace("LoginScreen")} 
         onNavigateToSettings={() => navigation.navigate("SettingsScreen")} 
         onShowVoteInfoModal={() => console.log("Show vote info modal")} 
         onNavigateToCity={() => console.log("Navigate to city")} 
         updateProfileImage={handleProfileImageUpdateWrapper} 
+      />
+       <FollowersModal
+        visible={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        followers={user?.followers || []}
+        onUserPress={handleFollowingUserPress}
+      />
+      <FollowingModal
+        visible={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        following={user?.following || []}
+        onUserPress={handleFollowingUserPress}
       />
     </View>
   );

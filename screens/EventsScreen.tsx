@@ -55,15 +55,11 @@ export default function EventsScreen({ navigation }) {
     }[]
   >([]);
 
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
-const dummyFn = () => {};
-  
+  const dummyFn = () => {};
+
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
@@ -411,21 +407,19 @@ const dummyFn = () => {};
           contentContainerStyle={styles.eventsList}
         />
       )}
-  <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        voteSummary={voteSummary}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
+        updateProfileImage={updateProfileImage}
+      />
       <Modal
         visible={isModalVisible}
         animationType="slide"
@@ -546,7 +540,8 @@ const dummyFn = () => {};
               <Text style={styles.photoSectionTitle}>Photos</Text>
               <PhotoManager
                 photos={
-                  currentEvent?.photos?.map((photo) => ({
+                  currentEvent?.photos?.map((photo, index) => ({
+                    id: index.toString(), // Assign a unique id for each photo
                     uri: photo.url,
                   })) || []
                 }
@@ -556,7 +551,7 @@ const dummyFn = () => {};
                       ? {
                           ...prev,
                           photos: newPhotos.map((photo) => ({
-                            url: photo.uri || photo.uri,
+                            url: photo.uri || "",
                           })),
                         }
                       : null
@@ -633,7 +628,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  
   eventsList: {
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -692,7 +686,6 @@ const styles = StyleSheet.create({
     color: "#888888",
     textAlign: "center",
   },
-
 
   actionButtons: {
     flexDirection: "row",

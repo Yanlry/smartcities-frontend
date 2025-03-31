@@ -302,14 +302,14 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
         toggleSidebar={toggleSidebar}
         user={user}
         displayName={displayName}
-        stats={{ posts: 0, likes: 0 }} // Suppression de la propriété 'comments'
-        onShowFollowers={dummyFn}
-        onShowFollowing={dummyFn}
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
         onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-        updateProfileImage={dummyUpdateProfileImage} // Fonction conforme à la signature demandée
-        onNavigateToRanking={() => navigation.navigate("RankingScreen")}
+        updateProfileImage={dummyUpdateProfileImage}
+        voteSummary={{
+          up: stats?.votes?.filter(vote => vote.type === "up").length || 0,
+          down: stats?.votes?.filter(vote => vote.type === "down").length || 0,
+        }} 
       />
     </View>
   );

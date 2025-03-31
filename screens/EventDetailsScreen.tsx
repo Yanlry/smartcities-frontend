@@ -32,7 +32,7 @@ interface Event {
   location: string;
   date: string;
   attendees: { user: Participant }[];
-  organizer: Participant; 
+  organizer: Participant;
   useFullName: boolean;
 }
 
@@ -47,31 +47,28 @@ interface Participant {
 
 export default function EventDetails({ route }) {
   const { eventId } = route.params;
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { unreadCount } = useNotification(); 
-  const { getUserId } = useToken(); 
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { unreadCount } = useNotification();
+  const { getUserId } = useToken();
 
   const [isRegistered, setIsRegistered] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0); 
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [event, setEvent] = useState<Event | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null); 
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
-const dummyFn = () => {};
+  const dummyFn = () => {};
 
   useEffect(() => {
     const fetchUserId = async () => {
       try {
-        const userId = await getUserId(); 
-        setCurrentUserId(userId); 
+        const userId = await getUserId();
+        setCurrentUserId(userId);
       } catch (error) {
         console.error(
           "Erreur lors de la récupération de l'utilisateur :",
@@ -100,7 +97,7 @@ const dummyFn = () => {};
     };
 
     const checkRegistration = async () => {
-      if (!currentUserId) return; 
+      if (!currentUserId) return;
 
       try {
         const url = `${API_URL}/events/${eventId}/is-registered?userId=${currentUserId}`;
@@ -143,7 +140,7 @@ const dummyFn = () => {};
                 day: "numeric",
               })}`
             : "Date non disponible"
-        }\n\nLien : https://smartcities.com/events/${eventId}`, 
+        }\n\nLien : https://smartcities.com/events/${eventId}`,
       });
 
       if (result.action === Share.sharedAction) {
@@ -185,18 +182,18 @@ const dummyFn = () => {};
       });
 
       Alert.alert(
-        "Inscription réussie", 
-        "Votre inscription est confirmée, profitez bien de l’événement !", 
+        "Inscription réussie",
+        "Votre inscription est confirmée, profitez bien de l’événement !",
         [
           {
-            text: "OK", 
-            onPress: () => console.log("OK Pressed"), 
+            text: "OK",
+            onPress: () => console.log("OK Pressed"),
           },
         ],
-        { cancelable: false } 
+        { cancelable: false }
       );
 
-      setIsRegistered(true); 
+      setIsRegistered(true);
 
       const updatedEventResponse = await axios.get(
         `${API_URL}/events/${eventId}`
@@ -231,15 +228,15 @@ const dummyFn = () => {};
       );
 
       Alert.alert(
-        "Désinscription enregistrée", 
-        "N’hésitez pas à vous réinscrire si vous changez d’avis !", 
+        "Désinscription enregistrée",
+        "N’hésitez pas à vous réinscrire si vous changez d’avis !",
         [
           {
-            text: "OK", 
+            text: "OK",
             onPress: () => console.log("OK Pressed"),
           },
         ],
-        { cancelable: false } 
+        { cancelable: false }
       );
       setIsRegistered(false);
 
@@ -250,7 +247,7 @@ const dummyFn = () => {};
           attendees: prevEvent.attendees.filter(
             (attendee) => attendee.user.id !== currentUserId
           ),
-          photos: prevEvent.photos || [], 
+          photos: prevEvent.photos || [],
         };
       });
     } catch (error) {
@@ -265,9 +262,9 @@ const dummyFn = () => {};
 
   const getDisplayName = (user) => {
     if (user.useFullName) {
-      return `${user.firstName} ${user.lastName}`; 
+      return `${user.firstName} ${user.lastName}`;
     }
-    return `${user.username}`; 
+    return `${user.username}`;
   };
 
   return (
@@ -277,7 +274,7 @@ const dummyFn = () => {};
           <Icon
             name="menu"
             size={24}
-            color="#FFFFFC" 
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -314,7 +311,7 @@ const dummyFn = () => {};
             />
           )}
           <FlatList
-            data={event.photos} 
+            data={event.photos}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -325,7 +322,7 @@ const dummyFn = () => {};
                   uri: item.url || "https://via.placeholder.com/600",
                 }}
                 style={styles.image}
-                onLoad={() => setIsLoading(false)} 
+                onLoad={() => setIsLoading(false)}
               />
             )}
             onScroll={(e) => {
@@ -349,38 +346,44 @@ const dummyFn = () => {};
         </View>
 
         <View style={styles.header}>
-      {/* Titre de l'événement */}
-      <Text style={styles.title} ellipsizeMode="tail">
-        {event.title || "Titre indisponible"}
-      </Text>
+          {/* Titre de l'événement */}
+          <Text style={styles.title} ellipsizeMode="tail">
+            {event.title || "Titre indisponible"}
+          </Text>
 
-      {/* Actions : Partager et Inscription */}
-      <View style={styles.actions}>
-        {/* Bouton Partager */}
-        <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
-          <Ionicons name="share-social" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Partager</Text>
-        </TouchableOpacity>
+          {/* Actions : Partager et Inscription */}
+          <View style={styles.actions}>
+            {/* Bouton Partager */}
+            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
+              <Ionicons name="share-social" size={24} color="#fff" />
+              <Text style={styles.buttonText}>Partager</Text>
+            </TouchableOpacity>
 
-        {/* Bouton Inscription/Désinscription */}
-        {isRegistered ? (
-          <TouchableOpacity style={[styles.iconButton, styles.leaveButton]} onPress={unregisterFromEvent}>
-            <FontAwesome name="times-circle" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Se désinscrire</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={[styles.iconButton, styles.joinButton]} onPress={registerForEvent}>
-            <Ionicons name="checkmark-circle" size={24} color="#fff" />
-            <Text style={styles.buttonText}>S'inscrire</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+            {/* Bouton Inscription/Désinscription */}
+            {isRegistered ? (
+              <TouchableOpacity
+                style={[styles.iconButton, styles.leaveButton]}
+                onPress={unregisterFromEvent}
+              >
+                <FontAwesome name="times-circle" size={24} color="#fff" />
+                <Text style={styles.buttonText}>Se désinscrire</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.iconButton, styles.joinButton]}
+                onPress={registerForEvent}
+              >
+                <Ionicons name="checkmark-circle" size={24} color="#fff" />
+                <Text style={styles.buttonText}>S'inscrire</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-      {/* Description */}
-      <Text style={styles.description} ellipsizeMode="tail">
-        {event.description || "Description indisponible"}
-      </Text>
-    </View>
+          {/* Description */}
+          <Text style={styles.description} ellipsizeMode="tail">
+            {event.description || "Description indisponible"}
+          </Text>
+        </View>
 
         {/* Informations Clés */}
         <View style={styles.infoContainer}>
@@ -412,53 +415,51 @@ const dummyFn = () => {};
 
         {/* Description */}
         <View style={styles.participantListContainer}>
-  <Text style={styles.sectionMember}>Liste des participants</Text>
-  {event.attendees.length > 0 ? (
-    <ScrollView contentContainerStyle={styles.participantList}>
-      {event.attendees.map((attendee, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.participant}
-          onPress={() =>
-            navigateToUserProfile(attendee.user.id.toString())
-          }
-        >
-          <Image
-            source={{
-              uri:
-                attendee.user.photos?.[0]?.url ||
-                "https://via.placeholder.com/150",
-            }}
-            style={styles.participantPhoto}
-          />
-          <Text style={styles.participantName}>
-            {getDisplayName(attendee.user)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  ) : (
-    <Text style={styles.noParticipants}>
-      Aucun participant inscrit pour le moment.
-    </Text>
-  )}
-</View>
+          <Text style={styles.sectionMember}>Liste des participants</Text>
+          {event.attendees.length > 0 ? (
+            <ScrollView contentContainerStyle={styles.participantList}>
+              {event.attendees.map((attendee, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.participant}
+                  onPress={() =>
+                    navigateToUserProfile(attendee.user.id.toString())
+                  }
+                >
+                  <Image
+                    source={{
+                      uri:
+                        attendee.user.photos?.[0]?.url ||
+                        "https://via.placeholder.com/150",
+                    }}
+                    style={styles.participantPhoto}
+                  />
+                  <Text style={styles.participantName}>
+                    {getDisplayName(attendee.user)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.noParticipants}>
+              Aucun participant inscrit pour le moment.
+            </Text>
+          )}
+        </View>
       </ScrollView>
       <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        voteSummary={voteSummary}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
+        updateProfileImage={updateProfileImage}
+      />
     </View>
   );
 }
@@ -516,7 +517,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#062C41", 
+    backgroundColor: "#062C41",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -526,11 +527,11 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#062C41', 
-    backgroundColor: '#FFFFFC',
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc', 
+    color: "#062C41",
+    backgroundColor: "#FFFFFC",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc",
   },
   typeBadge: {
     flexDirection: "row",
@@ -553,9 +554,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-
-
-
 
   header: {
     marginBottom: 20,
@@ -618,10 +616,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
 
-
   participantListContainer: {
-    flex: 1, 
-    marginBottom: 120, 
+    flex: 1,
+    marginBottom: 120,
   },
   participantList: {
     marginTop: 10,
@@ -646,7 +643,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     color: "gray",
   },
-
 
   infoContainer: {
     padding: 10,
@@ -676,5 +672,4 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: "#333",
   },
-
 });

@@ -10,22 +10,18 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/common/Sidebar";
 import { Linking } from "react-native";
-import MayorInfoCard from '../components/home/MayorInfoSection/MayorInfoCard';
+import MayorInfoCard from "../components/home/MayorInfoSection/MayorInfoCard";
 import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
 export default function CityScreen({ navigation }) {
   const { unreadCount } = useNotification();
-  
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
-const dummyFn = () => {};
+  const dummyFn = () => {};
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
@@ -76,20 +72,18 @@ const dummyFn = () => {};
         <MayorInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
       </ScrollView>
       <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        voteSummary={voteSummary}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
+        updateProfileImage={updateProfileImage}
+      />
     </View>
   );
 }
@@ -113,7 +107,7 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#FFFFFC", 
+    color: "#FFFFFC",
     letterSpacing: 2,
     fontWeight: "bold",
     fontFamily: "Insanibc",
@@ -146,5 +140,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 20,
   },
-  
 });

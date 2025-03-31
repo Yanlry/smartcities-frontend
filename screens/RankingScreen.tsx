@@ -66,7 +66,7 @@ interface RankingResponse {
  */
 const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { unreadCount } = useNotification();
-  
+
   // State management
   const [rankingData, setRankingData] = useState<User[]>([]);
   const [topUsers, setTopUsers] = useState<User[]>([]);
@@ -78,22 +78,18 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
 
-const dummyFn = () => {};
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
+
+  const dummyFn = () => {};
 
   // Animation values
   const scrollY = new Animated.Value(0);
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [1, 0.9],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
   /**
@@ -117,31 +113,33 @@ const dummyFn = () => {};
       if (!userResponse.ok) {
         throw new Error("Impossible de récupérer les données utilisateur.");
       }
-      
+
       const userData = await userResponse.json();
       const cityName = userData.nomCommune;
-      
+
       if (!cityName) {
         throw new Error("La ville de l'utilisateur est introuvable.");
       }
-      
+
       setCityName(cityName);
-      
+
       const rankingResponse = await fetch(
-        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
+        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(
+          cityName
+        )}`
       );
-      
+
       if (!rankingResponse.ok) {
         throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
       }
 
       const data: RankingResponse = await rankingResponse.json();
-      
+
       // Process and organize data
       const allUsers = data.users;
-      const top3 = allUsers.filter(user => user.ranking <= 3);
-      const remainingUsers = allUsers.filter(user => user.ranking > 3);
-      
+      const top3 = allUsers.filter((user) => user.ranking <= 3);
+      const remainingUsers = allUsers.filter((user) => user.ranking > 3);
+
       setRankingData(allUsers);
       setTopUsers(top3);
       setOtherUsers(remainingUsers);
@@ -170,7 +168,7 @@ const dummyFn = () => {};
 
   // Sidebar toggle
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen((prev) => !prev);
   }, []);
 
   // Navigation to notifications
@@ -179,9 +177,12 @@ const dummyFn = () => {};
   }, [navigation]);
 
   // Navigate to user profile
-  const navigateToUserProfile = useCallback((userId: number) => {
-    navigation.navigate("UserProfileScreen", { userId });
-  }, [navigation]);
+  const navigateToUserProfile = useCallback(
+    (userId: number) => {
+      navigation.navigate("UserProfileScreen", { userId });
+    },
+    [navigation]
+  );
 
   // Loading state
   if (loading && !refreshing) {
@@ -205,7 +206,7 @@ const dummyFn = () => {};
         <Ionicons name="alert-circle-outline" size={60} color="#e74c3c" />
         <Text style={styles.errorTitle}>Oops!</Text>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.retryButton}
           onPress={() => fetchRankingData()}
         >
@@ -216,7 +217,7 @@ const dummyFn = () => {};
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaContainer} edges={['right', 'left']}>
+    <SafeAreaView style={styles.safeAreaContainer} edges={["right", "left"]}>
       <StatusBar barStyle="light-content" />
       <View style={styles.container}>
         {/* Header */}
@@ -228,20 +229,20 @@ const dummyFn = () => {};
             <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
               <Feather name="menu" size={24} color={COLORS.text} />
             </TouchableOpacity>
-            
+
             <View style={styles.titleContainer}>
               <Text style={styles.headerTitle}>CLASSEMENT</Text>
             </View>
-            
-            <TouchableOpacity 
-              onPress={navigateToNotifications} 
+
+            <TouchableOpacity
+              onPress={navigateToNotifications}
               style={styles.notificationButton}
             >
               <Feather name="bell" size={24} color={COLORS.text} />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
+                    {unreadCount > 99 ? "99+" : unreadCount}
                   </Text>
                 </View>
               )}
@@ -262,27 +263,27 @@ const dummyFn = () => {};
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#3498db']}
+              colors={["#3498db"]}
               tintColor="#3498db"
             />
           }
           ListHeaderComponent={
             <>
               {/* User's Current Ranking */}
-              <RankingHeader 
-                userRanking={userRanking} 
-                totalUsers={totalUsers} 
-                cityName={cityName} 
+              <RankingHeader
+                userRanking={userRanking}
+                totalUsers={totalUsers}
+                cityName={cityName}
               />
-              
+
               {/* Top 3 Users */}
               {topUsers.length > 0 && (
-                <TopUsersSection 
-                  topUsers={topUsers} 
-                  onUserPress={navigateToUserProfile} 
+                <TopUsersSection
+                  topUsers={topUsers}
+                  onUserPress={navigateToUserProfile}
                 />
               )}
-              
+
               {/* Other Users Title */}
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Classement général</Text>
@@ -291,8 +292,8 @@ const dummyFn = () => {};
             </>
           }
           renderItem={({ item }) => (
-            <UserCard 
-              user={item} 
+            <UserCard
+              user={item}
               onPress={() => navigateToUserProfile(item.id)}
             />
           )}
@@ -306,23 +307,21 @@ const dummyFn = () => {};
           }
           ListFooterComponent={<View style={styles.footer} />}
         />
-        
+
         {/* Sidebar */}
         <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+          isOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+          user={user}
+          displayName={displayName}
+          voteSummary={voteSummary}
+          onShowNameModal={dummyFn}
+          onShowVoteInfoModal={dummyFn}
+          onNavigateToCity={() => {
+            /* TODO : remplacer par une navigation appropriée si besoin */
+          }}
+          updateProfileImage={updateProfileImage}
+        />
       </View>
     </SafeAreaView>
   );
@@ -332,20 +331,20 @@ const styles = StyleSheet.create({
   safeAreaContainer: {
     flex: 1,
     backgroundColor: COLORS.primary.start,
-    paddingTop:30,
+    paddingTop: 30,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: "#f5f7fa",
   },
   header: {
-    width: '100%',
+    width: "100%",
     elevation: 5,
   },
   headerGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
@@ -353,46 +352,46 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   titleContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.text,
     letterSpacing: 1,
   },
   cityIndicator: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
     marginTop: 2,
   },
   notificationButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     backgroundColor: COLORS.accent,
     borderRadius: 10,
     minWidth: 18,
     height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 4,
   },
   badgeText: {
     color: COLORS.text,
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   listContent: {
     paddingBottom: 20,
@@ -404,52 +403,52 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
     marginBottom: 8,
   },
   sectionDivider: {
     height: 2,
     width: 60,
-    backgroundColor: '#3498db',
+    backgroundColor: "#3498db",
     borderRadius: 1,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f7fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f7fa",
   },
   loadingGradient: {
     flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
     color: COLORS.text,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: "#f5f7fa",
   },
   errorTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+    fontWeight: "bold",
+    color: "#e74c3c",
     marginTop: 16,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
+    color: "#7f8c8d",
+    textAlign: "center",
     marginBottom: 24,
   },
   retryButton: {
@@ -461,17 +460,17 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: COLORS.text,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyText: {
     fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
+    color: "#7f8c8d",
+    textAlign: "center",
     marginTop: 16,
   },
   footer: {

@@ -188,7 +188,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get("window");
 
-export default function App({navigation}) {
+export default function App({ navigation }) {
   const { getToken } = useToken();
   const previousOffset = useRef(0);
 
@@ -201,12 +201,8 @@ export default function App({navigation}) {
   const headerOpacity = useSharedValue(1);
 
   // Récupération des infos utilisateur
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
   // Fonctions dummy pour Sidebar (à adapter au besoin)
   const dummyFn = () => {};
@@ -366,12 +362,12 @@ export default function App({navigation}) {
 
     return (
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
-         <LinearGradient
-                  colors={['#062C41', '#062C41', '#0F3460']}
-                  style={styles.headerGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
+        <LinearGradient
+          colors={["#062C41", "#062C41", "#0F3460"]}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
           {/* Enhanced glassmorphism effect */}
           {Platform.OS === "ios" && (
             <BlurView
@@ -471,7 +467,6 @@ export default function App({navigation}) {
       initializeUserId();
     }, []);
 
-    
     if (loading) {
       return (
         <View style={styles.loaderContainer}>
@@ -538,12 +533,12 @@ export default function App({navigation}) {
 
       return (
         <View style={styles.tabBarWrapper}>
-         <LinearGradient
-                  colors={['#062C41', '#062C41', '#0F3460']}
-                  style={styles.headerGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
+          <LinearGradient
+            colors={["#062C41", "#062C41", "#0F3460"]}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
             {/* Glassmorphism effect for iOS */}
             {Platform.OS === "ios" && (
               <BlurView
@@ -847,127 +842,133 @@ export default function App({navigation}) {
   return (
     <SafeAreaProvider>
       <AuthProvider handleLogout={handleLogout}>
-      <UserProfileProvider> 
-        <NotificationProvider>
-          <StatusBar
-            barStyle="light-content"
-            backgroundColor="transparent"
-            translucent
-          />
-          <NavigationContainer>
-            <KeyboardWrapper>
-              <>
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
-                  {!isLoggedIn ? (
-                    <>
-                      <Stack.Screen name="Login">
-                        {(props) => (
-                          <LoginScreen
-                            {...props}
-                            onLogin={() => {
-                              setIsLoggedIn(true);
-                            }}
-                          />
-                        )}
-                      </Stack.Screen>
-                      <Stack.Screen name="Register">
-                        {(props) => (
-                          <RegisterScreen
-                            {...props}
-                            onLogin={() => {
-                              setIsLoggedIn(true);
-                            }}
-                          />
-                        )}
-                      </Stack.Screen>
-                    </>
-                  ) : (
-                    <>
-                      <Stack.Screen name="Main" component={TabNavigator} />
+        <UserProfileProvider>
+          <NotificationProvider>
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor="transparent"
+              translucent
+            />
+            <NavigationContainer>
+              <KeyboardWrapper>
+                <>
+                  <Stack.Navigator screenOptions={{ headerShown: false }}>
+                    {!isLoggedIn ? (
+                      <>
+                        <Stack.Screen name="Login">
+                          {(props) => (
+                            <LoginScreen
+                              {...props}
+                              onLogin={() => {
+                                setIsLoggedIn(true);
+                              }}
+                            />
+                          )}
+                        </Stack.Screen>
+                        <Stack.Screen name="Register">
+                          {(props) => (
+                            <RegisterScreen
+                              {...props}
+                              onLogin={() => {
+                                setIsLoggedIn(true);
+                              }}
+                            />
+                          )}
+                        </Stack.Screen>
+                      </>
+                    ) : (
+                      <>
+                        <Stack.Screen name="Main" component={TabNavigator} />
 
-                      {/* Correction des fonctions inline pour les écrans */}
-                      <Stack.Screen
-                        name="ProfileScreen"
-                        component={ProfileScreen}
-                      />
-                      <Stack.Screen
-                        name="UserProfileScreen"
-                        component={UserProfileScreen}
-                      />
+                        {/* Correction des fonctions inline pour les écrans */}
+                        <Stack.Screen
+                          name="ProfileScreen"
+                          component={ProfileScreen}
+                        />
+                        <Stack.Screen
+                          name="UserProfileScreen"
+                          component={UserProfileScreen}
+                        />
 
-                      <Stack.Screen
-                        name="ReportDetailsScreen"
-                        component={ReportDetailsScreen}
-                      />
-                      <Stack.Screen
-                        name="ReportScreen"
-                        component={ReportScreen}
-                      />
-                      <Stack.Screen
-                        name="EventDetailsScreen"
-                        component={EventDetailsScreen}
-                      />
-                      <Stack.Screen
-                        name="EventsScreen"
-                        component={EventsScreen}
-                      />
-                      <Stack.Screen
-                        name="CategoryReportsScreen"
-                        component={CategoryReportsScreen}
-                      />
-                      <Stack.Screen
-                        name="CreateEventScreen"
-                        component={CreateEventScreen}
-                      />
-                      <Stack.Screen
-                        name="CreateReportScreen"
-                        component={CreateReportScreen}
-                      />
-                      <Stack.Screen
-                        name="NotificationsScreen"
-                        component={NotificationsScreen}
-                      />
-                      <Stack.Screen name="ChatScreen" component={ChatScreen} />
-                      <Stack.Screen
-                        name="RankingScreen"
-                        component={RankingScreen}
-                      />
-                      <Stack.Screen
-                        name="ConversationsScreen"
-                        component={ConversationsScreen}
-                      />
-                      <Stack.Screen
-                        name="SignalementsScreen"
-                        component={ReportScreen}
-                      />
-                      <Stack.Screen name="CityScreen" component={CityScreen} />
-                      <Stack.Screen
-                        name="PostDetailsScreen"
-                        component={PostDetailsScreen}
-                      />
-                    </>
-                  )}
-                </Stack.Navigator>
-                {/* Sidebar moved inside NavigationContainer */}
-                <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
-              </>
-            </KeyboardWrapper>
-          </NavigationContainer>
-        </NotificationProvider>
+                        <Stack.Screen
+                          name="ReportDetailsScreen"
+                          component={ReportDetailsScreen as React.ComponentType<any>}
+                        />
+                        <Stack.Screen
+                          name="ReportScreen"
+                          component={ReportScreen}
+                        />
+                        <Stack.Screen
+                          name="EventDetailsScreen"
+                          component={EventDetailsScreen}
+                        />
+                        <Stack.Screen
+                          name="EventsScreen"
+                          component={EventsScreen}
+                        />
+                        <Stack.Screen
+                          name="CategoryReportsScreen"
+                          component={CategoryReportsScreen}
+                        />
+                        <Stack.Screen
+                          name="CreateEventScreen"
+                          component={CreateEventScreen}
+                        />
+                        <Stack.Screen
+                          name="CreateReportScreen"
+                          component={CreateReportScreen}
+                        />
+                        <Stack.Screen
+                          name="NotificationsScreen"
+                          component={NotificationsScreen}
+                        />
+                        <Stack.Screen
+                          name="ChatScreen"
+                          component={ChatScreen}
+                        />
+                        <Stack.Screen
+                          name="RankingScreen"
+                          component={RankingScreen}
+                        />
+                        <Stack.Screen
+                          name="ConversationsScreen"
+                          component={ConversationsScreen}
+                        />
+                        <Stack.Screen
+                          name="SignalementsScreen"
+                          component={ReportScreen}
+                        />
+                        <Stack.Screen
+                          name="CityScreen"
+                          component={CityScreen}
+                        />
+                        <Stack.Screen
+                          name="PostDetailsScreen"
+                          component={PostDetailsScreen}
+                        />
+                      </>
+                    )}
+                  </Stack.Navigator>
+                  {/* Sidebar moved inside NavigationContainer */}
+                  <Sidebar
+                    isOpen={isSidebarOpen}
+                    toggleSidebar={toggleSidebar}
+                    user={user}
+                    displayName={displayName}
+                    voteSummary={voteSummary}
+                    onShowFollowers={dummyFn}
+                    onShowFollowing={dummyFn}
+                    onShowNameModal={dummyFn}
+                    onShowVoteInfoModal={dummyFn}
+                    onNavigateToCity={() => {
+                      /* TODO : remplacer par une navigation appropriée si besoin */
+                    }}
+                    updateProfileImage={updateProfileImage}
+                  />
+                </>
+              </KeyboardWrapper>
+            </NavigationContainer>
+          </NotificationProvider>
         </UserProfileProvider>
       </AuthProvider>
     </SafeAreaProvider>

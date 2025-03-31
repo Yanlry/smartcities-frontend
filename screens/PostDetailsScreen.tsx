@@ -69,14 +69,10 @@ export default function PostDetailsScreen({ navigation }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
-const dummyFn = () => {};
+  const dummyFn = () => {};
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -112,7 +108,7 @@ const dummyFn = () => {};
     try {
       const { getToken } = useToken();
       const token = await getToken();
-  
+
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "GET",
         headers: {
@@ -121,11 +117,12 @@ const dummyFn = () => {};
         },
       });
       const postData = await response.json();
-  
+
       const sortedComments = postData.comments.sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
-  
+
       setPost({
         ...postData,
         comments: sortedComments,
@@ -441,7 +438,7 @@ const dummyFn = () => {};
       key={comment.id}
       style={[
         styles.commentContainer,
-        isLastComment && styles.lastCommentContainer,  
+        isLastComment && styles.lastCommentContainer,
       ]}
     >
       {/* Avatar et contenu du commentaire principal */}
@@ -500,7 +497,7 @@ const dummyFn = () => {};
               </View>
             </TouchableOpacity>
           </View>
-  
+
           {/* Champ de réponse conditionnel */}
           {replyToCommentId === comment.id && (
             <View style={styles.replyContainer}>
@@ -523,7 +520,7 @@ const dummyFn = () => {};
               </TouchableOpacity>
             </View>
           )}
-  
+
           {/* Bouton pour afficher/masquer les réponses */}
           {comment.replies && comment.replies.length > 0 && (
             <TouchableOpacity
@@ -544,7 +541,7 @@ const dummyFn = () => {};
               </Text>
             </TouchableOpacity>
           )}
-  
+
           {/* Affichage des réponses imbriquées si visible */}
           {replyVisibility[comment.id] &&
             comment.replies &&
@@ -576,7 +573,7 @@ const dummyFn = () => {};
                           : "Date inconnue"}
                       </Text>
                       <Text style={styles.commentText}>{reply.text}</Text>
-  
+
                       {/* Bouton Supprimer pour les réponses de l'utilisateur connecté */}
                       {reply.userId === userId && (
                         <TouchableOpacity
@@ -705,20 +702,18 @@ const dummyFn = () => {};
       </View>
 
       <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        voteSummary={voteSummary}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
+        updateProfileImage={updateProfileImage}
+      />
       <ScrollView>
         <View style={styles.postContainer}>
           {/* En-tête du post */}
@@ -870,7 +865,9 @@ const dummyFn = () => {};
             <View style={styles.commentsSection}>
               {post.comments
                 .filter((comment) => comment.parentId === null)
-                .map((comment, index, array) => renderComment(comment, index === array.length - 1))}
+                .map((comment, index, array) =>
+                  renderComment(comment, index === array.length - 1)
+                )}
             </View>
           ) : (
             <Text style={styles.noPost}>Aucun commentaire pour le moment</Text>
@@ -1252,7 +1249,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   lastCommentContainer: {
-    marginBottom: 20,  
+    marginBottom: 20,
   },
   modalBackground: {
     flex: 1,

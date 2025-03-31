@@ -73,15 +73,10 @@ export default function NotificationsScreen({ navigation }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
-const dummyFn = () => {};
-
+  const dummyFn = () => {};
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -421,12 +416,12 @@ const dummyFn = () => {};
     const now = new Date();
     const date = new Date(dateString);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return 'À l\'instant';
+
+    if (diffInSeconds < 60) return "À l'instant";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} h`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} j`;
-    
+
     return date.toLocaleDateString();
   };
 
@@ -440,125 +435,142 @@ const dummyFn = () => {};
   }
 
   // Separate component for NotificationItem to properly use hooks
-  const NotificationItem = React.memo(({ item, index, onPress, onMarkAsRead, onDelete }: NotificationItemProps) => {
-    const itemFadeAnim = React.useRef(new Animated.Value(0)).current;
-    const itemSlideAnim = React.useRef(new Animated.Value(20)).current;
+  const NotificationItem = React.memo(
+    ({
+      item,
+      index,
+      onPress,
+      onMarkAsRead,
+      onDelete,
+    }: NotificationItemProps) => {
+      const itemFadeAnim = React.useRef(new Animated.Value(0)).current;
+      const itemSlideAnim = React.useRef(new Animated.Value(20)).current;
 
-    React.useEffect(() => {
-      const delay = index * 50; // Stagger effect
-      Animated.parallel([
-        Animated.timing(itemFadeAnim, {
-          toValue: 1,
-          duration: 300,
-          delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(itemSlideAnim, {
-          toValue: 0,
-          duration: 300,
-          delay,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, [index]);
+      React.useEffect(() => {
+        const delay = index * 50; // Stagger effect
+        Animated.parallel([
+          Animated.timing(itemFadeAnim, {
+            toValue: 1,
+            duration: 300,
+            delay,
+            useNativeDriver: true,
+          }),
+          Animated.timing(itemSlideAnim, {
+            toValue: 0,
+            duration: 300,
+            delay,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, [index]);
 
-    const renderLeftActions = () => (
-      <TouchableOpacity
-        style={styles.markAsReadButton}
-        onPress={() => onMarkAsRead(item.id)}
-      >
-        <Icon name="done" size={24} color="#FFF" />
-        <Text style={styles.markAsReadText}>Lu</Text>
-      </TouchableOpacity>
-    );
-
-    const renderRightActions = () => (
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => onDelete(item.id)}
-      >
-        <Icon name="delete" size={24} color="#FFF" />
-        <Text style={styles.deleteButtonText}>Supprimer</Text>
-      </TouchableOpacity>
-    );
-
-    return (
-      <Animated.View
-        style={[
-          { opacity: itemFadeAnim, transform: [{ translateY: itemSlideAnim }] },
-        ]}
-      >
-        <Swipeable
-          renderLeftActions={renderLeftActions}
-          renderRightActions={renderRightActions}
-          onSwipeableOpen={(direction) => {
-            if (direction === "left") {
-              onMarkAsRead(item.id);
-            } else if (direction === "right") {
-              Alert.alert(
-                "Confirmer la suppression",
-                "Voulez-vous vraiment supprimer cette notification ?",
-                [
-                  {
-                    text: "Annuler",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Supprimer",
-                    style: "destructive",
-                    onPress: () => onDelete(item.id),
-                  },
-                ]
-              );
-            }
-          }}
+      const renderLeftActions = () => (
+        <TouchableOpacity
+          style={styles.markAsReadButton}
+          onPress={() => onMarkAsRead(item.id)}
         >
-          <TouchableOpacity
-            style={[
-              styles.notificationItem,
-              !item.isRead && styles.unreadNotification,
-            ]}
-            onPress={() => onPress(item)}
-            activeOpacity={0.7}
+          <Icon name="done" size={24} color="#FFF" />
+          <Text style={styles.markAsReadText}>Lu</Text>
+        </TouchableOpacity>
+      );
+
+      const renderRightActions = () => (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => onDelete(item.id)}
+        >
+          <Icon name="delete" size={24} color="#FFF" />
+          <Text style={styles.deleteButtonText}>Supprimer</Text>
+        </TouchableOpacity>
+      );
+
+      return (
+        <Animated.View
+          style={[
+            {
+              opacity: itemFadeAnim,
+              transform: [{ translateY: itemSlideAnim }],
+            },
+          ]}
+        >
+          <Swipeable
+            renderLeftActions={renderLeftActions}
+            renderRightActions={renderRightActions}
+            onSwipeableOpen={(direction) => {
+              if (direction === "left") {
+                onMarkAsRead(item.id);
+              } else if (direction === "right") {
+                Alert.alert(
+                  "Confirmer la suppression",
+                  "Voulez-vous vraiment supprimer cette notification ?",
+                  [
+                    {
+                      text: "Annuler",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Supprimer",
+                      style: "destructive",
+                      onPress: () => onDelete(item.id),
+                    },
+                  ]
+                );
+              }
+            }}
           >
-            {!item.isRead && <View style={styles.unreadIndicator} />}
-            <View style={styles.notificationContent}>
-              <View style={styles.profilePhotoContainer}>
-                <Image
-                  source={{
-                    uri:
-                      item.initiator?.profilePhoto ||
-                      item.initiatorDetails?.profilePhoto?.url ||
-                      "https://via.placeholder.com/150",
-                  }}
-                  style={styles.profilePhoto}
+            <TouchableOpacity
+              style={[
+                styles.notificationItem,
+                !item.isRead && styles.unreadNotification,
+              ]}
+              onPress={() => onPress(item)}
+              activeOpacity={0.7}
+            >
+              {!item.isRead && <View style={styles.unreadIndicator} />}
+              <View style={styles.notificationContent}>
+                <View style={styles.profilePhotoContainer}>
+                  <Image
+                    source={{
+                      uri:
+                        item.initiator?.profilePhoto ||
+                        item.initiatorDetails?.profilePhoto?.url ||
+                        "https://via.placeholder.com/150",
+                    }}
+                    style={styles.profilePhoto}
+                  />
+                  {getNotificationTypeIcon(item.type)}
+                </View>
+                <View style={styles.notificationTextContainer}>
+                  <Text style={styles.notificationMessage} numberOfLines={2}>
+                    {item.message}
+                  </Text>
+                  <Text style={styles.notificationDate}>
+                    Il y a {getRelativeTime(item.createdAt)}
+                  </Text>
+                </View>
+                <Icon
+                  name="chevron-right"
+                  size={20}
+                  color="#A0A0A0"
+                  style={styles.chevronIcon}
                 />
-                {getNotificationTypeIcon(item.type)}
               </View>
-              <View style={styles.notificationTextContainer}>
-                <Text style={styles.notificationMessage} numberOfLines={2}>
-                  {item.message}
-                </Text>
-                <Text style={styles.notificationDate}>
-                 Il y a {getRelativeTime(item.createdAt)}
-                </Text>
-              </View>
-              <Icon 
-                name="chevron-right" 
-                size={20} 
-                color="#A0A0A0" 
-                style={styles.chevronIcon} 
-              />
-            </View>
-          </TouchableOpacity>
-        </Swipeable>
-      </Animated.View>
-    );
-  });
+            </TouchableOpacity>
+          </Swipeable>
+        </Animated.View>
+      );
+    }
+  );
 
   // Render function for FlatList
-  const renderNotification = ({ item, index }: { item: Notification; index: number }) => (
-    <NotificationItem 
+  const renderNotification = ({
+    item,
+    index,
+  }: {
+    item: Notification;
+    index: number;
+  }) => (
+    <NotificationItem
       item={item}
       index={index}
       onPress={handleNotificationClick}
@@ -570,7 +582,7 @@ const dummyFn = () => {};
   const getNotificationTypeIcon = (type) => {
     let iconName = "notifications";
     let backgroundColor = "#4A90E2";
-    
+
     switch (type) {
       case "COMMENT":
       case "comment":
@@ -602,7 +614,7 @@ const dummyFn = () => {};
       default:
         break;
     }
-    
+
     return (
       <View style={[styles.notificationTypeIcon, { backgroundColor }]}>
         <Icon name={iconName} size={12} color="#FFF" />
@@ -610,210 +622,218 @@ const dummyFn = () => {};
     );
   };
 
-const NotificationPreferencesModal = () => {
-  const [tempPreferences, setTempPreferences] = useState(preferences);
-  const modalScaleAnim = React.useRef(new Animated.Value(0.9)).current;
-  const modalOpacityAnim = React.useRef(new Animated.Value(0)).current;
+  const NotificationPreferencesModal = () => {
+    const [tempPreferences, setTempPreferences] = useState(preferences);
+    const modalScaleAnim = React.useRef(new Animated.Value(0.9)).current;
+    const modalOpacityAnim = React.useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    if (isModalVisible) {
-      console.log("Ouverture du modal : synchronisation des préférences");
-      setTempPreferences(preferences);
+    useEffect(() => {
+      if (isModalVisible) {
+        console.log("Ouverture du modal : synchronisation des préférences");
+        setTempPreferences(preferences);
 
+        Animated.parallel([
+          Animated.timing(modalScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(modalOpacityAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    }, [isModalVisible, preferences]);
+
+    const closeModal = () => {
       Animated.parallel([
         Animated.timing(modalScaleAnim, {
-          toValue: 1,
-          duration: 300,
+          toValue: 0.9,
+          duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(modalOpacityAnim, {
-          toValue: 1,
-          duration: 300,
+          toValue: 0,
+          duration: 200,
           useNativeDriver: true,
         }),
-      ]).start();
-    }
-  }, [isModalVisible, preferences]);
+      ]).start(() => {
+        setModalVisible(false);
+      });
+    };
 
-  const closeModal = () => {
-    Animated.parallel([
-      Animated.timing(modalScaleAnim, {
-        toValue: 0.9,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(modalOpacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setModalVisible(false);
-    });
-  };
+    const toggleTempPreference = useCallback((type) => {
+      setTempPreferences((prev) => ({
+        ...prev,
+        [type]: !prev[type],
+      }));
+    }, []);
 
-  const toggleTempPreference = useCallback((type) => {
-    setTempPreferences((prev) => ({
-      ...prev,
-      [type]: !prev[type],
-    }));
-  }, []);
+    const savePreferences = useCallback(async () => {
+      try {
+        await AsyncStorage.setItem(
+          "notificationPreferences",
+          JSON.stringify(tempPreferences)
+        );
+        setPreferences(tempPreferences);
+        console.log("Préférences sauvegardées");
 
-  const savePreferences = useCallback(async () => {
-    try {
-      await AsyncStorage.setItem(
-        "notificationPreferences",
-        JSON.stringify(tempPreferences)
-      );
-      setPreferences(tempPreferences);
-      console.log("Préférences sauvegardées");
+        closeModal();
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde des préférences :", error);
+      }
+    }, [tempPreferences]);
 
-      closeModal();
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde des préférences :", error);
-    }
-  }, [tempPreferences]);
+    const groupedNotificationTypes = [
+      {
+        category: "Activités sur mes signalements",
+        items: [
+          { type: "VOTE", label: "Votes reçus sur mes signalements" },
+          { type: "COMMENT", label: "Commentaires sur mes signalements" },
+        ],
+      },
+      {
+        category: "Activités sur mes posts",
+        items: [
+          { type: "LIKE", label: "Mentions J'aime sur mes publications" },
+          { type: "comment", label: "Commentaires sur mes publications" },
+        ],
+      },
+      {
+        category: "Relations et communications",
+        items: [
+          { type: "FOLLOW", label: "Nouveaux abonnés" },
+          { type: "new_message", label: "Messages privés reçus" },
+        ],
+      },
+      {
+        category: "Actualités des relations",
+        items: [
+          {
+            type: "NEW_POST",
+            label: "Nouvelles publications de mes relations",
+          },
+        ],
+      },
+    ];
 
-  const groupedNotificationTypes = [
-    {
-      category: "Activités sur mes signalements",
-      items: [
-        { type: "VOTE", label: "Votes reçus sur mes signalements" },
-        { type: "COMMENT", label: "Commentaires sur mes signalements" },
-      ],
-    },
-    {
-      category: "Activités sur mes posts",
-      items: [
-        { type: "LIKE", label: "Mentions J'aime sur mes publications" },
-        { type: "comment", label: "Commentaires sur mes publications" },
-      ],
-    },
-    {
-      category: "Relations et communications",
-      items: [
-        { type: "FOLLOW", label: "Nouveaux abonnés" },
-        { type: "new_message", label: "Messages privés reçus" },
-      ],
-    },
-    {
-      category: "Actualités des relations",
-      items: [
-        {
-          type: "NEW_POST",
-          label: "Nouvelles publications de mes relations",
-        },
-      ],
-    },
-  ];
-
-  return (
-    isModalVisible && (
-     // Remplacement de l'ancien modal par une version avec un ScrollView accessible plus facilement
-<Modal
-  visible={isModalVisible}
-  transparent
-  animationType="none"
-  statusBarTranslucent
-  onRequestClose={() => {
-    console.log("Fermeture forcée via onRequestClose");
-    closeModal();
-  }}
->
-  <View style={styles.modalBackdrop}>
-    {/* Zone vide pour fermer le modal */}
-    <TouchableWithoutFeedback onPress={closeModal}>
-      <View style={{ flex: 1 }} />
-    </TouchableWithoutFeedback>
-    <Animated.View
-      style={[
-        styles.modalContainer,
-        {
-          opacity: modalOpacityAnim,
-          transform: [{ scale: modalScaleAnim }],
-        },
-      ]}
-    >
-      {/* On supprime le TouchableWithoutFeedback englobant pour ne pas interférer avec le scroll */}
-      <View>
-        <View style={styles.modalHeader}>
-          <View style={styles.modalHeaderContent}>
-            <Text style={styles.modalTitle}>
-              Préférences de notification
-            </Text>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={closeModal}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Icon name="close" size={22} color="#4A4A4A" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.modalSubtitle}>
-            Configurez les types de notifications que vous souhaitez recevoir
-          </Text>
-        </View>
-
-        <ScrollView
-          style={styles.modalScrollView}
-          contentContainerStyle={styles.modalScrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={true}
-          keyboardShouldPersistTaps="handled"
+    return (
+      isModalVisible && (
+        // Remplacement de l'ancien modal par une version avec un ScrollView accessible plus facilement
+        <Modal
+          visible={isModalVisible}
+          transparent
+          animationType="none"
+          statusBarTranslucent
+          onRequestClose={() => {
+            console.log("Fermeture forcée via onRequestClose");
+            closeModal();
+          }}
         >
-          {groupedNotificationTypes.map((group, groupIndex) => (
-            <View
-              key={group.category}
+          <View style={styles.modalBackdrop}>
+            {/* Zone vide pour fermer le modal */}
+            <TouchableWithoutFeedback onPress={closeModal}>
+              <View style={{ flex: 1 }} />
+            </TouchableWithoutFeedback>
+            <Animated.View
               style={[
-                styles.categorySection,
-                groupIndex > 0 && styles.categoryDivider,
+                styles.modalContainer,
+                {
+                  opacity: modalOpacityAnim,
+                  transform: [{ scale: modalScaleAnim }],
+                },
               ]}
             >
-              <Text style={styles.categoryTitle}>{group.category}</Text>
-              {group.items.map((item) => (
-                <View key={item.type} style={styles.preferenceItem}>
-                  <View style={styles.preferenceTextContainer}>
-                    <Text style={styles.preferenceLabel}>{item.label}</Text>
+              {/* On supprime le TouchableWithoutFeedback englobant pour ne pas interférer avec le scroll */}
+              <View>
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalHeaderContent}>
+                    <Text style={styles.modalTitle}>
+                      Préférences de notification
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.modalCloseButton}
+                      onPress={closeModal}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Icon name="close" size={22} color="#4A4A4A" />
+                    </TouchableOpacity>
                   </View>
-                  <Switch
-                    value={tempPreferences[item.type]}
-                    onValueChange={() => toggleTempPreference(item.type)}
-                    trackColor={{ false: "#E9E9EB", true: "#4A90E2" }}
-                    thumbColor={
-                      Platform.OS === "ios"
-                        ? "#FFFFFF"
-                        : tempPreferences[item.type]
-                        ? "#FFFFFF"
-                        : "#F5F5F5"
-                    }
-                    ios_backgroundColor="#E9E9EB"
-                    style={styles.preferenceSwitch}
-                  />
+                  <Text style={styles.modalSubtitle}>
+                    Configurez les types de notifications que vous souhaitez
+                    recevoir
+                  </Text>
                 </View>
-              ))}
-            </View>
-          ))}
-        </ScrollView>
 
-        <View style={styles.modalFooter}>
-          <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-            <Text style={styles.cancelButtonText}>Annuler</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={savePreferences}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.saveButtonText}>Enregistrer</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Animated.View>
-  </View>
-</Modal>
-    )
-  );
-};
+                <ScrollView
+                  style={styles.modalScrollView}
+                  contentContainerStyle={styles.modalScrollContent}
+                  showsVerticalScrollIndicator={false}
+                  bounces={true}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {groupedNotificationTypes.map((group, groupIndex) => (
+                    <View
+                      key={group.category}
+                      style={[
+                        styles.categorySection,
+                        groupIndex > 0 && styles.categoryDivider,
+                      ]}
+                    >
+                      <Text style={styles.categoryTitle}>{group.category}</Text>
+                      {group.items.map((item) => (
+                        <View key={item.type} style={styles.preferenceItem}>
+                          <View style={styles.preferenceTextContainer}>
+                            <Text style={styles.preferenceLabel}>
+                              {item.label}
+                            </Text>
+                          </View>
+                          <Switch
+                            value={tempPreferences[item.type]}
+                            onValueChange={() =>
+                              toggleTempPreference(item.type)
+                            }
+                            trackColor={{ false: "#E9E9EB", true: "#4A90E2" }}
+                            thumbColor={
+                              Platform.OS === "ios"
+                                ? "#FFFFFF"
+                                : tempPreferences[item.type]
+                                ? "#FFFFFF"
+                                : "#F5F5F5"
+                            }
+                            ios_backgroundColor="#E9E9EB"
+                            style={styles.preferenceSwitch}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </ScrollView>
+
+                <View style={styles.modalFooter}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={closeModal}
+                  >
+                    <Text style={styles.cancelButtonText}>Annuler</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={savePreferences}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.saveButtonText}>Enregistrer</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+        </Modal>
+      )
+    );
+  };
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
@@ -829,7 +849,9 @@ const NotificationPreferencesModal = () => {
         <StatusBar barStyle="light-content" backgroundColor="#062C41" />
         <View style={styles.loadingContent}>
           <Icon name="notifications" size={50} color="#4A90E2" />
-          <Text style={styles.loadingText}>Chargement des notifications...</Text>
+          <Text style={styles.loadingText}>
+            Chargement des notifications...
+          </Text>
         </View>
       </View>
     );
@@ -838,9 +860,9 @@ const NotificationPreferencesModal = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#062C41" />
-      
+
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={toggleSidebar}
           style={styles.headerButton}
           activeOpacity={0.7}
@@ -871,20 +893,18 @@ const NotificationPreferencesModal = () => {
       </View>
 
       <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        voteSummary={voteSummary}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
+        updateProfileImage={updateProfileImage}
+      />
 
       <View style={styles.subHeader}>
         <TouchableOpacity
@@ -898,16 +918,14 @@ const NotificationPreferencesModal = () => {
           <Ionicons name="options" size={18} color="#4A90E2" />
           <Text style={styles.filterButtonText}>Filtrer</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.markAllButtonMini} 
+
+        <TouchableOpacity
+          style={styles.markAllButtonMini}
           onPress={markAllAsRead}
           activeOpacity={0.7}
         >
           <Icon name="done-all" size={18} color="#4A90E2" />
-          <Text style={styles.markAllButtonTextMini}>
-            Tout marquer lu
-          </Text>
+          <Text style={styles.markAllButtonTextMini}>Tout marquer lu</Text>
         </TouchableOpacity>
       </View>
 
@@ -937,7 +955,8 @@ const NotificationPreferencesModal = () => {
               <Icon name="notifications-off" size={60} color="#D1D5DB" />
               <Text style={styles.emptyTitle}>Aucune notification</Text>
               <Text style={styles.emptyText}>
-                Vous n'avez pas encore de notifications ou elles ont été filtrées.
+                Vous n'avez pas encore de notifications ou elles ont été
+                filtrées.
               </Text>
             </View>
           }
@@ -951,8 +970,8 @@ const NotificationPreferencesModal = () => {
 }
 
 // Obtenir dimensions de l'écran pour le responsive
-const { width, height } = Dimensions.get('window');
-const isIOS = Platform.OS === 'ios';
+const { width, height } = Dimensions.get("window");
+const isIOS = Platform.OS === "ios";
 const statusBarHeight = StatusBar.currentHeight || 0;
 const safeTop = isIOS ? 44 : statusBarHeight;
 
@@ -978,8 +997,8 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 20,
   },
   typeBadge: {
@@ -1221,7 +1240,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 8,
   },
-  
+
   // Modal styles
   modalBackdrop: {
     flex: 1,

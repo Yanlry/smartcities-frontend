@@ -1,23 +1,23 @@
 // src/screens/CreateReportScreen.tsx
 
-import React, { useMemo } from 'react';
-import { View, StyleSheet, Platform, Alert } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { categories as globalCategories } from '../utils/reportHelpers';
-import { useLocation } from '../hooks/location/useLocation';
-import { useReportForm } from '../hooks/reports/useReportForm';
-import { useReportLocation } from '../hooks/reports/useReportLocation';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useMemo } from "react";
+import { View, StyleSheet, Platform, Alert } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { categories as globalCategories } from "../utils/reportHelpers";
+import { useLocation } from "../hooks/location/useLocation";
+import { useReportForm } from "../hooks/reports/useReportForm";
+import { useReportLocation } from "../hooks/reports/useReportLocation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   CategorySelection,
   ReportDetailsForm,
   LocationSelectionStep,
   ProgressModal,
   StepNavigation,
-} from '../components/interactions/CreateReport';
+} from "../components/interactions/CreateReport";
 
 // Import du type attendu par CategorySelection
-import { ReportCategory as ComponentReportCategory } from '../types/entities/report.types';
+import { ReportCategory as ComponentReportCategory } from "../types/entities/report.types";
 
 /**
  * Écran de création d'un nouveau signalement
@@ -26,7 +26,7 @@ import { ReportCategory as ComponentReportCategory } from '../types/entities/rep
 const CreateReportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Obtenir les insets pour gérer les zones sécurisées
   const insets = useSafeAreaInsets();
-  
+
   // Utilisation du hook de localisation
   const { location, loading } = useLocation();
 
@@ -68,37 +68,37 @@ const CreateReportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   });
 
   // Adaptation des catégories globales au format attendu par le composant
-// Définir un mapping des valeurs de catégorie aux couleurs
-// Mapping optimisé des couleurs principales pour chaque type de signalement
-const typeColors: { [key: string]: string } = {
-  danger: "#E05263",     // Rouge rubis pour situations dangereuses
-  travaux: "#FFBC42",    // Jaune vif pour travaux
-  nuisance: "#9C64D6",   // Violet contemporain pour nuisances
-  pollution: "#41A894",  // Turquoise professionnel pour pollution
-  reparation: "#4A87DB", // Bleu azur pour réparations
-};
+  // Définir un mapping des valeurs de catégorie aux couleurs
+  // Mapping optimisé des couleurs principales pour chaque type de signalement
+  const typeColors: { [key: string]: string } = {
+    danger: "#E05263", // Rouge rubis pour situations dangereuses
+    travaux: "#FFBC42", // Jaune vif pour travaux
+    nuisance: "#9C64D6", // Violet contemporain pour nuisances
+    pollution: "#41A894", // Turquoise professionnel pour pollution
+    reparation: "#4A87DB", // Bleu azur pour réparations
+  };
 
-// Adaptation des catégories globales au format attendu par le composant
-// Adaptation des catégories globales au format attendu par le composant
-// Adaptation des catégories globales au format attendu par le composant
-const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
-  return globalCategories.map(category => ({
-    ...category,
-    // Utilisation des couleurs réelles correspondant à chaque catégorie
-    color: typeColors[category.value] || "#8E8E93", // Fallback à un gris neutre
-    // Conversion du type d'icône
-    icon: category.icon as ComponentReportCategory['icon'],
-    // Garantie que label est défini
-    label: category.label || category.name,
-  }));
-}, [globalCategories]);
+  // Adaptation des catégories globales au format attendu par le composant
+  // Adaptation des catégories globales au format attendu par le composant
+  // Adaptation des catégories globales au format attendu par le composant
+  const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
+    return globalCategories.map((category) => ({
+      ...category,
+      // Utilisation des couleurs réelles correspondant à chaque catégorie
+      color: typeColors[category.value] || "#8E8E93", // Fallback à un gris neutre
+      // Conversion du type d'icône
+      icon: category.icon as ComponentReportCategory["icon"],
+      // Garantie que label est défini
+      label: category.label || category.name,
+    }));
+  }, [globalCategories]);
 
   // Gestion de la position actuelle
   const handleUseLocation = async () => {
     if (loading || !location) {
       return;
     }
-    
+
     useCurrentLocation(location);
   };
 
@@ -129,10 +129,10 @@ const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
   const handleNextStep = () => {
     if (!canProceed) {
       // Afficher un message d'erreur spécifique à chaque étape
-      switch(step) {
+      switch (step) {
         case 1:
           Alert.alert(
-            "Sélection requise", 
+            "Sélection requise",
             "Veuillez sélectionner une catégorie pour continuer.",
             [{ text: "OK", style: "default" }]
           );
@@ -154,7 +154,7 @@ const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
       }
       return;
     }
-    
+
     // Si la validation passe, aller à l'étape suivante
     nextStep();
   };
@@ -217,22 +217,20 @@ const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
       <KeyboardAwareScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: bottomPadding } // Espace supplémentaire pour éviter le chevauchement
+          { paddingBottom: bottomPadding }, // Espace supplémentaire pour éviter le chevauchement
         ]}
         enableOnAndroid={true}
         extraHeight={120}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.container}>
-          {renderStep()}
-        </View>
+        <View style={styles.container}>{renderStep()}</View>
       </KeyboardAwareScrollView>
 
       {/* Barre de navigation fixe avec validation d'étape */}
-      <View 
+      <View
         style={[
-          styles.fixedBottomContainer, 
-          { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }
+          styles.fixedBottomContainer,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 },
         ]}
         pointerEvents="box-none"
       >
@@ -258,28 +256,28 @@ const adaptedCategories = useMemo<ComponentReportCategory[]>(() => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   scrollContent: {
     flexGrow: 1,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   fixedBottomContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     // Compatibilité avec Android
     ...Platform.select({
       android: {
         elevation: 5,
       },
       ios: {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,

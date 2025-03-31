@@ -1,7 +1,13 @@
 // Modifications apportées au composant MapScreen pour la section des filtres
 // Éléments modifiés: filtersHeader, gestion des filtres actifs et amélioration visuelle
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   ActivityIndicator,
@@ -12,7 +18,7 @@ import {
   Dimensions,
   Platform,
   Image,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import { useLocation } from "../hooks/location/useLocation";
@@ -58,33 +64,33 @@ const ICONS: Record<string, IconType> = {
   events: {
     name: "calendar-star",
     label: "Événements",
-    color: "#E43737"
+    color: "#E43737",
   },
   danger: {
     name: "alert-octagon",
     label: "Danger",
-    color: "#FF3B30"
+    color: "#FF3B30",
   },
   travaux: {
     name: "hammer",
     label: "Travaux",
-    color: "#FF9500"
+    color: "#FF9500",
   },
   nuisance: {
     name: "volume-high",
     label: "Nuisance",
-    color: "#9C27B0"
+    color: "#9C27B0",
   },
   pollution: {
     name: "factory",
     label: "Pollution",
-    color: "#34C759"
+    color: "#34C759",
   },
   reparation: {
     name: "wrench",
     label: "Reparation",
-    color: "#007AFF"
-  }
+    color: "#007AFF",
+  },
 };
 
 // Fonction pour obtenir l'icône selon le type
@@ -149,9 +155,9 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation<MapScreenNavigationProp>();
   const insets = useSafeAreaInsets();
-  const windowHeight = Dimensions.get('window').height;
-  const windowWidth = Dimensions.get('window').width;
-  
+  const windowHeight = Dimensions.get("window").height;
+  const windowWidth = Dimensions.get("window").width;
+
   // Animated values
   const translateY = useSharedValue(windowHeight);
   const filtersHeight = useSharedValue(56);
@@ -166,9 +172,15 @@ export default function MapScreen() {
   const [isReady, setIsReady] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedReport, setSelectedReport] = useState<Report | ReportEvent | null>(null);
-  const [mapType, setMapType] = useState<"standard" | "satellite" | "hybrid" | "terrain">("standard");
-  const [selectedFilter, setSelectedFilter] = useState<"all" | "reports" | "events">("all");
+  const [selectedReport, setSelectedReport] = useState<
+    Report | ReportEvent | null
+  >(null);
+  const [mapType, setMapType] = useState<
+    "standard" | "satellite" | "hybrid" | "terrain"
+  >("standard");
+  const [selectedFilter, setSelectedFilter] = useState<
+    "all" | "reports" | "events"
+  >("all");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Valeur de couleur par défaut pour les gradients
@@ -193,10 +205,10 @@ export default function MapScreen() {
       );
 
       fetchDataInRegion(initialRegion);
-      
+
       // Animate UI elements entry
       floatingButtonsScale.value = withSpring(1, ANIMATION.spring);
-      
+
       mapControlsOpacity.value = withTiming(1, {
         duration: ANIMATION.duration.long,
       });
@@ -310,9 +322,9 @@ export default function MapScreen() {
 
   // Toggle filters expansion
   const toggleFiltersExpanded = useCallback(() => {
-    setFiltersExpanded(prev => !prev);
+    setFiltersExpanded((prev) => !prev);
     filtersHeight.value = withSpring(
-      filtersExpanded ? 56 : 170, 
+      filtersExpanded ? 56 : 170,
       ANIMATION.spring
     );
     filtersExpandButton.value = withSpring(
@@ -331,9 +343,10 @@ export default function MapScreen() {
   }, []);
 
   // Determine if any filters are active
-  const hasActiveFilters = useMemo(() => 
-    selectedFilter !== 'all' || selectedCategory !== null,
-  [selectedFilter, selectedCategory]);
+  const hasActiveFilters = useMemo(
+    () => selectedFilter !== "all" || selectedCategory !== null,
+    [selectedFilter, selectedCategory]
+  );
 
   // Get active filter label for header display
   const getActiveFilterLabel = useMemo(() => {
@@ -363,13 +376,15 @@ export default function MapScreen() {
   }));
 
   const filtersButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ 
-      rotate: `${interpolate(
-        filtersExpandButton.value, 
-        [0, 1], 
-        [0, Math.PI / 2]
-      )}rad` 
-    }],
+    transform: [
+      {
+        rotate: `${interpolate(
+          filtersExpandButton.value,
+          [0, 1],
+          [0, Math.PI / 2]
+        )}rad`,
+      },
+    ],
   }));
 
   const floatingButtonsStyle = useAnimatedStyle(() => ({
@@ -453,7 +468,11 @@ export default function MapScreen() {
                   style={styles.markerGradient}
                 >
                   <MaterialCommunityIcons
-                    name={isReport(item) ? (getTypeIcon(item.type).name as any) : ICONS.events.name}
+                    name={
+                      isReport(item)
+                        ? (getTypeIcon(item.type).name as any)
+                        : ICONS.events.name
+                    }
                     size={24}
                     color={COLORS.text.inverse}
                   />
@@ -483,15 +502,17 @@ export default function MapScreen() {
       {/* Section de filtres optimisée avec amélioration visuelle */}
       <Animated.View style={[styles.filtersContainer, filtersContainerStyle]}>
         <LinearGradient
-          colors={hasActiveFilters ? COLORS.primaryGradient : ["#FFFFFF", "#F8F9FA"] as GradientTuple}
+          colors={
+            hasActiveFilters
+              ? COLORS.primaryGradient
+              : (["#FFFFFF", "#F8F9FA"] as GradientTuple)
+          }
           style={styles.filtersHeaderGradient}
         >
           <View style={styles.filtersHeader}>
             {hasActiveFilters ? (
               <View style={styles.activeFilterLabelContainer}>
-                <Text style={styles.filtersTitleActive}>
-                  Filtre actif:
-                </Text>
+                <Text style={styles.filtersTitleActive}>Filtre actif:</Text>
                 <Text style={styles.activeFilterName}>
                   {getActiveFilterLabel}
                 </Text>
@@ -499,8 +520,8 @@ export default function MapScreen() {
             ) : (
               <Text style={styles.filtersTitle}>Filtres</Text>
             )}
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.expandButton}
               onPress={toggleFiltersExpanded}
             >
@@ -508,17 +529,19 @@ export default function MapScreen() {
                 <MaterialCommunityIcons
                   name="chevron-right"
                   size={24}
-                  color={hasActiveFilters ? COLORS.text.inverse : COLORS.primary}
+                  color={
+                    hasActiveFilters ? COLORS.text.inverse : COLORS.primary
+                  }
                 />
               </Animated.View>
             </TouchableOpacity>
           </View>
         </LinearGradient>
-        
+
         {/* Mode compact (afficher uniquement les filtres actifs ou par défaut) */}
         {!filtersExpanded && (
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipScrollContainer}
           >
@@ -534,25 +557,33 @@ export default function MapScreen() {
               }}
             >
               <LinearGradient
-                colors={selectedFilter === "all" 
-                  ? COLORS.accentGradient 
-                  : defaultGradient}
+                colors={
+                  selectedFilter === "all"
+                    ? COLORS.accentGradient
+                    : defaultGradient
+                }
                 style={styles.chipGradient}
               >
                 <MaterialCommunityIcons
                   name="view-grid"
                   size={18}
-                  color={selectedFilter === "all" ? COLORS.text.inverse : COLORS.primary}
+                  color={
+                    selectedFilter === "all"
+                      ? COLORS.text.inverse
+                      : COLORS.primary
+                  }
                 />
-                <Text style={[
-                  styles.chipText,
-                  selectedFilter === "all" && styles.activeChipText,
-                ]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    selectedFilter === "all" && styles.activeChipText,
+                  ]}
+                >
                   Tout
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
-            
+
             {/* Filtre "Événements" (affiché si sélectionné ou mode par défaut) */}
             {(selectedFilter === "events" || !hasActiveFilters) && (
               <TouchableOpacity
@@ -566,26 +597,34 @@ export default function MapScreen() {
                 }}
               >
                 <LinearGradient
-                  colors={selectedFilter === "events" 
-                    ? COLORS.secondaryGradient 
-                    : defaultGradient}
+                  colors={
+                    selectedFilter === "events"
+                      ? COLORS.secondaryGradient
+                      : defaultGradient
+                  }
                   style={styles.chipGradient}
                 >
                   <MaterialCommunityIcons
                     name={ICONS.events.name as any}
                     size={18}
-                    color={selectedFilter === "events" ? COLORS.text.inverse : COLORS.primary}
+                    color={
+                      selectedFilter === "events"
+                        ? COLORS.text.inverse
+                        : COLORS.primary
+                    }
                   />
-                  <Text style={[
-                    styles.chipText,
-                    selectedFilter === "events" && styles.activeChipText,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedFilter === "events" && styles.activeChipText,
+                    ]}
+                  >
                     {ICONS.events.label}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
             )}
-            
+
             {/* Catégorie sélectionnée avec bouton de suppression */}
             {selectedCategory && (
               <TouchableOpacity
@@ -616,7 +655,7 @@ export default function MapScreen() {
                 </LinearGradient>
               </TouchableOpacity>
             )}
-            
+
             {/* Indicateur pour montrer qu'il y a plus de filtres */}
             {!hasActiveFilters && (
               <View style={styles.moreFiltersIndicator}>
@@ -629,13 +668,13 @@ export default function MapScreen() {
             )}
           </ScrollView>
         )}
-        
+
         {/* Mode étendu (afficher tous les filtres) */}
         {filtersExpanded && (
           <View style={styles.expandedFiltersContainer}>
             {/* Rangée 1: Filtres principaux */}
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chipScrollContainer}
             >
@@ -648,25 +687,33 @@ export default function MapScreen() {
                 }}
               >
                 <LinearGradient
-                  colors={selectedFilter === "all" 
-                    ? COLORS.accentGradient 
-                    : defaultGradient}
+                  colors={
+                    selectedFilter === "all"
+                      ? COLORS.accentGradient
+                      : defaultGradient
+                  }
                   style={styles.chipGradient}
                 >
                   <MaterialCommunityIcons
                     name="view-grid"
                     size={18}
-                    color={selectedFilter === "all" ? COLORS.text.inverse : COLORS.primary}
+                    color={
+                      selectedFilter === "all"
+                        ? COLORS.text.inverse
+                        : COLORS.primary
+                    }
                   />
-                  <Text style={[
-                    styles.chipText,
-                    selectedFilter === "all" && styles.activeChipText,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedFilter === "all" && styles.activeChipText,
+                    ]}
+                  >
                     Tout
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
-              
+
               {/* Filtre "Événements" */}
               <TouchableOpacity
                 style={styles.filterChip}
@@ -676,59 +723,80 @@ export default function MapScreen() {
                 }}
               >
                 <LinearGradient
-                  colors={selectedFilter === "events" 
-                    ? COLORS.secondaryGradient 
-                    : defaultGradient}
+                  colors={
+                    selectedFilter === "events"
+                      ? COLORS.secondaryGradient
+                      : defaultGradient
+                  }
                   style={styles.chipGradient}
                 >
                   <MaterialCommunityIcons
                     name={ICONS.events.name as any}
                     size={18}
-                    color={selectedFilter === "events" ? COLORS.text.inverse : COLORS.primary}
+                    color={
+                      selectedFilter === "events"
+                        ? COLORS.text.inverse
+                        : COLORS.primary
+                    }
                   />
-                  <Text style={[
-                    styles.chipText,
-                    selectedFilter === "events" && styles.activeChipText,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedFilter === "events" && styles.activeChipText,
+                    ]}
+                  >
                     {ICONS.events.label}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
-            
+
             {/* Rangée 2: Catégories de signalements */}
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chipScrollContainer}
               style={styles.categoryRow}
             >
               {Object.keys(ICONS)
-                .filter(key => key !== "events")
-                .map(key => (
+                .filter((key) => key !== "events")
+                .map((key) => (
                   <TouchableOpacity
                     key={key}
                     style={styles.filterChip}
                     onPress={() => {
                       setSelectedFilter("reports");
-                      setSelectedCategory(selectedCategory === key ? null : key);
+                      setSelectedCategory(
+                        selectedCategory === key ? null : key
+                      );
                     }}
                   >
                     <LinearGradient
-                      colors={selectedCategory === key
-                        ? [ICONS[key].color || COLORS.primary, COLORS.primary] as GradientTuple
-                        : defaultGradient}
+                      colors={
+                        selectedCategory === key
+                          ? ([
+                              ICONS[key].color || COLORS.primary,
+                              COLORS.primary,
+                            ] as GradientTuple)
+                          : defaultGradient
+                      }
                       style={styles.chipGradient}
                     >
                       <MaterialCommunityIcons
                         name={ICONS[key].name as any}
                         size={18}
-                        color={selectedCategory === key ? COLORS.text.inverse : COLORS.primary}
+                        color={
+                          selectedCategory === key
+                            ? COLORS.text.inverse
+                            : COLORS.primary
+                        }
                       />
-                      <Text style={[
-                        styles.chipText,
-                        selectedCategory === key && styles.activeChipText,
-                      ]}>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          selectedCategory === key && styles.activeChipText,
+                        ]}
+                      >
                         {ICONS[key].label}
                       </Text>
                     </LinearGradient>
@@ -740,7 +808,9 @@ export default function MapScreen() {
       </Animated.View>
 
       {/* Floating Action Buttons */}
-      <Animated.View style={[styles.floatingButtonContainer, floatingButtonsStyle]}>
+      <Animated.View
+        style={[styles.floatingButtonContainer, floatingButtonsStyle]}
+      >
         {/* Map Type Toggle Button */}
         <TouchableOpacity
           style={styles.floatingButtonView}
@@ -751,7 +821,9 @@ export default function MapScreen() {
             style={styles.floatingButtonGradient}
           >
             <MaterialCommunityIcons
-              name={mapType === "standard" ? "satellite-variant" : "map-outline"}
+              name={
+                mapType === "standard" ? "satellite-variant" : "map-outline"
+              }
               size={24}
               color="white"
             />
@@ -801,7 +873,7 @@ export default function MapScreen() {
                   color={COLORS.text.inverse}
                 />
               </LinearGradient>
-              
+
               <View style={styles.previewTitleContainer}>
                 <Text
                   style={styles.previewTitle}
@@ -830,14 +902,13 @@ export default function MapScreen() {
                 />
               )}
 
-
             {/* Info badges */}
             <View style={styles.previewInfoContainer}>
               <View style={styles.previewInfoBadge}>
-                <MaterialCommunityIcons 
-                  name="calendar" 
-                  size={16} 
-                  color={COLORS.primary} 
+                <MaterialCommunityIcons
+                  name="calendar"
+                  size={16}
+                  color={COLORS.primary}
                 />
                 <Text style={styles.previewInfoText}>
                   {isReport(selectedReport) && selectedReport.createdAt
@@ -914,7 +985,7 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  
+
   // Loading and error styles
   loadingContainer: {
     flex: 1,
@@ -923,9 +994,9 @@ const styles = StyleSheet.create({
   },
   loadingGradient: {
     flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     color: COLORS.text.inverse,
@@ -939,24 +1010,24 @@ const styles = StyleSheet.create({
   },
   errorGradient: {
     flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorTitle: {
     color: COLORS.text.inverse,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 16,
   },
   errorText: {
     color: COLORS.text.inverse,
     fontSize: 16,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
     paddingHorizontal: 32,
   },
-  
+
   // Map marker styles
   markerContainer: {
     alignItems: "center",
@@ -968,15 +1039,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 8,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderRadius: 20,
   },
   markerGradient: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 5,
   },
   markerIcon: {
@@ -992,9 +1063,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(6, 44, 65, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(6, 44, 65, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   userMarkerDot: {
     width: 16,
@@ -1004,7 +1075,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.text.inverse,
   },
-  
+
   // Styles améliorés pour la section de filtres
   filtersContainer: {
     position: "absolute",
@@ -1050,8 +1121,8 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   activeFilterLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   activeFilterName: {
     fontSize: 16,
@@ -1063,8 +1134,8 @@ const styles = StyleSheet.create({
     padding: 4,
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   chipScrollContainer: {
     paddingHorizontal: 12,
@@ -1073,7 +1144,7 @@ const styles = StyleSheet.create({
   filterChip: {
     marginHorizontal: 4,
     borderRadius: 20,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: COLORS.cardShadow,
@@ -1108,8 +1179,8 @@ const styles = StyleSheet.create({
   closeIconContainer: {
     marginLeft: 4,
     borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   moreFiltersIndicator: {
     justifyContent: "center",
@@ -1121,9 +1192,8 @@ const styles = StyleSheet.create({
   },
   categoryRow: {
     marginTop: 0,
-    
   },
-  
+
   // Floating button styles
   floatingButtonContainer: {
     position: "absolute",
@@ -1169,10 +1239,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  
+
   // Preview panel styles
   previewContainer: {
     position: "absolute",
@@ -1204,7 +1274,7 @@ const styles = StyleSheet.create({
   closeIconBar: {
     width: 40,
     height: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
     borderRadius: 10,
   },
   previewHeader: {
@@ -1216,8 +1286,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   previewIcon: {
@@ -1241,7 +1311,7 @@ const styles = StyleSheet.create({
   previewImageContainer: {
     marginBottom: 16,
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: COLORS.cardShadow,
@@ -1257,10 +1327,10 @@ const styles = StyleSheet.create({
   previewPhotoPlaceholder: {
     width: "100%",
     height: 150,
-    backgroundColor: 'rgba(161, 217, 247, 0.1)',
+    backgroundColor: "rgba(161, 217, 247, 0.1)",
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   previewPhotoText: {
     marginTop: 8,
@@ -1276,12 +1346,12 @@ const styles = StyleSheet.create({
   previewInfoContainer: {
     flexDirection: "row",
     marginBottom: 16,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   previewInfoBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: 'rgba(161, 217, 247, 0.2)',
+    backgroundColor: "rgba(161, 217, 247, 0.2)",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
@@ -1306,7 +1376,7 @@ const styles = StyleSheet.create({
   },
   detailsButton: {
     borderRadius: 25,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: COLORS.cardShadow,

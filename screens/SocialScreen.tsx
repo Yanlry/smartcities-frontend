@@ -113,21 +113,32 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   const [newPostContent, setNewPostContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [commentInputs, setCommentInputs] = useState<Record<number, string>>({});
-  const [visibleComments, setVisibleComments] = useState<Record<number, boolean>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<number, string>>(
+    {}
+  );
+  const [visibleComments, setVisibleComments] = useState<
+    Record<number, boolean>
+  >({});
   const [userId, setUserId] = useState<number | null>(null);
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
   const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null);
-  const [replyVisibility, setReplyVisibility] = useState<Record<number, boolean>>({});
+  const [replyVisibility, setReplyVisibility] = useState<
+    Record<number, boolean>
+  >({});
   const [selectedImage, setSelectedImage] = useState<string[]>([]);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [likedPosts, setLikedPosts] = useState<number[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [visibleCommentSection, setVisibleCommentSection] = useState<Record<number, boolean>>({});
-  const [isCityFilterEnabled, setIsCityFilterEnabled] = useState<boolean>(false);
+  const [visibleCommentSection, setVisibleCommentSection] = useState<
+    Record<number, boolean>
+  >({});
+  const [isCityFilterEnabled, setIsCityFilterEnabled] =
+    useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [expandedPostContent, setExpandedPostContent] = useState<Record<number, boolean>>({});
+  const [expandedPostContent, setExpandedPostContent] = useState<
+    Record<number, boolean>
+  >({});
 
   // Screen dimensions for responsive design
   const { width: screenWidth } = Dimensions.get("window");
@@ -182,7 +193,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
       });
 
       if (!userResponse.ok) {
-        throw new Error("Impossible de récupérer les informations de l'utilisateur.");
+        throw new Error(
+          "Impossible de récupérer les informations de l'utilisateur."
+        );
       }
 
       const userData = await userResponse.json();
@@ -251,7 +264,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error instanceof Error ? error.message : "Impossible de charger les publications."
+        error instanceof Error
+          ? error.message
+          : "Impossible de charger les publications."
       );
     } finally {
       setIsLoading(false);
@@ -304,7 +319,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error instanceof Error ? error.message : "Impossible d'aimer la publication."
+        error instanceof Error
+          ? error.message
+          : "Impossible d'aimer la publication."
       );
     }
   };
@@ -353,7 +370,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error instanceof Error ? error.message : "Impossible d'aimer le commentaire."
+        error instanceof Error
+          ? error.message
+          : "Impossible d'aimer le commentaire."
       );
     }
   };
@@ -367,7 +386,10 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
       const commentText = commentInputs[postId]?.trim();
 
       if (!userId || !commentText) {
-        Alert.alert("Erreur", "Le texte du commentaire est vide ou l'ID utilisateur est introuvable.");
+        Alert.alert(
+          "Erreur",
+          "Le texte du commentaire est vide ou l'ID utilisateur est introuvable."
+        );
         return;
       }
 
@@ -412,7 +434,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error instanceof Error ? error.message : "Impossible d'ajouter le commentaire."
+        error instanceof Error
+          ? error.message
+          : "Impossible d'ajouter le commentaire."
       );
     }
   };
@@ -459,41 +483,49 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
    * Delete a post
    */
   const handleDeletePost = async (postId: number) => {
-    Alert.alert("Confirmation", "Êtes-vous sûr de vouloir supprimer cette publication ?", [
-      {
-        text: "Annuler",
-        style: "cancel",
-      },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setIsLoading(true);
-            const response = await fetch(`${API_URL}/posts/${postId}`, {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-            });
-
-            if (!response.ok) {
-              throw new Error("Erreur lors de la suppression de la publication");
-            }
-
-            // Remove post from state
-            setPosts((prevPosts) =>
-              prevPosts.filter((post) => post.id !== postId)
-            );
-            setIsLoading(false);
-          } catch (error) {
-            setIsLoading(false);
-            Alert.alert(
-              "Erreur",
-              error instanceof Error ? error.message : "Impossible de supprimer la publication."
-            );
-          }
+    Alert.alert(
+      "Confirmation",
+      "Êtes-vous sûr de vouloir supprimer cette publication ?",
+      [
+        {
+          text: "Annuler",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              const response = await fetch(`${API_URL}/posts/${postId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+              });
+
+              if (!response.ok) {
+                throw new Error(
+                  "Erreur lors de la suppression de la publication"
+                );
+              }
+
+              // Remove post from state
+              setPosts((prevPosts) =>
+                prevPosts.filter((post) => post.id !== postId)
+              );
+              setIsLoading(false);
+            } catch (error) {
+              setIsLoading(false);
+              Alert.alert(
+                "Erreur",
+                error instanceof Error
+                  ? error.message
+                  : "Impossible de supprimer la publication."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   /**
@@ -557,7 +589,10 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
       const replyText = replyInputs[parentId]?.trim();
 
       if (!userId || !replyText) {
-        Alert.alert("Erreur", "Le texte de la réponse est vide ou l'ID utilisateur est introuvable.");
+        Alert.alert(
+          "Erreur",
+          "Le texte de la réponse est vide ou l'ID utilisateur est introuvable."
+        );
         return;
       }
 
@@ -606,7 +641,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error instanceof Error ? error.message : "Impossible d'ajouter la réponse."
+        error instanceof Error
+          ? error.message
+          : "Impossible d'ajouter la réponse."
       );
     }
   };
@@ -615,49 +652,55 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
    * Delete a reply
    */
   const handleDeleteReply = async (replyId: number) => {
-    Alert.alert("Confirmation", "Êtes-vous sûr de vouloir supprimer cette réponse ?", [
-      {
-        text: "Annuler",
-        style: "cancel",
-      },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const response = await fetch(
-              `${API_URL}/posts/comments/${replyId}`,
-              {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error("Erreur lors de la suppression de la réponse");
-            }
-
-            // Remove reply from state
-            setPosts((prevPosts) =>
-              prevPosts.map((post) => ({
-                ...post,
-                comments: post.comments.map((comment) => ({
-                  ...comment,
-                  replies: comment.replies.filter(
-                    (reply) => reply.id !== replyId
-                  ),
-                })),
-              }))
-            );
-          } catch (error) {
-            Alert.alert(
-              "Erreur",
-              error instanceof Error ? error.message : "Impossible de supprimer la réponse."
-            );
-          }
+    Alert.alert(
+      "Confirmation",
+      "Êtes-vous sûr de vouloir supprimer cette réponse ?",
+      [
+        {
+          text: "Annuler",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${API_URL}/posts/comments/${replyId}`,
+                {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Erreur lors de la suppression de la réponse");
+              }
+
+              // Remove reply from state
+              setPosts((prevPosts) =>
+                prevPosts.map((post) => ({
+                  ...post,
+                  comments: post.comments.map((comment) => ({
+                    ...comment,
+                    replies: comment.replies.filter(
+                      (reply) => reply.id !== replyId
+                    ),
+                  })),
+                }))
+              );
+            } catch (error) {
+              Alert.alert(
+                "Erreur",
+                error instanceof Error
+                  ? error.message
+                  : "Impossible de supprimer la réponse."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   /**
@@ -701,7 +744,10 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
    */
   const handlePickImage = async () => {
     if (selectedImage.length >= 5) {
-      Alert.alert("Limite atteinte", "Vous ne pouvez pas sélectionner plus de 5 images.");
+      Alert.alert(
+        "Limite atteinte",
+        "Vous ne pouvez pas sélectionner plus de 5 images."
+      );
       return;
     }
 
@@ -814,7 +860,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Erreur lors de la création de la publication");
+        throw new Error(
+          error.message || "Erreur lors de la création de la publication"
+        );
       }
 
       const newPost = await response.json();
@@ -830,7 +878,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     } catch (error) {
       Alert.alert(
         "Erreur",
-        error instanceof Error ? error.message : "Impossible de créer la publication."
+        error instanceof Error
+          ? error.message
+          : "Impossible de créer la publication."
       );
     } finally {
       setIsLoading(false);
@@ -1242,7 +1292,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
                       {replyVisibility[comment.id]
                         ? `Masquer les réponses`
                         : `Voir ${comment.replies.length} ${
-                            comment.replies.length === 1 ? "réponse" : "réponses"
+                            comment.replies.length === 1
+                              ? "réponse"
+                              : "réponses"
                           }`}
                     </Text>
                   </TouchableOpacity>
@@ -1378,11 +1430,14 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
                 <TouchableOpacity
                   style={[
                     styles.postButton,
-                    (!newPostContent.trim() && selectedImage.length === 0) &&
-                      styles.disabledButton
+                    !newPostContent.trim() &&
+                      selectedImage.length === 0 &&
+                      styles.disabledButton,
                   ]}
                   onPress={handleAddPost}
-                  disabled={!newPostContent.trim() && selectedImage.length === 0}
+                  disabled={
+                    !newPostContent.trim() && selectedImage.length === 0
+                  }
                 >
                   <Text style={styles.postButtonText}>Publier</Text>
                 </TouchableOpacity>
@@ -1474,7 +1529,7 @@ const styles = StyleSheet.create({
   },
   // Create Post Card
   createPostContainer: {
-    marginTop:10,
+    marginTop: 10,
     padding: 16,
     backgroundColor: "#ffffff",
     marginHorizontal: 16,

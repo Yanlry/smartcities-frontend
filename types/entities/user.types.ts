@@ -54,6 +54,7 @@ export interface User {
   organizedEvents?: any[];
   /** Événements auxquels l'utilisateur participe */
   attendedEvents?: any[];
+  voteSummary?: { up: number; down: number };
 }
 
 /**

@@ -30,8 +30,8 @@ type Report = {
   description: string;
   city: string;
   createdAt: string;
-  updatedAt?: string;  
-  photos?: { url: string }[];  
+  updatedAt?: string;
+  photos?: { url: string }[];
 };
 
 export default function ReportScreen({ navigation }) {
@@ -41,7 +41,9 @@ export default function ReportScreen({ navigation }) {
 
   const { getUserId } = useToken();
 
-  const [reports, setReports] = useState<{ id: number; title: string; description: string; createdAt: string }[]>([]);
+  const [reports, setReports] = useState<
+    { id: number; title: string; description: string; createdAt: string }[]
+  >([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,14 +51,10 @@ export default function ReportScreen({ navigation }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
 
-  const {
-    user,
-    displayName,
-    voteSummary,
-    updateProfileImage,
-  } = useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
 
-const dummyFn = () => {};
+  const dummyFn = () => {};
 
   useEffect(() => {
     const fetchUserReports = async () => {
@@ -80,7 +78,7 @@ const dummyFn = () => {};
     };
 
     fetchUserReports();
-  }, [currentReport]);  
+  }, [currentReport]);
 
   const renderItem = ({ item }) => (
     <View style={styles.reportCard}>
@@ -124,7 +122,7 @@ const dummyFn = () => {};
       </TouchableOpacity>
     </View>
   );
-  
+
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
@@ -137,7 +135,7 @@ const dummyFn = () => {};
       if (!response.ok) {
         throw new Error("Erreur lors de la suppression du signalement.");
       }
- 
+
       setReports((prevReports) =>
         prevReports.filter((report) => report.id !== reportId)
       );
@@ -175,7 +173,7 @@ const dummyFn = () => {};
 
     const { id, createdAt, votes, trustRate, distance, ...filteredReport } =
       updatedReport;
- 
+
     console.log("Photos envoyées :", filteredReport.photos);
 
     try {
@@ -234,8 +232,8 @@ const dummyFn = () => {};
 
         console.log("Adresse récupérée depuis OpenCage Data :", address);
 
-        setSuggestions(data.results);  
-        setModalVisible(true);  
+        setSuggestions(data.results);
+        setModalVisible(true);
       } else {
         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
       }
@@ -263,15 +261,15 @@ const dummyFn = () => {};
       const response = await fetch(url);
       const data = await response.json();
 
-      if (data.results.length > 0) { 
+      if (data.results.length > 0) {
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB;  
+          return postalA - postalB;
         });
 
-        setSuggestions(sortedSuggestions);  
-        setModalVisible(true);  
+        setSuggestions(sortedSuggestions);
+        setModalVisible(true);
       } else {
         setSuggestions([]);
         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -283,31 +281,31 @@ const dummyFn = () => {};
   };
 
   const extractPostalCode = (address) => {
-    const postalCodeMatch = address.match(/\b\d{5}\b/); 
-    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;  
+    const postalCodeMatch = address.match(/\b\d{5}\b/);
+    return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
   };
 
   const handleSuggestionSelect = (item: any) => {
     if (item.geometry) {
       const { lat, lng } = item.geometry;
- 
+
       const formattedCity = item.formatted.replace(
         /unnamed road/g,
         "Route inconnue"
       );
- 
+
       setCurrentReport((prevReport) => {
         if (!prevReport) return prevReport;
         return {
           ...prevReport,
-          city: formattedCity,  
+          city: formattedCity,
           latitude: lat,
           longitude: lng,
         };
       });
- 
+
       setIsAddressValidated(true);
- 
+
       mapRef.current?.animateToRegion(
         {
           latitude: lat,
@@ -353,7 +351,7 @@ const dummyFn = () => {};
           <Icon
             name="menu"
             size={24}
-            color="#FFFFFC"  
+            color="#FFFFFC"
             style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
@@ -444,7 +442,7 @@ const dummyFn = () => {};
                       ...currentReport,
                       city: text,
                     } as Report);
-                    setIsAddressValidated(false);  
+                    setIsAddressValidated(false);
                   }}
                 />
                 <TouchableOpacity
@@ -491,14 +489,14 @@ const dummyFn = () => {};
               <Text style={styles.photoSectionTitle}>Photos</Text>
               <PhotoManager
                 photos={
-                  currentReport?.photos?.map((photo) => { 
-                    return { uri: photo.url };
+                  currentReport?.photos?.map((photo, index) => {
+                    return { id: index.toString(), uri: photo.url };
                   }) || []
                 }
                 setPhotos={(newPhotos) => {
                   setCurrentReport({
                     ...currentReport,
-                    photos: newPhotos.map((photo) => ({ 
+                    photos: newPhotos.map((photo) => ({
                       url: photo.uri || photo.uri,
                     })),
                   } as Report);
@@ -510,17 +508,14 @@ const dummyFn = () => {};
                 style={[
                   styles.saveButton,
                   (!isAddressValidated || !isValidInput()) &&
-                    styles.disabledButton,  
+                    styles.disabledButton,
                 ]}
                 onPress={() => {
                   if (isAddressValidated && isValidInput()) {
                     updateReportHandler(currentReport);
                   } else {
                     const errors = getValidationErrors();
-                    Alert.alert(
-                      "Validation requise",
-                      errors.join("\n")  
-                    );
+                    Alert.alert("Validation requise", errors.join("\n"));
                   }
                 }}
               >
@@ -537,20 +532,18 @@ const dummyFn = () => {};
       </Modal>
 
       <Sidebar
-                  isOpen={isSidebarOpen}
-                  toggleSidebar={toggleSidebar}
-                  user={user}
-                  displayName={displayName}
-                  voteSummary={voteSummary}
-                  stats={{ posts: 0, comments: 0, likes: 0 }} // Add the required stats property
-                  onShowFollowers={dummyFn}
-                  onShowFollowing={dummyFn}
-                  onShowNameModal={dummyFn}
-                  onShowVoteInfoModal={dummyFn}
-                  onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
-                  updateProfileImage={updateProfileImage}
-                  onNavigateToRanking={() => navigation.navigate("RankingScreen")}
-                />
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        displayName={displayName}
+        voteSummary={voteSummary}
+        onShowNameModal={dummyFn}
+        onShowVoteInfoModal={dummyFn}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
+        updateProfileImage={updateProfileImage}
+      />
     </View>
   );
 }
@@ -564,7 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#062C41",  
+    backgroundColor: "#062C41",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 45,
@@ -574,10 +567,10 @@ const styles = StyleSheet.create({
     padding: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: "#FFFFFC", 
-    letterSpacing:2,
-    fontWeight: 'bold',
-    fontFamily: 'Insanibc',  
+    color: "#FFFFFC",
+    letterSpacing: 2,
+    fontWeight: "bold",
+    fontFamily: "Insanibc",
   },
   typeBadgeNav: {
     flexDirection: "row",
@@ -617,10 +610,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   reportImage: {
-    width: "100%",  
-    height: 200,  
-    borderRadius: 8,  
-    marginBottom: 8,  
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   reportTitle: {
     fontSize: 18,
@@ -634,7 +627,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-
   reportFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -646,7 +638,7 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   changeReport: {
-    backgroundColor: "#FF9800",  
+    backgroundColor: "#FF9800",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -656,14 +648,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
-    elevation: 3,  
+    elevation: 3,
   },
   changeReportText: {
-    color: "#FFFFFF",  
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "bold",
   },
-
 
   noReportsContainer: {
     flex: 1,
@@ -703,28 +694,28 @@ const styles = StyleSheet.create({
   },
   inputTitle: {
     width: "100%",
-    height: 50,  
-    maxHeight: 50, 
+    height: 50,
+    maxHeight: 50,
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
     paddingHorizontal: 15,
     paddingLeft: 30,
-    marginBottom: 25,  
+    marginBottom: 25,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden",  
+    overflow: "hidden",
   },
   input: {
     width: "100%",
     backgroundColor: "#f5f5f5",
     borderRadius: 30,
-    paddingVertical: 10,  
+    paddingVertical: 10,
     paddingHorizontal: 15,
     paddingLeft: 25,
     paddingTop: 20,
     fontSize: 16,
     color: "#333",
-    overflow: "hidden", 
+    overflow: "hidden",
   },
   textArea: {
     height: 100,
@@ -762,15 +753,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputSearch: {
-    height: 50,  
-    textAlignVertical: "center", 
+    height: 50,
+    textAlignVertical: "center",
     paddingHorizontal: 10,
-    paddingLeft: 20, 
+    paddingLeft: 20,
 
     backgroundColor: "#f5f5f5",
     width: "65%",
-    borderRadius: 30,  
-    fontSize: 16,  
+    borderRadius: 30,
+    fontSize: 16,
     color: "#333",
     marginTop: 40,
   },
@@ -781,7 +772,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#34495E",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, 
+    marginLeft: 10,
     marginTop: 40,
   },
   rowButtonLocation: {
@@ -791,15 +782,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDAE49",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10, 
+    marginLeft: 10,
     marginTop: 40,
   },
   modalOverlay: {
     flex: 1,
     paddingVertical: 50,
-    justifyContent: "center",  
-    alignItems: "center",  
-    backgroundColor: "rgba(0, 0, 0, 0.5)",  
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   suggestionItem: {
     padding: 10,
@@ -815,7 +806,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ddd",
   },
 });
-
 
 // import React, { useState, useEffect, useRef, useCallback } from "react";
 // import {
@@ -858,7 +848,7 @@ const styles = StyleSheet.create({
 //   border: "#E0E0E0",
 //   text: {
 //     primary: "#333333",
-//     secondary: "#666666", 
+//     secondary: "#666666",
 //     light: "#FFFFFF",
 //     muted: "#999999",
 //   },
@@ -870,7 +860,7 @@ const styles = StyleSheet.create({
 //   description: string;
 //   city: string;
 //   createdAt: string;
-//   updatedAt?: string;  
+//   updatedAt?: string;
 //   photos?: { url: string }[];
 //   latitude?: number;
 //   longitude?: number;
@@ -924,7 +914,7 @@ const styles = StyleSheet.create({
 //     };
 
 //     fetchUserReports();
-//   }, [currentReport]);  
+//   }, [currentReport]);
 
 //   // Item de rapport sans hooks internes
 //   const renderItem = useCallback(({ item }: { item: Report }) => (
@@ -936,7 +926,7 @@ const styles = StyleSheet.create({
 //       >
 //         {/* Indicateur visuel de statut */}
 //         <View style={styles.statusIndicator} />
-        
+
 //         <View style={styles.reportCardContent}>
 //           {/* Section image et informations principales */}
 //           <View style={styles.reportCardMainSection}>
@@ -976,7 +966,7 @@ const styles = StyleSheet.create({
 //               <Ionicons name="create-outline" size={16} color="#FFFFFF" />
 //               <Text style={styles.buttonText}>Modifier</Text>
 //             </TouchableOpacity>
-            
+
 //             <TouchableOpacity
 //               style={styles.deleteButton}
 //               onPress={() => confirmDelete(item.id)}
@@ -989,7 +979,7 @@ const styles = StyleSheet.create({
 //       </TouchableOpacity>
 //     </View>
 //   ), []);
-  
+
 //   const toggleSidebar = useCallback(() => {
 //     setIsSidebarOpen((prev) => !prev);
 //   }, []);
@@ -1002,7 +992,7 @@ const styles = StyleSheet.create({
 //       if (!response.ok) {
 //         throw new Error("Erreur lors de la suppression du signalement.");
 //       }
- 
+
 //       setReports((prevReports) =>
 //         prevReports.filter((report) => report.id !== reportId)
 //       );
@@ -1010,7 +1000,7 @@ const styles = StyleSheet.create({
 //     } catch (error) {
 //       console.error("Erreur lors de la suppression du signalement :", error);
 //       Alert.alert(
-//         "Erreur", 
+//         "Erreur",
 //         "Impossible de supprimer le signalement. Veuillez réessayer."
 //       );
 //     }
@@ -1022,10 +1012,10 @@ const styles = StyleSheet.create({
 //       "Voulez-vous vraiment supprimer ce signalement ?",
 //       [
 //         { text: "Annuler", style: "cancel" },
-//         { 
-//           text: "Supprimer", 
+//         {
+//           text: "Supprimer",
 //           onPress: () => deleteReport(reportId),
-//           style: "destructive" 
+//           style: "destructive"
 //         },
 //       ]
 //     );
@@ -1045,7 +1035,7 @@ const styles = StyleSheet.create({
 
 //   const updateReportHandler = useCallback(async (updatedReport: Report) => {
 //     if (!updatedReport) return;
-    
+
 //     setIsSubmitting(true);
 
 //     // Filtrer les propriétés non nécessaires pour l'API
@@ -1104,8 +1094,8 @@ const styles = StyleSheet.create({
 
 //       if (data.results && data.results.length > 0) {
 //         const address = data.results[0].formatted;
-//         setSuggestions(data.results);  
-//         setModalVisible(true);  
+//         setSuggestions(data.results);
+//         setModalVisible(true);
 //       } else {
 //         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
 //       }
@@ -1132,15 +1122,15 @@ const styles = StyleSheet.create({
 //       const response = await fetch(url);
 //       const data = await response.json();
 
-//       if (data.results && data.results.length > 0) { 
+//       if (data.results && data.results.length > 0) {
 //         const sortedSuggestions = data.results.sort((a, b) => {
 //           const postalA = extractPostalCode(a.formatted);
 //           const postalB = extractPostalCode(b.formatted);
-//           return postalA - postalB;  
+//           return postalA - postalB;
 //         });
 
-//         setSuggestions(sortedSuggestions);  
-//         setModalVisible(true);  
+//         setSuggestions(sortedSuggestions);
+//         setModalVisible(true);
 //       } else {
 //         setSuggestions([]);
 //         Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
@@ -1152,30 +1142,30 @@ const styles = StyleSheet.create({
 //   }, []);
 
 //   const extractPostalCode = useCallback((address: string) => {
-//     const postalCodeMatch = address.match(/\b\d{5}\b/); 
-//     return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;  
+//     const postalCodeMatch = address.match(/\b\d{5}\b/);
+//     return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
 //   }, []);
 
 //   const handleSuggestionSelect = useCallback((item: any) => {
 //     if (!currentReport) return;
-    
+
 //     if (item.geometry) {
 //       const { lat, lng } = item.geometry;
- 
+
 //       const formattedCity = item.formatted.replace(
 //         /unnamed road/g,
 //         "Route inconnue"
 //       );
- 
+
 //       setCurrentReport({
 //         ...currentReport,
-//         city: formattedCity,  
+//         city: formattedCity,
 //         latitude: lat,
 //         longitude: lng,
 //       });
- 
+
 //       setIsAddressValidated(true);
- 
+
 //       if (mapRef.current) {
 //         mapRef.current.animateToRegion(
 //           {
@@ -1232,20 +1222,20 @@ const styles = StyleSheet.create({
 //         backgroundColor={COLORS.primary}
 //         translucent
 //       />
-      
+
 //       {/* Header modernisé */}
 //       <View style={styles.header}>
-//         <TouchableOpacity 
-//           style={styles.headerIcon} 
+//         <TouchableOpacity
+//           style={styles.headerIcon}
 //           onPress={toggleSidebar}
 //           hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
 //         >
 //           <Ionicons name="menu-outline" size={24} color={COLORS.text.light} />
 //         </TouchableOpacity>
-        
+
 //         <Text style={styles.headerTitle}>MES SIGNALEMENTS</Text>
-        
-//         <TouchableOpacity 
+
+//         <TouchableOpacity
 //           style={styles.headerIcon}
 //           onPress={() => navigation.navigate("NotificationsScreen")}
 //           hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
@@ -1306,9 +1296,9 @@ const styles = StyleSheet.create({
 //                 <Ionicons name="close" size={24} color={COLORS.text.primary} />
 //               </TouchableOpacity>
 //             </View>
-            
+
 //             {/* Barre de défilement réparée */}
-//             <ScrollView 
+//             <ScrollView
 //               style={styles.modalScroll}
 //               contentContainerStyle={styles.modalScrollContent}
 //               showsVerticalScrollIndicator={true}
@@ -1336,11 +1326,11 @@ const styles = StyleSheet.create({
 //               <View style={styles.inputGroup}>
 //                 <Text style={styles.inputLabel}>Description</Text>
 //                 <View style={[styles.inputContainer, styles.textAreaContainer]}>
-//                   <Ionicons 
-//                     name="create-outline" 
-//                     size={20} 
-//                     color="#AAAAAA" 
-//                     style={[styles.inputIcon, {alignSelf: 'flex-start', marginTop: 10}]} 
+//                   <Ionicons
+//                     name="create-outline"
+//                     size={20}
+//                     color="#AAAAAA"
+//                     style={[styles.inputIcon, {alignSelf: 'flex-start', marginTop: 10}]}
 //                   />
 //                   <TextInput
 //                     style={styles.textArea}
@@ -1375,7 +1365,7 @@ const styles = StyleSheet.create({
 //                       />
 //                     </View>
 //                   </View>
-                  
+
 //                   <View style={styles.locationButtons}>
 //                     <TouchableOpacity
 //                       style={styles.searchButton}
@@ -1383,7 +1373,7 @@ const styles = StyleSheet.create({
 //                     >
 //                       <Ionicons name="search" size={18} color="#FFF" />
 //                     </TouchableOpacity>
-                    
+
 //                     <TouchableOpacity
 //                       style={styles.locationButton}
 //                       onPress={handleUseLocation}
@@ -1392,7 +1382,7 @@ const styles = StyleSheet.create({
 //                     </TouchableOpacity>
 //                   </View>
 //                 </View>
-                
+
 //                 {isAddressValidated && (
 //                   <View style={styles.validatedAddressContainer}>
 //                     <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
@@ -1438,7 +1428,7 @@ const styles = StyleSheet.create({
 //                   setPhotos={(newPhotos) => {
 //                     setCurrentReport(prev => prev ? {
 //                       ...prev,
-//                       photos: newPhotos.map((photo) => ({ 
+//                       photos: newPhotos.map((photo) => ({
 //                         url: photo.uri
 //                       }))
 //                     } : null);
@@ -1472,7 +1462,7 @@ const styles = StyleSheet.create({
 //                     </>
 //                   )}
 //                 </TouchableOpacity>
-                
+
 //                 <TouchableOpacity
 //                   style={styles.cancelButton}
 //                   onPress={closeModal}
@@ -1505,8 +1495,8 @@ const styles = StyleSheet.create({
 //                 <Ionicons name="close" size={24} color={COLORS.text.primary} />
 //               </TouchableOpacity>
 //             </View>
-            
-//             <ScrollView 
+
+//             <ScrollView
 //               style={styles.suggestionsList}
 //               contentContainerStyle={suggestions.length === 0 ? styles.emptyContentContainer : null}
 //             >
@@ -1525,7 +1515,7 @@ const styles = StyleSheet.create({
 //                 ))
 //               )}
 //             </ScrollView>
-            
+
 //             <TouchableOpacity
 //               style={styles.closeModalFullButton}
 //               onPress={() => setModalVisible(false)}
@@ -1537,7 +1527,7 @@ const styles = StyleSheet.create({
 //       </Modal>
 
 //       {/* Floating Action Button */}
-//       <TouchableOpacity 
+//       <TouchableOpacity
 //         style={styles.fab}
 //         onPress={() => navigation.navigate("CreateReportScreen")}
 //       >
@@ -1554,7 +1544,7 @@ const styles = StyleSheet.create({
 //     flex: 1,
 //     backgroundColor: COLORS.background,
 //   },
-  
+
 //   // État de chargement
 //   loadingContainer: {
 //     flex: 1,
@@ -1567,7 +1557,7 @@ const styles = StyleSheet.create({
 //     fontSize: 16,
 //     color: COLORS.text.secondary,
 //   },
-  
+
 //   // Header styles
 //   header: {
 //     backgroundColor: COLORS.primary,
@@ -1615,7 +1605,7 @@ const styles = StyleSheet.create({
 //     fontSize: 10,
 //     fontWeight: "bold",
 //   },
-  
+
 //   // Content styles
 //   content: {
 //     flex: 1,
@@ -1624,7 +1614,7 @@ const styles = StyleSheet.create({
 //     padding: 16,
 //     paddingBottom: 80, // Add space for FAB
 //   },
-  
+
 //   // Report card styles
 //   reportCard: {
 //     marginBottom: 16,
@@ -1716,7 +1706,7 @@ const styles = StyleSheet.create({
 //     fontWeight: "500",
 //     marginLeft: 6,
 //   },
-  
+
 //   // Empty state
 //   emptyContainer: {
 //     flex: 1,
@@ -1748,7 +1738,7 @@ const styles = StyleSheet.create({
 //     fontSize: 16,
 //     fontWeight: "600",
 //   },
-  
+
 //   // Modal styles - Améliorations pour résoudre les problèmes de scroll
 //   modalContainer: {
 //     flex: 1,
@@ -1789,7 +1779,7 @@ const styles = StyleSheet.create({
 //     padding: 16,
 //     paddingBottom: 40, // Ajoute un espace en bas du scroll
 //   },
-  
+
 //   // Form styles - Optimisations
 //   inputGroup: {
 //     marginBottom: 20,
@@ -1832,7 +1822,7 @@ const styles = StyleSheet.create({
 //     height: "100%",
 //     width: "100%",
 //   },
-  
+
 //   // Location styles - CORRIGÉ pour la mise en page de l'adresse
 //   locationContainer: {
 //     flexDirection: "row",
@@ -1873,7 +1863,7 @@ const styles = StyleSheet.create({
 //     color: COLORS.success,
 //     marginLeft: 6,
 //   },
-  
+
 //   // Carte dans le modal
 //   mapContainer: {
 //     height: 200,
@@ -1887,7 +1877,7 @@ const styles = StyleSheet.create({
 //     width: '100%',
 //     height: '100%',
 //   },
-  
+
 //   // Action buttons
 //   modalActions: {
 //     marginVertical: 16,
@@ -1917,7 +1907,7 @@ const styles = StyleSheet.create({
 //   disabledButton: {
 //     backgroundColor: "#BBBBBB",
 //   },
-  
+
 //   // Suggestions modal - Amélioré pour une meilleure expérience utilisateur
 //   suggestionsContainer: {
 //     flex: 1,
@@ -1994,7 +1984,7 @@ const styles = StyleSheet.create({
 //     fontSize: 16,
 //     fontWeight: '600',
 //   },
-  
+
 //   // FAB
 //   fab: {
 //     position: "absolute",
