@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -31,7 +37,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation/routes.types";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Type definitions for navigation
@@ -107,7 +112,6 @@ interface Filter {
 export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   const navigation = useNavigation<UserProfileScreenNavigationProp>();
   const { getUserId, getToken } = useToken();
-  const insets = useSafeAreaInsets();
 
   // State management
   const [posts, setPosts] = useState<Post[]>([]);
@@ -170,6 +174,183 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
 
     initialize();
   }, []);
+
+  const uploadImage = async (file: {
+    uri: string;
+    name: string;
+    type: string;
+  }): Promise<string> => {
+    // Exemple d'implémentation : retourner directement l'URI pour le débogage
+    return file.uri;
+  };
+
+  /**
+   * Create a new post
+   */
+  const handleAddPost = async () => {
+    if (!newPostContent.trim()) {
+      Alert.alert("Erreur", "Le contenu de la publication est vide.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        Alert.alert("Erreur", "Impossible de récupérer l'ID utilisateur.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Préparation des images uploadées en amont
+      let uploadedPhotoUrls: string[] = [];
+      if (selectedImage.length > 0) {
+        uploadedPhotoUrls = await Promise.all(
+          selectedImage.map(async (image) => {
+            const filename = image.split("/").pop();
+            const fileType = filename ? filename.split(".").pop() : "jpg";
+            // uploadImage est une fonction prédéfinie qui upload l'image et renvoie l'URL finale
+            return await uploadImage({
+              uri: image,
+              name: filename || "default.jpg",
+              type: `image/${fileType}`,
+            });
+          })
+        );
+      }
+
+      // Construction d'une publication locale optimiste
+      const userProfilePhoto = "https://via.placeholder.com/150"; // à remplacer par la photo réelle si disponible
+      const userName = "Chargement ..."; // à remplacer par le nom réel de l'utilisateur
+      const optimisticPost: Post = {
+        id: Math.floor(Math.random() * 100000), // ID temporaire en nombre
+        content: newPostContent,
+        photos: uploadedPhotoUrls,
+        authorId: userId,
+        profilePhoto: userProfilePhoto,
+        authorName: userName,
+        comments: [],
+        createdAt: new Date().toISOString(),
+        likesCount: 0,
+        likedByUser: false,
+      };
+
+      // Mise à jour immédiate de l'état local
+      setPosts((prevPosts) => [optimisticPost, ...prevPosts]);
+      setNewPostContent("");
+      setSelectedImage([]);
+
+      // Envoi de la publication vers le backend
+      const formData = new FormData();
+      formData.append("content", optimisticPost.content);
+      formData.append("authorId", userId.toString());
+      if (selectedImage.length > 0) {
+        selectedImage.forEach((image) => {
+          const filename = image.split("/").pop();
+          const fileType = filename ? filename.split(".").pop() : "jpg";
+          formData.append("photos", {
+            uri: image,
+            name: filename,
+            type: `image/${fileType}`,
+          } as any);
+        });
+      }
+      const response = await fetch(`${API_URL}/posts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          error.message || "Erreur lors de la création de la publication"
+        );
+      }
+      // Optionnel : rafraîchir toute la liste pour être sûr d'avoir les données mises à jour
+      fetchPosts();
+      Alert.alert("Succès", "Votre publication a été créée avec succès !");
+    } catch (error) {
+      Alert.alert(
+        "Erreur",
+        error instanceof Error
+          ? error.message
+          : "Impossible de créer la publication."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Handle adding a new comment to a post
+   */
+  const handleAddComment = async (postId: number) => {
+    try {
+      const userId = await getUserId();
+      const commentText = commentInputs[postId]?.trim();
+
+      if (!userId || !commentText) {
+        Alert.alert(
+          "Erreur",
+          "Le texte du commentaire est vide ou l'ID utilisateur est introuvable."
+        );
+        return;
+      }
+
+      // Construction d'un commentaire optimiste
+      const userProfilePhoto = "https://via.placeholder.com/150"; // à remplacer par la photo réelle si disponible
+      const userName = "Chargement ..."; // à remplacer par le nom réel de l'utilisateur
+      const optimisticComment: Comment = {
+        id: Math.floor(Math.random() * 100000), // ID temporaire en nombre
+        text: commentText,
+        userId,
+        userName,
+        userProfilePhoto,
+        replies: [],
+        createdAt: new Date().toISOString(),
+        likesCount: 0,
+        likedByUser: false,
+      };
+
+      // Mise à jour immédiate sur le post correspondant
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                comments: [...(post.comments || []), optimisticComment],
+              }
+            : post
+        )
+      );
+      // Réinitialisation de l'input
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+
+      // Envoi du commentaire vers le backend
+      const response = await fetch(`${API_URL}/posts/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          userId,
+          text: commentText,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Erreur lors de l'ajout du commentaire");
+      }
+      // Optionnel : rafraîchir le post pour récupérer le commentaire avec l'ID définitif, etc.
+      fetchPosts();
+    } catch (error) {
+      Alert.alert(
+        "Erreur",
+        error instanceof Error
+          ? error.message
+          : "Impossible d'ajouter le commentaire."
+      );
+    }
+  };
 
   /**
    * Fetch posts from API with optional city filtering
@@ -381,67 +562,6 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   };
 
   /**
-   * Handle adding a new comment to a post
-   */
-  const handleAddComment = async (postId: number) => {
-    try {
-      const userId = await getUserId();
-      const commentText = commentInputs[postId]?.trim();
-
-      if (!userId || !commentText) {
-        Alert.alert(
-          "Erreur",
-          "Le texte du commentaire est vide ou l'ID utilisateur est introuvable."
-        );
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/posts/comment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId,
-          userId,
-          text: commentText,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du commentaire");
-      }
-
-      // Clear input
-      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
-
-      // Get the new comment data
-      const newComment = await response.json();
-
-      // Correction : ajouter la photo de profil (ou une URL par défaut) au nouveau commentaire.
-      const commentWithPhoto = {
-        ...newComment,
-        userProfilePhoto: newComment.userProfilePhoto || "https://via.placeholder.com/150",
-        replies: [],
-      };
-
-      // Mise à jour du state pour afficher immédiatement l'image du commentaire
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? { ...post, comments: [...post.comments, commentWithPhoto] }
-            : post
-        )
-      );
-    } catch (error) {
-      Alert.alert(
-        "Erreur",
-        error instanceof Error
-          ? error.message
-          : "Impossible d'ajouter le commentaire."
-      );
-    }
-  };
-
-  /**
    * Toggle visibility of comments section
    */
   const toggleComments = (postId: number) => {
@@ -578,74 +698,6 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
         },
       ]
     );
-  };
-
-  /**
-   * Add a reply to a comment
-   */
-  const handleAddReply = async (parentId: number, postId: number) => {
-    try {
-      const userId = await getUserId();
-      const replyText = replyInputs[parentId]?.trim();
-
-      if (!userId || !replyText) {
-        Alert.alert(
-          "Erreur",
-          "Le texte de la réponse est vide ou l'ID utilisateur est introuvable."
-        );
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/posts/comment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId,
-          userId,
-          text: replyText,
-          parentId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout de la réponse");
-      }
-
-      // Clear input and update state
-      setReplyInputs((prev) => ({ ...prev, [parentId]: "" }));
-      setReplyToCommentId(null);
-
-      // Get the new reply data
-      const newReply = await response.json();
-
-      // Update posts with optimistic response
-      setPosts((prevPosts) =>
-        prevPosts.map((post) => {
-          if (post.id === postId) {
-            return {
-              ...post,
-              comments: post.comments.map((comment) => {
-                if (comment.id === parentId) {
-                  return {
-                    ...comment,
-                    replies: [...comment.replies, newReply],
-                  };
-                }
-                return comment;
-              }),
-            };
-          }
-          return post;
-        })
-      );
-    } catch (error) {
-      Alert.alert(
-        "Erreur",
-        error instanceof Error
-          ? error.message
-          : "Impossible d'ajouter la réponse."
-      );
-    }
   };
 
   /**
@@ -813,78 +865,6 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     saveFilterPreference(filterValue);
     fetchPosts(filterValue);
     setModalVisible(false);
-  };
-
-  /**
-   * Create a new post
-   */
-  const handleAddPost = async () => {
-    if (!newPostContent.trim()) {
-      Alert.alert("Erreur", "Le contenu de la publication est vide.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const userId = await getUserId();
-      if (!userId) {
-        Alert.alert("Erreur", "Impossible de récupérer l'ID utilisateur.");
-        setIsLoading(false);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("content", newPostContent);
-      formData.append("authorId", userId.toString());
-
-      if (selectedImage.length > 0) {
-        selectedImage.forEach((image) => {
-          const filename = image.split("/").pop();
-          const fileType = filename ? filename.split(".").pop() : "jpg";
-          formData.append("photos", {
-            uri: image,
-            name: filename,
-            type: `image/${fileType}`,
-          } as any);
-        });
-      }
-
-      const response = await fetch(`${API_URL}/posts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.message || "Erreur lors de la création de la publication"
-        );
-      }
-
-      const newPost = await response.json();
-
-      // Reset form
-      setNewPostContent("");
-      setSelectedImage([]);
-
-      // Add new post to state
-      setPosts((prevPosts) => [newPost, ...prevPosts]);
-
-      Alert.alert("Succès", "Votre publication a été créée avec succès !");
-    } catch (error) {
-      Alert.alert(
-        "Erreur",
-        error instanceof Error
-          ? error.message
-          : "Impossible de créer la publication."
-      );
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   /**
@@ -1123,34 +1103,37 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
         {/* Add Comment Input */}
         {visibleCommentSection[item.id] && (
           <View style={styles.addCommentContainer}>
-            <Image
-              source={{
-                uri: "https://via.placeholder.com/150", // Replace with user's avatar
-              }}
-              style={styles.commentAvatar}
-            />
-            <TextInput
-              style={styles.addCommentInput}
-              placeholder="Écrivez un commentaire..."
-              placeholderTextColor="#999"
-              value={commentInputs[item.id] || ""}
-              onChangeText={(text) =>
-                setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
-              }
-            />
-            <TouchableOpacity
-              onPress={() => handleAddComment(item.id)}
-              style={[
-                styles.addCommentButton,
-                (!commentInputs[item.id] || !commentInputs[item.id].trim()) &&
-                  styles.disabledButton,
-              ]}
-              disabled={
-                !commentInputs[item.id] || !commentInputs[item.id].trim()
-              }
-            >
-              <Icon name="send" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
+            <View style={styles.inputWrapper}>
+              <Image
+                source={{
+                  uri: "https://via.placeholder.com/150", // Replace with user's avatar
+                }}
+                style={styles.userAvatar}
+              />
+                <TextInput
+                  style={styles.addCommentInput}
+                  placeholder="Écrivez un commentaire..."
+                  placeholderTextColor="#999"
+                  value={commentInputs[item.id] || ""}
+                  onChangeText={(text) =>
+                    setCommentInputs((prev) => ({ ...prev, [item.id]: text }))
+                  }
+                />
+                <TouchableOpacity
+                  onPress={() => handleAddComment(item.id)}
+                  style={[
+                    styles.addCommentButton,
+                    (!commentInputs[item.id] ||
+                      !commentInputs[item.id].trim()) &&
+                      styles.disabledButton,
+                  ]}
+                  disabled={
+                    !commentInputs[item.id] || !commentInputs[item.id].trim()
+                  }
+                >
+                  <Icon name="send" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -1170,7 +1153,7 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
                           comment.userProfilePhoto ||
                           "https://via.placeholder.com/150",
                       }}
-                      style={styles.commentAvatar}
+                      style={styles.userAvatar}
                     />
                   </TouchableOpacity>
 
@@ -1184,183 +1167,54 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
                           {comment.userName || "Utilisateur inconnu"}
                         </Text>
                       </TouchableOpacity>
-                      <Text style={styles.commentTimestamp}>
-                        {formatDate(comment.createdAt)}
-                      </Text>
+                      <View style={styles.commentActions}>
+                        <TouchableOpacity
+                          onPress={() => handleLikeComment(comment.id)}
+                          style={styles.commentAction}
+                        >
+                          <Icon
+                            name={
+                              comment.likedByUser ? "heart" : "heart-outline"
+                            }
+                            size={18}
+                            color={comment.likedByUser ? "#E53935" : "#656765"}
+                          />
+                          {comment.likesCount > 0 && (
+                            <Text
+                              style={[
+                                styles.commentActionText,
+                                comment.likedByUser && styles.likedText,
+                              ]}
+                            >
+                              {comment.likesCount}
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     </View>
                     <Text style={styles.commentText}>{comment.text}</Text>
 
                     {/* Comment Actions */}
                     <View style={styles.commentActions}>
-                      <TouchableOpacity
-                        onPress={() => handleLikeComment(comment.id)}
-                        style={styles.commentAction}
-                      >
-                        <Icon
-                          name={comment.likedByUser ? "heart" : "heart-outline"}
-                          size={18}
-                          color={comment.likedByUser ? "#E53935" : "#656765"}
-                        />
-                        {comment.likesCount > 0 && (
-                          <Text
-                            style={[
-                              styles.commentActionText,
-                              comment.likedByUser && styles.likedText,
-                            ]}
-                          >
-                            {comment.likesCount}
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() =>
-                          setReplyToCommentId(
-                            replyToCommentId === comment.id ? null : comment.id
-                          )
-                        }
-                        style={styles.commentAction}
-                      >
-                        <Text style={styles.replyActionText}>Répondre</Text>
-                      </TouchableOpacity>
+                      <Text style={styles.commentTimestamp}>
+                        {formatDate(comment.createdAt)}
+                      </Text>
+                      {/* Delete Comment Button */}
+                      {comment.userId === userId && (
+                        <TouchableOpacity
+                          style={styles.deleteCommentIcon}
+                          onPress={() => handleDeleteComment(comment.id)}
+                        >
+                          <Icon
+                            name="trash-outline"
+                            size={16}
+                            color="#656765"
+                          />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
-
-                  {/* Delete Comment Button */}
-                  {comment.userId === userId && (
-                    <TouchableOpacity
-                      style={styles.deleteCommentIcon}
-                      onPress={() => handleDeleteComment(comment.id)}
-                    >
-                      <Icon name="trash-outline" size={16} color="#656765" />
-                    </TouchableOpacity>
-                  )}
                 </View>
-
-                {/* Reply Input */}
-                {replyToCommentId === comment.id && (
-                  <View style={styles.replyInputContainer}>
-                    <Image
-                      source={{
-                        uri: "https://via.placeholder.com/150", // Replace with user's avatar
-                      }}
-                      style={styles.replyAvatar}
-                    />
-                    <TextInput
-                      style={styles.replyInput}
-                      placeholder="Écrivez une réponse..."
-                      placeholderTextColor="#999"
-                      value={replyInputs[comment.id] || ""}
-                      onChangeText={(text) =>
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [comment.id]: text,
-                        }))
-                      }
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleAddReply(comment.id, item.id)}
-                      style={[
-                        styles.replyButton,
-                        (!replyInputs[comment.id] ||
-                          !replyInputs[comment.id].trim()) &&
-                          styles.disabledButton,
-                      ]}
-                      disabled={
-                        !replyInputs[comment.id] ||
-                        !replyInputs[comment.id].trim()
-                      }
-                    >
-                      <Icon name="send" size={16} color="#FFFFFF" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Show/Hide Replies Toggle */}
-                {comment.replies && comment.replies.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() =>
-                      setReplyVisibility((prev) => ({
-                        ...prev,
-                        [comment.id]: !prev[comment.id],
-                      }))
-                    }
-                    style={styles.showRepliesButton}
-                  >
-                    <Icon
-                      name={
-                        replyVisibility[comment.id]
-                          ? "chevron-up"
-                          : "chevron-down"
-                      }
-                      size={16}
-                      color="#1976D2"
-                    />
-                    <Text style={styles.showRepliesText}>
-                      {replyVisibility[comment.id]
-                        ? `Masquer les réponses`
-                        : `Voir ${comment.replies.length} ${
-                            comment.replies.length === 1
-                              ? "réponse"
-                              : "réponses"
-                          }`}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Replies */}
-                {replyVisibility[comment.id] &&
-                  comment.replies &&
-                  comment.replies.length > 0 && (
-                    <View style={styles.repliesSection}>
-                      {comment.replies.map((reply) => (
-                        <View key={reply.id} style={styles.replyWrapper}>
-                          <TouchableOpacity
-                            onPress={() => handleNavigate(reply.userId)}
-                          >
-                            <Image
-                              source={{
-                                uri:
-                                  reply.userProfilePhoto ||
-                                  "https://via.placeholder.com/150",
-                              }}
-                              style={styles.replyAvatar}
-                            />
-                          </TouchableOpacity>
-
-                          <View style={styles.replyContent}>
-                            <View style={styles.replyHeader}>
-                              <TouchableOpacity
-                                onPress={() => handleNavigate(reply.userId)}
-                              >
-                                <Text style={styles.replyUserName}>
-                                  {reply.userName || "Utilisateur inconnu"}
-                                </Text>
-                              </TouchableOpacity>
-                              <Text style={styles.replyTimestamp}>
-                                {formatDate(reply.createdAt)}
-                              </Text>
-                            </View>
-                            <Text style={styles.replyText}>{reply.text}</Text>
-
-                            {/* Delete Reply Button */}
-                            {reply.userId === userId && (
-                              <TouchableOpacity
-                                style={styles.deleteReplyIcon}
-                                onPress={() => handleDeleteReply(reply.id)}
-                              >
-                                <Icon
-                                  name="trash-outline"
-                                  size={14}
-                                  color="#656765"
-                                />
-                              </TouchableOpacity>
-                            )}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  )}
               </View>
             ))}
           </View>
@@ -1762,6 +1616,7 @@ const styles = StyleSheet.create({
     width: Dimensions.get("window").width - 32,
     height: (Dimensions.get("window").width - 32) * 0.75, // 4:3 aspect ratio
     borderRadius: 8,
+paddingHorizontal: 16,
   },
   indicatorsContainer: {
     flexDirection: "row",
@@ -1812,38 +1667,47 @@ const styles = StyleSheet.create({
 
   // Comments Section
   addCommentContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
+    padding: 16,
+    width: "100%",
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: "#F0F2F5",
   },
-  commentAvatar: {
+  commentRow: {
+    alignItems: "flex-start",
+  },
+  userAvatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
     marginRight: 8,
   },
+  inputWrapper: {
+    width: "73%",
+    flexDirection: "row",
+    backgroundColor: "#F0F2F5",
+    borderRadius: 20,
+  },
   addCommentInput: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#F5F7FA",
+    width: "100%",
+    paddingVertical: 10,
+    backgroundColor: "#F0F2F5",
     borderRadius: 20,
     fontSize: 14,
     color: "#333",
-    marginRight: 8,
+    minHeight: 40,
   },
   addCommentButton: {
-    backgroundColor: "#1976D2",
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+  marginLeft: 8,
+    backgroundColor: "#1877F2", // Facebook blue when active
+    borderRadius: 50,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
   disabledButton: {
-    backgroundColor: "#BDBDBD",
+    backgroundColor: "#D8DADF", // Light gray when disabled
   },
   commentsSection: {
     paddingHorizontal: 12,
@@ -1861,14 +1725,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F7FA",
     borderRadius: 16,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginLeft: 8,
   },
   commentHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
   },
   commentUserName: {
     fontWeight: "600",
@@ -1880,18 +1744,19 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   commentText: {
+    paddingVertical: 5,
     fontSize: 14,
     lineHeight: 20,
     color: "#333",
   },
   commentActions: {
     flexDirection: "row",
-    marginTop: 8,
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   commentAction: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 16,
   },
   commentActionText: {
     fontSize: 12,
@@ -1904,7 +1769,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   deleteCommentIcon: {
-    padding: 8,
     alignSelf: "flex-start",
   },
 
