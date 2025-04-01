@@ -453,14 +453,16 @@ const MetadataCard = memo(({ description, city, createdAt, gpsDistance }: Metada
           variant="secondary"
         />
         
-        {gpsDistance !== undefined && (
-          <MetadataItem 
-            icon="navigate-outline" 
-            text={`${gpsDistance.toFixed(1)} km`}
-            delay={150}
-            variant="accent"
-          />
-        )}
+        {
+  gpsDistance != null && (
+    <MetadataItem 
+      icon="navigate-outline" 
+      text={`${gpsDistance.toFixed(1)} km`}
+      delay={150}
+      variant="accent"
+    />
+  )
+}
       </View>
     </Animated.View>
   );

@@ -533,6 +533,12 @@ const VotingSection: React.FC<VotingSectionProps> = ({
                 { width: `${positivePercent}%` }
               ]} 
             />
+             <View 
+                style={[
+                  styles.voteStatsNegative,
+                  { width: `${100 - positivePercent}%` }
+                ]} 
+              />
           </View>
           <Text style={styles.voteStatsText}>
             {positivePercent}% des utilisateurs confirment cet événement
@@ -658,17 +664,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   voteStatsBar: {
+    flexDirection: "row",
     height: 6,
-    width: '100%',
-    backgroundColor: DESIGN_SYSTEM.colors.gray[200],
-    borderRadius: DESIGN_SYSTEM.border.radius.full,
-    overflow: 'hidden',
+    borderRadius: DESIGN_SYSTEM.border.radius.md,
     marginBottom: DESIGN_SYSTEM.spacing.sm,
+    overflow: "hidden",
   },
   voteStatsPositive: {
     height: '100%',
     backgroundColor: DESIGN_SYSTEM.colors.success.default,
-    borderRadius: DESIGN_SYSTEM.border.radius.full,
+
+  },
+  voteStatsNegative: {
+    backgroundColor: DESIGN_SYSTEM.colors.error.default,
   },
   voteStatsText: {
     fontSize: DESIGN_SYSTEM.typography.size.sm,
