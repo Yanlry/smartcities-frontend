@@ -149,10 +149,9 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showLikeInfoModal, setShowLikeInfoModal] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
-
+  const [isContentReady, setContentReady] = useState(false);
   // Ensure we have valid numbers for voteSummary
   const safeVoteSummary = {
     up: typeof contextVoteSummary?.up === "number" ? contextVoteSummary.up : 0,
@@ -182,10 +181,9 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   useEffect(() => {
     const fetchStats = async () => {
       if (!user?.id || !isOpen) return;
-
       try {
-        setLoading(true);
         setError(null);
+        setContentReady(false); // masquer le contenu pendant le chargement
 
         // Réinitialiser les animations lors du chargement
         avatarScale.setValue(0.8);
@@ -196,39 +194,35 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         if (response.status !== 200) {
           throw new Error(`Erreur API : ${response.statusText}`);
         }
-
         const data = response.data;
         setStats(data);
       } catch (error: any) {
         console.error("Erreur dans fetchStats :", error.message || error);
         setError("Impossible de récupérer les statistiques.");
       } finally {
-        setLoading(false);
 
-        // Forcer l'animation à s'exécuter correctement après le chargement
+        // Lancer les animations finales
         avatarScale.setValue(1);
-
-        // Délai progressif pour l'apparition des différents éléments
         setTimeout(() => nameOpacity.setValue(1), 150);
         setTimeout(() => statOpacity.setValue(1), 300);
 
-        // Réinitialiser les animations des éléments du menu
         mainItemsAnimations.forEach((anim, index) => {
           setTimeout(() => anim.setValue(0), 350 + index * 50);
         });
-
         secondaryItemsAnimations.forEach((anim, index) => {
           setTimeout(() => anim.setValue(0), 700 + index * 50);
         });
-
-        // Réinitialiser l'animation du bouton de déconnexion
         setTimeout(() => {
           logoutButtonAnimation.opacity.setValue(1);
           logoutButtonAnimation.translateY.setValue(0);
         }, 900);
+
+        // Une fois que toutes les animations sont supposées terminées, on affiche le contenu
+        setTimeout(() => {
+          setContentReady(true);
+        }, 1000);
       }
     };
-
     fetchStats();
   }, [user, isOpen]);
 
@@ -541,7 +535,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   }, [refreshUserData, toggleSidebar]);
 
   const renderContent = () => {
-    if (loading) {
+    if (!isContentReady) {
       return (
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}

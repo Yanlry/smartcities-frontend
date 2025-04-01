@@ -467,39 +467,6 @@ export default function App() {
       initializeUserId();
     }, []);
 
-    if (loading) {
-      return (
-        <View style={styles.loaderContainer}>
-          <LinearGradient
-            colors={[COLORS.primary.base, COLORS.primary.light]}
-            style={styles.loaderCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <ActivityIndicator size="large" color={COLORS.primary.contrast} />
-            <Text style={styles.loaderText}>Chargement...</Text>
-          </LinearGradient>
-        </View>
-      );
-    }
-
-    if (!userId) {
-      return (
-        <View style={styles.errorContainer}>
-          <View style={styles.errorCard}>
-            <Icon name="alert-circle" size={48} color={COLORS.state.error} />
-            <Text style={styles.errorTitle}>Oups !</Text>
-            <Text style={styles.errorText}>
-              Impossible de charger votre profil. Veuillez vous reconnecter.
-            </Text>
-            <TouchableOpacity style={styles.errorButton} onPress={handleLogout}>
-              <Text style={styles.errorButtonText}>Se reconnecter</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }
-
     // Enhanced TabBar with modern design and smooth animations
     const TabBar = ({ state, descriptors, navigation }) => {
       // Animation for the active tab indicator

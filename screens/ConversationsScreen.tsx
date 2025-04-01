@@ -292,16 +292,15 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
 
   // Hook personnalisé pour les conversations
-  const { conversations: allConversations, loading } = useConversations(
-    userId,
-    db
-  );
+  const { conversations: allConversations, loading } = useConversations(userId, db);
+
+  // Nouvel état local pour gérer les mises à jour en mémoire des conversations
+  const [localConversations, setLocalConversations] = useState<Conversation[]>(allConversations);
 
   // États
   const [hiddenConversations, setHiddenConversations] = useState<string[]>([]);
   const [showHiddenConversations, setShowHiddenConversations] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false); // Nouvel état pour le loader
-
   // Animations globales
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -314,22 +313,25 @@ const ConversationsScreen = ({ navigation, route }: any) => {
   // Hook personnalisé pour la gestion du stockage
   const { getStoredData, storeData } = useStorage(STORAGE_KEY_PREFIX);
 
+  useEffect(() => {
+    setLocalConversations(allConversations);
+  }, [allConversations]);
+
   // Conversations visibles
   const visibleConversations = useMemo(
     () =>
-      allConversations.filter(
+      localConversations.filter(
         (conversation) => !hiddenConversations.includes(conversation.id)
       ),
-    [allConversations, hiddenConversations]
+    [localConversations, hiddenConversations]
   );
 
-  // Conversations archivées
   const archivedConversations = useMemo(
     () =>
-      allConversations.filter((conversation) =>
+      localConversations.filter((conversation) =>
         hiddenConversations.includes(conversation.id)
       ),
-    [allConversations, hiddenConversations]
+    [localConversations, hiddenConversations]
   );
 
   // Icône de rotation pour les archives
@@ -449,9 +451,12 @@ const ConversationsScreen = ({ navigation, route }: any) => {
 
       if (receiverId) {
         // Marquer comme lu localement
-        const updatedConversations = allConversations.map((conv) =>
+        const updatedConversations = localConversations.map((conv) =>
           conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
         );
+
+        // Mettre à jour l'état local avec les conversations modifiées
+        setLocalConversations(updatedConversations);
 
         // Naviguer vers l'écran de chat
         navigation.navigate("ChatScreen", {
@@ -460,16 +465,15 @@ const ConversationsScreen = ({ navigation, route }: any) => {
         });
       }
     },
-    [userId, navigation, allConversations]
+    [userId, navigation, localConversations]
   );
+
 
   const handleConversationLongPress = useCallback(
     (conversation: Conversation) => {
       Alert.alert(
-        "Archiver cette conversation",
-        `Voulez-vous archiver cette conversation avec ${
-          conversation.otherParticipantName || "cet utilisateur"
-        } ?`,
+        "Êtes-vous sûr ?",
+        `Si vous masquez cette conversation, vous ne pourrez plus recevoir de messages de ${conversation.otherParticipantName || "cet utilisateur"}, mais vous pouvez toujours la récupérer plus tard.`,
         [
           { text: "Annuler", style: "cancel" },
           {
@@ -650,7 +654,7 @@ const ConversationsScreen = ({ navigation, route }: any) => {
                   </View>
                   <Text style={styles.emptyArchiveTitle}>Aucune archive</Text>
                   <Text style={styles.emptyArchiveText}>
-                    Les conversations archivées apparaîtront ici
+                    Appuyez longuement sur une conversation pour la masquer et ne plus recevoir de messages de cet utilisateur.
                   </Text>
                 </View>
               )}

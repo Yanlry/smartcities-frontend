@@ -193,28 +193,30 @@ export const fetchReports = async (
   radiusKm: number = 2000
 ): Promise<Report[]> => {
   try {
-    // Validation des coordonnées
     if (!isValidCoordinate(latitude, longitude)) {
-      console.warn("Coordonnées invalides pour la recherche de signalements");
+      console.warn("Coordonnées invalides pour la recherche de signalements:", { latitude, longitude });
       return [];
     }
 
+    console.log("Appel API fetchReports avec paramètres:", { latitude, longitude, radiusKm });
     const response = await axios.get(`${API_URL}/reports`, {
       params: { latitude, longitude, radiusKm },
     });
 
-    // Vérification de la réponse
     if (!Array.isArray(response?.data)) {
       console.warn("Format de réponse inattendu pour les signalements:", response?.data);
       return [];
     }
 
+    console.log("Réponse API fetchReports:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error(
-      "❌ Erreur dans fetchReports :",
-      error.response?.data || error.message
-    );
+    console.error("❌ Erreur dans fetchReports :", {
+      message: error.response?.data || error.message,
+      code: error.response?.status,
+      stack: error.stack,
+      params: { latitude, longitude, radiusKm }
+    });
     return [];
   }
 };
