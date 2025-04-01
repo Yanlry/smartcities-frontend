@@ -26,8 +26,6 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 /**
  * Interface pour les propriétés du composant RankBadge
  */
@@ -728,12 +726,14 @@ const styles = StyleSheet.create({
   badgeContentWrapper: {
     flex: 1,
     justifyContent: "center",
+    textAlign: "center",
   },
   badgeTitle: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 17,
+    textAlign: "center",
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 8,
     textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,

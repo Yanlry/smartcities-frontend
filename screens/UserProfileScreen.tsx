@@ -5,13 +5,18 @@ import Sidebar from "../components/common/Sidebar";
 import { profileStyles } from "../styles/profileStyles";
 import { useToken } from "../hooks/auth/useToken";
 import { useBadge } from "../hooks/ui/useBadge";
+import SectionProfile from "../components/profile/Profile/ProfileSection";
 
-import { 
-  useUserProfile, 
-  useUserStats, 
+import {
+  useUserProfile,
+  useUserStats,
   useUserContent,
 } from "../hooks/profile/index";
 import { useUserRanking } from "../hooks/user/useUserRanking";
+
+import {
+  BadgeModal,
+} from "../components/home/modals";
 
 // Composants
 import {
@@ -35,61 +40,70 @@ import { API_URL } from "@env";
 import { ParamListBase } from "@react-navigation/native";
 // Removed duplicate and incorrect import
 
-type UserProfileScreenNavigationProps = StackScreenProps<ParamListBase, "UserProfileScreen">;
+type UserProfileScreenNavigationProps = StackScreenProps<
+  ParamListBase,
+  "UserProfileScreen"
+>;
 
 interface UserProfileScreenProps {
   route: {
     params: {
       userId: string;
-    }
+    };
   };
   navigation: any;
 }
 
-const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({ route, navigation }) => {
+const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
+  route,
+  navigation,
+}) => {
   const { userId } = route.params as UserProfileScreenProps["route"]["params"];
   const { getToken, getUserId } = useToken();
   const { getBadgeStyles } = useBadge();
-  
+
   // États
   const [selectedTab, setSelectedTab] = useState<TabType>("info");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBadgeModal, setShowBadgeModal] = useState(false);
-  
 
-const dummyFn = () => {};
-const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
-  return true;
-};
+  const dummyFn = () => {};
+  const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
+    return true;
+  };
 
   // Hooks pour les données
-  const { 
-    user: rawUser, 
-    loading: userLoading, 
-    error: userError, 
+  const {
+    user: rawUser,
+    loading: userLoading,
+    error: userError,
     isFollowing,
     currentUserId,
     handleFollow,
-    handleUnfollow 
+    handleUnfollow,
   } = useUserProfile(userId);
-  
-  const { stats, loading: statsLoading, error: statsError } = useUserStats(userId);
-  
-  const { 
-    posts, 
-    reports, 
-    events, 
-    loading: contentLoading, 
-    error: contentError 
+
+  const {
+    stats,
+    loading: statsLoading,
+    error: statsError,
+  } = useUserStats(userId);
+
+  const {
+    posts,
+    reports,
+    events,
+    loading: contentLoading,
+    error: contentError,
   } = useUserContent(userId);
 
   // Hooks pour le classement
-  const { 
-    ranking: rankingFromRanking, 
-    totalUsers: totalUsersFromRanking, 
-    getRankingSuffix 
+  const {
+    ranking: rankingFromRanking,
+    totalUsers: totalUsersFromRanking,
+    getRankingSuffix,
   } = useUserRanking(rawUser?.nomCommune || "");
 
   // Adaptation du user pour le composant UserInfoTab
@@ -99,20 +113,21 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
     return {
       ...rawUser,
       // Garantir que useFullName est toujours défini (jamais undefined)
-      useFullName: rawUser.useFullName === undefined ? false : rawUser.useFullName
+      useFullName:
+        rawUser.useFullName === undefined ? false : rawUser.useFullName,
     } as EntityUser;
   }, [rawUser]);
 
   // États dérivés
-  const rankingSuffix = useMemo(() => 
-    getRankingSuffix(rankingFromRanking), 
+  const rankingSuffix = useMemo(
+    () => getRankingSuffix(rankingFromRanking),
     [getRankingSuffix, rankingFromRanking]
   );
-  
+
   const totalUsers = totalUsersFromRanking;
-  
+
   const displayName = useMemo(() => {
-    if(rawUser?.useFullName && rawUser.firstName && rawUser.lastName) {
+    if (rawUser?.useFullName && rawUser.firstName && rawUser.lastName) {
       return `${rawUser.firstName} ${rawUser.lastName}`;
     }
     return rawUser?.username || "Nom d'utilisateur";
@@ -120,7 +135,7 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
 
   // Handlers
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen((prev) => !prev);
   }, []);
 
   const openReportModal = useCallback(() => {
@@ -139,47 +154,53 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
     return getBadgeStyles(stats?.votes?.length || 0);
   }, [getBadgeStyles, stats?.votes?.length]);
 
-  const handleSendReport = useCallback(async (reason: string) => {
-    if (!reason.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const reporterId = await getUserId();
-
-      const response = await fetch(`${API_URL}/mails/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await getToken()}`,
-        },
-        body: JSON.stringify({
-          to: "yannleroy23@gmail.com",
-          subject: "Signalement d'un profil utilisateur",
-          userId,
-          reporterId,
-          reportReason: reason,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors du signalement du profil.");
+  const handleSendReport = useCallback(
+    async (reason: string) => {
+      if (!reason.trim()) {
+        Alert.alert(
+          "Erreur",
+          "Veuillez saisir une raison pour le signalement."
+        );
+        return;
       }
 
-      Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
-      closeReportModal();
-    } catch (error: any) {
-      console.error("Erreur lors de l'envoi du signalement :", error.message);
-      Alert.alert(
-        "Erreur",
-        "Une erreur s'est produite lors de l'envoi du signalement."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [userId, getUserId, getToken, closeReportModal]);
+      try {
+        setIsSubmitting(true);
+        const reporterId = await getUserId();
+
+        const response = await fetch(`${API_URL}/mails/send`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${await getToken()}`,
+          },
+          body: JSON.stringify({
+            to: "yannleroy23@gmail.com",
+            subject: "Signalement d'un profil utilisateur",
+            userId,
+            reporterId,
+            reportReason: reason,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur lors du signalement du profil.");
+        }
+
+        Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
+        closeReportModal();
+      } catch (error: any) {
+        console.error("Erreur lors de l'envoi du signalement :", error.message);
+        Alert.alert(
+          "Erreur",
+          "Une erreur s'est produite lors de l'envoi du signalement."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [userId, getUserId, getToken, closeReportModal]
+  );
 
   const handleFollowWithSubmitting = useCallback(async () => {
     setIsSubmitting(true);
@@ -217,19 +238,58 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
 
   return (
     <View>
-      <ProfileHeader 
-        toggleSidebar={toggleSidebar} 
-        openReportModal={openReportModal} 
+      <ProfileHeader
+        toggleSidebar={toggleSidebar}
+        openReportModal={openReportModal}
       />
-      
-      <ReportModal 
+
+      <ReportModal
         isVisible={isReportModalVisible}
         onClose={closeReportModal}
         onSendReport={handleSendReport}
       />
 
       <ScrollView contentContainerStyle={profileStyles.container}>
-        <ProfilePhoto 
+      <SectionProfile
+        user={{
+          username: rawUser?.username || "",
+          fullName: displayName,
+          avatar: rawUser?.profilePhoto?.url,
+          verified: true,
+          followers: rawUser?.followers?.length || 0,
+          following: rawUser?.following?.length || 0,
+          reports: stats?.numberOfReports || 0,
+          location: rawUser?.nomCommune || "",
+          memberSince: new Date(
+            rawUser?.createdAt || Date.now()
+          ).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }),
+          isPremium: rawUser?.isSubscribed || false,
+          ranking: rawUser?.ranking || null,
+        }}
+        isCurrentUser={
+          userId != null &&
+          currentUserId != null &&
+          String(userId) === String(currentUserId)
+        }
+        onEditProfile={() => navigation.navigate("ProfileScreen")} // Ajustez selon votre navigation
+        onFollowUser={handleFollowWithSubmitting}
+        onMessageUser={() =>
+          navigation.navigate("ChatScreen", {
+            receiverId: userId,
+            senderId: currentUserId,
+          })
+        }
+        // Passez les propriétés nécessaires pour RankBadge
+        ranking={rawUser?.ranking || null}
+        rankingSuffix={rankingSuffix}
+        totalUsers={totalUsers ?? undefined}
+        onNavigateToRanking={navigateToRanking}
+        badgeStyle={badgeStyle}
+        onShowBadgeModal={() => setShowBadgeModal(true)}
+        cityName={rawUser?.nomCommune || ""}
+      />
+      
+        <ProfilePhoto
           photoUrl={rawUser?.profilePhoto?.url}
           ranking={rawUser?.ranking || 999999}
           username={displayName}
@@ -242,25 +302,10 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
           onClose={() => {}} // Provide a default onClose handler
         />
 
-        <View>
-          <RankBadge
-            ranking={rawUser?.ranking || null}
-            rankingSuffix={rankingSuffix}
-            totalUsers={totalUsers}
-            onNavigateToRanking={navigateToRanking}
-            badgeStyle={badgeStyle}
-            onShowBadgeModal={() => setShowBadgeModal(true)}
-            cityName={rawUser?.nomCommune || ""}
-          />
-        </View>
-        
-        <ProfileTabs 
-          selectedTab={selectedTab} 
-          onSelectTab={setSelectedTab} 
-        />
+        <ProfileTabs selectedTab={selectedTab} onSelectTab={setSelectedTab} />
 
         {selectedTab === "info" && (
-          <UserInfoTab 
+          <UserInfoTab
             user={user}
             stats={stats}
             isFollowing={isFollowing}
@@ -274,26 +319,17 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
         )}
 
         {selectedTab === "signalement" && (
-          <ReportsTab 
-            reports={reports} 
-            navigation={navigation} 
-          />
+          <ReportsTab reports={reports} navigation={navigation} />
         )}
 
         {selectedTab === "publications" && (
-          <PostsTab 
-            posts={posts} 
-            navigation={navigation} 
-          />
+          <PostsTab posts={posts} navigation={navigation} />
         )}
 
         {selectedTab === "evenement" && (
-          <EventsTab 
-            events={events} 
-            navigation={navigation} 
-          />
+          <EventsTab events={events} navigation={navigation} />
         )}
-        
+
         <View style={profileStyles.separator} />
       </ScrollView>
 
@@ -304,13 +340,22 @@ const dummyUpdateProfileImage = async (uri: string): Promise<boolean> => {
         displayName={displayName}
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
-        onNavigateToCity={() => { /* TODO : remplacer par une navigation appropriée si besoin */ }}
+        onNavigateToCity={() => {
+          /* TODO : remplacer par une navigation appropriée si besoin */
+        }}
         updateProfileImage={dummyUpdateProfileImage}
         voteSummary={{
-          up: stats?.votes?.filter(vote => vote.type === "up").length || 0,
-          down: stats?.votes?.filter(vote => vote.type === "down").length || 0,
-        }} 
+          up: stats?.votes?.filter((vote) => vote.type === "up").length || 0,
+          down:
+            stats?.votes?.filter((vote) => vote.type === "down").length || 0,
+        }}
       />
+
+<BadgeModal
+          visible={showBadgeModal}
+          onClose={() => setShowBadgeModal(false)}
+          userVotes={stats?.votes?.length || 0}
+        />
     </View>
   );
 };

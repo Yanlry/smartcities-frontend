@@ -7,7 +7,7 @@ export default StyleSheet.create({
     justifyContent: "space-around",  
     alignItems: "center",
     flexWrap: "wrap",  
-    paddingHorizontal: 10,  
+
   },
   statItem: {
     justifyContent: "center",  

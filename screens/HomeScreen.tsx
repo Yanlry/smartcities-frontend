@@ -2,8 +2,6 @@ import React, { useState, useCallback, memo, useMemo, useRef } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  ActivityIndicator,
   Animated,
   TouchableOpacity,
   Modal,

@@ -6,7 +6,7 @@ import { StyleSheet } from "react-native";
  */
 export const profileStyles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
+
     paddingBottom: 30,
     backgroundColor: "#F5F5F5",
     flexGrow: 1,
