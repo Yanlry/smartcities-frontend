@@ -19,7 +19,7 @@ interface ProfileSectionProps {
     fullName?: string;
     avatar?: string;
     verified?: boolean;
-    isFollowing?: boolean; 
+    isFollowing?: boolean;
     onUnfollowUser?: () => void;
     bio?: string;
     followers?: number;
@@ -32,10 +32,9 @@ interface ProfileSectionProps {
   };
   isCurrentUser?: boolean;
   onEditProfile?: () => void;
-  onFollowUser?: () => void;
+  onFollowUser: () => void; // utilisé lorsque l'utilisateur n'est pas suivi
+  onUnfollowUser?: () => void; // callback pour se désabonner
   onMessageUser?: () => void;
-  
-  // Props pour le RankBadge
   ranking?: number | null;
   rankingSuffix?: string;
   totalUsers?: number;
@@ -43,6 +42,7 @@ interface ProfileSectionProps {
   badgeStyle?: any;
   onShowBadgeModal?: () => void;
   cityName?: string;
+  isFollowing?: boolean; // indique si l'utilisateur est suivi
 }
 
 const THEME = {
@@ -62,7 +62,7 @@ const THEME = {
     warning: '#F59E0B',
     error: '#EF4444',
     premium: '#F59E0B',
-    verified: '#2E5BFF',
+    verified: '#22C55E',
     text: {
       primary: '#1F2937',
       secondary: '#4B5563',
@@ -128,6 +128,8 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
   isCurrentUser,
   onEditProfile,
   onFollowUser,
+  onUnfollowUser,
+  isFollowing,
   onMessageUser,
   ranking,
   rankingSuffix,
@@ -196,7 +198,6 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
                 <Icon name="check-decagram" size={16} color={THEME.colors.verified} style={styles.verifiedIcon} />
               )}
             </View>
-            <Text style={styles.username}>@{user?.username}</Text>
             <View style={styles.locationContainer}>
               <Icon name="map-marker" size={14} color={THEME.colors.text.muted} style={styles.locationIcon} />
               <Text style={styles.locationText}>{user?.location}</Text>
@@ -220,24 +221,41 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
           />
         </View>
         <View style={styles.actionsContainer}>
-          {isCurrentUser ? (
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={onEditProfile}
-              activeOpacity={0.8}
+        {isCurrentUser ? (
+          <TouchableOpacity
+            style={styles.editProfileButton}
+            onPress={onEditProfile}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.editProfileGradient}
             >
-              <LinearGradient
-                colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.editProfileGradient}
+              <Icon name="pencil" size={16} color="#FFFFFF" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Modifier le profil</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.guestActionsRow}>
+            {isFollowing ? (
+              <TouchableOpacity
+                style={styles.followButton}  // utilisation du style existant
+                onPress={onUnfollowUser}
+                activeOpacity={0.8}
               >
-                <Icon name="pencil" size={16} color="#FFFFFF" style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>Modifier le profil</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.guestActionsRow}>
+                <LinearGradient
+                  colors={THEME.colors.secondary.gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.followButtonGradient} // utilisation du style existant
+                >
+                  <Icon name="account-remove" size={16} color="#FFFFFF" style={styles.buttonIcon} />
+                  <Text style={styles.buttonText}>Se désabonner</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
               <TouchableOpacity
                 style={styles.followButton}
                 onPress={onFollowUser}
@@ -253,24 +271,25 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
                   <Text style={styles.buttonText}>Suivre</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.messageButton}
-                onPress={onMessageUser}
-                activeOpacity={0.8}
+            )}
+            <TouchableOpacity
+              style={styles.messageButton}
+              onPress={onMessageUser}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.messageButtonGradient}
               >
-                <LinearGradient
-                  colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.messageButtonGradient}
-                >
-                  <Icon name="message-text-outline" size={16} color="#FFFFFF" style={styles.buttonIcon} />
-                  <Text style={styles.buttonText}>Message</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+                <Icon name="message-text-outline" size={16} color="#FFFFFF" style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Message</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
         <View style={styles.memberSinceContainer}>
           <Icon name="calendar-outline" size={12} color={THEME.colors.text.muted} />
           <Text style={styles.memberSinceText}>Membre depuis {user?.memberSince}</Text>
@@ -404,7 +423,6 @@ const styles = StyleSheet.create({
   },
   rankBadgeContainer: {
     marginVertical: THEME.spacing.md,
-
     backgroundColor: 'rgba(255, 255, 255, 0.1)', // Fond légèrement transparent pour le badge
     borderRadius: THEME.borderRadius.lg,
     borderWidth: 1,

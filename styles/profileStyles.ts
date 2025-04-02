@@ -559,7 +559,7 @@ export const profileStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 90,
   },
   noDataText: {
     fontSize: 16,

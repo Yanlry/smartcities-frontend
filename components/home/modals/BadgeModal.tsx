@@ -636,7 +636,7 @@ const ProgressPath = memo(({
     }
     
     // Sinon, calcul basé sur l'index (0 à 5 étoiles)
-    return Math.min(5, Math.max(0, index));
+    return Math.min(6, Math.max(0, index));
   }, [sortedTiers, getBadgeStyles]);
   
   // Effet de feedback tactile lors de la sélection
@@ -662,7 +662,7 @@ const ProgressPath = memo(({
     
     return (
       <View style={styles.starsContainer}>
-        {[...Array(5)].map((_, i) => {
+        {[...Array(6)].map((_, i) => {
           const isActive = i < starCount;
           
           return (

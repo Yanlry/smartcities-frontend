@@ -260,9 +260,7 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
           following: rawUser?.following?.length || 0,
           reports: stats?.numberOfReports || 0,
           location: rawUser?.nomCommune || "",
-          memberSince: new Date(
-            rawUser?.createdAt || Date.now()
-          ).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }),
+          memberSince: new Date(rawUser?.createdAt || Date.now()).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }),
           isPremium: rawUser?.isSubscribed || false,
           ranking: rawUser?.ranking || null,
         }}
@@ -271,15 +269,16 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
           currentUserId != null &&
           String(userId) === String(currentUserId)
         }
-        onEditProfile={() => navigation.navigate("ProfileScreen")} // Ajustez selon votre navigation
+        onEditProfile={() => navigation.navigate("ProfileScreen")}
         onFollowUser={handleFollowWithSubmitting}
+        onUnfollowUser={handleUnfollowWithSubmitting} // Ajout de la prop pour se désabonner
+        isFollowing={isFollowing} // Ajout de la prop pour gérer l'état
         onMessageUser={() =>
           navigation.navigate("ChatScreen", {
             receiverId: userId,
             senderId: currentUserId,
           })
         }
-        // Passez les propriétés nécessaires pour RankBadge
         ranking={rawUser?.ranking || null}
         rankingSuffix={rankingSuffix}
         totalUsers={totalUsers ?? undefined}

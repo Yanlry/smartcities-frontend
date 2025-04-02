@@ -5,13 +5,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Platform,
   ScrollView,
   Easing,
   Image,
+  Dimensions,
   Pressable,
   useWindowDimensions,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -31,12 +30,12 @@ import {
   LikeInfoModal,
   FollowersModal,
   FollowingModal,
-} from "../../../components/home/modals";
+} from "../../home/modals";
 // @ts-ignore
 import { API_URL } from "@env";
 import axios from "axios";
 import JoyfulLoader from "../../common/Loader/JoyfulLoader";
-// Theme system with colors, spacing, etc.
+
 // Theme system with colors, spacing, etc.
 const THEME = {
   colors: {
@@ -119,11 +118,14 @@ const THEME = {
   },
 };
 
+const windowHeight = Dimensions.get("window").height; // Récupération de la hauteur de l'écran
+
 /**
  * Modern sidebar component for social network
  * Immersive design with optimized animation management
  */
 const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
+  
   // Use global context to get user data INCLUDING voteSummary
   const {
     user,
@@ -963,7 +965,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: "80%", // largeur % pour meilleure adaptabilité
     maxWidth: 360,
-    height: "100%",
+    height: windowHeight, // Définie la hauteur constante
     zIndex: 1000,
     overflow: "hidden",
     borderTopRightRadius: 30,

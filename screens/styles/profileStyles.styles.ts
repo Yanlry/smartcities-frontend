@@ -394,7 +394,7 @@ export const profileStyles = StyleSheet.create({
     borderTopRightRadius: 0,
   },
   cardContainer: {
-    backgroundColor: "#FFFFFF",
+
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
