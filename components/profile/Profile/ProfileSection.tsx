@@ -1,5 +1,3 @@
-// Chemin : components/profile/SectionProfile.tsx
-
 import React from 'react';
 import {
   View,
@@ -15,13 +13,14 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RankBadge from '../../home/ProfileSection/RankBadge'; // Ajustez le chemin selon votre structure
 
-// Types fictifs pour la démo
 interface ProfileSectionProps {
   user?: {
     username: string;
     fullName?: string;
     avatar?: string;
     verified?: boolean;
+    isFollowing?: boolean; 
+    onUnfollowUser?: () => void;
     bio?: string;
     followers?: number;
     following?: number;
@@ -46,32 +45,24 @@ interface ProfileSectionProps {
   cityName?: string;
 }
 
-/**
- * Système de thème cohérent avec le reste de l'application
- */
 const THEME = {
   colors: {
-    // Dégradés primaires
     primary: {
       gradient: ['#2E5BFF', '#1E40AF'] as [string, string],
       default: '#2E5BFF',
       light: '#60A5FA',
     },
-    // Dégradés secondaires
     secondary: {
       gradient: ['#00C6A7', '#00A3C4'] as [string, string],
     },
-    // Dégradé accent
     accent: {
       gradient: ['#F97316', '#DB2777'] as [string, string],
     },
-    // Couleurs d'état
     success: '#22C55E',
     warning: '#F59E0B',
     error: '#EF4444',
     premium: '#F59E0B',
     verified: '#2E5BFF',
-    // Autres couleurs
     text: {
       primary: '#1F2937',
       secondary: '#4B5563',
@@ -86,7 +77,6 @@ const THEME = {
     border: 'rgba(0, 0, 0, 0.05)',
     inactive: '#94A3B8'
   },
-  // Système d'ombres
   shadows: {
     small: Platform.select({
       ios: {
@@ -95,9 +85,7 @@ const THEME = {
         shadowOpacity: 0.1,
         shadowRadius: 3
       },
-      android: {
-        elevation: 2
-      }
+      android: { elevation: 2 }
     }),
     medium: Platform.select({
       ios: {
@@ -106,9 +94,7 @@ const THEME = {
         shadowOpacity: 0.12,
         shadowRadius: 6
       },
-      android: {
-        elevation: 4
-      }
+      android: { elevation: 4 }
     }),
     large: Platform.select({
       ios: {
@@ -117,12 +103,9 @@ const THEME = {
         shadowOpacity: 0.15,
         shadowRadius: 12
       },
-      android: {
-        elevation: 8
-      }
+      android: { elevation: 8 }
     })
   },
-  // Rayons de bordure
   borderRadius: {
     sm: 8,
     md: 12,
@@ -130,7 +113,6 @@ const THEME = {
     xl: 24,
     pill: 9999
   },
-  // Espacement
   spacing: {
     xs: 4,
     sm: 8,
@@ -141,62 +123,29 @@ const THEME = {
   }
 };
 
-/**
- * Composant SectionProfile avec effets glassmorphiques
- */
 const SectionProfile: React.FC<ProfileSectionProps> = ({
-  user = {
-    username: 'johndoe',
-    fullName: 'John Doe',
-    avatar: undefined,
-    verified: true,
-    bio: 'Citoyen engagé pour une ville plus propre et plus sûre 🌱',
-    followers: 236,
-    following: 124,
-    reports: 17,
-    location: 'Haubourdin, France',
-    memberSince: 'Jan 2024',
-    isPremium: true,
-    ranking: 3
-  },
-  isCurrentUser = true,
+  user,
+  isCurrentUser,
   onEditProfile,
   onFollowUser,
   onMessageUser,
-  
-  // Props pour le RankBadge avec valeurs par défaut
-  ranking = user?.ranking || null,
-  rankingSuffix = 'ème',
-  totalUsers = 1000,
-  onNavigateToRanking = () => {},
-  badgeStyle = { background: '#1E40AF', color: '#FFFFFF' },
-  onShowBadgeModal = () => {},
-  cityName = user?.location || ''
+  ranking,
+  rankingSuffix,
+  totalUsers,
+  onNavigateToRanking,
+  badgeStyle,
+  onShowBadgeModal,
+  cityName
 }) => {
-  const insets = useSafeAreaInsets();
-  const { width } = Dimensions.get('window');
-  
-  // Fonction pour formater les nombres
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
-  
+
   return (
     <View style={[styles.container]}>
-      {/* Arrière-plan avec dégradé */}
       <LinearGradient
         colors={['#1E3A8A', '#2563EB']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.backgroundGradient}
       />
-      
-      {/* Overlay décoratif */}
       <View style={styles.backgroundOverlay}>
         <LinearGradient
           colors={['rgba(59, 130, 246, 0.2)', 'rgba(59, 130, 246, 0)']}
@@ -205,19 +154,15 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
           style={styles.decorativeAccent}
         />
       </View>
-      
-      {/* Contenu principal */}
       <View style={styles.contentContainer}>
-        {/* Section supérieure */}
         <View style={styles.headerSection}>
-          {/* Avatar */}
           <View style={styles.avatarContainer}>
             <LinearGradient
               colors={THEME.colors.primary.gradient}
               style={styles.avatarGradientBorder}
             >
               <View style={styles.avatarInnerBorder}>
-                {user.avatar ? (
+                {user?.avatar ? (
                   <Image
                     source={{ uri: user.avatar }}
                     style={styles.avatarImage}
@@ -225,15 +170,13 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <Text style={styles.avatarPlaceholderText}>
-                      {(user.fullName || user.username || '').charAt(0).toUpperCase()}
+                      {(user?.fullName || user?.username || '').charAt(0).toUpperCase()}
                     </Text>
                   </View>
                 )}
               </View>
             </LinearGradient>
-            
-            {/* Badge premium */}
-            {user.isPremium && (
+            {user?.isPremium && (
               <View style={styles.premiumBadge}>
                 <LinearGradient
                   colors={['#F59E0B', '#D97706']}
@@ -244,53 +187,43 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
               </View>
             )}
           </View>
-          
-          {/* Informations utilisateur */}
           <View style={styles.userInfoContainer}>
             <View style={styles.usernameContainer}>
               <Text style={styles.fullName}>
-                {user.fullName || user.username}
+                {user?.fullName || user?.username}
               </Text>
-              {user.verified && (
+              {user?.verified && (
                 <Icon name="check-decagram" size={16} color={THEME.colors.verified} style={styles.verifiedIcon} />
               )}
             </View>
-            
-            <Text style={styles.username}>@{user.username}</Text>
-            
+            <Text style={styles.username}>@{user?.username}</Text>
             <View style={styles.locationContainer}>
               <Icon name="map-marker" size={14} color={THEME.colors.text.muted} style={styles.locationIcon} />
-              <Text style={styles.locationText}>{user.location}</Text>
+              <Text style={styles.locationText}>{user?.location}</Text>
             </View>
           </View>
         </View>
-        
-        {/* Bio */}
-        {user.bio && (
+        {user?.bio && (
           <View style={styles.bioContainer}>
             <Text style={styles.bioText}>{user.bio}</Text>
           </View>
         )}
-        
-        {/* Intégration du composant RankBadge à la place des statistiques */}
         <View style={styles.rankBadgeContainer}>
           <RankBadge
-            ranking={ranking}
-            rankingSuffix={rankingSuffix}
-            totalUsers={totalUsers}
-            onNavigateToRanking={onNavigateToRanking}
+            ranking={ranking ?? user?.ranking ?? null}
+            rankingSuffix={rankingSuffix ?? ''}
+            totalUsers={totalUsers ?? null}
+            onNavigateToRanking={onNavigateToRanking || (() => {})}
             badgeStyle={badgeStyle}
             onShowBadgeModal={onShowBadgeModal}
-            cityName={cityName}
+            cityName={cityName ?? user?.location}
           />
         </View>
-        
-        {/* Boutons d'action */}
         <View style={styles.actionsContainer}>
           {isCurrentUser ? (
             <TouchableOpacity
               style={styles.editProfileButton}
-              onPress={(onEditProfile)}
+              onPress={onEditProfile}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -320,7 +253,6 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
                   <Text style={styles.buttonText}>Suivre</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              
               <TouchableOpacity
                 style={styles.messageButton}
                 onPress={onMessageUser}
@@ -339,17 +271,14 @@ const SectionProfile: React.FC<ProfileSectionProps> = ({
             </View>
           )}
         </View>
-        
-        {/* Information membre depuis */}
         <View style={styles.memberSinceContainer}>
           <Icon name="calendar-outline" size={12} color={THEME.colors.text.muted} />
-          <Text style={styles.memberSinceText}>Membre depuis {user.memberSince}</Text>
+          <Text style={styles.memberSinceText}>Membre depuis {user?.memberSince}</Text>
         </View>
       </View>
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     position: 'relative',

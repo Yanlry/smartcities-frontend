@@ -642,19 +642,6 @@ export const UserInfoTab: React.FC<UserInfoTabProps> = memo(({
                 )}
               </View>
             </View>
-            
-            {/* Boutons d'action */}
-            {currentUserId && userId && (
-              <View style={styles.actionButtonsContainer}>
-                <ActionButton
-                  label="Envoyer un message"
-                  icon="message-text-outline"
-                  onPress={handleChatPress}
-                  isPrimary={false}
-                  customColors={['#FFFFFF', '#F3F4F6'] as [string, string]}
-                />
-              </View>
-            )}
           </View>
         </View>
       </View>
@@ -900,7 +887,8 @@ const styles = StyleSheet.create({
     borderRadius: THEME.borderRadius.lg,
   },
   profileContent: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: THEME.colors.white,
+
     borderRadius: THEME.borderRadius.lg,
   },
   profileHeader: {

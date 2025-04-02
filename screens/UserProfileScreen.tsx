@@ -302,7 +302,7 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
           onClose={() => {}} // Provide a default onClose handler
         />
 
-        <ProfileTabs selectedTab={selectedTab} onSelectTab={setSelectedTab} />
+        <ProfileTabs selectedTab={selectedTab} onSelectTab={setSelectedTab} userId={userId} />
 
         {selectedTab === "info" && (
           <UserInfoTab

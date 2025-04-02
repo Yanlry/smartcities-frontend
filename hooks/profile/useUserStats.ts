@@ -1,5 +1,3 @@
-// hooks/profile/useUserStats.ts
-
 import { useState, useEffect } from "react";
 import { UserStats } from "../../types/features/profile/user.types";
 import axios from "axios";
@@ -17,6 +15,11 @@ export const useUserStats = (userId: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         setLoading(true);
@@ -34,7 +37,11 @@ export const useUserStats = (userId: string) => {
 
         setStats(data);
       } catch (error: any) {
-        console.error("Erreur dans fetchStats :", error.message || error);
+        if (error.response) {
+          console.error("Erreur dans fetchStats :", error.response.status, error.response.data);
+        } else {
+          console.error("Erreur dans fetchStats :", error.message || error);
+        }
         setError("Impossible de récupérer les statistiques.");
       } finally {
         setLoading(false);

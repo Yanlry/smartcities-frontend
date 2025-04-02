@@ -6313,10 +6313,10 @@ expo-linear-gradient@^14.0.2:
   resolved "https://registry.yarnpkg.com/expo-linear-gradient/-/expo-linear-gradient-14.0.2.tgz#51fb266d1c7a38349077d243e383cc3d69d4356b"
   integrity sha512-nvac1sPUfFFJ4mY25UkvubpUV/olrBH+uQw5k+beqSvQaVQiUfFtYzfRr+6HhYBNb4AEsOtpsCRkpDww3M2iGQ==
 
-expo-location@18.0.9:
-  version "18.0.9"
-  resolved "https://registry.yarnpkg.com/expo-location/-/expo-location-18.0.9.tgz#02aea9509cf81bde2d1f83ce0f01c8eb864f6c31"
-  integrity sha512-wvfLkcxUZK0zN8uHDwj4lcrePFVSIQvcLcSUHrXAXtmIG+Vpdvtah2Ugm2VtBOMm1KAcGBW67+EHkBhK6xxM9w==
+expo-location@~18.0.10:
+  version "18.0.10"
+  resolved "https://registry.yarnpkg.com/expo-location/-/expo-location-18.0.10.tgz#330f35f5dba2d575bd0ffd3c65d5df9299a0bf47"
+  integrity sha512-R0Iioz0UZ9Ts8TACPngh8uDFbajJhVa5/igLqWB8Pq/gp8UHuwj7PC8XbZV7avsFoShYjaxrOhf4U7IONeKLgg==
 
 expo-module-scripts@^4.0.4:
   version "4.0.4"
