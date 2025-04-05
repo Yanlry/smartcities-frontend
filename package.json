@@ -55,7 +55,7 @@
     "nativewind": "^4.1.23",
     "nodemailer": "^6.9.16",
     "react": "18.3.1",
-    "react-native": "0.76.8",
+    "react-native": "0.76.9",
     "react-native-actionsheet": "^2.4.2",
     "react-native-blob-util": "^0.19.11",
     "react-native-calendar-picker": "^8.0.5",
