@@ -10566,6 +10566,13 @@ react-native-actionsheet@^2.4.2:
   resolved "https://registry.npmjs.org/react-native-actionsheet/-/react-native-actionsheet-2.4.2.tgz"
   integrity sha512-DBoWIvVwuWXuptF4t46pBqkFxaUxS+rsIdHiA05t0n4BdTIDV2R4s9bLEUVOGzb94D7VxIamsXZPA/3mmw+SXg==
 
+react-native-animatable@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/react-native-animatable/-/react-native-animatable-1.4.0.tgz#05a259e1566081ce7d3f6fba1e92edc65f5c6160"
+  integrity sha512-DZwaDVWm2NBvBxf7I0wXKXLKb/TxDnkV53sWhCvei1pRyTX3MVFpkvdYBknNBqPrxYuAIlPxEp7gJOidIauUkw==
+  dependencies:
+    prop-types "^15.8.1"
+
 react-native-blob-util@^0.19.11:
   version "0.19.11"
   resolved "https://registry.npmjs.org/react-native-blob-util/-/react-native-blob-util-0.19.11.tgz"

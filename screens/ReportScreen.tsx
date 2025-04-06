@@ -26,13 +26,13 @@ import { useLocation } from "../hooks/location/useLocation";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
-import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
+import { useUserProfile } from "../hooks/user/useUserProfile";
 
 // Constantes pour le design system
 const { width, height } = Dimensions.get("window");
 const COLORS = {
   primary: "#062C41",
-  secondary: "#FF9800",
+  secondary: "#1B5D85",
   danger: "#f44336",
   success: "#4CAF50",
   background: "#F8F9FA",
@@ -46,7 +46,8 @@ const COLORS = {
   },
 };
 
-type Report = {
+// Interfaces
+interface Report {
   id: number;
   title: string;
   description: string;
@@ -59,29 +60,37 @@ type Report = {
   votes?: number;
   trustRate?: number;
   distance?: number;
-};
+}
 
-export default function ReportScreen({ navigation }) {
+interface AddressSuggestion {
+  formatted: string;
+  geometry: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export default function ReportScreen({ navigation }: { navigation: any }) {
   const { unreadCount } = useNotification();
   const { location, loading: locationLoading } = useLocation();
   const mapRef = useRef<MapView>(null);
-
   const { getUserId } = useToken();
 
+  // États
   const [reports, setReports] = useState<Report[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentReport, setCurrentReport] = useState<Report | null>(null);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isAddressValidated, setIsAddressValidated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
-
-  const { user, displayName, voteSummary, updateProfileImage } =
-    useUserProfile();
+  const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
     
+  // Chargement des données au démarrage
   useEffect(() => {
     const fetchUserReports = async () => {
       try {
@@ -110,11 +119,12 @@ export default function ReportScreen({ navigation }) {
     };
 
     fetchUserReports();
-  }, [currentReport]);
+  }, []);
 
+  // Functions
   const dummyFn = () => {};
 
-  // Item de rapport sans hooks internes
+  // Rendu de chaque élément de rapport
   const renderItem = useCallback(({ item }: { item: Report }) => (
     <View style={styles.reportCard}>
       <TouchableOpacity
@@ -178,10 +188,12 @@ export default function ReportScreen({ navigation }) {
     </View>
   ), []);
 
+  // Gestion du sidebar
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
   }, []);
 
+  // Suppression d'un signalement
   const deleteReport = useCallback(async (reportId: number) => {
     try {
       const response = await fetch(`${API_URL}/reports/${reportId}`, {
@@ -204,6 +216,7 @@ export default function ReportScreen({ navigation }) {
     }
   }, []);
 
+  // Confirmation de suppression
   const confirmDelete = useCallback((reportId: number) => {
     Alert.alert(
       "Confirmer la suppression",
@@ -219,18 +232,23 @@ export default function ReportScreen({ navigation }) {
     );
   }, [deleteReport]);
 
+  // Ouverture du modal de modification
   const openModal = useCallback((report: Report) => {
     setCurrentReport(report);
     setIsAddressValidated(true); // Si on modifie un rapport existant, l'adresse est déjà validée
     setIsModalVisible(true);
   }, []);
 
+  // Fermeture du modal de modification
   const closeModal = useCallback(() => {
     setIsModalVisible(false);
     setCurrentReport(null);
     setIsAddressValidated(false);
+    // Assurez-vous que le modal de suggestion est également fermé lors de la fermeture du modal principal
+    setModalVisible(false);
   }, []);
 
+  // Mise à jour d'un signalement
   const updateReportHandler = useCallback(async (updatedReport: Report) => {
     if (!updatedReport) return;
 
@@ -270,6 +288,7 @@ export default function ReportScreen({ navigation }) {
     }
   }, [closeModal]);
 
+  // Utilisation de la position actuelle
   const handleUseLocation = useCallback(async () => {
     if (locationLoading) {
       Alert.alert("Chargement", "Récupération de votre position en cours...");
@@ -284,17 +303,24 @@ export default function ReportScreen({ navigation }) {
       return;
     }
 
+    // D'abord ouvrir le modal avec l'indicateur de chargement
+    setIsLoadingSuggestions(true);
+    setSuggestions([]);
+    setModalVisible(true);
+    
     try {
+      // Attendre un court délai pour garantir que le modal s'affiche avec le loader
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
 
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.results && data.results.length > 0) {
-        const address = data.results[0].formatted;
         setSuggestions(data.results);
-        setModalVisible(true);
       } else {
+        setSuggestions([]);
         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
       }
     } catch (error) {
@@ -303,16 +329,28 @@ export default function ReportScreen({ navigation }) {
         "Erreur",
         "Une erreur est survenue lors de la récupération de l'adresse."
       );
+      setModalVisible(false);
+    } finally {
+      setIsLoadingSuggestions(false);
     }
   }, [location, locationLoading]);
 
+  // Recherche d'adresse
   const handleAddressSearch = useCallback(async (city: string) => {
     if (!city || !city.trim()) {
       Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
       return;
     }
 
+    // D'abord ouvrir le modal avec l'indicateur de chargement
+    setIsLoadingSuggestions(true);
+    setSuggestions([]);
+    setModalVisible(true);
+    
     try {
+      // Attendre un court délai pour garantir que le modal s'affiche avec le loader
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         city
       )}&key=${OPEN_CAGE_API_KEY}`;
@@ -328,23 +366,26 @@ export default function ReportScreen({ navigation }) {
         });
 
         setSuggestions(sortedSuggestions);
-        setModalVisible(true);
       } else {
         setSuggestions([]);
-        Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
       }
     } catch (error) {
       console.error("Erreur lors de la recherche de l'adresse :", error);
       Alert.alert("Erreur", "Impossible de rechercher l'adresse.");
+      setModalVisible(false);
+    } finally {
+      setIsLoadingSuggestions(false);
     }
   }, []);
 
+  // Extraction du code postal
   const extractPostalCode = useCallback((address: string) => {
     const postalCodeMatch = address.match(/\b\d{5}\b/);
     return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
   }, []);
 
-  const handleSuggestionSelect = useCallback((item: any) => {
+  // Sélection d'une suggestion d'adresse
+  const handleSuggestionSelect = useCallback((item: AddressSuggestion) => {
     if (!currentReport) return;
 
     if (item.geometry) {
@@ -380,6 +421,7 @@ export default function ReportScreen({ navigation }) {
     setModalVisible(false);
   }, [currentReport]);
 
+  // Validation des entrées
   const isValidInput = useCallback(() => {
     return (
       (currentReport?.title?.trim().length ?? 0) > 4 &&
@@ -387,6 +429,7 @@ export default function ReportScreen({ navigation }) {
     );
   }, [currentReport]);
 
+  // Obtention des erreurs de validation
   const getValidationErrors = useCallback((): string[] => {
     const errors: string[] = [];
     if (!isAddressValidated) {
@@ -427,8 +470,9 @@ export default function ReportScreen({ navigation }) {
           style={styles.headerIcon}
           onPress={toggleSidebar}
           hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          activeOpacity={0.8}
         >
-          <Ionicons name="menu-outline" size={24} color={COLORS.text.light} />
+          <Ionicons name="menu-outline" size={26} color={COLORS.text.light} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>MES SIGNALEMENTS</Text>
@@ -437,9 +481,10 @@ export default function ReportScreen({ navigation }) {
           style={styles.headerIcon}
           onPress={() => navigation.navigate("NotificationsScreen")}
           hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          activeOpacity={0.8}
         >
           <View>
-            <Ionicons name="notifications-outline" size={24} color={COLORS.text.light} />
+            <Ionicons name="notifications-outline" size={26} color={COLORS.text.light} />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -453,15 +498,17 @@ export default function ReportScreen({ navigation }) {
       <View style={styles.content}>
         {reports.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={70} color="#CCCCCC" />
+            <Ionicons name="document-text-outline" size={90} color="#CCCCCC" />
             <Text style={styles.emptyTitle}>Aucun signalement</Text>
             <Text style={styles.emptySubtitle}>
-              Vous n'avez pas encore créé de signalement
+              Vous n'avez pas encore créé de signalement dans votre espace personnel
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={() => navigation.navigate("CreateReportScreen")}
+              activeOpacity={0.8}
             >
+              <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
               <Text style={styles.emptyButtonText}>Créer un signalement</Text>
             </TouchableOpacity>
           </View>
@@ -472,11 +519,12 @@ export default function ReportScreen({ navigation }) {
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           />
         )}
       </View>
 
-      {/* Modal de modification - Amélioration du scroll et du keyboard */}
+      {/* Modal de modification */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -495,7 +543,6 @@ export default function ReportScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {/* Barre de défilement réparée */}
             <ScrollView
               style={styles.modalScroll}
               contentContainerStyle={styles.modalScrollContent}
@@ -544,7 +591,7 @@ export default function ReportScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Localisation - Corrigé pour prendre toute la largeur */}
+              {/* Localisation */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Adresse</Text>
                 <View style={styles.locationContainer}>
@@ -557,9 +604,21 @@ export default function ReportScreen({ navigation }) {
                         placeholderTextColor="#AAAAAA"
                         value={currentReport?.city || ""}
                         onChangeText={(text) => {
-                          setCurrentReport(prev => prev ? {...prev, city: text} : null);
-                          setIsAddressValidated(false);
+                          if (currentReport) {
+                            // Mise à jour du texte sans ouvrir le modal
+                            setCurrentReport({...currentReport, city: text});
+                            
+                            // Ne réinitialise l'état de validation que si le texte change vraiment
+                            if (text !== currentReport.city) {
+                              setIsAddressValidated(false);
+                            }
+                          }
                         }}
+                        // Désactiver l'auto-correction et les suggestions pour éviter les problèmes
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                        // Désactiver la soumission automatique
+                        returnKeyType="done"
                       />
                     </View>
                   </View>
@@ -567,7 +626,14 @@ export default function ReportScreen({ navigation }) {
                   <View style={styles.locationButtons}>
                     <TouchableOpacity
                       style={styles.searchButton}
-                      onPress={() => currentReport && handleAddressSearch(currentReport.city)}
+                      onPress={() => {
+                        if (currentReport && currentReport.city.trim()) {
+                          handleAddressSearch(currentReport.city);
+                        } else {
+                          Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
+                        }
+                      }}
+                      activeOpacity={0.8}
                     >
                       <Ionicons name="search" size={18} color="#FFF" />
                     </TouchableOpacity>
@@ -575,21 +641,31 @@ export default function ReportScreen({ navigation }) {
                     <TouchableOpacity
                       style={styles.locationButton}
                       onPress={handleUseLocation}
+                      activeOpacity={0.8}
                     >
                       <Ionicons name="locate" size={18} color="#FFF" />
                     </TouchableOpacity>
                   </View>
                 </View>
 
-                {isAddressValidated && (
-                  <View style={styles.validatedAddressContainer}>
-                    <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
-                    <Text style={styles.validatedAddressText}>Adresse validée</Text>
-                  </View>
-                )}
+                {isAddressValidated ? (
+                    <>
+                    <View style={styles.validatedAddressContainer}>
+                      <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                      <Text style={styles.validatedAddressText}>Adresse validée</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                    <View style={styles.validatedAddressContainer}>
+                      <Ionicons name="close-circle" size={16} color={COLORS.danger} />
+                      <Text style={styles.invalidAddressText}>Adresse non validée</Text>
+                      </View>
+                    </>
+                  )}
               </View>
 
-              {/* Carte - Ajoutée pour visualiser la position */}
+              {/* Carte */}
               {currentReport?.latitude && currentReport?.longitude && (
                 <View style={styles.mapContainer}>
                   <MapView
@@ -618,20 +694,20 @@ export default function ReportScreen({ navigation }) {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Photos</Text>
                 <PhotoManager
-                photos={
-                  currentReport?.photos?.map((photo, index) => {
-                    return { id: index.toString(), uri: photo.url };
-                  }) || []
-                }
-                setPhotos={(newPhotos) => {
-                  setCurrentReport({
-                    ...currentReport,
-                    photos: newPhotos.map((photo) => ({
-                      url: photo.uri || photo.uri,
-                    })),
-                  } as Report);
-                }}
-              />
+                  photos={
+                    currentReport?.photos?.map((photo, index) => {
+                      return { id: index.toString(), uri: photo.url };
+                    }) || []
+                  }
+                  setPhotos={(newPhotos) => {
+                    setCurrentReport({
+                      ...currentReport,
+                      photos: newPhotos.map((photo) => ({
+                        url: photo.uri || photo.uri,
+                      })),
+                    } as Report);
+                  }}
+                />
               </View>
 
               {/* Actions */}
@@ -673,63 +749,83 @@ export default function ReportScreen({ navigation }) {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
 
-      {/* Modal d'adresses - Amélioré pour une meilleure expérience */}
-      <Modal
-        visible={modalVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.suggestionsContainer}>
-          <View style={styles.suggestionsContent}>
-            <View style={styles.suggestionsHeader}>
-              <Text style={styles.suggestionsTitle}>Sélectionnez une adresse</Text>
-              <TouchableOpacity
-                style={styles.closeSuggestionsButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color={COLORS.text.primary} />
-              </TouchableOpacity>
-            </View>
+        {/* Modal d'adresses - Maintenant à l'intérieur du modal principal pour un meilleur z-index */}
+        {modalVisible && (
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View style={styles.addressModalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.suggestionsContent}>
+                  <View style={styles.suggestionsHeader}>
+                    <Text style={styles.suggestionsTitle}>Sélectionnez une adresse</Text>
+                    <TouchableOpacity
+                      style={styles.closeSuggestionsButton}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Ionicons name="close" size={22} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
 
-            <ScrollView
-              style={styles.suggestionsList}
-              contentContainerStyle={suggestions.length === 0 ? styles.emptyContentContainer : null}
-            >
-              {suggestions.length === 0 ? (
-                <Text style={styles.noSuggestionsText}>Aucune adresse trouvée</Text>
-              ) : (
-                suggestions.map((item, index) => (
-                  <TouchableOpacity
-                    key={`${item.formatted}-${index}`}
-                    style={styles.suggestionItem}
-                    onPress={() => handleSuggestionSelect(item)}
+                  <ScrollView
+                    style={styles.suggestionsList}
+                    contentContainerStyle={suggestions.length === 0 ? styles.emptyContentContainer : null}
+                    showsVerticalScrollIndicator={false}
                   >
-                    <Ionicons name="location" size={20} color={COLORS.primary} style={{marginRight: 10}} />
-                    <Text style={styles.suggestionText}>{item.formatted}</Text>
-                  </TouchableOpacity>
-                ))
-              )}
-            </ScrollView>
+                    {isLoadingSuggestions && (
+                      <View style={styles.loaderContainer}>
+                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <Text style={styles.loaderText}>Recherche d'adresses...</Text>
+                      </View>
+                    )}
+                    
+                    {!isLoadingSuggestions && suggestions.length === 0 ? (
+                      <View style={styles.emptyContentContainer}>
+                        <Ionicons name="location-outline" size={56} color="#CCCCCC" />
+                        <Text style={styles.noSuggestionsText}>
+                          Aucune adresse trouvée pour cette recherche
+                        </Text>
+                      </View>
+                    ) : (
+                      !isLoadingSuggestions && suggestions.map((item, index) => (
+                        <TouchableOpacity
+                          key={`${item.formatted}-${index}`}
+                          style={[
+                            styles.suggestionItem,
+                            index % 2 === 0 ? {backgroundColor: "#FFFFFF"} : {backgroundColor: "#FAFAFA"}
+                          ]}
+                          onPress={() => handleSuggestionSelect(item)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.suggestionIconContainer}>
+                            <Ionicons name="location" size={20} color="#FFFFFF" />
+                          </View>
+                          <Text style={styles.suggestionText}>{item.formatted}</Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
 
-            <TouchableOpacity
-              style={styles.closeModalFullButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeModalButtonText}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+                  <TouchableOpacity
+                    style={styles.closeModalFullButton}
+                    onPress={() => setModalVisible(false)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.closeModalButtonText}>Fermer</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        )}
       </Modal>
 
       {/* Floating Action Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate("CreateReportScreen")}
+        activeOpacity={0.85}
       >
-        <Ionicons name="add" size={24} color="#FFFFFF" />
+        <Ionicons name="add" size={26} color="#FFFFFF" />
       </TouchableOpacity>
 
       <Sidebar
@@ -741,7 +837,7 @@ export default function ReportScreen({ navigation }) {
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
         onNavigateToCity={() => {
-          /* TODO : remplacer par une navigation appropriée si besoin */
+          /* TODO : remplacer par une navigation appropriée si besoin */
         }}
         updateProfileImage={updateProfileImage}
       />
@@ -767,94 +863,122 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text.secondary,
   },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 20,
+    height: 200,
+  },
+  loaderText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+    marginTop: 16,
+    textAlign: 'center',
+  },
 
-  // Header styles
+  // Header styles - modernisés
   header: {
     backgroundColor: COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    elevation: 4,
+    paddingTop: Platform.OS === 'ios' ? 55 : 45,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   headerIcon: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 21,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "700",
     color: COLORS.text.light,
     letterSpacing: 1,
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
+    top: -6,
+    right: -6,
     backgroundColor: COLORS.danger,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: COLORS.primary,
   },
   badgeText: {
     color: "#FFFFFF",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "bold",
   },
 
-  // Content styles
+  // Content & List styles - améliorés
   content: {
     flex: 1,
+    backgroundColor: '#F2F5F8', // Légère teinte bleutée pour le fond
   },
   listContainer: {
-    padding: 16,
-    paddingBottom: 80, // Add space for FAB
+    padding: 20,
+    paddingBottom: 90, // Espace pour le FAB
   },
 
-  // Report card styles
+  // Report card styles - Nouveau design modernisé
   reportCard: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   reportCardTouchable: {
     backgroundColor: COLORS.card,
   },
   statusIndicator: {
-    height: 4,
+    height: 5,
     backgroundColor: COLORS.secondary,
+    width: '40%',
+    borderBottomRightRadius: 8,
   },
   reportCardContent: {
     padding: 16,
   },
   reportCardMainSection: {
     flexDirection: "row",
+    alignItems: "center",
   },
   imageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 90,
+    height: 90,
+    borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#F5F5F5",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   placeholderContainer: {
     width: "100%",
@@ -870,50 +994,64 @@ const styles = StyleSheet.create({
   reportInfo: {
     flex: 1,
     marginLeft: 16,
+    justifyContent: 'space-between',
   },
   reportTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: COLORS.text.primary,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   reportDate: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.text.secondary,
-    marginBottom: 6,
+    marginBottom: 8,
+    paddingLeft: 20,
+    position: 'relative',
   },
   reportDescription: {
     fontSize: 14,
     color: COLORS.text.secondary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   reportActions: {
     flexDirection: "row",
-    marginTop: 16,
+    marginTop: 20,
+    justifyContent: 'flex-end',
   },
   editButton: {
     backgroundColor: COLORS.secondary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 16,
-    borderRadius: 6,
-    marginRight: 8,
+    borderRadius: 10,
+    marginRight: 10,
+    elevation: 2,
+    shadowColor: COLORS.secondary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   deleteButton: {
     backgroundColor: COLORS.danger,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 16,
-    borderRadius: 6,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: COLORS.danger,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
     marginLeft: 6,
   },
 
@@ -949,7 +1087,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Modal styles - Améliorations pour résoudre les problèmes de scroll
+  // Modal principal
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -983,14 +1121,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalScroll: {
-    maxHeight: height * 0.8, // Limite la hauteur du scroll à 80% de l'écran
+    maxHeight: height * 0.8,
   },
   modalScrollContent: {
     padding: 16,
-    paddingBottom: 40, // Ajoute un espace en bas du scroll
+    paddingBottom: 40,
   },
 
-  // Form styles - Optimisations
+  // Styles pour l'overlay du modal d'adresses (nouveau)
+  addressModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+
+  // Form styles
   inputGroup: {
     marginBottom: 20,
   },
@@ -1032,15 +1183,25 @@ const styles = StyleSheet.create({
     height: "100%",
     width: "100%",
   },
+  // Style pour l'icône de suggestion d'adresse
+  suggestionIconContainer: {
+    width: 32, 
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
 
-  // Location styles - CORRIGÉ pour la mise en page de l'adresse
+  // Location styles
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
     width: '100%',
   },
   addressInputWrapper: {
-    flex: 1, // Prend tout l'espace disponible
+    flex: 1,
   },
   locationButtons: {
     flexDirection: "row",
@@ -1071,6 +1232,11 @@ const styles = StyleSheet.create({
   validatedAddressText: {
     fontSize: 13,
     color: COLORS.success,
+    marginLeft: 6,
+  },
+  invalidAddressText: {
+    fontSize: 13,
+    color: "red",
     marginLeft: 6,
   },
 
@@ -1118,21 +1284,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#BBBBBB",
   },
 
-  // Suggestions modal - Amélioré pour une meilleure expérience utilisateur
-  suggestionsContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 9999,      // Assure que ce container est au-dessus
-    elevation: 20,     // Pour Android
-  },
+  // Suggestions modal - Avec z-index élevé et style amélioré
   suggestionsContent: {
-    width: "100%",
-    maxHeight: "80%",
+    width: width * 0.92,
+    maxHeight: height * 0.7,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
+    zIndex: 1100,
+    elevation: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
   },
   suggestionsHeader: {
     flexDirection: "row",
@@ -1140,60 +1304,75 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderBottomColor: "#EFEFEF",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.primary,
   },
   suggestionsTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
-    color: COLORS.text.primary,
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
   },
   closeSuggestionsButton: {
     padding: 4,
-    height: 40,
-    width: 40,
+    height: 36,
+    width: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 18,
   },
   suggestionsList: {
-    maxHeight: height * 0.5, // Limite la hauteur de la liste
+    maxHeight: height * 0.5,
+    paddingTop: 8,
   },
   suggestionItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#EFEFEF",
+    borderBottomColor: "#F0F0F0",
+    backgroundColor: "#FFFFFF",
   },
   suggestionText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.text.primary,
+    lineHeight: 22,
   },
   emptyContentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 150,
+    minHeight: 200,
+    paddingHorizontal: 20,
   },
   noSuggestionsText: {
     fontSize: 16,
     color: COLORS.text.secondary,
     textAlign: 'center',
+    lineHeight: 24,
   },
   closeModalFullButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
+    backgroundColor: COLORS.secondary,
+    paddingVertical: 15,
     alignItems: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginVertical: 16,
-    borderRadius: 8,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   closeModalButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
 
   // FAB

@@ -1,249 +1,208 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   FlatList,
+  StyleSheet,
   Alert,
   Image,
-  TouchableWithoutFeedback,
   Modal,
   TextInput,
-  Keyboard,
   ScrollView,
+  StatusBar,
+  Dimensions,
+  ActivityIndicator,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNotification } from "../context/NotificationContext";
-import Sidebar from "../components/common/Sidebar";
-import { useToken } from "../hooks/auth/useToken";
 // @ts-ignore
 import { API_URL, OPEN_CAGE_API_KEY } from "@env";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { useToken } from "../hooks/auth/useToken";
+import { useNotification } from "../context/NotificationContext";
+import Sidebar from "../components/common/Sidebar";
 import PhotoManager from "../components/interactions/PhotoManager";
 import { useLocation } from "../hooks/location/useLocation";
-import MapView from "react-native-maps";
-import Icon from "react-native-vector-icons/MaterialIcons";
-import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
+import MapView, { Marker } from "react-native-maps";
+import { Ionicons } from "@expo/vector-icons";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
+import { useUserProfile } from "../hooks/user/useUserProfile";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
-export default function EventsScreen({ navigation }) {
+// Constantes pour le design system
+const { width, height } = Dimensions.get("window");
+const COLORS = {
+  primary: "#062C41",
+  secondary: "#1B5D85",
+  danger: "#f44336",
+  success: "#4CAF50",
+  background: "#F8F9FA",
+  card: "#FFFFFF",
+  border: "#E0E0E0",
+  text: {
+    primary: "#333333",
+    secondary: "#666666",
+    light: "#FFFFFF",
+    muted: "#999999",
+  },
+};
+
+// Interfaces
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  createdAt: string;
+  updatedAt?: string;
+  photos?: { url: string }[];
+  latitude?: number;
+  longitude?: number;
+}
+
+interface AddressSuggestion {
+  formatted: string;
+  geometry: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export default function EventsScreen({ navigation }: { navigation: any }) {
   const { unreadCount } = useNotification();
-  const { location, loading } = useLocation();
+  const { location, loading: locationLoading } = useLocation();
+  const mapRef = useRef<MapView>(null);
   const { getUserId } = useToken();
 
+  // États
+  const [events, setEvents] = useState<Event[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentEvent, setCurrentEvent] = useState<{
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    location: string;
-    photos: { url: string }[];
-  } | null>(null);
-  const [events, setEvents] = useState<
-    {
-      id: number;
-      title: string;
-      description: string;
-      createdAt: string;
-      photos: { url: string }[];
-    }[]
-  >([]);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [isAddressValidated, setIsAddressValidated] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [shouldRefreshEvents, setShouldRefreshEvents] = useState(true);
 
-  const { user, displayName, voteSummary, updateProfileImage } =
-    useUserProfile();
-
-  const dummyFn = () => {};
-
+  const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
+    
+  // Chargement des données au démarrage
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
+        setLoading(true);
         const userId = await getUserId();
         if (!userId) {
           console.error("Impossible de récupérer l'ID utilisateur.");
           return;
         }
 
-        console.log("ID utilisateur récupéré :", userId);
         const response = await fetch(`${API_URL}/events?userId=${userId}`);
         if (!response.ok) {
           throw new Error(`Erreur HTTP ! statut : ${response.status}`);
         }
-
         const data = await response.json();
         setEvents(data);
       } catch (error) {
         console.error("Erreur lors de la récupération des événements :", error);
+        Alert.alert(
+          "Erreur",
+          "Impossible de charger vos événements. Veuillez réessayer."
+        );
+      } finally {
+        setLoading(false);
+        setShouldRefreshEvents(false);
       }
     };
 
-    fetchUserEvents();
-  }, [currentEvent]);
-
-  const updateEventHandler = async (updatedEvent) => {
-    try {
-      const {
-        id,
-        title,
-        description,
-        date,
-        location,
-        latitude,
-        longitude,
-        photos,
-      } = updatedEvent;
-
-      const eventData = {
-        title,
-        description,
-        date: new Date(date).toISOString(),
-        location,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        photos: photos.map((photo) => ({
-          url: photo.uri || photo.url,
-        })),
-      };
-
-      console.log("Données envoyées au backend :", eventData);
-
-      const response = await fetch(`${API_URL}/events/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventData),
-      });
-
-      if (!response.ok) {
-        const errorDetails = await response.json();
-        console.error("Erreur backend :", errorDetails);
-        throw new Error("Erreur lors de la mise à jour de l'événement.");
-      }
-
-      const updatedEventData = await response.json();
-
-      console.log("Événement mis à jour :", updatedEventData);
-
-      setEvents((prevEvents) =>
-        prevEvents.map((event) => (event.id === id ? updatedEventData : event))
-      );
-
-      closeModal();
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour :", error.message || error);
-      Alert.alert("Erreur", "Impossible de modifier l'événement.");
+    if (shouldRefreshEvents) {
+      fetchUserEvents();
     }
-  };
+  }, [shouldRefreshEvents]);
 
-  const openModal = (event) => {
-    setCurrentEvent({
-      ...event,
-      photos: event.photos || [],
-    });
-    setIsModalVisible(true);
-  };
+  // Functions
+  const dummyFn = () => {};
 
-  const closeModal = () => {
-    setIsModalVisible(false);
-    setCurrentEvent(null);
-  };
+  // Rendu de chaque élément d'événement
+  const renderItem = useCallback(({ item }: { item: Event }) => (
+    <View style={styles.eventCard}>
+      <TouchableOpacity
+        style={styles.eventCardTouchable}
+        activeOpacity={0.7}
+        onPress={() => navigation.navigate("EventDetailsScreen", { eventId: item.id })}
+      >
+        {/* Indicateur visuel de statut */}
+        <View style={styles.statusIndicator} />
 
-  const renderItem = ({ item }) => {
-    const imageUrl =
-      item.photos?.length > 0
-        ? item.photos[0].url
-        : "https://via.placeholder.com/150";
+        <View style={styles.eventCardContent}>
+          {/* Section image et informations principales */}
+          <View style={styles.eventCardMainSection}>
+            {/* Affichage de l'image avec placeholder si besoin */}
+            <View style={styles.imageContainer}>
+              {Array.isArray(item.photos) && item.photos.length > 0 ? (
+                <Image
+                  source={{ uri: item.photos[0].url }}
+                  style={styles.eventImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.placeholderContainer}>
+                  <Ionicons name="calendar-outline" size={24} color="#CCCCCC" />
+                </View>
+              )}
+            </View>
 
-    const eventDate = item.date
-      ? new Date(item.date).toLocaleDateString()
-      : "Date non disponible";
-
-    return (
-      <View style={styles.eventCard}>
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("EventDetailsScreen", { eventId: item.id })
-          }
-        >
-          {/* Image de l'événement */}
-          <Image
-            source={{
-              uri: item.photos?.[0]?.url || "https://via.placeholder.com/150",
-            }}
-            style={styles.eventImage}
-            resizeMode="cover"
-          />
-
-          {/* Titre et description */}
-          <Text style={styles.eventTitle}>
-            {item.title || "Titre non disponible"}
-          </Text>
-          <Text style={styles.eventDescription} numberOfLines={2}>
-            {item.description || "Aucune description disponible"}
-          </Text>
-
-          {/* Pied de carte avec la date */}
-          <View style={styles.eventFooter}>
-            <Text style={styles.eventDate}>
-              L'événement est prévu pour le {eventDate}
-            </Text>
-            <Icon name="chevron-right" size={24} color="#CBCBCB" />
+            {/* Informations textuelles */}
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.eventDate}>
+                {new Date(item.date).toLocaleDateString()}
+              </Text>
+              <Text style={styles.eventDescription} numberOfLines={2}>
+                {item.description}
+              </Text>
+            </View>
           </View>
-        </TouchableOpacity>
 
-        {/* Boutons Modifier et Supprimer */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => openModal(item)}
-          >
-            <Text style={styles.editButtonText}>Modifier</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => confirmDelete(item.id)}
-          >
-            <Icon name="delete" size={24} color="#FF3B30" />
-          </TouchableOpacity>
+          {/* Actions */}
+          <View style={styles.eventActions}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => openModal(item)}
+            >
+              <Ionicons name="create-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.buttonText}>Modifier</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => confirmDelete(item.id)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.buttonText}>Supprimer</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    );
-  };
+      </TouchableOpacity>
+    </View>
+  ), []);
 
-  const toggleSidebar = () => {
+  // Gestion du sidebar
+  const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
-  };
+  }, []);
 
-  const confirmDelete = (eventId) => {
-    Alert.alert(
-      "Confirmer la suppression",
-      "Voulez-vous vraiment supprimer cet événement ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", onPress: () => deleteEvent(eventId) },
-      ]
-    );
-  };
-
-  const deleteEvent = async (eventId) => {
+  // Suppression d'un événement
+  const deleteEvent = useCallback(async (eventId: number) => {
     try {
-      const userId = await getUserId();
-      if (!userId) {
-        console.error("Impossible de récupérer l'ID utilisateur.");
-        return;
-      }
-
-      const response = await fetch(
-        `${API_URL}/events/${eventId}?userId=${userId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
+      const response = await fetch(`${API_URL}/events/${eventId}`, {
+        method: "DELETE",
+      });
       if (!response.ok) {
         throw new Error("Erreur lors de la suppression de l'événement.");
       }
@@ -251,14 +210,103 @@ export default function EventsScreen({ navigation }) {
       setEvents((prevEvents) =>
         prevEvents.filter((event) => event.id !== eventId)
       );
+      Alert.alert("Succès", "Événement supprimé avec succès");
     } catch (error) {
       console.error("Erreur lors de la suppression de l'événement :", error);
+      Alert.alert(
+        "Erreur",
+        "Impossible de supprimer l'événement. Veuillez réessayer."
+      );
     }
-  };
+  }, []);
 
-  const handleUseLocation = async () => {
-    if (loading) {
-      console.log("Chargement en cours, action ignorée.");
+  // Confirmation de suppression
+  const confirmDelete = useCallback((eventId: number) => {
+    Alert.alert(
+      "Confirmer la suppression",
+      "Voulez-vous vraiment supprimer cet événement ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          onPress: () => deleteEvent(eventId),
+          style: "destructive"
+        },
+      ]
+    );
+  }, [deleteEvent]);
+
+  // Ouverture du modal de modification
+  const openModal = useCallback((event: Event) => {
+    setCurrentEvent(event);
+    setIsAddressValidated(true); // Si on modifie un événement existant, l'adresse est déjà validée
+    setIsModalVisible(true);
+  }, []);
+
+  // Fermeture du modal de modification
+  const closeModal = useCallback(() => {
+    setIsModalVisible(false);
+    setCurrentEvent(null);
+    setIsAddressValidated(false);
+    // Assurez-vous que le modal de suggestion est également fermé lors de la fermeture du modal principal
+    setModalVisible(false);
+  }, []);
+
+  // Mise à jour d'un événement
+  const updateEventHandler = useCallback(async (updatedEvent: Event) => {
+    if (!updatedEvent) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const eventData = {
+        title: updatedEvent.title,
+        description: updatedEvent.description,
+        date: new Date(updatedEvent.date).toISOString(),
+        location: updatedEvent.location,
+        latitude: updatedEvent.latitude,
+        longitude: updatedEvent.longitude,
+        photos: updatedEvent.photos?.map((photo) => ({
+          url: photo.url,
+        })),
+      };
+
+      const response = await fetch(`${API_URL}/events/${updatedEvent.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erreur du serveur :", errorText);
+        throw new Error("Erreur lors de la mise à jour de l'événement.");
+      }
+
+      const data = await response.json();
+
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event.id === updatedEvent.id ? data : event))
+      );
+
+      Alert.alert("Succès", "Événement mis à jour avec succès");
+      closeModal();
+      // Plutôt que de dépendre de currentEvent, on déclenche explicitement le rafraîchissement
+      setShouldRefreshEvents(true);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour :", error);
+      Alert.alert("Erreur", "Impossible de mettre à jour l'événement");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [closeModal]);
+
+  // Utilisation de la position actuelle
+  const handleUseLocation = useCallback(async () => {
+    if (locationLoading) {
+      Alert.alert("Chargement", "Récupération de votre position en cours...");
       return;
     }
 
@@ -270,48 +318,62 @@ export default function EventsScreen({ navigation }) {
       return;
     }
 
+    // D'abord ouvrir le modal avec l'indicateur de chargement
+    setIsLoadingSuggestions(true);
+    setSuggestions([]);
+    setModalVisible(true);
+    
     try {
+      // Attendre un court délai pour garantir que le modal s'affiche avec le loader
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
-      console.log("Requête API pour reverse geocoding :", url);
 
       const response = await fetch(url);
       const data = await response.json();
 
-      if (data.results.length > 0) {
-        const address = data.results[0].formatted;
-
-        console.log("Adresse récupérée depuis OpenCage Data :", address);
-
+      if (data.results && data.results.length > 0) {
         setSuggestions(data.results);
-        setModalVisible(true);
       } else {
+        setSuggestions([]);
         Alert.alert("Erreur", "Impossible de déterminer l'adresse exacte.");
       }
     } catch (error) {
       console.error("Erreur lors du reverse geocoding :", error);
       Alert.alert(
         "Erreur",
-        "Une erreur est survenue lors de la récupération de l’adresse."
+        "Une erreur est survenue lors de la récupération de l'adresse."
       );
+      setModalVisible(false);
+    } finally {
+      setIsLoadingSuggestions(false);
     }
-  };
+  }, [location, locationLoading]);
 
-  const handleAddressSearch = async (city) => {
+  // Recherche d'adresse
+  const handleAddressSearch = useCallback(async (city: string) => {
     if (!city || !city.trim()) {
-      console.warn("Recherche annulée : champ ville vide.");
+      Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
       return;
     }
 
+    // D'abord ouvrir le modal avec l'indicateur de chargement
+    setIsLoadingSuggestions(true);
+    setSuggestions([]);
+    setModalVisible(true);
+    
     try {
+      // Attendre un court délai pour garantir que le modal s'affiche avec le loader
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         city
       )}&key=${OPEN_CAGE_API_KEY}`;
-      console.log("Requête API pour la recherche :", url);
 
       const response = await fetch(url);
       const data = await response.json();
 
-      if (data.results.length > 0) {
+      if (data.results && data.results.length > 0) {
         const sortedSuggestions = data.results.sort((a, b) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
@@ -319,94 +381,502 @@ export default function EventsScreen({ navigation }) {
         });
 
         setSuggestions(sortedSuggestions);
-        setModalVisible(true);
       } else {
         setSuggestions([]);
-        Alert.alert("Erreur", "Aucune adresse correspondante trouvée.");
       }
     } catch (error) {
-      console.error("Erreur lors de la recherche de l’adresse :", error);
-      Alert.alert("Erreur", "Impossible de rechercher l’adresse.");
+      console.error("Erreur lors de la recherche de l'adresse :", error);
+      Alert.alert("Erreur", "Impossible de rechercher l'adresse.");
+      setModalVisible(false);
+    } finally {
+      setIsLoadingSuggestions(false);
     }
-  };
+  }, []);
 
-  const extractPostalCode = (address) => {
+  // Extraction du code postal
+  const extractPostalCode = useCallback((address: string) => {
     const postalCodeMatch = address.match(/\b\d{5}\b/);
     return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
-  };
+  }, []);
 
-  const handleSuggestionSelect = (item: any) => {
+  // Sélection d'une suggestion d'adresse
+  const handleSuggestionSelect = useCallback((item: AddressSuggestion) => {
+    if (!currentEvent) return;
+
     if (item.geometry) {
       const { lat, lng } = item.geometry;
 
       const formattedLocation = item.formatted.replace(
-        /unnamed road/gi,
+        /unnamed road/g,
         "Route inconnue"
       );
 
-      setCurrentEvent((prevEvent) => {
-        if (!prevEvent) return prevEvent;
-        return {
-          ...prevEvent,
-          location: formattedLocation,
-          latitude: lat,
-          longitude: lng,
-        };
+      setCurrentEvent({
+        ...currentEvent,
+        location: formattedLocation,
+        latitude: lat,
+        longitude: lng,
       });
 
-      setModalVisible(false);
+      setIsAddressValidated(true);
+
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            latitude: lat,
+            longitude: lng,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          },
+          1000
+        );
+      }
     }
-  };
+
+    setModalVisible(false);
+  }, [currentEvent]);
+
+  // Validation des entrées
+  const isValidInput = useCallback(() => {
+    return (
+      (currentEvent?.title?.trim().length ?? 0) > 4 &&
+      (currentEvent?.description?.trim().length ?? 0) > 4 &&
+      !!currentEvent?.date &&
+      isAddressValidated
+    );
+  }, [currentEvent, isAddressValidated]);
+
+  // Obtention des erreurs de validation
+  const getValidationErrors = useCallback((): string[] => {
+    const errors: string[] = [];
+    if (!isAddressValidated) {
+      errors.push(
+        "Veuillez sélectionner une adresse en recherchant dans la liste."
+      );
+    }
+    if ((currentEvent?.title?.trim().length ?? 0) <= 4) {
+      errors.push("Le titre doit contenir au moins 5 caractères.");
+    }
+    if ((currentEvent?.description?.trim().length ?? 0) <= 4) {
+      errors.push("La description doit contenir au moins 5 caractères.");
+    }
+    if (!currentEvent?.date) {
+      errors.push("Veuillez sélectionner une date pour l'événement.");
+    }
+    return errors;
+  }, [isAddressValidated, currentEvent]);
+
+  // Rendu conditionnel pour l'état de chargement
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Chargement des événements...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerNav}>
-        <TouchableOpacity onPress={toggleSidebar}>
-          <Icon
-            name="menu"
-            size={24}
-            color="#FFFFFC"
-            style={{ marginLeft: 10 }}
-          />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={COLORS.primary}
+        translucent
+      />
+
+      {/* Header modernisé */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerIcon}
+          onPress={toggleSidebar}
+          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="menu-outline" size={26} color={COLORS.text.light} />
         </TouchableOpacity>
 
-        {/* Titre de la page */}
-        <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>MES ÉVÉNEMENTS</Text>
-        </View>
+        <Text style={styles.headerTitle}>MES ÉVÉNEMENTS</Text>
 
-        {/* Bouton de notifications avec compteur */}
         <TouchableOpacity
+          style={styles.headerIcon}
           onPress={() => navigation.navigate("NotificationsScreen")}
+          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          activeOpacity={0.8}
         >
           <View>
-            <Icon
-              name="notifications"
-              size={24}
-              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
-              style={{ marginRight: 10 }}
-            />
+            <Ionicons name="notifications-outline" size={26} color={COLORS.text.light} />
             {unreadCount > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
+                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </View>
             )}
           </View>
         </TouchableOpacity>
       </View>
 
-      {events.length === 0 ? (
-        <View style={styles.noEventsContainer}>
-          <Text style={styles.noEventsText}>Aucun événement trouvé.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={events}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.eventsList}
-        />
-      )}
+      {/* Contenu principal */}
+      <View style={styles.content}>
+        {events.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={90} color="#CCCCCC" />
+            <Text style={styles.emptyTitle}>Aucun événement</Text>
+            <Text style={styles.emptySubtitle}>
+              Vous n'avez pas encore créé d'événement dans votre espace personnel
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => navigation.navigate("CreateEventScreen")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.emptyButtonText}>Créer un événement</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={events}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          />
+        )}
+      </View>
+
+      {/* Modal de modification */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Modifier l'événement</Text>
+              <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
+                <Ionicons name="close" size={24} color={COLORS.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              {/* Titre */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Titre</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="bookmark-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Titre de l'événement"
+                    placeholderTextColor="#AAAAAA"
+                    value={currentEvent?.title || ""}
+                    onChangeText={(text) =>
+                      setCurrentEvent(prev => prev ? {...prev, title: text} : null)
+                    }
+                    maxLength={100}
+                  />
+                </View>
+              </View>
+
+              {/* Description */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Description</Text>
+                <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                  <Ionicons
+                    name="create-outline"
+                    size={20}
+                    color="#AAAAAA"
+                    style={[styles.inputIcon, {alignSelf: 'flex-start', marginTop: 10}]}
+                  />
+                  <TextInput
+                    style={styles.textArea}
+                    placeholder="Description de l'événement"
+                    placeholderTextColor="#AAAAAA"
+                    value={currentEvent?.description || ""}
+                    onChangeText={(text) =>
+                      setCurrentEvent(prev => prev ? {...prev, description: text} : null)
+                    }
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+
+              {/* Date */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Date de l'événement</Text>
+                <TouchableOpacity 
+                  style={styles.datePickerButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                  <Text style={styles.datePickerText}>
+                    {currentEvent?.date 
+                      ? new Date(currentEvent.date).toLocaleString() 
+                      : "Sélectionnez une date et heure"}
+                  </Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={new Date(currentEvent?.date || Date.now())}
+                    mode="datetime"
+                    display="default"
+                    onChange={(event, date) => {
+                      setShowDatePicker(false);
+                      if (date) {
+                        setCurrentEvent((prev) =>
+                          prev ? { ...prev, date: date.toISOString() } : null
+                        );
+                      }
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Localisation */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Adresse</Text>
+                <View style={styles.locationContainer}>
+                  <View style={styles.addressInputWrapper}>
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="location-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Adresse de l'événement"
+                        placeholderTextColor="#AAAAAA"
+                        value={currentEvent?.location || ""}
+                        onChangeText={(text) => {
+                          if (currentEvent) {
+                            // Mise à jour du texte sans ouvrir le modal
+                            setCurrentEvent({...currentEvent, location: text});
+                            
+                            // Ne réinitialise l'état de validation que si le texte change vraiment
+                            if (text !== currentEvent.location) {
+                              setIsAddressValidated(false);
+                            }
+                          }
+                        }}
+                        // Désactiver l'auto-correction et les suggestions pour éviter les problèmes
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                        // Désactiver la soumission automatique
+                        returnKeyType="done"
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.locationButtons}>
+                    <TouchableOpacity
+                      style={styles.searchButton}
+                      onPress={() => {
+                        if (currentEvent && currentEvent.location.trim()) {
+                          handleAddressSearch(currentEvent.location);
+                        } else {
+                          Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
+                        }
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="search" size={18} color="#FFF" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.locationButton}
+                      onPress={handleUseLocation}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="locate" size={18} color="#FFF" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.validatedAddressContainer}>
+                  {isAddressValidated ? (
+                    <>
+                      <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                      <Text style={styles.validatedAddressText}>Adresse validée</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="close-circle" size={16} color={COLORS.danger} />
+                      <Text style={styles.invalidAddressText}>Adresse non validée</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+
+              {/* Carte */}
+              {currentEvent?.latitude && currentEvent?.longitude && (
+                <View style={styles.mapContainer}>
+                  <MapView
+                    ref={mapRef}
+                    style={styles.map}
+                    initialRegion={{
+                      latitude: currentEvent.latitude,
+                      longitude: currentEvent.longitude,
+                      latitudeDelta: 0.005,
+                      longitudeDelta: 0.005,
+                    }}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: currentEvent.latitude,
+                        longitude: currentEvent.longitude,
+                      }}
+                      pinColor="red"
+                      title="Position de l'événement"
+                    />
+                  </MapView>
+                </View>
+              )}
+
+              {/* Photos */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Photos</Text>
+                <PhotoManager
+                  photos={
+                    currentEvent?.photos?.map((photo, index) => {
+                      return { id: index.toString(), uri: photo.url };
+                    }) || []
+                  }
+                  setPhotos={(newPhotos) => {
+                    setCurrentEvent({
+                      ...currentEvent,
+                      photos: newPhotos.map((photo) => ({
+                        url: photo.uri || photo.url,
+                      })),
+                    } as Event);
+                  }}
+                />
+              </View>
+
+              {/* Actions */}
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[
+                    styles.saveButton,
+                    (!isValidInput() || isSubmitting) && styles.disabledButton
+                  ]}
+                  onPress={() => {
+                    if (isValidInput() && !isSubmitting && currentEvent) {
+                      updateEventHandler(currentEvent);
+                    } else if (!isSubmitting) {
+                      const errors = getValidationErrors();
+                      Alert.alert("Validation requise", errors.join("\n"));
+                    }
+                  }}
+                  disabled={!isValidInput() || isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="save-outline" size={20} color="#FFFFFF" style={{marginRight: 8}} />
+                      <Text style={styles.actionButtonText}>Enregistrer</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={closeModal}
+                  disabled={isSubmitting}
+                >
+                  <Ionicons name="close-circle-outline" size={20} color="#FFFFFF" style={{marginRight: 8}} />
+                  <Text style={styles.actionButtonText}>Annuler</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+
+        {/* Modal d'adresses - Maintenant à l'intérieur du modal principal pour un meilleur z-index */}
+        {modalVisible && (
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View style={styles.addressModalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.suggestionsContent}>
+                  <View style={styles.suggestionsHeader}>
+                    <Text style={styles.suggestionsTitle}>Sélectionnez une adresse</Text>
+                    <TouchableOpacity
+                      style={styles.closeSuggestionsButton}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Ionicons name="close" size={22} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <ScrollView
+                    style={styles.suggestionsList}
+                    contentContainerStyle={suggestions.length === 0 ? styles.emptyContentContainer : null}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {isLoadingSuggestions && (
+                      <View style={styles.loaderContainer}>
+                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <Text style={styles.loaderText}>Recherche d'adresses...</Text>
+                      </View>
+                    )}
+                    
+                    {!isLoadingSuggestions && suggestions.length === 0 ? (
+                      <View style={styles.emptyContentContainer}>
+                        <Ionicons name="location-outline" size={56} color="#CCCCCC" />
+                        <Text style={styles.noSuggestionsText}>
+                          Aucune adresse trouvée pour cette recherche
+                        </Text>
+                      </View>
+                    ) : (
+                      !isLoadingSuggestions && suggestions.map((item, index) => (
+                        <TouchableOpacity
+                          key={`${item.formatted}-${index}`}
+                          style={[
+                            styles.suggestionItem,
+                            index % 2 === 0 ? {backgroundColor: "#FFFFFF"} : {backgroundColor: "#FAFAFA"}
+                          ]}
+                          onPress={() => handleSuggestionSelect(item)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.suggestionIconContainer}>
+                            <Ionicons name="location" size={20} color="#FFFFFF" />
+                          </View>
+                          <Text style={styles.suggestionText}>{item.formatted}</Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
+
+                  <TouchableOpacity
+                    style={styles.closeModalFullButton}
+                    onPress={() => setModalVisible(false)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.closeModalButtonText}>Fermer</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        )}
+      </Modal>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate("CreateEventScreen")}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={26} color="#FFFFFF" />
+      </TouchableOpacity>
+
       <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -416,167 +886,10 @@ export default function EventsScreen({ navigation }) {
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
         onNavigateToCity={() => {
-          /* TODO : remplacer par une navigation appropriée si besoin */
+          /* TODO : remplacer par une navigation appropriée si besoin */
         }}
         updateProfileImage={updateProfileImage}
       />
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={closeModal}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Modifier l'événement</Text>
-
-              {/* Champ Titre */}
-              <TextInput
-                style={styles.inputTitle}
-                placeholder="Titre"
-                value={currentEvent?.title || ""}
-                onChangeText={(text) =>
-                  setCurrentEvent((prev) =>
-                    prev ? { ...prev, title: text } : null
-                  )
-                }
-              />
-
-              {/* Champ Description */}
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Description"
-                value={currentEvent?.description || ""}
-                onChangeText={(text) =>
-                  setCurrentEvent((prev) =>
-                    prev ? { ...prev, description: text } : null
-                  )
-                }
-                multiline
-              />
-
-              {/* Champ Date */}
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.datePickerText}>
-                  {currentEvent?.date
-                    ? new Date(currentEvent.date).toLocaleString()
-                    : "Sélectionnez une date"}
-                </Text>
-              </TouchableOpacity>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={new Date(currentEvent?.date || Date.now())}
-                  mode="datetime"
-                  display="default"
-                  onChange={(event, date) => {
-                    setShowDatePicker(false);
-                    if (date) {
-                      setCurrentEvent((prev) =>
-                        prev ? { ...prev, date: date.toISOString() } : null
-                      );
-                    }
-                  }}
-                />
-              )}
-
-              {/* Champ Lieu */}
-              <View style={styles.inputWithButton}>
-                <TextInput
-                  style={styles.inputSearch}
-                  placeholder="Rechercher une adresse"
-                  value={currentEvent?.location || ""}
-                  placeholderTextColor="#c7c7c7"
-                  onChangeText={(text) => {
-                    setCurrentEvent((prev) =>
-                      prev ? { ...prev, location: text } : null
-                    );
-                  }}
-                />
-                <TouchableOpacity
-                  style={styles.searchButton}
-                  onPress={() =>
-                    currentEvent && handleAddressSearch(currentEvent.location)
-                  }
-                >
-                  <Ionicons name="search-sharp" size={18} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.rowButtonLocation}
-                  onPress={handleUseLocation}
-                >
-                  <Ionicons name="location-sharp" size={18} color="#fff" />
-                </TouchableOpacity>
-              </View>
-              {/* Suggestions d'adresses */}
-              <Modal
-                visible={modalVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setModalVisible(false)}
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
-                    <ScrollView>
-                      {suggestions.map((item, index) => (
-                        <TouchableOpacity
-                          key={`${item.formatted}-${index}`}
-                          style={styles.suggestionItem}
-                          onPress={() => handleSuggestionSelect(item)}
-                        >
-                          <Text style={styles.suggestionText}>
-                            {item.formatted}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                </View>
-              </Modal>
-              {/* Gestion des photos */}
-              <Text style={styles.photoSectionTitle}>Photos</Text>
-              <PhotoManager
-                photos={
-                  currentEvent?.photos?.map((photo, index) => ({
-                    id: index.toString(), // Assign a unique id for each photo
-                    uri: photo.url,
-                  })) || []
-                }
-                setPhotos={(newPhotos) => {
-                  setCurrentEvent((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          photos: newPhotos.map((photo) => ({
-                            url: photo.uri || "",
-                          })),
-                        }
-                      : null
-                  );
-                }}
-              />
-              {/* Boutons */}
-              <View style={styles.buttonsContainer}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={closeModal}
-                >
-                  <Text style={styles.cancelButtonText}>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={() => updateEventHandler(currentEvent)}
-                >
-                  <Text style={styles.saveButtonText}>Enregistrer</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 }
@@ -584,288 +897,570 @@ export default function EventsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: COLORS.background,
   },
-  headerNav: {
+
+  // État de chargement
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: COLORS.text.secondary,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 20,
+    height: 200,
+  },
+  loaderText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+
+  // Header styles - modernisés
+  header: {
+    backgroundColor: COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#062C41",
-    paddingVertical: 10,
+    paddingTop: Platform.OS === 'ios' ? 55 : 45,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    paddingTop: 45,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
-  headerTitleNav: {
-    fontSize: 20,
-    padding: 5,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    color: "#FFFFFC",
-
-    letterSpacing: 2,
-    fontWeight: "bold",
-    fontFamily: "Insanibc",
-  },
-  typeBadgeNav: {
-    flexDirection: "row",
-    alignItems: "center",
+  headerIcon: {
+    width: 42,
+    height: 42,
     justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 21,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+  },
+  headerTitle: {
+    fontSize: 19,
+    fontWeight: "700",
+    color: COLORS.text.light,
+    letterSpacing: 1,
   },
   badge: {
     position: "absolute",
-    top: -7,
-    right: 2,
-    backgroundColor: "red",
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.danger,
+    width: 20,
+    height: 20,
     borderRadius: 10,
-    width: 15,
-    height: 15,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   badgeText: {
-    color: "white",
-    fontSize: 12,
+    color: "#FFFFFF",
+    fontSize: 11,
     fontWeight: "bold",
   },
 
-  eventsList: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+  // Content & List styles - améliorés
+  content: {
+    flex: 1,
+    backgroundColor: '#F2F5F8', // Légère teinte bleutée pour le fond
   },
+  listContainer: {
+    padding: 20,
+    paddingBottom: 90, // Espace pour le FAB
+  },
+
+  // Event card styles - Nouveau design modernisé
   eventCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 3,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: "#E8E8E8",
+    borderColor: 'rgba(0,0,0,0.03)',
   },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 5,
+  eventCardTouchable: {
+    backgroundColor: COLORS.card,
   },
-  eventDescription: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 10,
+  statusIndicator: {
+    height: 5,
+    backgroundColor: COLORS.secondary,
+    width: '40%',
+    borderBottomRightRadius: 8,
+  },
+  eventCardContent: {
+    padding: 16,
+  },
+  eventCardMainSection: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  imageContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#F5F5F5",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  placeholderContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
   },
   eventImage: {
     width: "100%",
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 10,
+    height: "100%",
   },
-  eventFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#E8E8E8",
-    paddingTop: 10,
-    marginBottom: 5,
+  eventInfo: {
+    flex: 1,
+    marginLeft: 16,
+    justifyContent: 'space-between',
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text.primary,
+    marginBottom: 6,
   },
   eventDate: {
-    fontSize: 12,
-    color: "#999999",
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    marginBottom: 8,
+    paddingLeft: 20,
+    position: 'relative',
+  },
+  eventDescription: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    lineHeight: 21,
+  },
+  eventActions: {
+    flexDirection: "row",
+    marginTop: 20,
+    justifyContent: 'flex-end',
+  },
+  editButton: {
+    backgroundColor: COLORS.secondary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginRight: 10,
+    elevation: 2,
+    shadowColor: COLORS.secondary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  deleteButton: {
+    backgroundColor: COLORS.danger,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: COLORS.danger,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
   },
 
-  noEventsContainer: {
+  // Empty state
+  emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 32,
   },
-  noEventsText: {
-    fontSize: 16,
-    color: "#888888",
-    textAlign: "center",
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.text.primary,
+    marginTop: 16,
   },
-
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  editButton: {
-    backgroundColor: "#2196F3",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: "#FFFFFF",
+  emptySubtitle: {
     fontSize: 14,
-    fontWeight: "bold",
+    color: COLORS.text.secondary,
+    textAlign: "center",
+    marginTop: 8,
   },
-  deleteButton: {
-    backgroundColor: "#FFF5F5",
-    padding: 8,
+  emptyButton: {
+    backgroundColor: COLORS.primary,
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
-    shadowColor: "#FF3B30",
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  photoSectionTitle: {
+  emptyButtonText: {
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
+    fontWeight: "600",
+    marginLeft: 8,
   },
 
+  // Modal principal
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    padding: 20,
-    width: "90%",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     maxHeight: "90%",
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  inputTitle: {
-    width: "100%",
-    height: 50,
-    maxHeight: 50,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 30,
-    paddingHorizontal: 15,
-    paddingLeft: 30,
-    marginBottom: 25,
-    fontSize: 16,
-    color: "#333",
-    overflow: "hidden",
-  },
-  input: {
-    width: "100%",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    paddingLeft: 25,
-    paddingTop: 20,
-    fontSize: 16,
-    color: "#333",
-    overflow: "hidden",
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  datePickerButton: {
-    borderRadius: 30,
-    padding: 15,
-    marginTop: 15,
-    marginBottom: 15,
-    backgroundColor: "#f5f5f5",
-  },
-  datePickerText: {
-    color: "#555555",
-    fontSize: 14,
-  },
-  previewImage: {
-    width: "100%",
-    height: 150,
-    borderRadius: 8,
-    marginVertical: 10,
-  },
-  buttonsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  cancelButton: {
-    backgroundColor: "#FF5252",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  cancelButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  saveButton: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  saveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  inputWithButton: {
+  modalHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  inputSearch: {
-    height: 50,
-    textAlignVertical: "center",
-    paddingHorizontal: 10,
-    paddingLeft: 20,
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text.primary,
+  },
+  closeModalButton: {
+    padding: 4,
+    height: 40,
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScroll: {
+    maxHeight: height * 0.8,
+  },
+  modalScrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
 
-    backgroundColor: "#f5f5f5",
-    width: "65%",
-    borderRadius: 30,
+  // Styles pour l'overlay du modal d'adresses (nouveau)
+  addressModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+
+  // Form styles
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.text.primary,
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F8F8",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EFEFEF",
+    height: 50,
+    paddingHorizontal: 12,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    height: "100%",
     fontSize: 16,
-    color: "#333",
-    marginTop: 10,
+    color: COLORS.text.primary,
+  },
+  textAreaContainer: {
+    height: 120,
+    alignItems: "flex-start",
+    paddingVertical: 10,
+  },
+  textArea: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.text.primary,
+    textAlignVertical: "top",
+    height: "100%",
+    width: "100%",
+  },
+  // Style pour l'icône de suggestion d'adresse
+  suggestionIconContainer: {
+    width: 32, 
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  // Location styles
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: '100%',
+  },
+  addressInputWrapper: {
+    flex: 1,
+  },
+  locationButtons: {
+    flexDirection: "row",
+    marginLeft: 8,
   },
   searchButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "#34495E",
-    alignItems: "center",
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
     justifyContent: "center",
-    marginLeft: 10,
-    marginTop: 10,
+    alignItems: "center",
   },
-  rowButtonLocation: {
+  locationButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "#EDAE49",
-    alignItems: "center",
+    borderRadius: 8,
+    backgroundColor: COLORS.secondary,
     justifyContent: "center",
-    marginLeft: 10,
-    marginTop: 10,
+    alignItems: "center",
+    marginLeft: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    paddingVertical: 50,
-    justifyContent: "center",
+  validatedAddressContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    marginTop: 8,
+  },
+  validatedAddressText: {
+    fontSize: 13,
+    color: COLORS.success,
+    marginLeft: 6,
+  },
+  invalidAddressText: {
+    fontSize: 13,
+    color: COLORS.danger,
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+
+  // Date styles
+  datePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F8F8",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EFEFEF",
+    height: 50,
+    paddingHorizontal: 12,
+  },
+  datePickerText: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.text.primary,
+  },
+
+  // Carte dans le modal
+  mapContainer: {
+    height: 200,
+    marginBottom: 20,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+
+  // Action buttons
+  modalActions: {
+    marginVertical: 16,
+  },
+  saveButton: {
+    backgroundColor: COLORS.success,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  cancelButton: {
+    backgroundColor: COLORS.danger,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  disabledButton: {
+    backgroundColor: "#BBBBBB",
+  },
+
+  // Suggestions modal - Avec z-index élevé et style amélioré
+  suggestionsContent: {
+    width: width * 0.92,
+    maxHeight: height * 0.7,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    overflow: "hidden",
+    zIndex: 1100,
+    elevation: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  suggestionsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.primary,
+  },
+  suggestionsTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  closeSuggestionsButton: {
+    padding: 4,
+    height: 36,
+    width: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 18,
+  },
+  suggestionsList: {
+    maxHeight: height * 0.5,
+    paddingTop: 8,
   },
   suggestionItem: {
-    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: "#F0F0F0",
+    backgroundColor: "#FFFFFF",
   },
   suggestionText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#333",
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.text.primary,
+    lineHeight: 22,
+  },
+  emptyContentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+    paddingHorizontal: 20,
+  },
+  noSuggestionsText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  closeModalFullButton: {
+    backgroundColor: COLORS.secondary,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginVertical: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  closeModalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+
+  // FAB
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
 });
