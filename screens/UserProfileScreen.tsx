@@ -14,9 +14,7 @@ import {
 } from "../hooks/profile/index";
 import { useUserRanking } from "../hooks/user/useUserRanking";
 
-import {
-  BadgeModal,
-} from "../components/home/modals";
+import { BadgeModal } from "../components/home/modals";
 
 // Composants
 import {
@@ -250,44 +248,46 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
       />
 
       <ScrollView contentContainerStyle={profileStyles.container}>
-      <SectionProfile
-        user={{
-          username: rawUser?.username || "",
-          fullName: displayName,
-          avatar: rawUser?.profilePhoto?.url,
-          verified: true,
-          followers: rawUser?.followers?.length || 0,
-          following: rawUser?.following?.length || 0,
-          reports: stats?.numberOfReports || 0,
-          location: rawUser?.nomCommune || "",
-          memberSince: new Date(rawUser?.createdAt || Date.now()).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }),
-          isPremium: rawUser?.isSubscribed || false,
-          ranking: rawUser?.ranking || null,
-        }}
-        isCurrentUser={
-          userId != null &&
-          currentUserId != null &&
-          String(userId) === String(currentUserId)
-        }
-        onEditProfile={() => navigation.navigate("ProfileScreen")}
-        onFollowUser={handleFollowWithSubmitting}
-        onUnfollowUser={handleUnfollowWithSubmitting} // Ajout de la prop pour se désabonner
-        isFollowing={isFollowing} // Ajout de la prop pour gérer l'état
-        onMessageUser={() =>
-          navigation.navigate("ChatScreen", {
-            receiverId: userId,
-            senderId: currentUserId,
-          })
-        }
-        ranking={rawUser?.ranking || null}
-        rankingSuffix={rankingSuffix}
-        totalUsers={totalUsers ?? undefined}
-        onNavigateToRanking={navigateToRanking}
-        badgeStyle={badgeStyle}
-        onShowBadgeModal={() => setShowBadgeModal(true)}
-        cityName={rawUser?.nomCommune || ""}
-      />
-      
+        <SectionProfile
+          user={{
+            username: rawUser?.username || "",
+            fullName: displayName,
+            avatar: rawUser?.profilePhoto?.url,
+            verified: true,
+            followers: rawUser?.followers?.length || 0,
+            following: rawUser?.following?.length || 0,
+            reports: stats?.numberOfReports || 0,
+            location: rawUser?.nomCommune || "",
+            memberSince: new Date(
+              rawUser?.createdAt || Date.now()
+            ).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }),
+            isPremium: rawUser?.isSubscribed || false,
+            ranking: rawUser?.ranking || null,
+          }}
+          isCurrentUser={
+            userId != null &&
+            currentUserId != null &&
+            String(userId) === String(currentUserId)
+          }
+          onEditProfile={() => navigation.navigate("ProfileScreen")}
+          onFollowUser={handleFollowWithSubmitting}
+          onUnfollowUser={handleUnfollowWithSubmitting} // Ajout de la prop pour se désabonner
+          isFollowing={isFollowing} // Ajout de la prop pour gérer l'état
+          onMessageUser={() =>
+            navigation.navigate("ChatScreen", {
+              receiverId: userId,
+              senderId: currentUserId,
+            })
+          }
+          ranking={rawUser?.ranking || null}
+          rankingSuffix={rankingSuffix}
+          totalUsers={totalUsers ?? undefined}
+          onNavigateToRanking={navigateToRanking}
+          badgeStyle={badgeStyle}
+          onShowBadgeModal={() => setShowBadgeModal(true)}
+          cityName={rawUser?.nomCommune || ""}
+        />
+
         <ProfilePhoto
           photoUrl={rawUser?.profilePhoto?.url}
           ranking={rawUser?.ranking || 999999}
@@ -301,7 +301,11 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
           onClose={() => {}} // Provide a default onClose handler
         />
 
-        <ProfileTabs selectedTab={selectedTab} onSelectTab={setSelectedTab} userId={userId} />
+        <ProfileTabs
+          selectedTab={selectedTab}
+          onSelectTab={setSelectedTab}
+          userId={userId}
+        />
 
         {selectedTab === "info" && (
           <UserInfoTab
@@ -350,11 +354,11 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
         }}
       />
 
-<BadgeModal
-          visible={showBadgeModal}
-          onClose={() => setShowBadgeModal(false)}
-          userVotes={stats?.votes?.length || 0}
-        />
+      <BadgeModal
+        visible={showBadgeModal}
+        onClose={() => setShowBadgeModal(false)}
+        userVotes={stats?.votes?.length || 0}
+      />
     </View>
   );
 };

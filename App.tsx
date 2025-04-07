@@ -217,6 +217,17 @@ export default function App() {
     };
   });
 
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  
+  // Ce useEffect gère le minuteur de 3 secondes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true);
+    }, 3000); // 3 secondes
+    
+    return () => clearTimeout(timer); // Nettoyage
+  }, []);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -783,7 +794,7 @@ export default function App() {
   }
 
   // Enhanced splash screen with brand styling
-  if (loading) {
+  if (loading || !minTimeElapsed) {
     return (
       <View style={styles.initialLoadingContainer}>
         <LinearGradient

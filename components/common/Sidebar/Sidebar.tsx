@@ -402,7 +402,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           color={THEME.colors.neutral.white}
         />
       ),
-      label: "Fil d'actualité",
+      label: "Tableau de bord",
       screen: "Main",
     },
     {
@@ -441,12 +441,12 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     {
       icon: (
         <FontAwesome5
-          name="bell"
+          name="bullhorn"
           size={18}
           color={THEME.colors.neutral.white}
         />
       ),
-      label: "Mes notifications",
+      label: "Mes signalements",
       screen: "ReportScreen",
     },
     {
@@ -457,7 +457,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
           color={THEME.colors.neutral.white}
         />
       ),
-      label: "Événements",
+      label: "Mes événements",
       screen: "EventsScreen",
     },
   ];
