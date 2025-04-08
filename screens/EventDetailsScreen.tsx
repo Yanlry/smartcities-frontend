@@ -4,7 +4,6 @@ import {
   Text,
   Image,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
@@ -47,6 +46,7 @@ const COLORS = {
     secondary: ["#FF9800", "#FFB547"] as readonly [string, string],
     success: ["#4CAF50", "#66BB6A"] as readonly [string, string],
     danger: ["#f44336", "#EF5350"] as readonly [string, string],
+    disabled: ["#9E9E9E", "#BDBDBD"] as readonly [string, string],
   },
   text: {
     primary: "#333333",
@@ -73,7 +73,7 @@ interface Participant {
   firstName: string;
   lastName: string;
   username: string;
-  photos: { url: string }[];
+  photos?: { url: string }[];
   useFullName: boolean;
 }
 
@@ -101,6 +101,7 @@ export default function EventDetails({ route }) {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [autoPlayInterval, setAutoPlayInterval] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [isOrganizer, setIsOrganizer] = useState(false);
 
   const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
 
@@ -146,6 +147,26 @@ export default function EventDetails({ route }) {
     return { dayMonth, year, time };
   }, []);
 
+  // Fonction pour obtenir la photo de l'organisateur
+  const getOrganizerPhotoUrl = useCallback((event: Event): string => {
+    // Maintenant que le backend inclut les photos dans l'objet organizer
+    if (event.organizer?.photos?.[0]?.url) {
+      return event.organizer.photos[0].url;
+    }
+    
+    // Chercher l'organisateur dans la liste des participants comme fallback
+    const organizerInAttendees = event.attendees.find(
+      attendee => attendee.user.id === event.organizer.id
+    );
+    
+    if (organizerInAttendees?.user?.photos?.[0]?.url) {
+      return organizerInAttendees.user.photos[0].url;
+    }
+    
+    // Fallback sur une image par défaut
+    return "https://via.placeholder.com/50";
+  }, []);
+
   // Effet pour récupérer l'ID utilisateur
   useEffect(() => {
     const fetchUserId = async () => {
@@ -172,6 +193,18 @@ export default function EventDetails({ route }) {
         const url = `${API_URL}/events/${eventId}`;
         const response = await axios.get(url);
         setEvent(response.data);
+        
+        // Vérifier si l'utilisateur actuel est l'organisateur
+        if (currentUserId && response.data.organizer) {
+          const isUserOrganizer = response.data.organizer.id === currentUserId;
+          setIsOrganizer(isUserOrganizer);
+          
+          // Si l'utilisateur est l'organisateur, on le considère automatiquement comme inscrit
+          if (isUserOrganizer) {
+            setIsRegistered(true);
+          }
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error("Erreur lors du chargement des détails de l'événement :", error);
@@ -316,6 +349,16 @@ export default function EventDetails({ route }) {
       return;
     }
 
+    // Vérifier si l'utilisateur est l'organisateur
+    if (isOrganizer) {
+      Alert.alert(
+        "Action impossible",
+        "En tant qu'organisateur, vous ne pouvez pas vous désinscrire de votre propre événement.",
+        [{ text: "Compris" }]
+      );
+      return;
+    }
+
     try {
       animateButton();
       setIsLoading(true);
@@ -342,12 +385,21 @@ export default function EventDetails({ route }) {
         };
       });
     } catch (error) {
-      console.error("Erreur lors de la désinscription :", error);
-      Alert.alert("Erreur", "Une erreur est survenue lors de la désinscription.");
+      // Vérifier si l'erreur est liée à une tentative de désinscription de l'organisateur
+      if (error.response?.status === 403) {
+        Alert.alert(
+          "Action impossible",
+          "En tant qu'organisateur, vous ne pouvez pas vous désinscrire de votre propre événement.",
+          [{ text: "Compris" }]
+        );
+      } else {
+        console.error("Erreur lors de la désinscription :", error);
+        Alert.alert("Erreur", "Une erreur est survenue lors de la désinscription.");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [currentUserId, eventId, animateButton]);
+  }, [currentUserId, eventId, animateButton, isOrganizer]);
 
   // Fonction pour naviguer vers le profil d'un utilisateur
   const navigateToUserProfile = useCallback((userId: string) => {
@@ -515,14 +567,6 @@ export default function EventDetails({ route }) {
             />
           ))}
         </View>
-        <View style={styles.dateBadge}>
-            <View style={styles.dateTop}>
-              <Text style={styles.dateDay}>{typeof eventDate === 'object' ? eventDate.dayMonth : 'N/A'}</Text>
-            </View>
-            <View style={styles.dateBottom}>
-              <Text style={styles.dateTime}>{typeof eventDate === 'object' ? eventDate.time : 'N/A'}</Text>
-            </View>
-          </View>
       </Animated.View>
       
       <Animated.ScrollView
@@ -535,7 +579,7 @@ export default function EventDetails({ route }) {
         scrollEventThrottle={16}
       >
         {/* Espace pour compenser la hauteur du header */}
-        <View style={{ height: 320 }} />
+        <View style={{ height: 390 }} />
         
         {/* Contenu principal */}
         <View style={styles.mainContent}>
@@ -554,7 +598,7 @@ export default function EventDetails({ route }) {
               >
                 <Image 
                   source={{ 
-                    uri: event.organizer?.photos?.[0]?.url || "https://via.placeholder.com/50" 
+                    uri: getOrganizerPhotoUrl(event)
                   }} 
                   style={styles.organizerPhoto} 
                 />
@@ -589,7 +633,23 @@ export default function EventDetails({ route }) {
               transform: [{ scale: animatedButtonScale }],
               flex: 2
             }}>
-              {isRegistered ? (
+              {isOrganizer ? (
+                // Si l'utilisateur est l'organisateur, afficher le bouton Organisateur
+                <View
+                  style={styles.organizerOnlyButton}
+                >
+                  <LinearGradient
+                    colors={COLORS.gradient.secondary as readonly [string, string]}
+                    style={styles.buttonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="star" size={20} color="#FFF" />
+                    <Text style={styles.actionButtonText}>Organisateur</Text>
+                  </LinearGradient>
+                </View>
+              ) : isRegistered ? (
+                // Si l'utilisateur est inscrit mais n'est pas l'organisateur
                 <TouchableOpacity
                   style={styles.unregisterButton}
                   onPress={unregisterFromEvent}
@@ -613,6 +673,7 @@ export default function EventDetails({ route }) {
                   </LinearGradient>
                 </TouchableOpacity>
               ) : (
+                // Si l'utilisateur n'est ni l'organisateur ni inscrit
                 <TouchableOpacity
                   style={styles.registerButton}
                   onPress={registerForEvent}
@@ -717,16 +778,26 @@ export default function EventDetails({ route }) {
                 contentContainerStyle={styles.participantsList}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.participantItem}
+                    style={[
+                      styles.participantItem,
+                      item.user.id === event.organizer.id && styles.organizerParticipantItem
+                    ]}
                     onPress={() => navigateToUserProfile(item.user.id.toString())}
                     activeOpacity={0.7}
                   >
-                    <Image
-                      source={{
-                        uri: item.user.photos?.[0]?.url || "https://via.placeholder.com/60"
-                      }}
-                      style={styles.participantImage}
-                    />
+                    <View style={styles.participantImageContainer}>
+                      <Image
+                        source={{
+                          uri: item.user.photos?.[0]?.url || "https://via.placeholder.com/60"
+                        }}
+                        style={styles.participantImage}
+                      />
+                      {item.user.id === event.organizer.id && (
+                        <View style={styles.organizerBadge}>
+                          <Ionicons name="star" size={12} color="#FFF" />
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.participantName} numberOfLines={1}>
                       {getDisplayName(item.user)}
                     </Text>
@@ -753,8 +824,8 @@ export default function EventDetails({ route }) {
         </View>
       </Animated.ScrollView>
       
-      {/* Bouton flottant d'inscription rapide (visible seulement en mode non inscrit) */}
-      {!isRegistered && (
+      {/* Bouton flottant d'inscription rapide (visible seulement en mode non inscrit et pour les non-organisateurs) */}
+      {!isRegistered && !isOrganizer && (
         <View style={styles.floatingButtonContainer}>
           <TouchableOpacity
             style={styles.floatingButton}
@@ -791,162 +862,156 @@ export default function EventDetails({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F4F7",
+    backgroundColor: COLORS.background,
   },
-  
-  // Header et image
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 16,
+    color: COLORS.text.secondary,
+    fontSize: 16,
+  },
   header: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    overflow: 'hidden',
-    zIndex: 2, // Réduit pour que les autres éléments puissent passer au-dessus
+    backgroundColor: COLORS.primary,
+    zIndex: 10,
   },
-  navigationBar: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 40,
+  imageContainer: {
+    position: "absolute",
+    top: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 100,
+    bottom: 0,
+    zIndex: 5,
+    overflow: "hidden",
+  },
+  imageBackground: {
+    width: Dimensions.get("window").width,
+    height: "100%",
+  },
+  imageGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  navigationBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingHorizontal: 20,
+    zIndex: 20,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    marginRight: 10,
   },
   headerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   headerActionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     marginLeft: 10,
   },
-  imageContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    zIndex: 1,
-  },
-  imageBackground: {
-    width,
-    height: '100%',
-  },
-  imageGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: '100%',
-  },
   paginationContainer: {
-    position: 'absolute',
-    bottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-    zIndex: 100,
+    position: "absolute",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    bottom: 16,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: '#FFFFFF',
-    width: 24,
+    backgroundColor: COLORS.secondary,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  
-  // Contenu principal
-  scrollContent: {
-    paddingBottom: 40,
-    zIndex: 3,
-  },
-  mainContent: {
-    backgroundColor: COLORS.background,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    marginTop: -30, // Ajusté pour être plus proche de l'image
-    paddingHorizontal: 20,
-    paddingTop: 40, // Augmenté pour donner plus d'espace au badge de date
-    paddingBottom: 100,
-    minHeight: height,
-    position: 'relative', // Pour le positionnement correct des éléments absolus
-    zIndex: 5, // S'assurer que le contenu est au-dessus de l'image
-  },
-  
-  // Badge de date
   dateBadge: {
-    position: 'absolute',
-    bottom: 5,
+    position: "absolute",
     right: 20,
+    bottom: 20,
+    zIndex: 20,
+    backgroundColor: COLORS.secondary,
+    borderRadius: 8,
+    overflow: "hidden",
     width: 80,
-    height: 80,
-    borderRadius: 15,
-    overflow: 'hidden',
-    elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    zIndex: 10, // S'assurer que le badge est au-dessus de tout
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
   dateTop: {
-    height: '70%',
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: COLORS.secondary,
+    paddingVertical: 5,
+    alignItems: "center",
   },
   dateDay: {
     color: COLORS.text.light,
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: "700",
   },
   dateBottom: {
-    height: '30%',
-    backgroundColor: COLORS.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    paddingVertical: 3,
+    alignItems: "center",
   },
   dateTime: {
     color: COLORS.text.light,
     fontSize: 12,
-    fontWeight: 'bold',
   },
-  
-  // Titre et Organisateur
+  scrollContent: {
+    backgroundColor: COLORS.background,
+  },
+  mainContent: {
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -20,
+  },
   titleContainer: {
-    marginTop: 30,
     marginBottom: 20,
-
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: "700",
     color: COLORS.text.primary,
-    marginBottom: 15,
+    marginBottom: 16,
+    flexWrap: "wrap",
   },
   organizerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 5,
+    flexDirection: "row",
+    alignItems: "center",
   },
   organizedBy: {
     fontSize: 14,
@@ -954,12 +1019,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   organizerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(93, 127, 219, 0.1)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.background,
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   organizerPhoto: {
     width: 24,
@@ -969,224 +1036,210 @@ const styles = StyleSheet.create({
   },
   organizerName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.accent,
+    fontWeight: "500",
+    color: COLORS.text.primary,
   },
-  
-  // Boutons d'action
   actionButtonsContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
+    flexDirection: "row",
+    marginBottom: 10,
   },
   locationButton: {
     flex: 1,
     marginRight: 10,
     borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    overflow: "hidden",
+    height: 48,
   },
   registerButton: {
     borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    overflow: "hidden",
+    height: 48,
   },
   unregisterButton: {
     borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    overflow: "hidden",
+    height: 48,
+  },
+  organizerOnlyButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+    height: 48,
   },
   buttonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+    paddingHorizontal: 16,
   },
   actionButtonText: {
     color: COLORS.text.light,
-    fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: 8,
+    fontSize: 15,
   },
-  
-  // Détails de l'événement
   detailsCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
   detailRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   detailIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(93, 127, 219, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
+    width: 40,
+    alignItems: "center",
+    marginRight: 12,
   },
   detailTextContainer: {
     flex: 1,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: COLORS.text.secondary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   detailText: {
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.text.primary,
-    fontWeight: '500',
+    lineHeight: 22,
   },
-  
-  // Description
   descriptionCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
   descriptionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "600",
     color: COLORS.text.primary,
     marginBottom: 12,
   },
   descriptionText: {
     fontSize: 15,
-    lineHeight: 24,
     color: COLORS.text.secondary,
+    lineHeight: 22,
   },
-  
-  // Participants
   participantsCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
   participantsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
   },
   participantsTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "600",
     color: COLORS.text.primary,
   },
   participantsCountBadge: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     marginLeft: 10,
   },
   participantsCount: {
     color: COLORS.text.light,
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: "600",
   },
   participantsList: {
-    paddingVertical: 5,
+    width: "100%",
   },
   participantItem: {
-    width: '33.33%',
-    padding: 8,
-    alignItems: 'center',
+    flex: 1,
+    alignItems: "center",
+    marginBottom: 16,
+    maxWidth: "33.33%",
+  },
+  organizerParticipantItem: {
+    // Styles spécifiques pour l'organisateur dans la liste des participants
+  },
+  participantImageContainer: {
+    position: 'relative',
+    marginBottom: 8,
   },
   participantImage: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    marginBottom: 8,
-    borderWidth: 2,
-    borderColor: COLORS.background,
+  },
+  organizerBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: COLORS.secondary,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fff',
   },
   participantName: {
     fontSize: 12,
-    textAlign: 'center',
     color: COLORS.text.primary,
-    maxWidth: '100%',
+    textAlign: "center",
+    fontWeight: "500",
+    width: "80%",
   },
   noParticipantsContainer: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 30,
   },
   noParticipantsText: {
-    fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     color: COLORS.text.muted,
-    marginTop: 10,
-    fontStyle: 'italic',
+    marginTop: 16,
+    fontSize: 14,
   },
-  
-  // Bouton flottant
   floatingButtonContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20,
     right: 20,
-    zIndex: 100,
+    zIndex: 5,
   },
   floatingButton: {
-    borderRadius: 30,
-    overflow: 'hidden',
-    elevation: 5,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   floatingButtonGradient: {
-    width: 60,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  // Loading
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: COLORS.text.secondary,
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

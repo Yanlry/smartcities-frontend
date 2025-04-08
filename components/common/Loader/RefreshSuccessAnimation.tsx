@@ -12,7 +12,7 @@ interface RefreshSuccessAnimationProps {
  */
 const RefreshSuccessAnimation: React.FC<RefreshSuccessAnimationProps> = ({
   visible,
-  message = "Mis à jour avec succès!"
+  message = "Succès! La page va être rafraîchie.",
 }) => {
   // Animations
   const opacity = useRef(new Animated.Value(0)).current;

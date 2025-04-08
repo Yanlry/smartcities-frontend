@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Configuration des couleurs
 const THEME = {
   primary: "#3498db",
-  secondary: "#A1869E",
+  secondary: "#1E40AF",
 };
 
 interface ContactInfoProps {

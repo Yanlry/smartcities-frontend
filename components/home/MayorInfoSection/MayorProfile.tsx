@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Configuration des couleurs
 const THEME = {
-  secondary: "#A1869E",
+  secondary: "#1E40AF",
   primary: "#3498db",
 };
 

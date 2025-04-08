@@ -322,7 +322,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
 
         <RefreshSuccessAnimation
           visible={showRefreshSuccess}
-          message="✓ Mis à jour avec succès!"
+          message="✓ Succès! La page va être rafraîchie"
         />
         <Animated.ScrollView
           style={styles.container}
