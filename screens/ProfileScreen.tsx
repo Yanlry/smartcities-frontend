@@ -22,7 +22,8 @@ import { API_URL } from "@env";
 import { getUserIdFromToken } from "../utils/tokenUtils";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "@expo/vector-icons/MaterialIcons";
 import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import franceCitiesRaw from "../assets/france.json";
@@ -489,7 +490,7 @@ export default function ProfileScreen({ navigation }) {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Icon name="error-outline" size={60} color={COLORS.state.error} />
+        <MaterialIcons name="error-outline" size={60} color={COLORS.state.error} />
         <Text style={styles.errorTitle}>Oups !</Text>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity

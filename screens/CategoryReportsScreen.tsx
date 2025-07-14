@@ -25,7 +25,7 @@ import { processReports } from "../services/reportService";
 import { formatCity } from "../utils/formatters";
 import { typeColors, categoryDescriptions } from "../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -393,22 +393,22 @@ export default function CategoryReportsScreen() {
   );
   
   // Helper function to determine icon based on category
-  const getCategoryIcon = useCallback((categoryName: string) => {
-    const icons: Record<string, string> = {
-      'violence': 'warning-outline',
-      'infrastructure': 'construct-outline',
-      'propreté': 'trash-outline',
-      'santé': 'medical-outline',
-      'environnement': 'leaf-outline',
-      'sécurité': 'shield-outline',
-      'transport': 'car-outline',
-      'bruit': 'volume-high-outline',
-      'nuisance': 'alert-outline',
-      'autre': 'ellipsis-horizontal-outline',
-    };
-    
-    return icons[categoryName] || 'alert-circle-outline';
-  }, []);
+  const getCategoryIcon = useCallback((categoryName: string): keyof typeof Ionicons.glyphMap => {
+      const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+        'violence': 'warning-outline',
+        'infrastructure': 'construct-outline',
+        'propreté': 'trash-outline',
+        'santé': 'medical-outline',
+        'environnement': 'leaf-outline',
+        'sécurité': 'shield-outline',
+        'transport': 'car-outline',
+        'bruit': 'volume-high-outline',
+        'nuisance': 'alert-outline',
+        'autre': 'ellipsis-horizontal-outline',
+      };
+      
+      return icons[categoryName] || 'alert-circle-outline';
+    }, []);
 
   // Apply filters to reports
   const applyFilter = useCallback((filter: 'all' | 'recent' | 'nearby') => {

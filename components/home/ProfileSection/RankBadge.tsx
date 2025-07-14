@@ -18,6 +18,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BadgeStyle } from "../../../types/entities/user.types";
 import CircularProgress from "./CircularProgress";
 import { formatCityForDisplay } from "../../../utils/formatters";
+
 // Activer LayoutAnimation pour Android
 if (
   Platform.OS === "android" &&
@@ -32,7 +33,7 @@ if (
 interface RankBadgeProps {
   /** Classement actuel de l'utilisateur */
   ranking: number | null;
-  /** Suffixe à afficher après le classement (e.g., "er", "ème") */
+  /** Suffixe à afficher après le classement (e.g., "er", "ème") - sera traité automatiquement */
   rankingSuffix: string;
   /** Nombre total d'utilisateurs dans le classement */
   totalUsers: number | null;
@@ -65,6 +66,33 @@ const CIF = {
 };
 
 /**
+ * Fonction utilitaire pour générer le suffixe correct selon le classement
+ * @param ranking - Le classement de l'utilisateur
+ * @returns Le suffixe approprié ("er", "ème")
+ */
+const getRankingSuffix = (ranking: number | null): string => {
+  if (!ranking) return "ème";
+  
+  // Cas spécial pour le premier
+  if (ranking === 1) return "er";
+  
+  // Tous les autres cas utilisent "ème"
+  return "ème";
+};
+
+/**
+ * Fonction utilitaire pour formater l'affichage complet du classement
+ * @param ranking - Le classement de l'utilisateur
+ * @returns Le classement formaté (ex: "1er", "2ème", "3ème", etc.)
+ */
+const getFormattedRanking = (ranking: number | null): string => {
+  if (!ranking) return "?";
+  
+  const suffix = getRankingSuffix(ranking);
+  return `${ranking}${suffix}`;
+};
+
+/**
  * RankBadge - Design entièrement repensé avec indicateur circulaire précis
  * Implémente les standards CIF pour une interface cohérente et optimisée
  */
@@ -72,7 +100,7 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
   ({
     cityName,
     ranking,
-    rankingSuffix,
+    rankingSuffix, // Cette prop sera ignorée au profit de notre logique interne
     totalUsers,
     onNavigateToRanking,
     badgeStyle,
@@ -87,6 +115,10 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
     const rotateAnim = useRef(new Animated.Value(0)).current;
     const headerShadowAnim = useRef(new Animated.Value(0)).current;
     const decorAnim = useRef(new Animated.Value(0)).current;
+
+    // Calcul memoïzé du suffixe et du classement formaté
+    const computedSuffix = useMemo(() => getRankingSuffix(ranking), [ranking]);
+    const formattedRanking = useMemo(() => getFormattedRanking(ranking), [ranking]);
 
     const formattedCityName = useMemo(() => 
       cityName ? formatCityForDisplay(cityName) : "Ville non spécifiée", 
@@ -442,8 +474,7 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
                 <View style={styles.textContainer}>
                   <Text style={styles.rankLabel}>{getRankLabel()}</Text>
                   <Text style={styles.rankValue}>
-                    #{ranking}
-                    {rankingSuffix}
+                    #{formattedRanking}
                   </Text>
                 </View>
               </View>
@@ -549,9 +580,7 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
                           <View>
                             <View style={styles.rankBadge}>
                               <Text style={styles.rankBadgeText}>
-                                {ranking === 1
-                                  ? "1er"
-                                  : `${ranking}${rankingSuffix}`}
+                                {formattedRanking}
                               </Text>
                             </View>
                             <Text style={styles.statLabel}>Voir le classement</Text>
@@ -570,8 +599,7 @@ const RankBadge: React.FC<RankBadgeProps> = memo(
   }
 );
 
-// Chemin: components/home/RankBadge.tsx
-
+// Styles inchangés...
 const styles = StyleSheet.create({
   // ========== CONTENEUR PRINCIPAL ET CARTE ==========
   container: {
@@ -756,7 +784,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: "rgba(255, 255, 255, 0.7)",
     textAlign: 'center',
-
     letterSpacing: 0.3,
   },
   statsRow: {
@@ -797,7 +824,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-
 
   // ========== SYSTÈMES D'ÉTOILES ==========
   // Pour arrangement linéaire (1-3 étoiles)
