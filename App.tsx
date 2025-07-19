@@ -12,8 +12,7 @@ import {
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-// ✅ CORRECTION : Import avec assertion de type
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ActionSheet from "react-native-actionsheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -59,9 +58,6 @@ import { BlurView } from "expo-blur";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useUserProfile } from "./hooks/user/useUserProfile"; // Ajoutez cette ligne
 import { UserProfileProvider } from "./context/UserProfileContext";
-
-// ✅ CORRECTION : Typage explicite pour Icon comme composant React
-const IconComponent = Icon as any;
 
 // Enhanced color system with semantic naming
 const COLORS = {
@@ -255,7 +251,7 @@ export default function App() {
     initializeApp();
   }, []);
 
-  const handleScroll = (event: any) => {
+  const handleScroll = (event) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
     if (currentOffset <= 0) {
       headerTranslateY.value = withTiming(0, {
@@ -318,7 +314,7 @@ export default function App() {
   };
 
   // Modern Header with enhanced animations and UI refinements
-  const CustomHeader = ({ navigation, headerTranslateY }: any) => {
+  const CustomHeader = ({ navigation, headerTranslateY }) => {
     const { unreadCount } = useNotification();
     const notificationScale = useSharedValue(1);
     const notificationBgOpacity = useSharedValue(0);
@@ -399,8 +395,7 @@ export default function App() {
               activeOpacity={0.7}
               hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
             >
-              {/* ✅ CORRECTION : Utilisation d'IconComponent au lieu d'Icon */}
-              <IconComponent name="menu" size={24} color={COLORS.primary.contrast} />
+              <Ionicons name="menu" size={24} color={COLORS.primary.contrast} />
             </TouchableOpacity>
 
             <View style={styles.headerTitleContainer}>
@@ -426,8 +421,7 @@ export default function App() {
                 />
               )}
 
-              {/* ✅ CORRECTION : Utilisation d'IconComponent au lieu d'Icon */}
-              <IconComponent
+              <Ionicons
                 name="notifications"
                 size={22}
                 color={COLORS.primary.contrast}
@@ -451,7 +445,7 @@ export default function App() {
     return null;
   };
 
-  const TabNavigator = ({ navigation }: any) => {
+  const TabNavigator = ({ navigation }) => {
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
     const actionSheetRef = useRef<typeof ActionSheet | null>(null);
@@ -485,7 +479,7 @@ export default function App() {
     }, []);
 
     // Enhanced TabBar with modern design and smooth animations
-    const TabBar = ({ state, descriptors, navigation }: any) => {
+    const TabBar = ({ state, descriptors, navigation }) => {
       // Animation for the active tab indicator
       useEffect(() => {
         activeTab.value = withTiming(state.index, {
@@ -539,7 +533,7 @@ export default function App() {
             <Animated.View style={[styles.tabIndicator, tabIndicatorStyle]} />
 
             <View style={styles.tabBarContainer}>
-              {state.routes.map((route: any, index: number) => {
+              {state.routes.map((route, index) => {
                 const { options } = descriptors[route.key];
                 const isFocused = state.index === index;
 
@@ -590,7 +584,7 @@ export default function App() {
                   }
                 };
 
-                let iconName = "";
+                let iconName: "home" | "home-outline" | "chatbubble-ellipses" | "chatbubble-ellipses-outline" | "people" | "people-outline" | "map" | "map-outline" | "add-circle" = "home";
                 if (route.name === "Accueil") {
                   iconName = isFocused ? "home" : "home-outline";
                 } else if (route.name === "Messages") {
@@ -622,8 +616,7 @@ export default function App() {
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         >
-                          {/* ✅ CORRECTION : Utilisation d'IconComponent au lieu d'Icon */}
-                          <IconComponent
+                          <Ionicons
                             name={iconName}
                             size={32}
                             color={COLORS.accent.contrast}
@@ -633,8 +626,7 @@ export default function App() {
                     ) : (
                       <View style={styles.tabButtonContent}>
                         <Animated.View style={tabIconStyle}>
-                          {/* ✅ CORRECTION : Utilisation d'IconComponent au lieu d'Icon */}
-                          <IconComponent
+                          <Ionicons
                             name={iconName}
                             size={24}
                             color={COLORS.primary.contrast}
@@ -945,7 +937,7 @@ export default function App() {
                     onShowNameModal={dummyFn}
                     onShowVoteInfoModal={dummyFn}
                     onNavigateToCity={() => {
-                      /* TODO : remplacer par une navigation appropriée si besoin */
+                      /* TODO : remplacer par une navigation appropriée si besoin */
                     }}
                     updateProfileImage={updateProfileImage}
                   />

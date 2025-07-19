@@ -1,6 +1,6 @@
 // src/components/interactions/ReportDetails/HeaderSection.tsx
 
-import React, { memo, useRef, useEffect, useState } from "react";
+import React, { memo, useRef, useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   Easing,
   Platform,
   Dimensions,
-  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,22 +18,65 @@ import { LinearGradient } from "expo-linear-gradient";
 const { width } = Dimensions.get("window");
 
 /**
- * Système de couleurs premium avec dégradés riches
+ * Type pour les fonctions d'easing React Native
  */
-const COLORS = {
-  // Palette dégradés primaire
+type EasingFunction = (value: number) => number;
+
+/**
+ * Type pour les animations composites
+ */
+type CompositeAnimation = Animated.CompositeAnimation;
+
+/**
+ * Configuration des couleurs avec typage strict
+ */
+interface ColorSystem {
   gradients: {
-    primary: ["#2B32B2", "#1488CC"],
-    secondary: ["#8E2DE2", "#4A00E0"],
-    accent: ["#00C6FB", "#005BEA"],
-    rose: ["#FF416C", "#FF4B2B"],
-    success: ["#00B09B", "#96C93D"],
-    header: ["rgba(37, 95, 240, 0.85)", "rgba(35, 76, 203, 0.92)"],
-    titleBar: ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"],
-    buttonHover: ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"],
+    primary: readonly [string, string];
+    secondary: readonly [string, string];
+    accent: readonly [string, string];
+    rose: readonly [string, string];
+    success: readonly [string, string];
+    header: readonly [string, string];
+    titleBar: readonly [string, string];
+    buttonHover: readonly [string, string];
+  };
+  primary: {
+    main: string;
+    dark: string;
+    light: string;
+    ghost: string;
+    subtle: string;
+  };
+  lightText: {
+    primary: string;
+    secondary: string;
+    disabled: string;
+  };
+  gray: Record<50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900, string>;
+  glass: {
+    white: string;
+    light: string;
+    dark: string;
+    border: string;
+  };
+}
+
+/**
+ * Système de couleurs premium optimisé
+ */
+const COLORS: ColorSystem = {
+  gradients: {
+    primary: ["#2B32B2", "#1488CC"] as const,
+    secondary: ["#8E2DE2", "#4A00E0"] as const,
+    accent: ["#00C6FB", "#005BEA"] as const,
+    rose: ["#FF416C", "#FF4B2B"] as const,
+    success: ["#00B09B", "#96C93D"] as const,
+    header: ["rgba(37, 95, 240, 0.85)", "rgba(35, 76, 203, 0.92)"] as const,
+    titleBar: ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"] as const,
+    buttonHover: ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"] as const,
   },
   
-  // Couleurs primaires
   primary: {
     main: "#3470FF",
     dark: "#1D4ED8",
@@ -43,14 +85,12 @@ const COLORS = {
     subtle: "rgba(52, 112, 255, 0.15)",
   },
   
-  // Palette pour le texte sur fond foncé
   lightText: {
     primary: "rgba(255, 255, 255, 0.95)",
     secondary: "rgba(255, 255, 255, 0.7)",
     disabled: "rgba(255, 255, 255, 0.4)",
   },
   
-  // Échelle de gris raffinée
   gray: {
     50: "#F9FAFB",
     100: "#F3F4F6",
@@ -64,20 +104,18 @@ const COLORS = {
     900: "#111827",
   },
   
-  // Effets transparents
   glass: {
     white: "rgba(255, 255, 255, 0.95)",
     light: "rgba(255, 255, 255, 0.2)",
     dark: "rgba(0, 0, 0, 0.1)",
     border: "rgba(255, 255, 255, 0.18)",
   },
-};
+} as const;
 
 /**
- * Système d'ombres sophistiqué avec différents niveaux d'élévation
+ * Système d'ombres optimisé par plateforme
  */
 const SHADOWS = {
-  // Ombres adaptées par plateforme
   button: Platform.select({
     ios: {
       shadowColor: "#000",
@@ -90,7 +128,6 @@ const SHADOWS = {
     },
   }),
   
-  // Ombre pour header premium
   header: Platform.select({
     ios: {
       shadowColor: "#000",
@@ -103,7 +140,6 @@ const SHADOWS = {
     },
   }),
   
-  // Ombre spécifique pour titre
   title: Platform.select({
     ios: {
       shadowColor: "#000",
@@ -115,12 +151,31 @@ const SHADOWS = {
       elevation: 2,
     },
   }),
-};
+} as const;
 
 /**
- * Système d'animation avancé avec courbes et timing sophistiqués
+ * Configuration d'animation avec types optimisés
  */
-const ANIMATIONS = {
+interface AnimationConfig {
+  duration: {
+    veryFast: number;
+    fast: number;
+    medium: number;
+    slow: number;
+  };
+  easing: {
+    standard: EasingFunction;
+    decelerate: EasingFunction;
+    accelerate: EasingFunction;
+    gentle: EasingFunction;
+    elastic: EasingFunction;
+  };
+}
+
+/**
+ * Système d'animation avancé avec courbes sophistiquées
+ */
+const ANIMATIONS: AnimationConfig = {
   duration: {
     veryFast: 120,
     fast: 200,
@@ -128,83 +183,107 @@ const ANIMATIONS = {
     slow: 450,
   },
   
-  // Courbes d'accélération sophistiquées
   easing: {
-    // Standard Material Design easing
     standard: Easing.bezier(0.4, 0.0, 0.2, 1),
-    // Pour les entrées et apparitions
     decelerate: Easing.bezier(0.0, 0.0, 0.2, 1),
-    // Pour les sorties et disparitions
     accelerate: Easing.bezier(0.4, 0.0, 1, 1),
-    // Pour les rebonds élégants
     gentle: Easing.bezier(0.34, 1.56, 0.64, 1),
-    // Pour une impression de légèreté
     elastic: Easing.elastic(1),
   },
-  
-  // Helpers pour simplifier l'usage des animations
-  helpers: {
-    fadeIn: (value, duration = 300, delay = 0, easing = Easing.bezier(0.0, 0.0, 0.2, 1)) => 
-      Animated.timing(value, {
-        toValue: 1,
-        duration,
-        delay,
-        easing,
-        useNativeDriver: true,
-      }),
-      
-    slideInY: (value, fromValue = 15, duration = 300, delay = 0) => {
-      value.setValue(fromValue);
-      return Animated.timing(value, {
-        toValue: 0,
-        duration,
-        delay,
-        easing: Easing.bezier(0.0, 0.0, 0.2, 1),
-        useNativeDriver: true,
-      });
-    },
-    
-    pulse: (value, toValue = 1.05, duration = 300) => {
-      return Animated.sequence([
-        Animated.timing(value, {
-          toValue,
-          duration: duration / 2,
-          easing: Easing.bezier(0.0, 0.0, 0.2, 1),
-          useNativeDriver: true,
-        }),
-        Animated.timing(value, {
-          toValue: 1,
-          duration: duration / 2,
-          easing: Easing.bezier(0.0, 0.0, 0.2, 1),
-          useNativeDriver: true,
-        }),
-      ]);
-    },
-  },
-};
+} as const;
 
 /**
- * Badge de notification animé pour les boutons d'action
+ * Helpers d'animation optimisés avec types stricts
  */
-const NotificationBadge = memo(() => {
+class AnimationHelpers {
+  static fadeIn(
+    value: Animated.Value,
+    duration: number = ANIMATIONS.duration.medium,
+    delay: number = 0,
+    easing: EasingFunction = ANIMATIONS.easing.decelerate
+  ): CompositeAnimation {
+    return Animated.timing(value, {
+      toValue: 1,
+      duration,
+      delay,
+      easing,
+      useNativeDriver: true,
+    });
+  }
+  
+  static slideInY(
+    value: Animated.Value,
+    fromValue: number = 15,
+    duration: number = ANIMATIONS.duration.medium,
+    delay: number = 0
+  ): CompositeAnimation {
+    value.setValue(fromValue);
+    return Animated.timing(value, {
+      toValue: 0,
+      duration,
+      delay,
+      easing: ANIMATIONS.easing.decelerate,
+      useNativeDriver: true,
+    });
+  }
+  
+  static pulse(
+    value: Animated.Value,
+    toValue: number = 1.05,
+    duration: number = ANIMATIONS.duration.medium
+  ): CompositeAnimation {
+    return Animated.sequence([
+      Animated.timing(value, {
+        toValue,
+        duration: duration / 2,
+        easing: ANIMATIONS.easing.standard,
+        useNativeDriver: true,
+      }),
+      Animated.timing(value, {
+        toValue: 1,
+        duration: duration / 2,
+        easing: ANIMATIONS.easing.standard,
+        useNativeDriver: true,
+      }),
+    ]);
+  }
+  
+  static springEnter(
+    value: Animated.Value,
+    toValue: number = 1,
+    friction: number = 6,
+    tension: number = 300
+  ): CompositeAnimation {
+    return Animated.spring(value, {
+      toValue,
+      friction,
+      tension,
+      useNativeDriver: true,
+    });
+  }
+}
+
+/**
+ * Badge de notification avec animation optimisée
+ */
+interface NotificationBadgeProps {
+  count?: number;
+}
+
+const NotificationBadge: React.FC<NotificationBadgeProps> = memo(({ count = 2 }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   
   useEffect(() => {
-    // Animation d'entrée avec rebond léger
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 6,
-      tension: 300,
-      useNativeDriver: true,
-    }).start();
+    // Animation d'entrée
+    AnimationHelpers.springEnter(scaleAnim).start();
     
-    // Animation de pulsation toutes les 3 secondes
+    // Pulsation périodique
     const interval = setInterval(() => {
-      ANIMATIONS.helpers.pulse(scaleAnim, 1.2, 600).start();
+      AnimationHelpers.pulse(scaleAnim, 1.2, 600).start();
     }, 3000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [scaleAnim]);
   
   return (
     <Animated.View 
@@ -213,11 +292,16 @@ const NotificationBadge = memo(() => {
         { transform: [{ scale: scaleAnim }] }
       ]}
     >
-      <Text style={styles.notificationText}>2</Text>
+      <Text style={styles.notificationText}>{count}</Text>
     </Animated.View>
   );
 });
 
+NotificationBadge.displayName = 'NotificationBadge';
+
+/**
+ * Interface pour le titre d'en-tête
+ */
 interface HeaderTitleProps {
   title: string;
   onPress: () => void;
@@ -225,18 +309,17 @@ interface HeaderTitleProps {
 }
 
 /**
- * Sous-composant pour le titre avec effets visuels premium
+ * Composant titre avec animations fluides
  */
-const HeaderTitle = memo(({ title, onPress, onLayout }: HeaderTitleProps) => {
-  // Animations pour le titre
+const HeaderTitle: React.FC<HeaderTitleProps> = memo(({ title, onPress, onLayout }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-10)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   
   useEffect(() => {
     Animated.parallel([
-      ANIMATIONS.helpers.fadeIn(fadeAnim, ANIMATIONS.duration.medium),
-      ANIMATIONS.helpers.slideInY(slideAnim, -8, ANIMATIONS.duration.medium),
+      AnimationHelpers.fadeIn(fadeAnim),
+      AnimationHelpers.slideInY(slideAnim, -8),
       Animated.timing(scaleAnim, {
         toValue: 1,
         duration: ANIMATIONS.duration.medium,
@@ -244,7 +327,7 @@ const HeaderTitle = memo(({ title, onPress, onLayout }: HeaderTitleProps) => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [title]);
+  }, [title, fadeAnim, slideAnim, scaleAnim]);
 
   return (
     <TouchableOpacity 
@@ -254,7 +337,7 @@ const HeaderTitle = memo(({ title, onPress, onLayout }: HeaderTitleProps) => {
       style={styles.headerTitleTouchable}
     >
       <LinearGradient
-        colors={COLORS.gradients.titleBar as [string, string]}
+        colors={COLORS.gradients.titleBar}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.titleGradientContainer}
@@ -283,43 +366,47 @@ const HeaderTitle = memo(({ title, onPress, onLayout }: HeaderTitleProps) => {
   );
 });
 
+HeaderTitle.displayName = 'HeaderTitle';
+
+/**
+ * Interface pour les boutons d'action
+ */
 interface HeaderActionButtonProps {
   iconName: string;
   onPress: () => void;
   showBadge?: boolean;
   position?: 'left' | 'right';
+  badgeCount?: number;
 }
 
-const HeaderActionButton = memo(({ 
+/**
+ * Bouton d'action avec interactions fluides
+ */
+const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({ 
   iconName, 
   onPress, 
   showBadge = false,
-  position = 'right'
-}: HeaderActionButtonProps) => {
-  // Animation pour l'entrée - Native
+  position = 'right',
+  badgeCount = 2
+}) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(position === 'left' ? -15 : 15)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   
-  // Animation pour l'effet de survol - JavaScript
-  const [isPressed, setIsPressed] = useState(false);
+  const [isPressed, setIsPressed] = useState<boolean>(false);
   
-  // Déclencher les animations d'entrée
   useEffect(() => {
+    const animationDelay = position === 'left' ? 0 : 100;
+    const slideValue = position === 'left' ? -15 : 15;
+    
     Animated.parallel([
-      ANIMATIONS.helpers.fadeIn(fadeAnim, ANIMATIONS.duration.medium, position === 'left' ? 0 : 100),
-      ANIMATIONS.helpers.slideInY(slideAnim, position === 'left' ? -15 : 15, ANIMATIONS.duration.medium, position === 'left' ? 0 : 100),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 6,
-        tension: 300,
-        useNativeDriver: true,
-      }),
+      AnimationHelpers.fadeIn(fadeAnim, ANIMATIONS.duration.medium, animationDelay),
+      AnimationHelpers.slideInY(slideAnim, slideValue, ANIMATIONS.duration.medium, animationDelay),
+      AnimationHelpers.springEnter(scaleAnim),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim, scaleAnim, position]);
   
-  // Gestionnaires d'événements - sans conflit d'animation
-  const handlePressIn = () => {
+  const handlePressIn = useCallback((): void => {
     setIsPressed(true);
     Animated.timing(scaleAnim, {
       toValue: 0.92,
@@ -327,21 +414,20 @@ const HeaderActionButton = memo(({
       easing: ANIMATIONS.easing.standard,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scaleAnim]);
   
-  const handlePressOut = () => {
+  const handlePressOut = useCallback((): void => {
     setIsPressed(false);
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 4,
-      tension: 300,
-      useNativeDriver: true,
-    }).start();
-  };
+    AnimationHelpers.springEnter(scaleAnim, 1, 4, 300).start();
+  }, [scaleAnim]);
+  
+  const handlePress = useCallback((): void => {
+    onPress();
+  }, [onPress]);
   
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -363,40 +449,50 @@ const HeaderActionButton = memo(({
         ]}
       >
         <Icon name={iconName} size={22} color={COLORS.lightText.primary} />
-        {showBadge && <NotificationBadge />}
+        {showBadge && <NotificationBadge count={badgeCount} />}
       </Animated.View>
     </TouchableOpacity>
   );
 });
 
+HeaderActionButton.displayName = 'HeaderActionButton';
+
+/**
+ * Interface principale du composant HeaderSection
+ */
 interface HeaderSectionProps {
   title: string;
   onBack: () => void;
   onNotificationsPress: () => void;
   onTitlePress: () => void;
   onTitleLayout: (event: LayoutChangeEvent) => void;
+  notificationCount?: number;
 }
 
 /**
- * Composant d'en-tête premium avec effets visuels riches et animations élégantes
+ * Composant d'en-tête premium avec architecture optimisée
+ * 
+ * @description En-tête avec animations fluides, design moderne et interactions optimisées
+ * @param props Propriétés du composant
+ * @returns Composant HeaderSection optimisé
  */
-const HeaderSection: React.FC<HeaderSectionProps> = ({
+const HeaderSection: React.FC<HeaderSectionProps> = memo(({
   title,
   onBack,
   onNotificationsPress,
   onTitlePress,
   onTitleLayout,
+  notificationCount = 2,
 }) => {
-  // Animation pour l'en-tête complet
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(-10)).current;
   
   useEffect(() => {
     Animated.parallel([
-      ANIMATIONS.helpers.fadeIn(fadeAnim, ANIMATIONS.duration.medium),
-      ANIMATIONS.helpers.slideInY(translateYAnim, -10, ANIMATIONS.duration.medium),
+      AnimationHelpers.fadeIn(fadeAnim),
+      AnimationHelpers.slideInY(translateYAnim, -10),
     ]).start();
-  }, []);
+  }, [fadeAnim, translateYAnim]);
 
   return (
     <Animated.View 
@@ -409,12 +505,12 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
       ]}
     >
       <LinearGradient
-        colors={COLORS.gradients.header as [string, string]}
+        colors={COLORS.gradients.header}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
       >
-        {/* Élément décoratif en arrière-plan */}
+        {/* Éléments décoratifs */}
         <View style={styles.headerDecoration}>
           <View style={styles.decorationCircle1} />
           <View style={styles.decorationCircle2} />
@@ -437,12 +533,18 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
           onPress={onNotificationsPress}
           showBadge={true}
           position="right"
+          badgeCount={notificationCount}
         />
       </LinearGradient>
     </Animated.View>
   );
-};
+});
 
+HeaderSection.displayName = 'HeaderSection';
+
+/**
+ * Styles optimisés avec organisation modulaire
+ */
 const styles = StyleSheet.create({
   headerContainer: {
     zIndex: 10,
@@ -463,6 +565,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     overflow: 'hidden',
+    pointerEvents: 'none',
   },
   decorationCircle1: {
     position: 'absolute',
@@ -550,4 +653,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(HeaderSection);
+export default HeaderSection;
