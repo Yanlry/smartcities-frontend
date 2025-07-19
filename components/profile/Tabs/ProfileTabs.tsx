@@ -215,7 +215,6 @@ export const ProfileTabs: React.FC<ProfileTabsProps & { userId: string }> = memo
           colors={["rgba(255,255,255,0.95)", "rgba(248,250,252,0.9)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.tabsBackground}
         />
         <ScrollView
           horizontal
@@ -346,7 +345,7 @@ const styles = StyleSheet.create({
     height: 50
   },
   tabsContainer: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.md,
     alignItems: "center"
   },

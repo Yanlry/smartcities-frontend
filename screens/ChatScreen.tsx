@@ -401,7 +401,11 @@ export default function ChatScreen({ route, navigation }: any) {
       setReportReason("");
       setReportModalVisible(false);
     } catch (error) {
-      console.error("Erreur lors de l'envoi du signalement :", error.message);
+      if (error instanceof Error) {
+        console.error("Erreur lors de l'envoi du signalement :", error.message);
+      } else {
+        console.error("Erreur lors de l'envoi du signalement :", error);
+      }
       Alert.alert("Erreur", "Une erreur s'est produite lors du signalement.");
     }
   };

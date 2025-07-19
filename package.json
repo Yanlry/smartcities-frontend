@@ -15,6 +15,7 @@
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@react-navigation/bottom-tabs": "^7.0.1",
     "@react-navigation/native": "^7.0.3",
+    "@react-navigation/native-stack": "^7.3.21",
     "@react-navigation/stack": "^7.0.4",
     "@types/react-native-dotenv": "^0.2.2",
     "axios": "^1.10.0",
