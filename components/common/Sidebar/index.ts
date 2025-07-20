@@ -10,7 +10,7 @@ export { default } from './Sidebar';
 export { default as SidebarItem } from './SidebarItem';
 
 // Export des types depuis leur nouvel emplacement
-export { 
+export type { 
   SidebarProps, 
   SidebarItemProps 
 } from '../../../types/components/common/sidebar.types';

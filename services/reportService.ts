@@ -208,7 +208,6 @@ export const fetchReports = async (
       return [];
     }
 
-    console.log("Réponse API fetchReports:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("❌ Erreur dans fetchReports :", {

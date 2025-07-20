@@ -5,20 +5,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 // @ts-ignore
 import { API_URL } from '@env';
-// ✅ UTILISATION de vos types existants
 import { User, UserStats } from '../types/entities/user.types';
 
 /**
- * Configuration des clés de stockage (synchronisée avec useAuth)
+ * 🔧 Configuration des clés de stockage (EXACTEMENT les mêmes que useToken)
+ * ⚠️ IMPORTANT: Ces clés correspondent à celles dans useToken
  */
 const STORAGE_KEYS = {
-  AUTH_TOKEN: 'smartcity_auth_token',
-  REFRESH_TOKEN: 'smartcity_refresh_token',
-  USER_ID: 'smartcity_user_id',
+  AUTH_TOKEN: 'authToken',
+  REFRESH_TOKEN: 'refreshToken', 
+  USER_ID: 'userId',
 } as const;
 
 /**
- * Interface pour le résumé des votes (utilise le type existant)
+ * 📊 Interface pour le résumé des votes
  */
 interface VoteSummary {
   up: number;
@@ -26,8 +26,7 @@ interface VoteSummary {
 }
 
 /**
- * Interface pour le contexte du profil utilisateur
- * Utilise vos types existants sans redéfinition
+ * 🎭 Interface pour le contexte du profil utilisateur
  */
 interface UserProfileContextType {
   user: User | null;
@@ -36,14 +35,12 @@ interface UserProfileContextType {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  // ✅ Signature compatible avec vos types Sidebar
   updateProfileImage: (uri: string) => Promise<boolean>;
   updateUserDisplayPreference: (useFullName: boolean) => Promise<boolean>;
   refreshUserData: () => Promise<void>;
   updateUserCity: (nomCommune: string, codePostal: string) => Promise<void>;
 }
 
-// Create context with default values
 const UserProfileContext = createContext<UserProfileContextType>({
   user: null,
   displayName: '',
@@ -57,16 +54,17 @@ const UserProfileContext = createContext<UserProfileContextType>({
   updateUserCity: async () => {},
 });
 
-// Custom hook to use the context
 export const useUserProfile = () => useContext(UserProfileContext);
 
 /**
- * Utilitaires de gestion des tokens (synchronisés avec useAuth)
+ * 🔐 Gestionnaire de tokens harmonisé avec useToken
  */
 const TokenManager = {
   async getToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      console.log('🔍 Token récupéré:', token ? `Présent (${token.substring(0, 20)}...)` : 'Absent');
+      return token;
     } catch (error) {
       console.error('❌ Erreur récupération token:', error);
       return null;
@@ -76,45 +74,83 @@ const TokenManager = {
   async getUserId(): Promise<number | null> {
     try {
       const userIdStr = await AsyncStorage.getItem(STORAGE_KEYS.USER_ID);
-      return userIdStr ? parseInt(userIdStr, 10) : null;
+      const userId = userIdStr ? parseInt(userIdStr, 10) : null;
+      console.log('🆔 UserId récupéré:', userId);
+      return userId;
     } catch (error) {
       console.error('❌ Erreur récupération userId:', error);
       return null;
     }
   },
 
+  async getRefreshToken(): Promise<string | null> {
+    try {
+      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      console.log('🔄 Refresh token:', refreshToken ? 'Présent' : 'Absent');
+      return refreshToken;
+    } catch (error) {
+      console.error('❌ Erreur récupération refresh token:', error);
+      return null;
+    }
+  },
+
+  /**
+   * 🛡️ Validation simplifiée du token (le serveur fait la vraie validation)
+   */
   async isTokenValid(): Promise<boolean> {
     try {
       const token = await this.getToken();
-      if (!token) return false;
-
-      // Validation basique du format JWT
-      const parts = token.split('.');
-      if (parts.length !== 3) return false;
-
-      // Vérification de l'expiration
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-      if (payload.exp) {
-        const currentTime = Math.floor(Date.now() / 1000);
-        return currentTime < payload.exp;
+      if (!token) {
+        console.log('⚠️ Aucun token trouvé');
+        return false;
       }
 
-      return true;
+      // ✅ Validation basique du format JWT
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.log('⚠️ Format token invalide');
+        return false;
+      }
+
+      try {
+        // ✅ Tentative de décodage du payload (mais on ne fait pas de validation d'expiration côté client)
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        console.log('✅ Token format valide, payload décodé');
+        
+        // ⚠️ On ne vérifie PAS l'expiration côté client car cela peut causer des problèmes
+        // Le serveur s'occupera de valider l'expiration
+        return true;
+      } catch (decodeError) {
+        console.log('⚠️ Erreur décodage payload:', decodeError);
+        return false;
+      }
     } catch (error) {
       console.error('❌ Erreur validation token:', error);
       return false;
+    }
+  },
+
+  /**
+   * 🧹 Nettoyage complet des données d'authentification
+   */
+  async clearAuthData(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.AUTH_TOKEN,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.USER_ID,
+      ]);
+      console.log('🧹 Données d\'authentification nettoyées');
+    } catch (error) {
+      console.error('❌ Erreur nettoyage données auth:', error);
     }
   }
 };
 
 /**
- * Utilitaires pour le calcul des données utilisateur
- * Compatible avec vos types existants
+ * 🔧 Utilitaires pour le calcul des données utilisateur
  */
 const UserUtils = {
-  /**
-   * Génère le nom d'affichage selon les préférences
-   */
   getDisplayName(user: User | null): string {
     if (!user) return '';
     return user.useFullName 
@@ -122,15 +158,11 @@ const UserUtils = {
       : user.username || `${user.firstName} ${user.lastName}`.trim();
   },
 
-  /**
-   * Calcule le résumé des votes à partir des données utilisateur
-   */
   calculateVoteSummary(user: User | null): VoteSummary {
     if (!user || !user.votes) {
       return { up: 0, down: 0 };
     }
 
-    // Utilise voteSummary s'il existe déjà, sinon calcule
     if (user.voteSummary) {
       return user.voteSummary;
     }
@@ -147,25 +179,21 @@ const UserUtils = {
 };
 
 /**
- * Provider component avec types harmonisés
+ * 🚀 Provider component ultra-optimisé
  */
 export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ✅ États typés avec vos interfaces existantes
   const [user, setUser] = useState<User | null>(null);
   const [voteSummary, setVoteSummary] = useState<VoteSummary>({ up: 0, down: 0 });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Référence pour éviter les fuites mémoire
   const mountedRef = useRef(true);
   const fetchControllerRef = useRef<AbortController | null>(null);
-
-  // ✅ Utilise UserUtils pour le nom d'affichage
   const displayName = UserUtils.getDisplayName(user);
 
   /**
-   * Mise à jour sécurisée de l'état (évite les updates sur composant démonté)
+   * 🔒 Mise à jour sécurisée de l'état
    */
   const safeStateUpdate = useCallback((updater: () => void) => {
     if (mountedRef.current) {
@@ -174,10 +202,9 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   /**
-   * Configuration axios avec intercepteur automatique
+   * 🌐 Configuration axios avec intercepteur automatique
    */
   const setupAxiosInterceptors = useCallback(() => {
-    // Intercepteur de requête pour ajouter automatiquement le token
     const requestInterceptor = axios.interceptors.request.use(
       async (config) => {
         const token = await TokenManager.getToken();
@@ -189,19 +216,17 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       (error) => Promise.reject(error)
     );
 
-    // Intercepteur de réponse pour gérer les erreurs d'authentification
     const responseInterceptor = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
         if (error.response?.status === 401) {
-          console.log('🔒 Token expiré, déconnexion automatique');
+          console.log('🔒 Token expiré détecté par le serveur');
           await handleAuthenticationError();
         }
         return Promise.reject(error);
       }
     );
 
-    // Retourner une fonction de nettoyage
     return () => {
       axios.interceptors.request.eject(requestInterceptor);
       axios.interceptors.response.eject(responseInterceptor);
@@ -209,9 +234,11 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   /**
-   * Gestion des erreurs d'authentification
+   * ⚠️ Gestion des erreurs d'authentification
    */
   const handleAuthenticationError = useCallback(async () => {
+    console.log('🚨 Gestion erreur authentification');
+    
     safeStateUpdate(() => {
       setIsAuthenticated(false);
       setUser(null);
@@ -220,48 +247,51 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setLoading(false);
     });
 
-    // Nettoyer les données d'authentification
-    try {
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.AUTH_TOKEN,
-        STORAGE_KEYS.REFRESH_TOKEN,
-        STORAGE_KEYS.USER_ID,
-      ]);
-      console.log('🧹 Données d\'authentification nettoyées après erreur');
-    } catch (cleanupError) {
-      console.error('❌ Erreur nettoyage après auth error:', cleanupError);
-    }
+    await TokenManager.clearAuthData();
   }, [safeStateUpdate]);
 
   /**
-   * Vérification de l'état d'authentification
+   * 🔍 Vérification d'authentification SIMPLIFIÉE
    */
   const checkAuthenticationStatus = useCallback(async (): Promise<boolean> => {
     try {
-      const [token, userId, isValid] = await Promise.all([
+      console.log('🔍 Vérification du statut d\'authentification...');
+      
+      const [token, userId] = await Promise.all([
         TokenManager.getToken(),
         TokenManager.getUserId(),
-        TokenManager.isTokenValid(),
       ]);
 
-      const isAuthenticated = !!(token && userId && isValid);
+      // ✅ Vérification simple : token ET userId présents
+      const hasCredentials = !!(token && userId);
+      
+      if (hasCredentials) {
+        // ✅ Validation basique du format du token
+        const isTokenFormatValid = await TokenManager.isTokenValid();
+        
+        if (isTokenFormatValid) {
+          console.log('✅ Authentification valide');
+          safeStateUpdate(() => setIsAuthenticated(true));
+          return true;
+        } else {
+          console.log('❌ Format token invalide');
+          await TokenManager.clearAuthData();
+        }
+      } else {
+        console.log('❌ Credentials manquants');
+      }
 
-      safeStateUpdate(() => {
-        setIsAuthenticated(isAuthenticated);
-      });
-
-      return isAuthenticated;
+      safeStateUpdate(() => setIsAuthenticated(false));
+      return false;
     } catch (error) {
       console.error('❌ Erreur vérification authentification:', error);
-      safeStateUpdate(() => {
-        setIsAuthenticated(false);
-      });
+      safeStateUpdate(() => setIsAuthenticated(false));
       return false;
     }
   }, [safeStateUpdate]);
 
   /**
-   * Récupération des données utilisateur avec gestion d'erreurs robuste
+   * 📡 Récupération des données utilisateur optimisée
    */
   const fetchUserProfile = useCallback(async (userId: number): Promise<void> => {
     try {
@@ -272,16 +302,13 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setError(null);
       });
 
-      // Annuler la requête précédente si elle existe
       if (fetchControllerRef.current) {
         fetchControllerRef.current.abort();
       }
 
-      // Nouvelle instance AbortController
       fetchControllerRef.current = new AbortController();
       const { signal } = fetchControllerRef.current;
 
-      // Vérifier la disponibilité du token
       const token = await TokenManager.getToken();
       if (!token) {
         throw new Error('Aucun token d\'authentification disponible');
@@ -292,43 +319,43 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         'Content-Type': 'application/json',
       };
 
-      // Requêtes parallèles pour optimiser les performances
+      console.log('📡 Envoi de la requête vers:', `${API_URL}/users/${userId}`);
+
+      // 🚀 Requêtes parallèles optimisées
       const [userResponse, statsResponse] = await Promise.allSettled([
         fetch(`${API_URL}/users/${userId}`, { signal, headers }),
         fetch(`${API_URL}/users/stats/${userId}`, { signal, headers }),
       ]);
 
-      // Traitement de la réponse utilisateur
+      // 📊 Traitement de la réponse utilisateur
       if (userResponse.status === 'fulfilled') {
+        console.log('📡 Réponse utilisateur reçue:', userResponse.value.status);
+        
         if (!userResponse.value.ok) {
           if (userResponse.value.status === 401) {
+            console.log('🔒 Erreur 401 - Token invalide');
             await handleAuthenticationError();
             return;
           }
-          throw new Error(`Erreur HTTP ${userResponse.value.status}: Impossible de récupérer les données utilisateur`);
+          throw new Error(`Erreur HTTP ${userResponse.value.status}`);
         }
         
         const userData: User = await userResponse.value.json();
+        console.log('✅ Données utilisateur récupérées:', userData.firstName);
         
-        // ✅ Les données sont déjà typées correctement selon votre interface User
         safeStateUpdate(() => {
           setUser(userData);
-          // Calculer le résumé des votes
           const summary = UserUtils.calculateVoteSummary(userData);
           setVoteSummary(summary);
         });
-        
-        console.log('✅ UserProfile - Données utilisateur récupérées');
-      } else {
-        throw new Error('Échec de récupération des données utilisateur');
-      }
+      } 
 
-      // Traitement de la réponse statistiques (non critique)
+      // 📈 Traitement des statistiques (non critique)
       if (statsResponse.status === 'fulfilled' && statsResponse.value.ok) {
         try {
           const statsData: UserStats = await statsResponse.value.json();
+          console.log('📈 Statistiques récupérées');
           
-          // Mettre à jour le résumé des votes avec les stats si disponibles
           if (statsData.votes) {
             const summary = statsData.votes.reduce(
               (acc, vote) => {
@@ -339,28 +366,18 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
               { up: 0, down: 0 }
             );
             
-            safeStateUpdate(() => {
-              setVoteSummary(summary);
-            });
+            safeStateUpdate(() => setVoteSummary(summary));
           }
-          
-          console.log('✅ UserProfile - Statistiques récupérées');
         } catch (statsError) {
-          console.warn('⚠️ UserProfile - Erreur traitement stats:', statsError);
+          console.warn('⚠️ Erreur traitement stats:', statsError);
         }
-      } else {
-        console.warn('⚠️ UserProfile - Échec récupération stats, utilisation valeurs par défaut');
       }
 
-      safeStateUpdate(() => {
-        setLoading(false);
-      });
+      safeStateUpdate(() => setLoading(false));
 
     } catch (error: any) {
-      console.error('❌ UserProfile - Erreur récupération:', error);
-
       if (error.name === 'AbortError') {
-        console.log('🚫 UserProfile - Requête annulée');
+        console.log('🚫 Requête annulée');
         return;
       }
 
@@ -373,11 +390,11 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [safeStateUpdate, handleAuthenticationError]);
 
   /**
-   * Initialisation et gestion du cycle de vie
+   * 🚀 Initialisation du profil utilisateur
    */
   const initializeUserProfile = useCallback(async () => {
     try {
-      console.log('🚀 UserProfile - Initialisation');
+      console.log('🚀 UserProfile - Initialisation...');
 
       const isAuth = await checkAuthenticationStatus();
       
@@ -386,7 +403,8 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         if (userId) {
           await fetchUserProfile(userId);
         } else {
-          throw new Error('UserId non disponible malgré l\'authentification');
+          console.error('❌ UserId manquant malgré l\'authentification');
+          await handleAuthenticationError();
         }
       } else {
         console.log('ℹ️ UserProfile - Utilisateur non authentifié');
@@ -404,19 +422,24 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setLoading(false);
       });
     }
-  }, [checkAuthenticationStatus, fetchUserProfile, safeStateUpdate]);
+  }, [checkAuthenticationStatus, fetchUserProfile, safeStateUpdate, handleAuthenticationError]);
 
   /**
-   * Function to refresh user data
+   * 🔄 Rafraîchissement des données utilisateur
    */
   const refreshUserData = useCallback(async () => {
     try {
+      console.log('🔄 UserProfile - Rafraîchissement des données...');
+      
       const isAuth = await checkAuthenticationStatus();
       
       if (isAuth) {
         const userId = await TokenManager.getUserId();
         if (userId) {
           await fetchUserProfile(userId);
+        } else {
+          console.error('❌ UserId manquant lors du refresh');
+          await handleAuthenticationError();
         }
       } else {
         console.log('⚠️ UserProfile - refreshUserData: Utilisateur non authentifié');
@@ -431,7 +454,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [checkAuthenticationStatus, fetchUserProfile, handleAuthenticationError, safeStateUpdate]);
 
   /**
-   * ✅ Update profile image avec signature compatible Sidebar
+   * 📸 Mise à jour de l'image de profil
    */
   const updateProfileImage = useCallback(async (uri: string): Promise<boolean> => {
     const userId = await TokenManager.getUserId();
@@ -496,7 +519,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [safeStateUpdate, handleAuthenticationError]);
 
   /**
-   * ✅ Update user display preference avec retour boolean
+   * ⚙️ Mise à jour des préférences d'affichage
    */
   const updateUserDisplayPreference = useCallback(async (useFullName: boolean): Promise<boolean> => {
     if (!user) {
@@ -554,7 +577,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [user, safeStateUpdate, handleAuthenticationError]);
 
   /**
-   * Update user city
+   * 🏙️ Mise à jour de la ville
    */
   const updateUserCity = useCallback(async (nomCommune: string, codePostal: string): Promise<void> => {
     try {
@@ -575,7 +598,6 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
       });
 
-      // Update local state immediately to reflect changes across the app
       safeStateUpdate(() => {
         setUser(prev => prev ? { ...prev, nomCommune, codePostal } : null);
       });
@@ -593,16 +615,12 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [user, isAuthenticated, safeStateUpdate, handleAuthenticationError]);
 
   /**
-   * Effet d'initialisation avec nettoyage
+   * 🎯 Effet d'initialisation avec nettoyage optimisé
    */
   useEffect(() => {
-    // Configuration des intercepteurs axios
     const cleanupInterceptors = setupAxiosInterceptors();
-    
-    // Initialisation du profil utilisateur
     initializeUserProfile();
 
-    // Nettoyage lors du démontage
     return () => {
       mountedRef.current = false;
       cleanupInterceptors();
@@ -615,36 +633,48 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [setupAxiosInterceptors, initializeUserProfile]);
 
   /**
-   * Effet pour surveiller les changements d'authentification
-   * Écoute les changements dans AsyncStorage (par exemple depuis useAuth)
+   * 👂 Écoute des changements dans AsyncStorage pour détecter les nouveaux tokens
    */
   useEffect(() => {
-    const checkAuthPeriodically = () => {
-      const interval = setInterval(async () => {
-        if (mountedRef.current) {
-          const currentAuth = await checkAuthenticationStatus();
-          
-          // Si l'état d'authentification a changé
-          if (currentAuth !== isAuthenticated) {
-            if (currentAuth) {
-              // Nouvelle authentification détectée
-              await initializeUserProfile();
-            } else {
-              // Déconnexion détectée
-              await handleAuthenticationError();
-            }
-          }
+    let pollingInterval: ReturnType<typeof setInterval>;
+    
+    const checkForTokenChanges = async () => {
+      if (!mountedRef.current) return;
+      
+      try {
+        const [currentToken, currentUserId] = await Promise.all([
+          TokenManager.getToken(),
+          TokenManager.getUserId(),
+        ]);
+        
+        // Si on détecte un nouveau token et qu'on n'était pas authentifié
+        if (currentToken && currentUserId && !isAuthenticated) {
+          console.log('🔄 Nouveau token détecté - réinitialisation du profil');
+          await initializeUserProfile();
         }
-      }, 5000); // Vérification toutes les 5 secondes
-
-      return () => clearInterval(interval);
+        // Si le token a disparu et qu'on était authentifié
+        else if (!currentToken && isAuthenticated) {
+          console.log('🚫 Token supprimé détecté - déconnexion');
+          await handleAuthenticationError();
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la vérification des tokens:', error);
+      }
     };
 
-    const cleanup = checkAuthPeriodically();
-    return cleanup;
-  }, [isAuthenticated, checkAuthenticationStatus, initializeUserProfile, handleAuthenticationError]);
+    // Vérification toutes les 2 secondes (optimisé pour la réactivité)
+    pollingInterval = setInterval(checkForTokenChanges, 2000);
+    
+    // Vérification immédiate
+    checkForTokenChanges();
 
-  // ✅ Context value avec signatures parfaitement compatibles
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [isAuthenticated, initializeUserProfile, handleAuthenticationError]);
+
   const value: UserProfileContextType = {
     user,
     displayName,

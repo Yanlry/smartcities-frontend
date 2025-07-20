@@ -297,7 +297,11 @@ export const handleVote = async ({
       setVotes(response.data.updatedVotes);
     }
   } catch (error) {
-    console.error("Erreur lors de l'envoi du vote :", error.response?.data || error);
+    if (axios.isAxiosError(error)) {
+      console.error("Erreur lors de l'envoi du vote :", error.response?.data || error.message);
+    } else {
+      console.error("Erreur lors de l'envoi du vote :", error);
+    }
     // Annulation de la mise à jour optimiste en cas d'erreur
     setVotes(currentVotes);
   }
