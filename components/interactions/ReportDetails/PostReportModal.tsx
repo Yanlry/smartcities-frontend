@@ -1,5 +1,4 @@
-// components/profile/modals/PostReportModal.tsx
-// CORRECTION POUR AFFICHAGE PLEIN ÉCRAN
+// Chemin : components/profile/modals/PostReportModal.tsx
 
 import React, { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { 
@@ -16,12 +15,10 @@ import {
   TouchableWithoutFeedback,
   Platform,
   KeyboardAvoidingView,
-  ScrollView,
-  StatusBar
+  ScrollView
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -121,7 +118,8 @@ const COLORS = {
 };
 
 /**
- * Modal de signalement optimisé avec affichage plein écran
+ * Modal de signalement optimisé pour les publications
+ * Offre une interface intuitive avec catégories prédéfinies et champ personnalisé
  */
 export const PostReportModal: React.FC<PostReportModalProps> = memo(({ 
   isVisible, 
@@ -131,8 +129,6 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
   postAuthor,
   postTitle
 }) => {
-  const insets = useSafeAreaInsets();
-  
   // États locaux
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [customReason, setCustomReason] = useState<string>('');
@@ -145,20 +141,16 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(height))[0];
   const stepAnim = useState(new Animated.Value(0))[0];
-
-  // Gestion du clavier optimisée
+  
+  // Gestion du clavier
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (event) => {
-        setKeyboardVisible(true);
-      }
+      () => setKeyboardVisible(true)
     );
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardVisible(false);
-      }
+      () => setKeyboardVisible(false)
     );
 
     return () => {
@@ -167,7 +159,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
     };
   }, []);
   
-  // Animations d'ouverture/fermeture optimisées
+  // Animations d'ouverture/fermeture
   useEffect(() => {
     if (isVisible) {
       Animated.parallel([
@@ -350,7 +342,6 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       <ScrollView 
         style={styles.categoriesContainer}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContent}
       >
         {REPORT_CATEGORIES.map((category) => (
           <TouchableOpacity
@@ -489,13 +480,11 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       onRequestClose={handleCloseModal}
       statusBarTranslucent={true}
     >
-      <StatusBar backgroundColor="rgba(0, 0, 0, 0.6)" barStyle="light-content" />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.container}
+        >
           <Animated.View 
             style={[
               styles.backdrop,
@@ -503,7 +492,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
             ]}
           >
             <TouchableWithoutFeedback onPress={handleCloseModal}>
-              <View style={styles.backdropTouchable} />
+              <View style={StyleSheet.absoluteFill} />
             </TouchableWithoutFeedback>
             
             <Animated.View 
@@ -511,13 +500,14 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                 styles.modalContainer,
                 {
                   transform: [{ translateY: slideAnim }],
+                  maxHeight: keyboardVisible ? '85%' : '75%'
                 }
               ]}
             >
               {/* Header avec dégradé */}
               <LinearGradient
                 colors={[COLORS.danger.main, COLORS.danger.dark]}
-                style={[styles.modalHeader, { paddingTop: insets.top + 15 }]}
+                style={styles.modalHeader}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
@@ -560,7 +550,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                 </View>
               </View>
               
-              {/* Contenu dynamique qui prend tout l'espace disponible */}
+              {/* Contenu dynamique */}
               <View style={styles.contentContainer}>
                 {currentStep === 'category' && renderCategorySelection()}
                 {currentStep === 'details' && renderDetailsStep()}
@@ -568,7 +558,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
               
               {/* Boutons d'action */}
               {currentStep === 'details' && (
-                <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 10 }]}>
+                <View style={styles.buttonContainer}>
                   <TouchableOpacity 
                     onPress={handleBackToCategory} 
                     style={styles.cancelButton}
@@ -616,15 +606,14 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
               )}
             </Animated.View>
           </Animated.View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 });
 
 PostReportModal.displayName = 'PostReportModal';
 
-// STYLES CORRIGÉS POUR AFFICHAGE PLEIN ÉCRAN
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -632,40 +621,28 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    // CORRECTION PRINCIPALE : Centrer au lieu de justifyContent: 'flex-end'
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdropTouchable: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: COLORS.neutral.white,
-    borderRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     overflow: 'hidden',
-    // CORRECTION : Utiliser toute la hauteur disponible avec des marges
-    width: width * 0.95,
-    height: height * 0.9,
-    maxHeight: height - 100, // Garde une petite marge
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: -4,
     },
     shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 15,
+    shadowRadius: 8,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    padding: 20,
+    paddingTop: 25,
   },
   headerContent: {
     flexDirection: 'row',
@@ -719,7 +696,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary.main,
   },
   contentContainer: {
-    flex: 1, // CORRECTION : Utilise tout l'espace disponible
+    flex: 1,
     position: 'relative',
   },
   stepContainer: {
@@ -744,9 +721,6 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     flex: 1,
-  },
-  categoriesContent: {
-    paddingBottom: 20,
   },
   categoryItem: {
     flexDirection: 'row',

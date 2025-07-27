@@ -11,6 +11,7 @@ import {
   Easing,
   Platform,
   Dimensions,
+  Vibration,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -40,6 +41,8 @@ interface ColorSystem {
     header: readonly [string, string];
     titleBar: readonly [string, string];
     buttonHover: readonly [string, string];
+    reportDanger: readonly [string, string];
+    reportWarning: readonly [string, string];
   };
   primary: {
     main: string;
@@ -47,6 +50,14 @@ interface ColorSystem {
     light: string;
     ghost: string;
     subtle: string;
+  };
+  report: {
+    danger: string;
+    dangerLight: string;
+    warning: string;
+    warningLight: string;
+    info: string;
+    infoLight: string;
   };
   lightText: {
     primary: string;
@@ -63,7 +74,7 @@ interface ColorSystem {
 }
 
 /**
- * Système de couleurs premium optimisé
+ * Système de couleurs premium optimisé avec support signalement
  */
 const COLORS: ColorSystem = {
   gradients: {
@@ -75,6 +86,8 @@ const COLORS: ColorSystem = {
     header: ["rgba(37, 95, 240, 0.85)", "rgba(35, 76, 203, 0.92)"] as const,
     titleBar: ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"] as const,
     buttonHover: ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"] as const,
+    reportDanger: ["#FF6B6B", "#FF4757"] as const,
+    reportWarning: ["#FFA726", "#FF9800"] as const,
   },
   
   primary: {
@@ -83,6 +96,15 @@ const COLORS: ColorSystem = {
     light: "#60A5FA",
     ghost: "rgba(52, 112, 255, 0.08)",
     subtle: "rgba(52, 112, 255, 0.15)",
+  },
+  
+  report: {
+    danger: "#FF6B6B",
+    dangerLight: "rgba(255, 107, 107, 0.2)",
+    warning: "#FFA726",
+    warningLight: "rgba(255, 167, 38, 0.2)",
+    info: "#42A5F5",
+    infoLight: "rgba(66, 165, 245, 0.2)",
   },
   
   lightText: {
@@ -151,6 +173,18 @@ const SHADOWS = {
       elevation: 2,
     },
   }),
+  
+  reportButton: Platform.select({
+    ios: {
+      shadowColor: "#FF6B6B",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+    },
+    android: {
+      elevation: 4,
+    },
+  }),
 } as const;
 
 /**
@@ -169,6 +203,7 @@ interface AnimationConfig {
     accelerate: EasingFunction;
     gentle: EasingFunction;
     elastic: EasingFunction;
+    bounce: EasingFunction;
   };
 }
 
@@ -189,6 +224,7 @@ const ANIMATIONS: AnimationConfig = {
     accelerate: Easing.bezier(0.4, 0.0, 1, 1),
     gentle: Easing.bezier(0.34, 1.56, 0.64, 1),
     elastic: Easing.elastic(1),
+    bounce: Easing.bounce,
   },
 } as const;
 
@@ -261,43 +297,108 @@ class AnimationHelpers {
       useNativeDriver: true,
     });
   }
+  
+  static reportAlert(
+    value: Animated.Value,
+    duration: number = ANIMATIONS.duration.fast
+  ): CompositeAnimation {
+    return Animated.sequence([
+      Animated.timing(value, {
+        toValue: 1.15,
+        duration: duration / 3,
+        easing: ANIMATIONS.easing.accelerate,
+        useNativeDriver: true,
+      }),
+      Animated.timing(value, {
+        toValue: 0.95,
+        duration: duration / 3,
+        easing: ANIMATIONS.easing.bounce,
+        useNativeDriver: true,
+      }),
+      Animated.timing(value, {
+        toValue: 1,
+        duration: duration / 3,
+        easing: ANIMATIONS.easing.gentle,
+        useNativeDriver: true,
+      }),
+    ]);
+  }
 }
 
 /**
- * Badge de notification avec animation optimisée
+ * Badge d'alerte de signalement avec animation spécialisée
  */
-interface NotificationBadgeProps {
-  count?: number;
+interface ReportAlertBadgeProps {
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  visible?: boolean;
 }
 
-const NotificationBadge: React.FC<NotificationBadgeProps> = memo(({ count = 2 }) => {
+const ReportAlertBadge: React.FC<ReportAlertBadgeProps> = memo(({ 
+  severity = 'medium', 
+  visible = true 
+}) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
+  const getBadgeConfig = useCallback(() => {
+    switch (severity) {
+      case 'critical':
+        return { color: COLORS.report.danger, label: '!' };
+      case 'high':
+        return { color: COLORS.report.warning, label: '!' };
+      case 'medium':
+        return { color: COLORS.report.info, label: '•' };
+      case 'low':
+      default:
+        return { color: COLORS.report.info, label: '•' };
+    }
+  }, [severity]);
+  
+  const badgeConfig = getBadgeConfig();
   
   useEffect(() => {
-    // Animation d'entrée
-    AnimationHelpers.springEnter(scaleAnim).start();
-    
-    // Pulsation périodique
-    const interval = setInterval(() => {
-      AnimationHelpers.pulse(scaleAnim, 1.2, 600).start();
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, [scaleAnim]);
+    if (visible) {
+      // Animation d'entrée
+      AnimationHelpers.springEnter(scaleAnim).start();
+      
+      // Pulsation continue pour les alertes critiques
+      if (severity === 'critical') {
+        const interval = setInterval(() => {
+          AnimationHelpers.pulse(pulseAnim, 1.3, 800).start();
+        }, 2000);
+        
+        return () => clearInterval(interval);
+      }
+    } else {
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: ANIMATIONS.duration.fast,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, severity, scaleAnim, pulseAnim]);
+  
+  if (!visible) return null;
   
   return (
     <Animated.View 
       style={[
-        styles.notificationBadge,
-        { transform: [{ scale: scaleAnim }] }
+        styles.reportAlertBadge,
+        { 
+          backgroundColor: badgeConfig.color,
+          transform: [
+            { scale: scaleAnim },
+            { scale: pulseAnim }
+          ]
+        }
       ]}
     >
-      <Text style={styles.notificationText}>{count}</Text>
+      <Text style={styles.reportAlertText}>{badgeConfig.label}</Text>
     </Animated.View>
   );
 });
 
-NotificationBadge.displayName = 'NotificationBadge';
+ReportAlertBadge.displayName = 'ReportAlertBadge';
 
 /**
  * Interface pour le titre d'en-tête
@@ -374,26 +475,50 @@ HeaderTitle.displayName = 'HeaderTitle';
 interface HeaderActionButtonProps {
   iconName: string;
   onPress: () => void;
-  showBadge?: boolean;
   position?: 'left' | 'right';
-  badgeCount?: number;
+  variant?: 'default' | 'report';
+  isLoading?: boolean;
+  disabled?: boolean;
 }
 
 /**
- * Bouton d'action avec interactions fluides
+ * Bouton d'action avec interactions fluides et support signalement
  */
 const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({ 
   iconName, 
   onPress, 
-  showBadge = false,
   position = 'right',
-  badgeCount = 2
+  variant = 'default',
+  isLoading = false,
+  disabled = false
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(position === 'left' ? -15 : 15)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   
   const [isPressed, setIsPressed] = useState<boolean>(false);
+  
+  // Configuration basée sur la variante
+  const getButtonConfig = useCallback(() => {
+    if (variant === 'report') {
+      return {
+        backgroundColor: 'rgba(255, 107, 107, 0.15)',
+        borderColor: 'rgba(255, 107, 107, 0.3)',
+        iconColor: COLORS.report.danger,
+        shadow: SHADOWS.reportButton,
+      };
+    }
+    
+    return {
+      backgroundColor: 'rgba(255, 255, 255, 0.12)',
+      borderColor: 'rgba(255, 255, 255, 0.16)',
+      iconColor: COLORS.lightText.primary,
+      shadow: SHADOWS.button,
+    };
+  }, [variant]);
+  
+  const buttonConfig = getButtonConfig();
   
   useEffect(() => {
     const animationDelay = position === 'left' ? 0 : 100;
@@ -406,24 +531,63 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({
     ]).start();
   }, [fadeAnim, slideAnim, scaleAnim, position]);
   
+  // Animation de loading pour le bouton report
+  useEffect(() => {
+    if (isLoading && variant === 'report') {
+      const rotateAnimation = Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      );
+      rotateAnimation.start();
+      
+      return () => rotateAnimation.stop();
+    } else {
+      rotateAnim.setValue(0);
+    }
+  }, [isLoading, variant, rotateAnim]);
+  
   const handlePressIn = useCallback((): void => {
+    if (disabled) return;
+    
     setIsPressed(true);
-    Animated.timing(scaleAnim, {
-      toValue: 0.92,
-      duration: ANIMATIONS.duration.veryFast,
-      easing: ANIMATIONS.easing.standard,
-      useNativeDriver: true,
-    }).start();
-  }, [scaleAnim]);
+    
+    if (variant === 'report') {
+      // Feedback haptique pour le signalement
+      if (Platform.OS !== 'web') {
+        Vibration.vibrate(50);
+      }
+      
+      AnimationHelpers.reportAlert(scaleAnim).start();
+    } else {
+      Animated.timing(scaleAnim, {
+        toValue: 0.92,
+        duration: ANIMATIONS.duration.veryFast,
+        easing: ANIMATIONS.easing.standard,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [scaleAnim, variant, disabled]);
   
   const handlePressOut = useCallback((): void => {
+    if (disabled) return;
+    
     setIsPressed(false);
     AnimationHelpers.springEnter(scaleAnim, 1, 4, 300).start();
-  }, [scaleAnim]);
+  }, [scaleAnim, disabled]);
   
   const handlePress = useCallback((): void => {
+    if (disabled || isLoading) return;
     onPress();
-  }, [onPress]);
+  }, [onPress, disabled, isLoading]);
+  
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
   
   return (
     <TouchableOpacity
@@ -432,24 +596,43 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({
       onPressOut={handlePressOut}
       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       activeOpacity={1}
+      disabled={disabled}
     >
       <Animated.View 
         style={[
           styles.actionButton,
+          buttonConfig.shadow,
           { 
             opacity: fadeAnim,
+            backgroundColor: isPressed 
+              ? `${buttonConfig.backgroundColor}80`
+              : buttonConfig.backgroundColor,
+            borderColor: buttonConfig.borderColor,
             transform: [
               { translateX: slideAnim },
               { scale: scaleAnim }
             ],
-            backgroundColor: isPressed 
-              ? 'rgba(255, 255, 255, 0.24)' 
-              : 'rgba(255, 255, 255, 0.12)',
           }
         ]}
       >
-        <Icon name={iconName} size={22} color={COLORS.lightText.primary} />
-        {showBadge && <NotificationBadge count={badgeCount} />}
+        <Animated.View
+          style={{
+            transform: isLoading ? [{ rotate: rotateInterpolate }] : undefined
+          }}
+        >
+          <Icon 
+            name={isLoading ? "sync" : iconName} 
+            size={22} 
+            color={disabled ? COLORS.lightText.disabled : buttonConfig.iconColor} 
+          />
+        </Animated.View>
+        
+        {variant === 'report' && !isLoading && (
+          <ReportAlertBadge 
+            severity="medium" 
+            visible={!disabled}
+          />
+        )}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -463,26 +646,28 @@ HeaderActionButton.displayName = 'HeaderActionButton';
 interface HeaderSectionProps {
   title: string;
   onBack: () => void;
-  onNotificationsPress: () => void;
+  onReportPress: () => void;
   onTitlePress: () => void;
   onTitleLayout: (event: LayoutChangeEvent) => void;
-  notificationCount?: number;
+  isReportLoading?: boolean;
+  reportDisabled?: boolean;
 }
 
 /**
- * Composant d'en-tête premium avec architecture optimisée
+ * Composant d'en-tête premium avec bouton de signalement optimisé
  * 
- * @description En-tête avec animations fluides, design moderne et interactions optimisées
- * @param props Propriétés du composant
- * @returns Composant HeaderSection optimisé
+ * @description En-tête avec animations fluides, design moderne et signalement intégré
+ * @param props Propriétés du composant avec support signalement
+ * @returns Composant HeaderSection optimisé avec fonctionnalités de signalement
  */
 const HeaderSection: React.FC<HeaderSectionProps> = memo(({
   title,
   onBack,
-  onNotificationsPress,
+  onReportPress,
   onTitlePress,
   onTitleLayout,
-  notificationCount = 2,
+  isReportLoading = false,
+  reportDisabled = false,
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(-10)).current;
@@ -516,24 +701,29 @@ const HeaderSection: React.FC<HeaderSectionProps> = memo(({
           <View style={styles.decorationCircle2} />
         </View>
         
+        {/* Bouton Retour */}
         <HeaderActionButton 
           iconName="arrow-back" 
           onPress={onBack}
           position="left"
+          variant="default"
         />
         
+        {/* Titre Central */}
         <HeaderTitle 
           title={title} 
           onPress={onTitlePress}
           onLayout={onTitleLayout}
         />
         
+        {/* Bouton de Signalement */}
         <HeaderActionButton 
-          iconName="notifications-outline" 
-          onPress={onNotificationsPress}
-          showBadge={true}
+          iconName="flag" 
+          onPress={onReportPress}
           position="right"
-          badgeCount={notificationCount}
+          variant="report"
+          isLoading={isReportLoading}
+          disabled={reportDisabled}
         />
       </LinearGradient>
     </Animated.View>
@@ -543,7 +733,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = memo(({
 HeaderSection.displayName = 'HeaderSection';
 
 /**
- * Styles optimisés avec organisation modulaire
+ * Styles optimisés avec organisation modulaire et support signalement
  */
 const styles = StyleSheet.create({
   headerContainer: {
@@ -628,28 +818,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    ...SHADOWS.button,
+    position: 'relative',
   },
-  notificationBadge: {
+  reportAlertBadge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#FF416C',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: 'rgba(255, 255, 255, 0.9)',
   },
-  notificationText: {
+  reportAlertText: {
     color: COLORS.lightText.primary,
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '900',
+    textAlign: 'center',
   },
 });
 

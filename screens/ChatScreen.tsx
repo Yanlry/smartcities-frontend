@@ -964,6 +964,7 @@ const styles = StyleSheet.create({
   },
   // Input container
   inputContainer: {
+    marginBottom: 25,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: "#F8F9FA",

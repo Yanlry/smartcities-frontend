@@ -1,6 +1,6 @@
-// src/components/interactions/ReportDetails/MapTabContent.tsx
+// Chemin : src/components/interactions/ReportDetails/MapTabContent.tsx
 
-import React, { useRef, memo, useEffect, useMemo, useState } from "react";
+import React, { useRef, memo, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import MapView, {
   Marker,
   Polyline,
   PROVIDER_DEFAULT,
-  Region,
 } from "react-native-maps";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Report } from "../../../types/entities/report.types";
@@ -23,6 +22,14 @@ import { formatCity } from "../../../utils/formatters";
 
 // Dimensions pour calculs responsifs
 const { width, height } = Dimensions.get("window");
+
+// Types définis manuellement pour éviter les conflits d'espaces de noms
+interface MapRegion {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
 
 // Échelle de gris définie séparément pour éviter les références circulaires
 const GRAY_SCALE = {
@@ -187,7 +194,7 @@ const ANIMATIONS = {
 
   // Helpers pour simplifier l'usage des animations
   helpers: {
-    fadeIn: (value, duration = 300, delay = 0) =>
+    fadeIn: (value: Animated.Value, duration = 300, delay = 0): Animated.CompositeAnimation =>
       Animated.timing(value, {
         toValue: 1,
         duration,
@@ -196,7 +203,7 @@ const ANIMATIONS = {
         useNativeDriver: true,
       }),
 
-    slideInY: (value, fromValue = 20, duration = 300, delay = 0) => {
+    slideInY: (value: Animated.Value, fromValue = 20, duration = 300, delay = 0): Animated.CompositeAnimation => {
       value.setValue(fromValue);
       return Animated.timing(value, {
         toValue: 0,
@@ -207,7 +214,7 @@ const ANIMATIONS = {
       });
     },
 
-    pulse: (value, minValue = 1, maxValue = 1.1, duration = 2000) => {
+    pulse: (value: Animated.Value, minValue = 1, maxValue = 1.1, duration = 2000): Animated.CompositeAnimation => {
       return Animated.loop(
         Animated.sequence([
           Animated.timing(value, {
@@ -247,6 +254,8 @@ const getTypeIcon = (type: string): { name: string; color: string } => {
       return { name: "car", color: COLORS.accent.secondary };
     case "circulation":
       return { name: "time", color: COLORS.state.info };
+    case "reparation":
+      return { name: "build", color: COLORS.primary.main };
     default:
       return { name: "alert-circle", color: COLORS.primary.main };
   }
@@ -262,11 +271,31 @@ interface CustomMarkerProps {
  * Marqueur premium avec effets visuels statiques (sans animation)
  */
 const PremiumMarker = memo(({ type, title, coordinate }: CustomMarkerProps) => {
+  // State pour contrôler tracksViewChanges
+  const [tracksViewChanges, setTracksViewChanges] = React.useState(true);
+  
   // Obtenir l'icône et la couleur selon le type
   const iconInfo = getTypeIcon(type);
 
+  console.log(`🎯 Création du marqueur pour ${title} à`, coordinate, `Type: ${type}, Icône: ${iconInfo.name}`);
+
+  // Désactiver tracksViewChanges après le premier rendu
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setTracksViewChanges(false);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <Marker coordinate={coordinate} title={title} tracksViewChanges={false}>
+    <Marker 
+      coordinate={coordinate} 
+      title={title} 
+      tracksViewChanges={tracksViewChanges}
+      identifier={`marker-${title}-${coordinate.latitude}-${coordinate.longitude}`}
+      onLayout={() => setTracksViewChanges(false)}
+    >
       <View style={styles.markerOuterContainer}>
         {/* Effet de halo lumineux (statique) */}
         <View
@@ -423,40 +452,68 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
   onMapReady,
 }) => {
   // Références pour la carte et animations
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<MapView>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Debug: Afficher les données du rapport
+  console.log("📍 MapTabContent - Données du rapport:", {
+    id: report?.id,
+    title: report?.title,
+    latitude: report?.latitude,
+    longitude: report?.longitude,
+    type: report?.type,
+    city: report?.city,
+    mapReady
+  });
 
   // Valider les coordonnées du rapport
   const validCoordinates = useMemo(() => {
-    return (
-      report &&
-      report.latitude &&
-      report.longitude &&
+    const isValid = report &&
+      typeof report.latitude === 'number' &&
+      typeof report.longitude === 'number' &&
       !isNaN(report.latitude) &&
-      !isNaN(report.longitude)
-    );
+      !isNaN(report.longitude) &&
+      report.latitude !== 0 &&
+      report.longitude !== 0;
+    
+    console.log("🔍 Validation des coordonnées:", {
+      isValid,
+      latitude: report?.latitude,
+      longitude: report?.longitude,
+      latType: typeof report?.latitude,
+      lngType: typeof report?.longitude
+    });
+    
+    return isValid;
   }, [report]);
 
   // Coordonnées du rapport
   const reportCoords = useMemo(() => {
-    return validCoordinates
+    const coords = validCoordinates
       ? {
           latitude: report.latitude,
           longitude: report.longitude,
         }
       : null;
+    
+    console.log("📍 Coordonnées du rapport calculées:", coords);
+    return coords;
   }, [report, validCoordinates]);
 
   // Détermine la région optimale pour la carte
-  const calculateRegion = (): Region => {
+  const calculateRegion = (): MapRegion => {
+    console.log("🗺️ Calcul de la région de la carte...");
+    
     // Si nous n'avons que le point du signalement
     if (!routeCoords || routeCoords.length === 0) {
-      return {
+      const region = {
         latitude: reportCoords?.latitude || 48.8566,
         longitude: reportCoords?.longitude || 2.3522,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
+      console.log("📍 Région calculée (point unique):", region);
+      return region;
     }
 
     // Si nous avons un itinéraire, calculer les limites
@@ -486,16 +543,20 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
     const latDelta = (maxLat - minLat) * 1.5;
     const lngDelta = (maxLng - minLng) * 1.5;
 
-    return {
+    const region = {
       latitude: centerLat,
       longitude: centerLng,
       latitudeDelta: Math.max(latDelta, 0.01),
       longitudeDelta: Math.max(lngDelta, 0.01),
     };
+    
+    console.log("📍 Région calculée (avec itinéraire):", region);
+    return region;
   };
 
   // Fonction pour recentrer la carte
   const handleRecenter = () => {
+    console.log("🎯 Recentrage de la carte...");
     if (mapRef.current && reportCoords) {
       const region = calculateRegion();
       mapRef.current.animateToRegion(region, 300);
@@ -504,6 +565,7 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
 
   // Gestion de l'événement "carte prête"
   const handleMapReady = () => {
+    console.log("🗺️ Carte prête, initialisation...");
     onMapReady();
 
     // Animer l'apparition de la carte
@@ -515,14 +577,27 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
         try {
           setTimeout(() => {
             const region = calculateRegion();
+            console.log("🎯 Animation vers la région:", region);
             mapRef.current?.animateToRegion(region, 300);
           }, 500);
         } catch (error) {
-          console.warn("Erreur lors de l'ajustement de la carte:", error);
+          console.warn("❌ Erreur lors de l'ajustement de la carte:", error);
         }
       }
     }
   };
+
+  // Region initiale pour la carte
+  const initialRegion = useMemo(() => {
+    const region = {
+      latitude: validCoordinates ? report.latitude : 48.8566,
+      longitude: validCoordinates ? report.longitude : 2.3522,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+    console.log("🗺️ Région initiale de la carte:", region);
+    return region;
+  }, [validCoordinates, report]);
 
   return (
     <View style={styles.mapContent}>
@@ -532,12 +607,7 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
           ref={mapRef}
           style={styles.map}
           provider={PROVIDER_DEFAULT}
-          initialRegion={{
-            latitude: validCoordinates ? report.latitude : 48.8566,
-            longitude: validCoordinates ? report.longitude : 2.3522,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
+          initialRegion={initialRegion}
           showsUserLocation={true}
           showsCompass={true}
           onMapReady={handleMapReady}
@@ -547,6 +617,7 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
           {/* Marqueur premium avec vérifications pour éviter les erreurs */}
           {mapReady && validCoordinates && (
             <PremiumMarker
+              key={`marker-${report.id}-${report.latitude}-${report.longitude}`}
               type={report.type}
               title={report.title}
               coordinate={{
