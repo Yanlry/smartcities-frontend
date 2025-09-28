@@ -563,9 +563,9 @@ export default function ProfileScreen({ navigation }) {
                   />
                 ) : (
                   <View style={styles.placeholderImage}>
-                    <Text style={styles.placeholderText}>
-                      {formData.firstName.charAt(0)}
+                    <Text style={styles.placeholderText}>                
                       {formData.lastName.charAt(0)}
+                      {formData.firstName.charAt(0)}
                     </Text>
                   </View>
                 )}
@@ -573,7 +573,7 @@ export default function ProfileScreen({ navigation }) {
 
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>
-                  {formData.firstName} {formData.lastName}
+                 {formData.lastName} {formData.firstName} 
                 </Text>
                 <Text style={styles.profileUsername}>
                   @{formData.username || "username"}
@@ -1201,7 +1201,7 @@ export default function ProfileScreen({ navigation }) {
         navigation={navigation}
         user={user}
         stats={stats}
-        displayName={`${formData.firstName} ${formData.lastName}`}
+        displayName={`${formData.lastName} ${formData.firstName} `}
         unreadCount={unreadCount}
         voteSummary={stats?.voteSummary || {}}
         onShowNameModal={() => setIsEditingCity(true)}

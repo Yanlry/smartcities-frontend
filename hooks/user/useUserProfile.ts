@@ -166,7 +166,7 @@ export const useUserProfile = () => {
   const memberSince = user?.createdAt ? calculateYearsSince(user.createdAt) : "";
 
   const displayName = user?.useFullName 
-    ? `${user.firstName} ${user.lastName}` 
+    ? `${user.lastName} ${user.firstName}` 
     : user?.username || "";
 
   

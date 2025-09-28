@@ -154,7 +154,7 @@ const UserUtils = {
   getDisplayName(user: User | null): string {
     if (!user) return '';
     return user.useFullName 
-      ? `${user.firstName} ${user.lastName}`.trim()
+      ? `${user.lastName} ${user.firstName}`.trim()
       : user.username || `${user.firstName} ${user.lastName}`.trim();
   },
 

@@ -44,7 +44,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, onPress }) => {
   // Get display name for user
   const displayName = useMemo(() => {
     if (user.useFullName && user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+      return ` ${user.lastName} ${user.firstName}`;
     }
     return user.username || "Utilisateur inconnu";
   }, [user]);

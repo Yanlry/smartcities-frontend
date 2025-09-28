@@ -1,6 +1,6 @@
 // Chemin : screens/Auth/RegisterScreen.tsx
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   TextInput,
@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/auth/useAuth";
@@ -25,6 +26,8 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from 'expo-haptics';
 import franceCitiesRaw from "../../assets/france.json";
+// NOUVEAU: Import des fonctions de vérification depuis votre authService
+import { checkUsernameAvailability, checkEmailAvailability } from "../../services/authService";
 
 const { width, height } = Dimensions.get("window");
 const franceCities: City[] = franceCitiesRaw as City[];
@@ -70,6 +73,19 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  // NOUVEAUX États pour les vérifications d'unicité en temps réel
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+
+  // NOUVEAU: État pour la visibilité du mot de passe
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  // CORRECTED: Refs pour les timeouts de debounce (utilisation de 'number' au lieu de 'NodeJS.Timeout')
+  const usernameTimeoutRef = useRef<number | null>(null);
+  const emailTimeoutRef = useRef<number | null>(null);
+
   // États de localisation et recherche
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
@@ -94,6 +110,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null]);
   const modalScaleAnim = useRef(new Animated.Value(0.8)).current;
   const searchBounceAnim = useRef(new Animated.Value(1)).current;
+  const checkingAnim = useRef(new Animated.Value(0)).current;
 
   // Animation d'entrée
   useEffect(() => {
@@ -119,6 +136,158 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     ]).start();
   }, []);
 
+  // Animation pour les vérifications en cours
+  useEffect(() => {
+    if (isCheckingUsername || isCheckingEmail) {
+      Animated.loop(
+        Animated.timing(checkingAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+          easing: Easing.linear,
+        })
+      ).start();
+    } else {
+      checkingAnim.stopAnimation();
+      checkingAnim.setValue(0);
+    }
+  }, [isCheckingUsername, isCheckingEmail]);
+
+  /**
+   * NOUVELLE FONCTION: Vérification de la disponibilité du nom d'utilisateur
+   * Utilise votre authService existant
+   */
+  const checkUsernameAvailabilityHandler = useCallback(async (usernameToCheck: string): Promise<boolean> => {
+    try {
+      setIsCheckingUsername(true);
+      
+      // Appel à votre authService
+      const isAvailable = await checkUsernameAvailability(usernameToCheck);
+      
+      setUsernameAvailable(isAvailable);
+      
+      if (!isAvailable) {
+        setUsernameError("Ce nom d'utilisateur est déjà pris");
+      } else {
+        setUsernameError(null);
+      }
+      
+      return isAvailable;
+    } catch (error) {
+      console.error('Erreur lors de la vérification du nom d\'utilisateur:', error);
+      setUsernameError("Erreur lors de la vérification. Veuillez réessayer.");
+      return false;
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  }, []);
+
+  /**
+   * NOUVELLE FONCTION: Vérification de la disponibilité de l'email
+   * Utilise votre authService existant
+   */
+  const checkEmailAvailabilityHandler = useCallback(async (emailToCheck: string): Promise<boolean> => {
+    try {
+      setIsCheckingEmail(true);
+      
+      // Appel à votre authService
+      const isAvailable = await checkEmailAvailability(emailToCheck);
+      
+      setEmailAvailable(isAvailable);
+      
+      if (!isAvailable) {
+        setEmailError("Cette adresse email est déjà utilisée");
+      } else {
+        setEmailError(null);
+      }
+      
+      return isAvailable;
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l\'email:', error);
+      setEmailError("Erreur lors de la vérification. Veuillez réessayer.");
+      return false;
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }, []);
+
+  // NOUVEAU: Fonction pour basculer la visibilité du mot de passe
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+    // Petite vibration pour confirmer l'action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  // NOUVEAU: Fonction pour capitaliser la première lettre et mettre le reste en minuscule
+  const capitalizeFirstLetter = (text: string): string => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
+
+  // NOUVEAU: Effet pour vérification en temps réel du nom d'utilisateur
+  useEffect(() => {
+    // Nettoyer le timeout précédent
+    if (usernameTimeoutRef.current) {
+      clearTimeout(usernameTimeoutRef.current);
+    }
+
+    // Reset les états quand l'utilisateur tape
+    setUsernameAvailable(null);
+
+    // Vérifier seulement si le username a la longueur minimale
+    if (username.length >= MIN_LENGTH) {
+      // Délai de 800ms avant de faire la vérification (debounce)
+      usernameTimeoutRef.current = setTimeout(() => {
+        checkUsernameAvailabilityHandler(username);
+      }, 800);
+    } else if (username.length > 0) {
+      // Si la longueur est insuffisante, afficher l'erreur immédiatement
+      setUsernameError(`Le nom d'utilisateur doit comporter au moins ${MIN_LENGTH} caractères`);
+    } else {
+      // Si le champ est vide, pas d'erreur
+      setUsernameError(null);
+    }
+
+    // Nettoyage
+    return () => {
+      if (usernameTimeoutRef.current) {
+        clearTimeout(usernameTimeoutRef.current);
+      }
+    };
+  }, [username, checkUsernameAvailabilityHandler]);
+
+  // NOUVEAU: Effet pour vérification en temps réel de l'email
+  useEffect(() => {
+    // Nettoyer le timeout précédent
+    if (emailTimeoutRef.current) {
+      clearTimeout(emailTimeoutRef.current);
+    }
+
+    // Reset les états quand l'utilisateur tape
+    setEmailAvailable(null);
+
+    // Vérifier seulement si l'email a un format valide
+    if (EMAIL_REGEX.test(email)) {
+      // Délai de 800ms avant de faire la vérification (debounce)
+      emailTimeoutRef.current = setTimeout(() => {
+        checkEmailAvailabilityHandler(email);
+      }, 800);
+    } else if (email.length > 0) {
+      // Si le format est invalide, afficher l'erreur immédiatement
+      setEmailError("Veuillez saisir une adresse e-mail valide");
+    } else {
+      // Si le champ est vide, pas d'erreur
+      setEmailError(null);
+    }
+
+    // Nettoyage
+    return () => {
+      if (emailTimeoutRef.current) {
+        clearTimeout(emailTimeoutRef.current);
+      }
+    };
+  }, [email, checkEmailAvailabilityHandler]);
+
   // Fonctions de validation des champs
   const validateFirstName = (value: string): boolean => {
     const isValid = value.length >= MIN_LENGTH;
@@ -140,26 +309,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     return isValid || value.length === 0;
   };
 
-  const validateUsername = (value: string): boolean => {
-    const isValid = value.length >= MIN_LENGTH;
-    if (!isValid && value.length > 0) {
-      setUsernameError(`Le nom d'utilisateur doit comporter au moins ${MIN_LENGTH} caractères`);
-    } else {
-      setUsernameError(null);
-    }
-    return isValid || value.length === 0;
-  };
-
-  const validateEmail = (value: string): boolean => {
-    const isValid = EMAIL_REGEX.test(value);
-    if (!isValid && value.length > 0) {
-      setEmailError("Veuillez saisir une adresse e-mail valide");
-    } else {
-      setEmailError(null);
-    }
-    return isValid || value.length === 0;
-  };
-
   const validatePassword = (value: string): boolean => {
     const isValid = PASSWORD_REGEX.test(value);
     if (!isValid && value.length > 0) {
@@ -172,23 +321,27 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
   // Gestionnaires de modification des champs avec validation
   const handleFirstNameChange = (value: string) => {
-    setFirstName(value);
-    validateFirstName(value);
+    // NOUVEAU: Capitalise automatiquement la première lettre
+    const capitalizedValue = capitalizeFirstLetter(value);
+    setFirstName(capitalizedValue);
+    validateFirstName(capitalizedValue);
   };
 
   const handleLastNameChange = (value: string) => {
-    setLastName(value);
-    validateLastName(value);
+    // NOUVEAU: Capitalise automatiquement la première lettre
+    const capitalizedValue = capitalizeFirstLetter(value);
+    setLastName(capitalizedValue);
+    validateLastName(capitalizedValue);
   };
 
+  // MODIFIÉ: Gestionnaire simplifié pour le username (la vérification se fait maintenant dans useEffect)
   const handleUsernameChange = (value: string) => {
     setUsername(value);
-    validateUsername(value);
   };
 
+  // MODIFIÉ: Gestionnaire simplifié pour l'email (la vérification se fait maintenant dans useEffect)
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    validateEmail(value);
   };
 
   const handlePasswordChange = (value: string) => {
@@ -199,18 +352,20 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   // Valider le formulaire selon l'étape courante
   useEffect(() => {
     if (currentStep === 1) {
-      // Vérifie que les champs sont remplis ET valides
+      // MODIFIÉ: Vérifie que les champs sont remplis ET valides ET que le username est disponible
       const step1Valid = 
         !!firstName && !!lastName && !!username && 
         firstNameError === null && lastNameError === null && usernameError === null &&
-        firstName.length >= MIN_LENGTH && lastName.length >= MIN_LENGTH && username.length >= MIN_LENGTH;
+        firstName.length >= MIN_LENGTH && lastName.length >= MIN_LENGTH && username.length >= MIN_LENGTH &&
+        usernameAvailable === true; // NOUVEAU: vérifier que le username est disponible
       setFormValid(step1Valid);
     } else if (currentStep === 2) {
-      // Vérifie que les champs sont remplis ET valides
+      // MODIFIÉ: Vérifie que les champs sont remplis ET valides ET que l'email est disponible
       const step2Valid = 
         !!email && !!password && 
         emailError === null && passwordError === null &&
-        EMAIL_REGEX.test(email) && PASSWORD_REGEX.test(password);
+        EMAIL_REGEX.test(email) && PASSWORD_REGEX.test(password) &&
+        emailAvailable === true; // NOUVEAU: vérifier que l'email est disponible
       setFormValid(step2Valid);
     } else if (currentStep === 3) {
       setFormValid(!!selectedLocation && !!photos?.length);
@@ -218,7 +373,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   }, [
     firstName, lastName, username, email, password, 
     firstNameError, lastNameError, usernameError, emailError, passwordError,
-    currentStep, selectedLocation, photos
+    currentStep, selectedLocation, photos, usernameAvailable, emailAvailable
   ]);
 
   // Gestion de l'inscription
@@ -262,8 +417,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     handleRegister(onLogin, cityData);
   };
 
-  // Navigation vers la prochaine étape
-  const goToNextStep = () => {
+  // MODIFIÉ: Navigation vers la prochaine étape (suppression des vérifications manuelles car maintenant automatiques)
+  const goToNextStep = async () => {
     if (!formValid) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       
@@ -285,6 +440,17 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         }),
       ]).start();
       
+      return;
+    }
+
+    // MODIFIÉ: Vérifications simplifiées car maintenant automatiques
+    if (currentStep === 1 && usernameAvailable === false) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Nom d'utilisateur indisponible", "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre.");
+      return;
+    } else if (currentStep === 2 && emailAvailable === false) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Email indisponible", "Cette adresse email est déjà utilisée. Veuillez en utiliser une autre.");
       return;
     }
 
@@ -387,13 +553,12 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         cityName.includes(trimmedQuery.toLowerCase()) ||
         codePostal.startsWith(trimmedQuery)
       );
-    }).slice(0, 20); // Limiter à 20 résultats pour les performances
+    }).slice(0, 20);
 
     if (filteredCities.length > 0) {
       setSuggestions(filteredCities);
       setModalVisible(true);
       
-      // Animation à l'ouverture de la modale
       Animated.spring(modalScaleAnim, {
         toValue: 1,
         friction: 7,
@@ -431,7 +596,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Animation à la fermeture de la modale
     Animated.timing(modalScaleAnim, {
       toValue: 0.8,
       duration: 150,
@@ -495,7 +659,43 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     }
   };
 
-  // Rendu de l'étape 1: Informations personnelles
+  // NOUVELLE FONCTION: Afficher l'indicateur de vérification avec animations
+  const renderVerificationIndicator = (isChecking: boolean, isAvailable: boolean | null, fieldName: string) => {
+    if (isChecking) {
+      return (
+        <Animated.View 
+          style={[
+            styles.verificationIndicator,
+            {
+              transform: [{
+                rotate: checkingAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '360deg'],
+                })
+              }]
+            }
+          ]}
+        >
+          <ActivityIndicator size="small" color="#6366f1" />
+        </Animated.View>
+      );
+    } else if (isAvailable === true) {
+      return (
+        <View style={styles.verificationIndicator}>
+          <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+        </View>
+      );
+    } else if (isAvailable === false) {
+      return (
+        <View style={styles.verificationIndicator}>
+          <Ionicons name="close-circle" size={20} color="#ef4444" />
+        </View>
+      );
+    }
+    return null;
+  };
+
+  // Rendu de l'étape 1: Informations personnelles (MODIFIÉ avec vérifications)
   const renderStepOne = () => (
     <Animated.View
       style={[
@@ -522,6 +722,34 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       </Text>
 
       <View style={styles.formContainer}>
+      <View>
+          <View style={[
+            styles.inputWrapper,
+            lastNameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
+          ]}>
+            <Ionicons 
+              name="people-outline" 
+              size={22} 
+              color={lastNameError ? "#ef4444" : "#5e5ce6"} 
+              style={styles.inputIcon} 
+            />
+            <TextInput
+              style={styles.input}
+              value={lastName}
+              placeholder="Nom"
+              placeholderTextColor="#94a3b8"
+              onChangeText={handleLastNameChange}
+              autoCorrect={false}
+              spellCheck={false}
+              returnKeyType="next"
+              ref={(el) => { inputRefs.current[1] = el; }}
+              onSubmitEditing={() => focusNextInput(1, 1)}
+            />
+          </View>
+          {lastNameError && (
+            <Text style={styles.errorText}>{lastNameError}</Text>
+          )}
+        </View>
         <View>
           <View style={[
             styles.inputWrapper,
@@ -542,9 +770,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="next"
-              ref={(el) => (inputRefs.current[0] = el)}
+              ref={(el) => { inputRefs.current[0] = el; }}
               onSubmitEditing={() => focusNextInput(0, 1)}
-              onBlur={() => validateFirstName(firstName)}
             />
           </View>
           {firstNameError && (
@@ -552,45 +779,18 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           )}
         </View>
 
-        <View>
-          <View style={[
-            styles.inputWrapper,
-            lastNameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
-          ]}>
-            <Ionicons 
-              name="people-outline" 
-              size={22} 
-              color={lastNameError ? "#ef4444" : "#5e5ce6"} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={styles.input}
-              value={lastName}
-              placeholder="Nom"
-              placeholderTextColor="#94a3b8"
-              onChangeText={handleLastNameChange}
-              autoCorrect={false}
-              spellCheck={false}
-              returnKeyType="next"
-              ref={(el) => (inputRefs.current[1] = el)}
-              onSubmitEditing={() => focusNextInput(1, 1)}
-              onBlur={() => validateLastName(lastName)}
-            />
-          </View>
-          {lastNameError && (
-            <Text style={styles.errorText}>{lastNameError}</Text>
-          )}
-        </View>
+    
         
         <View>
           <View style={[
             styles.inputWrapper,
-            usernameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
+            usernameError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
+            usernameAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
           ]}>
             <Ionicons 
               name="at" 
               size={22} 
-              color={usernameError ? "#ef4444" : "#5e5ce6"} 
+              color={usernameError ? "#ef4444" : usernameAvailable === true ? "#10b981" : "#5e5ce6"} 
               style={styles.inputIcon} 
             />
             <TextInput
@@ -602,13 +802,18 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="next"
-              ref={(el) => (inputRefs.current[2] = el)}
+              ref={(el) => { inputRefs.current[2] = el; }}
               onSubmitEditing={() => focusNextInput(2, 1)}
-              onBlur={() => validateUsername(username)}
             />
+            {/* NOUVEAU: Indicateur de vérification */}
+            {renderVerificationIndicator(isCheckingUsername, usernameAvailable, 'username')}
           </View>
           {usernameError && (
             <Text style={styles.errorText}>{usernameError}</Text>
+          )}
+          {/* NOUVEAU: Message de succès */}
+          {usernameAvailable === true && !usernameError && (
+            <Text style={styles.successText}>✓ Ce nom d'utilisateur est disponible</Text>
           )}
         </View>
       </View>
@@ -616,20 +821,30 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       <TouchableOpacity
         style={[
           styles.nextButton,
-          !formValid && styles.buttonDisabled,
+          (!formValid || isCheckingUsername) && styles.buttonDisabled,
         ]}
         onPress={goToNextStep}
-        disabled={!formValid}
+        disabled={!formValid || isCheckingUsername}
         activeOpacity={0.9}
       >
         <LinearGradient
-          colors={formValid ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
+          colors={(formValid && !isCheckingUsername) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientButton}
         >
-          <Text style={styles.nextButtonText}>Continuer</Text>
-          <Ionicons name="arrow-forward" size={20} color="#fff" />
+          {/* NOUVEAU: Affichage différent selon l'état de vérification */}
+          {isCheckingUsername ? (
+            <>
+              <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.nextButtonText}>Vérification...</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.nextButtonText}>Continuer</Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </>
+          )}
         </LinearGradient>
       </TouchableOpacity>
 
@@ -645,7 +860,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
-  // Rendu de l'étape 2: Informations du compte
+  // Rendu de l'étape 2: Informations du compte (MODIFIÉ avec vérifications)
   const renderStepTwo = () => (
     <Animated.View
       style={[
@@ -675,12 +890,13 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         <View>
           <View style={[
             styles.inputWrapper,
-            emailError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
+            emailError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
+            emailAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
           ]}>
             <Ionicons 
               name="mail-outline" 
               size={22} 
-              color={emailError ? "#ef4444" : "#5e5ce6"} 
+              color={emailError ? "#ef4444" : emailAvailable === true ? "#10b981" : "#5e5ce6"} 
               style={styles.inputIcon} 
             />
             <TextInput
@@ -694,13 +910,18 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="next"
-              ref={(el) => (inputRefs.current[3] = el)}
+              ref={(el) => { inputRefs.current[3] = el; }}
               onSubmitEditing={() => focusNextInput(3, 2)}
-              onBlur={() => validateEmail(email)}
             />
+            {/* NOUVEAU: Indicateur de vérification */}
+            {renderVerificationIndicator(isCheckingEmail, emailAvailable, 'email')}
           </View>
           {emailError && (
             <Text style={styles.errorText}>{emailError}</Text>
+          )}
+          {/* NOUVEAU: Message de succès */}
+          {emailAvailable === true && !emailError && (
+            <Text style={styles.successText}>✓ Cette adresse email est disponible</Text>
           )}
         </View>
 
@@ -721,14 +942,25 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               placeholder="Mot de passe"
               placeholderTextColor="#94a3b8"
               onChangeText={handlePasswordChange}
-              secureTextEntry
+              secureTextEntry={!isPasswordVisible}  // MODIFIÉ: La visibilité dépend maintenant de l'état
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="done"
-              ref={(el) => (inputRefs.current[4] = el)}
+              ref={(el) => { inputRefs.current[4] = el; }}
               onSubmitEditing={() => focusNextInput(4, 2)}
-              onBlur={() => validatePassword(password)}
             />
+            {/* NOUVEAU: Bouton pour montrer/cacher le mot de passe */}
+            <TouchableOpacity
+              onPress={togglePasswordVisibility}
+              style={styles.passwordToggle}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name={isPasswordVisible ? "eye-off" : "eye"}
+                size={20}
+                color="#94a3b8"
+              />
+            </TouchableOpacity>
           </View>
           {passwordError && (
             <Text style={styles.errorText}>{passwordError}</Text>
@@ -749,27 +981,37 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           style={[
             styles.nextButton,
             styles.nextButtonInRow,
-            !formValid && styles.buttonDisabled,
+            (!formValid || isCheckingEmail) && styles.buttonDisabled,
           ]}
           onPress={goToNextStep}
-          disabled={!formValid}
+          disabled={!formValid || isCheckingEmail}
           activeOpacity={0.9}
         >
           <LinearGradient
-            colors={formValid ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
+            colors={(formValid && !isCheckingEmail) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientButton}
           >
-            <Text style={styles.nextButtonText}>Continuer</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
+            {/* NOUVEAU: Affichage différent selon l'état de vérification */}
+            {isCheckingEmail ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.nextButtonText}>Vérification...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.nextButtonText}>Continuer</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </View>
     </Animated.View>
   );
 
-  // Rendu de l'étape 3: Finalisation du profil
+  // Rendu de l'étape 3: Finalisation du profil (inchangé)
   const renderStepThree = () => (
     <Animated.View
       style={[
@@ -1102,7 +1344,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 12,
-    marginBottom: 10,  // Réduit pour laisser de la place aux messages d'erreur
+    marginBottom: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
@@ -1116,8 +1358,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  // NOUVEAU: Style pour l'indicateur de vérification
+  verificationIndicator: {
+    position: 'absolute',
+    right: 16,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // NOUVEAU: Style pour le bouton montrer/cacher le mot de passe
+  passwordToggle: {
+    position: 'absolute',
+    right: 16,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 5,
+  },
   errorText: {
     color: '#ef4444',
+    fontSize: 12,
+    marginBottom: 12,
+    marginLeft: 16,
+    fontWeight: '500',
+  },
+  // NOUVEAU: Style pour les messages de succès
+  successText: {
+    color: '#10b981',
     fontSize: 12,
     marginBottom: 12,
     marginLeft: 16,

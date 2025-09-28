@@ -18,6 +18,7 @@ import {
   Keyboard,
   Easing,
   Pressable,
+  ScrollView,
 } from "react-native";
 import { useAuth } from "../../hooks/auth/useAuth";
 import { BlurView } from "expo-blur";
@@ -41,7 +42,7 @@ interface ForgotPasswordState {
 
 // Configuration des mesures et constantes
 const { width, height } = Dimensions.get("window");
-const BORDER_RADIUS = 24; // On utilise le border-radius de l'original
+const BORDER_RADIUS = 24;
 const NEON_PRIMARY = '#FF3A8D';
 const NEON_SECONDARY = '#00DFFF';
 const NEON_TERTIARY = '#00FFB3';
@@ -69,20 +70,26 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  
+  // États pour le clavier
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   
   // États de validation
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Animations améliorées - combinaison des deux approches
+  // Animations améliorées
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-100)).current; // Animation slide du haut
-  const formSlideAnim = useRef(new Animated.Value(50)).current; // Animation du formulaire de bas en haut
+  const slideAnim = useRef(new Animated.Value(-100)).current;
+  const formSlideAnim = useRef(new Animated.Value(50)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  
+  // Animation pour le bouton de fermeture du clavier
+  const keyboardButtonAnim = useRef(new Animated.Value(0)).current;
   
   // Animation de fond
   const bgCircleScale1 = useRef(new Animated.Value(1)).current;
@@ -94,7 +101,28 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
   const passwordInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
   
-  // Animation des cercles de fond - effet glassmorphique subtil
+  // FONCTION AMÉLIORÉE : Fermer le clavier avec plusieurs méthodes
+  const dismissKeyboard = useCallback(() => {
+    // Méthode 1: Keyboard.dismiss()
+    Keyboard.dismiss();
+    
+    // Méthode 2: Forcer le blur sur tous les inputs actifs
+    if (emailInputRef.current) {
+      emailInputRef.current.blur();
+    }
+    if (passwordInputRef.current) {
+      passwordInputRef.current.blur();
+    }
+  }, []);
+
+  // NOUVEAU : Gestionnaire d'événements pour fermer le clavier sur tap
+  const handleScreenPress = useCallback(() => {
+    if (keyboardVisible) {
+      dismissKeyboard();
+    }
+  }, [keyboardVisible, dismissKeyboard]);
+  
+  // Animation des cercles de fond
   useEffect(() => {
     const animateBackground = () => {
       Animated.loop(
@@ -162,16 +190,13 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
   useEffect(() => {
     const startupAnimation = () => {
       Animated.sequence([
-        // Fade in du background
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 800,
           useNativeDriver: true,
           easing: Easing.out(Easing.cubic),
         }),
-        // Séquence parallèle d'animations
         Animated.parallel([
-          // Logo slide down + rotation
           Animated.timing(slideAnim, {
             toValue: 0,
             duration: 1000,
@@ -184,7 +209,6 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
             useNativeDriver: true,
             easing: Easing.out(Easing.back(1.5)),
           }),
-          // Formulaire slide up
           Animated.timing(formSlideAnim, {
             toValue: 0,
             duration: 800,
@@ -192,7 +216,6 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
             useNativeDriver: true,
             easing: Easing.out(Easing.cubic),
           }),
-          // Opacity in
           Animated.timing(opacityAnim, {
             toValue: 1,
             duration: 1000,
@@ -200,7 +223,6 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
             useNativeDriver: true,
             easing: Easing.inOut(Easing.cubic),
           }),
-          // Scale up
           Animated.timing(scaleAnim, {
             toValue: 1,
             duration: 1000,
@@ -214,14 +236,34 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
     
     startupAnimation();
     
-    // Listeners de clavier
+    // Listeners de clavier améliorés pour gérer la hauteur du clavier
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
-      () => setKeyboardVisible(true)
+      (event) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(event.endCoordinates.height);
+        // Animation d'apparition du bouton
+        Animated.spring(keyboardButtonAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      }
     );
+    
     const keyboardDidHideListener = Keyboard.addListener(
       'keyboardDidHide',
-      () => setKeyboardVisible(false)
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+        // Animation de disparition du bouton
+        Animated.timing(keyboardButtonAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
     );
 
     return () => {
@@ -315,7 +357,7 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
       return;
     }
     
-    // Animation de pression du bouton avec meilleure fluidité
+    // Animation de pression du bouton
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 0.95,
@@ -344,7 +386,6 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
   const handleRegisterNavigation = useCallback(() => {
     setIsRegisterClicked(true);
     
-    // Animation de sortie plus élaborée
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -374,7 +415,7 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
       navigation.navigate("Register");
       setTimeout(() => {
         setIsRegisterClicked(false);
-        // Reset animations for when we come back
+        // Reset animations
         fadeAnim.setValue(0);
         slideAnim.setValue(-100);
         formSlideAnim.setValue(50);
@@ -762,266 +803,258 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
     >
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       
-      <ImageBackground
-        source={require("../../assets/images/2.jpg")}
-        style={styles.background}
-        imageStyle={styles.backgroundImage}
-      >
-        {/* Overlay amélioré avec animation */}
-        <View style={styles.overlay}>
-          <View style={styles.backgroundEffects}>
-            {/* Premier cercle animé */}
-            <Animated.View style={[
-              styles.bgCircle1,
-              {
-                transform: [{ scale: bgCircleScale1 }],
-                opacity: bgCircleOpacity1
-              }
-            ]}>
-              <LinearGradient
-                colors={[NEON_PRIMARY, 'transparent']}
-                style={styles.bgGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
-            </Animated.View>
-            
-            {/* Deuxième cercle animé */}
-            <Animated.View style={[
-              styles.bgCircle2,
-              {
-                transform: [{ scale: bgCircleScale2 }],
-                opacity: bgCircleOpacity2
-              }
-            ]}>
-              <LinearGradient
-                colors={[NEON_SECONDARY, 'transparent']}
-                style={styles.bgGradient}
-                start={{ x: 1, y: 0 }}
-                end={{ x: 0, y: 1 }}
-              />
-            </Animated.View>
-          </View>
-        </View>
-
-        {/* Logo et titre animés */}
-        <Animated.View
-          style={[
-            styles.headerContainer,
-            {
-              opacity: fadeAnim,
-              transform: [
-                { translateY: slideAnim },
-                { scale: scaleAnim }
-              ],
-            },
-          ]}
+      {/* SOLUTION : Utilisation de Pressable qui fonctionne mieux avec les navigations */}
+      <Pressable style={styles.container} onPress={handleScreenPress}>
+        <ImageBackground
+          source={require("../../assets/images/2.jpg")}
+          style={styles.background}
+          imageStyle={styles.backgroundImage}
         >
-          <Animated.View style={[
-            styles.logoContainer,
-            {
-              transform: [{ rotate: rotateDegrees }]
-            }
-          ]}>
-            <LinearGradient
-              colors={['#062C41', '#1d3e53']}
-              style={styles.logoBackground}
-            >
-              <Icon name="location-city" size={40} color="#fff" />
-            </LinearGradient>
-          </Animated.View>
-          <Text style={styles.appName}>Smartcities</Text>
-          <Text style={styles.appTagline}>Connectez-vous avec votre ville</Text>
-        </Animated.View>
-
-        {/* Section principale avec animation */}
-        <Animated.View
-          style={[
-            styles.mainContainer,
-            {
-              opacity: fadeAnim,
-              transform: [
-                { translateY: formSlideAnim },
-                { scale: scaleAnim },
-                { translateX: shakeAnim }
-              ],
-            },
-          ]}
-        >
-          <BlurView intensity={90} tint="dark" style={styles.blurContainer}>
-            <LinearGradient
-              colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
-              start={[0, 0]}
-              end={[1, 1]}
-              style={styles.gradientOverlay}
-            />
-            
-            <Text style={styles.welcomeTitle}>Bienvenue</Text>
-            <Text style={styles.welcomeSubtitle}>Accédez à votre espace connecté</Text>
-
-            <View style={styles.inputGroup}>
-              <View style={[
-                styles.inputContainer,
-                emailError && styles.inputContainerError
+          {/* Overlay amélioré avec animation */}
+          <View style={styles.overlay}>
+            <View style={styles.backgroundEffects}>
+              {/* Premier cercle animé */}
+              <Animated.View style={[
+                styles.bgCircle1,
+                {
+                  transform: [{ scale: bgCircleScale1 }],
+                  opacity: bgCircleOpacity1
+                }
               ]}>
-                <Icon 
-                  name="person" 
-                  size={22} 
-                  color={emailError ? "#e11d48" : "#fff"} 
-                  style={styles.inputIcon} 
+                <LinearGradient
+                  colors={[NEON_PRIMARY, 'transparent']}
+                  style={styles.bgGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={handleEmailChange}
-                  placeholder="Adresse Email"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  spellCheck={false}
-                  returnKeyType="next"
-                  onSubmitEditing={focusNextInput}
-                  blurOnSubmit={false}
-                  onBlur={() => validateEmail(email)}
+              </Animated.View>
+              
+              {/* Deuxième cercle animé */}
+              <Animated.View style={[
+                styles.bgCircle2,
+                {
+                  transform: [{ scale: bgCircleScale2 }],
+                  opacity: bgCircleOpacity2
+                }
+              ]}>
+                <LinearGradient
+                  colors={[NEON_SECONDARY, 'transparent']}
+                  style={styles.bgGradient}
+                  start={{ x: 1, y: 0 }}
+                  end={{ x: 0, y: 1 }}
                 />
-              </View>
-              {emailError && (
-                <Text style={styles.errorText}>{emailError}</Text>
-              )}
+              </Animated.View>
             </View>
+          </View>
 
-            <View style={styles.inputGroup}>
-              <View style={[
-                styles.inputContainer,
-                passwordError && styles.inputContainerError
-              ]}>
-                <Icon 
-                  name="lock" 
-                  size={22} 
-                  color={passwordError ? "#e11d48" : "#fff"} 
-                  style={styles.inputIcon} 
-                />
-                <TextInput
-                  ref={passwordInputRef}
-                  style={styles.input}
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder="Mot de passe"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                  secureTextEntry={!isPasswordVisible}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  spellCheck={false}
-                  returnKeyType="done"
-                  onSubmitEditing={handleLoginClick}
-                  onBlur={() => validatePassword(password)}
-                />
-                <TouchableOpacity
-                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                  style={styles.visibilityIcon}
-                >
-                  <Icon
-                    name={isPasswordVisible ? "visibility-off" : "visibility"}
-                    size={22}
-                    color={passwordError ? "#e11d48" : "#fff"}
+          {/* Logo et titre animés */}
+          <Animated.View
+            style={[
+              styles.headerContainer,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: scaleAnim }
+                ],
+              },
+            ]}
+          >
+            <Text style={styles.appName}>Smartcities</Text>
+            <Text style={styles.appTagline}>Connectez-vous avec votre ville</Text>
+          </Animated.View>
+
+          {/* Section principale avec animation */}
+          <Animated.View
+            style={[
+              styles.mainContainer,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: formSlideAnim },
+                  { scale: scaleAnim },
+                  { translateX: shakeAnim }
+                ],
+              },
+            ]}
+          >
+            <BlurView intensity={90} tint="dark" style={styles.blurContainer}>
+              <LinearGradient
+                colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
+                start={[0, 0]}
+                end={[1, 1]}
+                style={styles.gradientOverlay}
+              />
+              
+              <Text style={styles.welcomeTitle}>Bienvenue</Text>
+              <Text style={styles.welcomeSubtitle}>Accédez à votre espace connecté</Text>
+
+              <View style={styles.inputGroup}>
+                <View style={[
+                  styles.inputContainer,
+                  emailError && styles.inputContainerError
+                ]}>
+                  <Icon 
+                    name="person" 
+                    size={22} 
+                    color={emailError ? "#e11d48" : "#fff"} 
+                    style={styles.inputIcon} 
                   />
+                  <TextInput
+                    ref={emailInputRef}
+                    style={styles.input}
+                    value={email}
+                    onChangeText={handleEmailChange}
+                    placeholder="Adresse Email"
+                    placeholderTextColor="rgba(255,255,255,0.6)"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    returnKeyType="next"
+                    onSubmitEditing={focusNextInput}
+                    blurOnSubmit={false}
+                    onBlur={() => validateEmail(email)}
+                  />
+                </View>
+                {emailError && (
+                  <Text style={styles.errorText}>{emailError}</Text>
+                )}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <View style={[
+                  styles.inputContainer,
+                  passwordError && styles.inputContainerError
+                ]}>
+                  <Icon 
+                    name="lock" 
+                    size={22} 
+                    color={passwordError ? "#e11d48" : "#fff"} 
+                    style={styles.inputIcon} 
+                  />
+                  <TextInput
+                    ref={passwordInputRef}
+                    style={styles.input}
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    placeholder="Mot de passe"
+                    placeholderTextColor="rgba(255,255,255,0.6)"
+                    secureTextEntry={!isPasswordVisible}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLoginClick}
+                    onBlur={() => validatePassword(password)}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                    style={styles.visibilityIcon}
+                  >
+                    <Icon
+                      name={isPasswordVisible ? "visibility-off" : "visibility"}
+                      size={22}
+                      color={passwordError ? "#e11d48" : "#fff"}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {passwordError && (
+                  <Text style={styles.errorText}>{passwordError}</Text>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                onPress={() => setIsModalVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={[
+                  styles.loginButtonContainer,
+                  isLoginClicked && styles.buttonClicked,
+                ]}
+                onPress={handleLoginClick}
+              >
+                <LinearGradient
+                  colors={['#1a759f', '#168aad', '#34a0a4']}
+                  start={[0, 0]}
+                  end={[1, 0]}
+                  style={styles.loginButton}
+                >
+                  <Text style={styles.loginButtonText}>CONNEXION</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <View style={styles.separator}>
+                <View style={styles.separatorLine} />
+                <Text style={styles.separatorText}>OU</Text>
+                <View style={styles.separatorLine} />
+              </View>
+
+              <View style={styles.socialButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  activeOpacity={0.8}
+                >
+                  <Icon name="mail" size={20} color="#fff" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.socialButton, styles.socialButtonTwitter]}
+                  activeOpacity={0.8}
+                >
+                  <Icon name="alternate-email" size={20} color="#fff" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.socialButton, styles.socialButtonFacebook]}
+                  activeOpacity={0.8}
+                >
+                  <Icon name="facebook" size={20} color="#fff" />
                 </TouchableOpacity>
               </View>
-              {passwordError && (
-                <Text style={styles.errorText}>{passwordError}</Text>
-              )}
-            </View>
 
-            <TouchableOpacity
-              style={styles.forgotPasswordButton}
-              onPress={() => setIsModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={[
-                styles.loginButtonContainer,
-                isLoginClicked && styles.buttonClicked,
-              ]}
-              onPress={handleLoginClick}
-            >
-              <LinearGradient
-                colors={['#1a759f', '#168aad', '#34a0a4']}
-                start={[0, 0]}
-                end={[1, 0]}
-                style={styles.loginButton}
-              >
-                <Text style={styles.loginButtonText}>CONNEXION</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <View style={styles.separator}>
-              <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>OU</Text>
-              <View style={styles.separatorLine} />
-            </View>
-
-            <View style={styles.socialButtonsContainer}>
               <TouchableOpacity
-                style={styles.socialButton}
+                onPress={handleRegisterNavigation}
+                style={styles.registerButton}
                 activeOpacity={0.8}
               >
-                <Icon name="mail" size={20} color="#fff" />
+                <Text style={styles.registerText}>
+                  Nouveau sur Smartcities ?{" "}
+                  <Text style={styles.registerTextBold}>Créer un compte</Text>
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.socialButton, styles.socialButtonTwitter]}
-                activeOpacity={0.8}
-              >
-                <Icon name="alternate-email" size={20} color="#fff" />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.socialButton, styles.socialButtonFacebook]}
-                activeOpacity={0.8}
-              >
-                <Icon name="facebook" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            </BlurView>
+          </Animated.View>
 
-            <TouchableOpacity
-              onPress={handleRegisterNavigation}
-              style={styles.registerButton}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.registerText}>
-                Nouveau sur Smartcities ?{" "}
-                <Text style={styles.registerTextBold}>Créer un compte</Text>
-              </Text>
-            </TouchableOpacity>
-          </BlurView>
-        </Animated.View>
-
-        {/* Modal avec animation */}
-        <Modal
-          visible={isModalVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <Animated.View 
-              style={[
-                styles.modalContainer,
-                {
-                  transform: [{ scale: isModalVisible ? 1 : 0.9 }],
-                },
-              ]}
-            >
-              {renderModalContent()}
-            </Animated.View>
-          </View>
-        </Modal>
-      </ImageBackground>
+          {/* Modal avec animation */}
+          <Modal
+            visible={isModalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsModalVisible(false)}
+          >
+            {/* SOLUTION : Même approche dans la modal */}
+            <Pressable style={styles.modalOverlay} onPress={dismissKeyboard}>
+              <Animated.View 
+                style={[
+                  styles.modalContainer,
+                  {
+                    transform: [{ scale: isModalVisible ? 1 : 0.9 }],
+                  },
+                ]}
+              >
+                {renderModalContent()}
+              </Animated.View>
+            </Pressable>
+          </Modal>
+        </ImageBackground>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }
@@ -1282,6 +1315,36 @@ const styles = StyleSheet.create({
   registerTextBold: {
     fontWeight: "bold",
     color: "#fff",
+  },
+  
+  // Styles du bouton de fermeture du clavier
+  keyboardCloseButton: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  keyboardCloseButtonTouchable: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  keyboardCloseButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  keyboardCloseButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   
   // Modal styles

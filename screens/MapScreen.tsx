@@ -1,5 +1,4 @@
-// Modifications apportées au composant MapScreen pour la section des filtres
-// Éléments modifiés: filtersHeader, gestion des filtres actifs et amélioration visuelle
+// Chemin : frontend/screens/MapScreen.tsx
 
 import React, {
   useEffect,
@@ -32,7 +31,7 @@ import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../types/navigation/routes.types";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { PanGestureHandler } from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -41,7 +40,6 @@ import Animated, {
   interpolate,
   Extrapolate,
   runOnJS,
-  useAnimatedGestureHandler,
 } from "react-native-reanimated";
 import { formatDate } from "../utils/formatters";
 import { LinearGradient } from "expo-linear-gradient";
@@ -273,22 +271,30 @@ export default function MapScreen() {
     }
   };
 
-  // Handle the gesture for dismissing the report detail panel
-  const gestureHandler = useAnimatedGestureHandler({
-    onActive: (event) => {
+  // Fonction pour fermer le panneau de détail
+  const closeDetailPanel = useCallback(() => {
+    translateY.value = withSpring(windowHeight, ANIMATION.spring);
+    setSelectedReport(null);
+  }, [translateY, windowHeight]);
+
+  // Configuration du geste Pan (nouvelle API)
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      // Ne permettre que le mouvement vers le bas
       if (event.translationY > 0) {
         translateY.value = event.translationY;
       }
-    },
-    onEnd: (event) => {
+    })
+    .onEnd((event) => {
+      // Si le geste dépasse 100px vers le bas, fermer le panneau
       if (event.translationY > 100) {
         translateY.value = withSpring(windowHeight, ANIMATION.spring);
-        runOnJS(setSelectedReport)(null);
+        runOnJS(closeDetailPanel)();
       } else {
+        // Sinon, revenir à la position fermée
         translateY.value = withSpring(0, ANIMATION.spring);
       }
-    },
-  });
+    });
 
   // Filter markers based on selected filter and category
   const filteredMarkers = useCallback((): (Report | ReportEvent)[] => {
@@ -846,7 +852,7 @@ export default function MapScreen() {
 
       {/* Report/Event Detail Panel */}
       {selectedReport && (
-        <PanGestureHandler onGestureEvent={gestureHandler}>
+        <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.previewContainer, detailPanelStyle]}>
             {/* Pull Handle */}
             <View style={styles.closeIcon}>
@@ -970,7 +976,7 @@ export default function MapScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
-        </PanGestureHandler>
+        </GestureDetector>
       )}
     </View>
   );
