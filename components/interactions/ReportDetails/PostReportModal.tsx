@@ -1,4 +1,4 @@
-// Chemin : components/profile/modals/PostReportModal.tsx
+// Chemin : frontend/components/profile/modals/PostReportModal.tsx
 
 import React, { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { 
@@ -15,14 +15,19 @@ import {
   TouchableWithoutFeedback,
   Platform,
   KeyboardAvoidingView,
-  ScrollView
+  ScrollView,
+  StatusBar
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
-// Interface pour les props du modal
+/**
+ * Interface pour les props du modal de signalement
+ * Compatible avec l'écran PostDetailsScreen
+ */
 interface PostReportModalProps {
   isVisible: boolean;
   onClose: () => void;
@@ -32,57 +37,75 @@ interface PostReportModalProps {
   postTitle?: string;
 }
 
-// Catégories de signalement prédéfinies
+/**
+ * Catégories de signalement prédéfinies avec métadonnées
+ */
 const REPORT_CATEGORIES = [
   {
     id: 'inappropriate_content',
     label: 'Contenu inapproprié',
     icon: 'warning-outline',
-    description: 'Contenu offensant, vulgaire ou déplacé'
+    description: 'Contenu offensant, vulgaire ou déplacé',
+    requiresDetails: true,
+    severity: 'high'
   },
   {
     id: 'spam',
     label: 'Spam ou publicité',
     icon: 'ban-outline',
-    description: 'Contenu publicitaire non désiré ou répétitif'
+    description: 'Contenu publicitaire non désiré ou répétitif',
+    requiresDetails: false,
+    severity: 'medium'
   },
   {
     id: 'harassment',
     label: 'Harcèlement',
     icon: 'shield-outline',
-    description: 'Intimidation, menaces ou harcèlement'
+    description: 'Intimidation, menaces ou harcèlement',
+    requiresDetails: true,
+    severity: 'high'
   },
   {
     id: 'false_information',
     label: 'Fausses informations',
     icon: 'information-circle-outline',
-    description: 'Désinformation ou informations trompeuses'
+    description: 'Désinformation ou informations trompeuses',
+    requiresDetails: true,
+    severity: 'medium'
   },
   {
     id: 'violence',
     label: 'Violence ou danger',
     icon: 'alert-circle-outline',
-    description: 'Incitation à la violence ou contenu dangereux'
+    description: 'Incitation à la violence ou contenu dangereux',
+    requiresDetails: true,
+    severity: 'critical'
   },
   {
     id: 'copyright',
     label: 'Violation de droits',
     icon: 'document-text-outline',
-    description: 'Utilisation non autorisée de contenu protégé'
+    description: 'Utilisation non autorisée de contenu protégé',
+    requiresDetails: false,
+    severity: 'medium'
   },
   {
     id: 'other',
     label: 'Autre motif',
     icon: 'ellipsis-horizontal-outline',
-    description: 'Autre problème non listé ci-dessus'
+    description: 'Autre problème non listé ci-dessus',
+    requiresDetails: true,
+    severity: 'low'
   }
 ] as const;
 
-// Palette de couleurs optimisée
+/**
+ * Système de couleurs sémantique
+ */
 const COLORS = {
   primary: {
     main: "#667eea",
-    light: "#764ba2",
+    light: "#8b9dff",
     dark: "#4c63d2",
     contrast: "#FFFFFF"
   },
@@ -115,11 +138,103 @@ const COLORS = {
       hint: "#ADB5BD"
     }
   }
+} as const;
+
+/**
+ * Hook personnalisé pour la gestion des animations
+ */
+const useModalAnimations = (isVisible: boolean) => {
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(height))[0];
+  const stepAnim = useState(new Animated.Value(0))[0];
+
+  const showModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 70,
+        friction: 12,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
+  const hideModal = useCallback((callback?: () => void) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: height,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(callback);
+  }, [fadeAnim, slideAnim]);
+
+  const animateStep = useCallback((step: 'category' | 'details') => {
+    Animated.timing(stepAnim, {
+      toValue: step === 'category' ? 0 : 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [stepAnim]);
+
+  useEffect(() => {
+    if (isVisible) {
+      showModal();
+    }
+  }, [isVisible, showModal]);
+
+  return { fadeAnim, slideAnim, stepAnim, hideModal, animateStep };
 };
 
 /**
- * Modal de signalement optimisé pour les publications
- * Offre une interface intuitive avec catégories prédéfinies et champ personnalisé
+ * Hook personnalisé pour la gestion d'état du modal
+ */
+const useReportState = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [customReason, setCustomReason] = useState<string>('');
+  const [charCount, setCharCount] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [currentStep, setCurrentStep] = useState<'category' | 'details'>('category');
+
+  const resetState = useCallback(() => {
+    setSelectedCategory('');
+    setCustomReason('');
+    setCharCount(0);
+    setIsSubmitting(false);
+    setCurrentStep('category');
+  }, []);
+
+  useEffect(() => {
+    setCharCount(customReason.length);
+  }, [customReason]);
+
+  return {
+    selectedCategory,
+    setSelectedCategory,
+    customReason,
+    setCustomReason,
+    charCount,
+    isSubmitting,
+    setIsSubmitting,
+    currentStep,
+    setCurrentStep,
+    resetState
+  };
+};
+
+/**
+ * PostReportModal - Modal de signalement ultra-moderne
+ * Architecture optimisée avec gestion d'état robuste et animations fluides
  */
 export const PostReportModal: React.FC<PostReportModalProps> = memo(({ 
   isVisible, 
@@ -129,20 +244,24 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
   postAuthor,
   postTitle
 }) => {
-  // États locaux
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [customReason, setCustomReason] = useState<string>('');
-  const [charCount, setCharCount] = useState<number>(0);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<'category' | 'details'>('category');
-  
-  // Animations
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const slideAnim = useState(new Animated.Value(height))[0];
-  const stepAnim = useState(new Animated.Value(0))[0];
-  
-  // Gestion du clavier
+  const insets = useSafeAreaInsets();
+  const { fadeAnim, slideAnim, stepAnim, hideModal, animateStep } = useModalAnimations(isVisible);
+  const {
+    selectedCategory,
+    setSelectedCategory,
+    customReason,
+    setCustomReason,
+    charCount,
+    isSubmitting,
+    setIsSubmitting,
+    currentStep,
+    setCurrentStep,
+    resetState
+  } = useReportState();
+
+  // Gestion du clavier optimisée
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -158,64 +277,44 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       keyboardDidHideListener.remove();
     };
   }, []);
-  
-  // Animations d'ouverture/fermeture
-  useEffect(() => {
-    if (isVisible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 70,
-          friction: 12,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: height,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Reset du modal à la fermeture
-        setCurrentStep('category');
-        setSelectedCategory('');
-        setCustomReason('');
-        setCharCount(0);
-      });
-    }
-  }, [isVisible, fadeAnim, slideAnim]);
 
   // Animation de transition entre étapes
   useEffect(() => {
-    Animated.timing(stepAnim, {
-      toValue: currentStep === 'category' ? 0 : 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [currentStep, stepAnim]);
-  
-  // Suivi du nombre de caractères
-  useEffect(() => {
-    setCharCount(customReason.length);
-  }, [customReason]);
+    animateStep(currentStep);
+  }, [currentStep, animateStep]);
 
-  // Catégorie sélectionnée avec détails
+  // Catégorie sélectionnée avec métadonnées
   const selectedCategoryData = useMemo(() => 
     REPORT_CATEGORIES.find(cat => cat.id === selectedCategory),
     [selectedCategory]
   );
+
+  /**
+   * Validation des données avant soumission
+   */
+  const validateSubmission = useCallback(() => {
+    if (!selectedCategory) {
+      Alert.alert(
+        "Catégorie requise",
+        "Veuillez sélectionner une catégorie de signalement.",
+        [{ text: "Compris", style: "default" }]
+      );
+      return false;
+    }
+
+    const requiresDetails = selectedCategoryData?.requiresDetails || selectedCategory === 'other';
+    
+    if (requiresDetails && customReason.trim().length < 10) {
+      Alert.alert(
+        "Détails requis",
+        "Veuillez fournir plus de détails (minimum 10 caractères) pour nous aider à traiter votre signalement.",
+        [{ text: "Compris", style: "default" }]
+      );
+      return false;
+    }
+
+    return true;
+  }, [selectedCategory, selectedCategoryData, customReason]);
 
   /**
    * Sélection d'une catégorie et passage à l'étape suivante
@@ -223,39 +322,20 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
   const handleCategorySelect = useCallback((categoryId: string) => {
     setSelectedCategory(categoryId);
     setCurrentStep('details');
-  }, []);
+  }, [setSelectedCategory, setCurrentStep]);
 
   /**
    * Retour à la sélection de catégorie
    */
   const handleBackToCategory = useCallback(() => {
     setCurrentStep('category');
-  }, []);
+  }, [setCurrentStep]);
 
   /**
-   * Gestion de la soumission du signalement
+   * Gestion de la soumission du signalement avec validation robuste
    */
   const handleSendReport = useCallback(async () => {
-    if (!selectedCategory) {
-      Alert.alert(
-        "Catégorie requise",
-        "Veuillez sélectionner une catégorie de signalement.",
-        [{ text: "Compris", style: "default" }]
-      );
-      return;
-    }
-
-    const requiresCustomReason = selectedCategory === 'other' || 
-      ['inappropriate_content', 'harassment', 'false_information'].includes(selectedCategory);
-    
-    if (requiresCustomReason && customReason.trim().length < 10) {
-      Alert.alert(
-        "Détails requis",
-        "Veuillez fournir plus de détails pour nous aider à traiter votre signalement.",
-        [{ text: "Compris", style: "default" }]
-      );
-      return;
-    }
+    if (!validateSubmission()) return;
     
     try {
       setIsSubmitting(true);
@@ -267,9 +347,12 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       
       await onSendReport(reportMessage, selectedCategory);
       
+      // Reset et fermeture
+      resetState();
+      
       // Feedback de succès
       Alert.alert(
-        "✅ Signalement envoyé",
+        "Signalement envoyé",
         "Merci de contribuer à la sécurité de notre communauté. Notre équipe de modération examinera ce contenu rapidement.",
         [{ 
           text: "Fermer", 
@@ -280,14 +363,14 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
     } catch (error) {
       console.error('Erreur lors du signalement:', error);
       Alert.alert(
-        "❌ Erreur",
+        "Erreur",
         "Une erreur est survenue lors de l'envoi du signalement. Veuillez réessayer.",
         [{ text: "Réessayer", style: "default" }]
       );
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedCategory, customReason, selectedCategoryData, onSendReport, onClose]);
+  }, [validateSubmission, customReason, selectedCategoryData, selectedCategory, onSendReport, resetState, onClose, setIsSubmitting]);
 
   /**
    * Fermeture avec confirmation si données saisies
@@ -304,14 +387,22 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
           { 
             text: "Abandonner", 
             style: "destructive", 
-            onPress: onClose
+            onPress: () => {
+              hideModal(() => {
+                resetState();
+                onClose();
+              });
+            }
           }
         ]
       );
     } else {
-      onClose();
+      hideModal(() => {
+        resetState();
+        onClose();
+      });
     }
-  }, [selectedCategory, customReason, onClose]);
+  }, [selectedCategory, customReason, hideModal, resetState, onClose]);
 
   /**
    * Rendu de l'étape sélection de catégorie
@@ -342,37 +433,51 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       <ScrollView 
         style={styles.categoriesContainer}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.categoriesContent}
       >
         {REPORT_CATEGORIES.map((category) => (
           <TouchableOpacity
             key={category.id}
             style={[
               styles.categoryItem,
-              selectedCategory === category.id && styles.categoryItemSelected
+              selectedCategory === category.id && styles.categoryItemSelected,
+              category.severity === 'critical' && styles.categoryItemCritical
             ]}
             onPress={() => handleCategorySelect(category.id)}
             activeOpacity={0.7}
           >
-            <View style={styles.categoryIconContainer}>
+            <View style={[
+              styles.categoryIconContainer,
+              category.severity === 'critical' && styles.categoryIconCritical
+            ]}>
               <Ionicons 
                 name={category.icon as any} 
                 size={24} 
-                color={selectedCategory === category.id 
-                  ? COLORS.primary.main 
-                  : COLORS.neutral.text.secondary
+                color={
+                  selectedCategory === category.id 
+                    ? COLORS.primary.main 
+                    : category.severity === 'critical'
+                    ? COLORS.danger.main
+                    : COLORS.neutral.text.secondary
                 } 
               />
             </View>
             <View style={styles.categoryContent}>
               <Text style={[
                 styles.categoryLabel,
-                selectedCategory === category.id && styles.categoryLabelSelected
+                selectedCategory === category.id && styles.categoryLabelSelected,
+                category.severity === 'critical' && styles.categoryLabelCritical
               ]}>
                 {category.label}
               </Text>
               <Text style={styles.categoryDescription}>
                 {category.description}
               </Text>
+              {category.requiresDetails && (
+                <Text style={styles.categoryRequirement}>
+                  Détails requis
+                </Text>
+              )}
             </View>
             <Ionicons 
               name="chevron-forward" 
@@ -411,6 +516,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
           onPress={handleBackToCategory}
           style={styles.backButton}
           activeOpacity={0.7}
+          hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={24} color={COLORS.primary.main} />
         </TouchableOpacity>
@@ -418,29 +524,42 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       </View>
       
       {selectedCategoryData && (
-        <View style={styles.selectedCategoryBadge}>
+        <View style={[
+          styles.selectedCategoryBadge,
+          selectedCategoryData.severity === 'critical' && styles.selectedCategoryBadgeCritical
+        ]}>
           <Ionicons 
             name={selectedCategoryData.icon as any} 
             size={20} 
-            color={COLORS.primary.main} 
+            color={
+              selectedCategoryData.severity === 'critical' 
+                ? COLORS.danger.main 
+                : COLORS.primary.main
+            } 
           />
-          <Text style={styles.selectedCategoryText}>
+          <Text style={[
+            styles.selectedCategoryText,
+            selectedCategoryData.severity === 'critical' && styles.selectedCategoryTextCritical
+          ]}>
             {selectedCategoryData.label}
           </Text>
         </View>
       )}
       
       <Text style={styles.detailsInstructions}>
-        {selectedCategory === 'other' 
-          ? "Veuillez décrire le problème en détail"
+        {selectedCategoryData?.requiresDetails || selectedCategory === 'other'
+          ? "Veuillez décrire le problème en détail (minimum 10 caractères)"
           : "Ajoutez des détails supplémentaires si nécessaire (optionnel)"
         }
       </Text>
       
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.textInput}
-          placeholder={selectedCategory === 'other' 
+          style={[
+            styles.textInput,
+            selectedCategoryData?.severity === 'critical' && styles.textInputCritical
+          ]}
+          placeholder={selectedCategoryData?.requiresDetails || selectedCategory === 'other'
             ? "Décrivez le problème rencontré..."
             : "Informations complémentaires (optionnel)..."
           }
@@ -450,13 +569,17 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
           multiline={true}
           textAlignVertical="top"
           maxLength={500}
-          autoFocus={selectedCategory === 'other'}
+          autoFocus={selectedCategoryData?.requiresDetails || selectedCategory === 'other'}
         />
         <Text style={[
           styles.charCount,
-          charCount > 400 ? styles.charCountWarning : null
+          charCount > 400 ? styles.charCountWarning : null,
+          charCount < 10 && selectedCategoryData?.requiresDetails ? styles.charCountError : null
         ]}>
           {charCount}/500
+          {selectedCategoryData?.requiresDetails && charCount < 10 && (
+            <Text style={styles.charCountRequirement}> (min. 10)</Text>
+          )}
         </Text>
       </View>
       
@@ -480,11 +603,13 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       onRequestClose={handleCloseModal}
       statusBarTranslucent={true}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.container}
-        >
+      <StatusBar backgroundColor="rgba(0, 0, 0, 0.6)" barStyle="light-content" />
+      
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <Animated.View 
             style={[
               styles.backdrop,
@@ -492,7 +617,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
             ]}
           >
             <TouchableWithoutFeedback onPress={handleCloseModal}>
-              <View style={StyleSheet.absoluteFill} />
+              <View style={styles.backdropTouchable} />
             </TouchableWithoutFeedback>
             
             <Animated.View 
@@ -500,14 +625,14 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                 styles.modalContainer,
                 {
                   transform: [{ translateY: slideAnim }],
-                  maxHeight: keyboardVisible ? '85%' : '75%'
+                  maxHeight: keyboardVisible ? height * 0.75 : height * 0.85
                 }
               ]}
             >
-              {/* Header avec dégradé */}
+              {/* Header avec dégradé et glassmorphisme */}
               <LinearGradient
                 colors={[COLORS.danger.main, COLORS.danger.dark]}
-                style={styles.modalHeader}
+                style={[styles.modalHeader, { paddingTop: insets.top + 15 }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
@@ -519,12 +644,13 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                   style={styles.closeButton} 
                   onPress={handleCloseModal}
                   activeOpacity={0.7}
+                  hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
                 >
                   <Ionicons name="close" size={24} color={COLORS.danger.contrast} />
                 </TouchableOpacity>
               </LinearGradient>
               
-              {/* Indicateur de progression */}
+              {/* Indicateur de progression modernisé */}
               <View style={styles.progressContainer}>
                 <View style={[
                   styles.progressStep,
@@ -550,15 +676,15 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                 </View>
               </View>
               
-              {/* Contenu dynamique */}
+              {/* Contenu dynamique avec animations fluides */}
               <View style={styles.contentContainer}>
                 {currentStep === 'category' && renderCategorySelection()}
                 {currentStep === 'details' && renderDetailsStep()}
               </View>
               
-              {/* Boutons d'action */}
+              {/* Boutons d'action avec feedback visuel */}
               {currentStep === 'details' && (
-                <View style={styles.buttonContainer}>
+                <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 10 }]}>
                   <TouchableOpacity 
                     onPress={handleBackToCategory} 
                     style={styles.cancelButton}
@@ -572,12 +698,12 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                     style={[
                       styles.confirmButton,
                       (!selectedCategory || 
-                        (selectedCategory === 'other' && customReason.trim().length < 10)
+                        ((selectedCategoryData?.requiresDetails || selectedCategory === 'other') && customReason.trim().length < 10)
                       ) && styles.confirmButtonDisabled
                     ]}
                     activeOpacity={0.7}
                     disabled={isSubmitting || !selectedCategory || 
-                      (selectedCategory === 'other' && customReason.trim().length < 10)
+                      ((selectedCategoryData?.requiresDetails || selectedCategory === 'other') && customReason.trim().length < 10)
                     }
                   >
                     <LinearGradient
@@ -606,14 +732,17 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
               )}
             </Animated.View>
           </Animated.View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </Modal>
   );
 });
 
 PostReportModal.displayName = 'PostReportModal';
 
+/**
+ * Styles optimisés avec système de design cohérent
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -621,28 +750,37 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backdropTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalContainer: {
     backgroundColor: COLORS.neutral.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
+    width: width * 0.95,
+    maxHeight: height - 100,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: -4,
+      height: 10,
     },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+    shadowRadius: 20,
+    elevation: 15,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 25,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   headerContent: {
     flexDirection: 'row',
@@ -722,6 +860,9 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     flex: 1,
   },
+  categoriesContent: {
+    paddingBottom: 20,
+  },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -744,6 +885,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary.main,
     backgroundColor: 'rgba(102, 126, 234, 0.05)',
   },
+  categoryItemCritical: {
+    borderColor: COLORS.danger.light,
+    backgroundColor: 'rgba(255, 107, 107, 0.05)',
+  },
   categoryIconContainer: {
     width: 40,
     height: 40,
@@ -752,6 +897,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+  },
+  categoryIconCritical: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
   categoryContent: {
     flex: 1,
@@ -765,10 +913,19 @@ const styles = StyleSheet.create({
   categoryLabelSelected: {
     color: COLORS.primary.main,
   },
+  categoryLabelCritical: {
+    color: COLORS.danger.main,
+  },
   categoryDescription: {
     fontSize: 13,
     color: COLORS.neutral.text.secondary,
     lineHeight: 18,
+  },
+  categoryRequirement: {
+    fontSize: 11,
+    color: COLORS.warning.main,
+    fontWeight: '500',
+    marginTop: 4,
   },
   detailsHeader: {
     flexDirection: 'row',
@@ -789,11 +946,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 15,
   },
+  selectedCategoryBadgeCritical: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+  },
   selectedCategoryText: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.primary.main,
     marginLeft: 8,
+  },
+  selectedCategoryTextCritical: {
+    color: COLORS.danger.main,
   },
   detailsInstructions: {
     fontSize: 15,
@@ -817,6 +980,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     textAlignVertical: 'top',
   },
+  textInputCritical: {
+    borderColor: COLORS.danger.light,
+    backgroundColor: 'rgba(255, 107, 107, 0.02)',
+  },
   charCount: {
     position: 'absolute',
     bottom: 12,
@@ -825,6 +992,13 @@ const styles = StyleSheet.create({
     color: COLORS.neutral.text.hint,
   },
   charCountWarning: {
+    color: COLORS.warning.main,
+  },
+  charCountError: {
+    color: COLORS.danger.main,
+  },
+  charCountRequirement: {
+    fontSize: 10,
     color: COLORS.danger.main,
   },
   postInfoContainer: {
@@ -893,4 +1067,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Export par défaut pour l'utilisation dans PostDetailsScreen
 export default PostReportModal;

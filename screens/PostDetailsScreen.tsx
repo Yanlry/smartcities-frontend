@@ -1,922 +1,625 @@
-// components/profile/modals/PostReportModal.tsx
-// CORRECTION POUR AFFICHAGE PLEIN ÉCRAN
+// Chemin : frontend/screens/PostDetailsScreen.tsx
 
-import React, { memo, useState, useCallback, useEffect, useMemo } from "react";
-import { 
-  View, 
-  Text, 
-  Modal, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert,
+import React, { useState, useCallback, memo, useEffect } from 'react';
+import {
+  View,
+  Text,
   StyleSheet,
-  Dimensions,
-  Animated,
-  Keyboard,
-  TouchableWithoutFeedback,
-  Platform,
-  KeyboardAvoidingView,
+  SafeAreaView,
+  TouchableOpacity,
+  Alert,
   ScrollView,
-  StatusBar
-} from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+  ActivityIndicator,
+  Dimensions,
+} from 'react-native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width, height } = Dimensions.get('window');
+// Import du modal de signalement
+import PostReportModal from '../components/interactions/ReportDetails/PostReportModal';
 
-// Interface pour les props du modal
-interface PostReportModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-  onSendReport: (reportReason: string, reportType: string) => Promise<void>;
+const { width } = Dimensions.get('window');
+
+/**
+ * Interface pour les paramètres de navigation de l'écran
+ */
+interface PostDetailsScreenParams {
   postId?: string;
   postAuthor?: string;
   postTitle?: string;
+  showReportModal?: boolean;
 }
 
-// Catégories de signalement prédéfinies
-const REPORT_CATEGORIES = [
-  {
-    id: 'inappropriate_content',
-    label: 'Contenu inapproprié',
-    icon: 'warning-outline',
-    description: 'Contenu offensant, vulgaire ou déplacé'
-  },
-  {
-    id: 'spam',
-    label: 'Spam ou publicité',
-    icon: 'ban-outline',
-    description: 'Contenu publicitaire non désiré ou répétitif'
-  },
-  {
-    id: 'harassment',
-    label: 'Harcèlement',
-    icon: 'shield-outline',
-    description: 'Intimidation, menaces ou harcèlement'
-  },
-  {
-    id: 'false_information',
-    label: 'Fausses informations',
-    icon: 'information-circle-outline',
-    description: 'Désinformation ou informations trompeuses'
-  },
-  {
-    id: 'violence',
-    label: 'Violence ou danger',
-    icon: 'alert-circle-outline',
-    description: 'Incitation à la violence ou contenu dangereux'
-  },
-  {
-    id: 'copyright',
-    label: 'Violation de droits',
-    icon: 'document-text-outline',
-    description: 'Utilisation non autorisée de contenu protégé'
-  },
-  {
-    id: 'other',
-    label: 'Autre motif',
-    icon: 'ellipsis-horizontal-outline',
-    description: 'Autre problème non listé ci-dessus'
-  }
-] as const;
+/**
+ * Props de navigation pour l'écran PostDetails
+ * Compatible avec React Navigation Stack Navigator
+ */
+interface PostDetailsScreenProps {
+  navigation: StackNavigationProp<any, 'PostDetailsScreen'>;
+  route: RouteProp<{ PostDetailsScreen: PostDetailsScreenParams }, 'PostDetailsScreen'>;
+}
 
-// Palette de couleurs optimisée
-const COLORS = {
-  primary: {
-    main: "#667eea",
-    light: "#764ba2",
-    dark: "#4c63d2",
-    contrast: "#FFFFFF"
-  },
-  danger: {
-    main: "#FF6B6B",
-    light: "#FF8E8E",
-    dark: "#FF4757",
-    contrast: "#FFFFFF"
-  },
-  warning: {
-    main: "#FFA726",
-    light: "#FFB74D",
-    dark: "#FF9800",
-    contrast: "#FFFFFF"
-  },
-  success: {
-    main: "#66BB6A",
-    light: "#81C784",
-    dark: "#4CAF50",
-    contrast: "#FFFFFF"
-  },
-  neutral: {
-    white: "#FFFFFF",
-    background: "#F8F9FA",
-    card: "#FFFFFF",
-    border: "#E9ECEF",
-    text: {
-      primary: "#212529",
-      secondary: "#6C757D",
-      hint: "#ADB5BD"
+/**
+ * Interface pour les données d'un post
+ */
+interface PostData {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  createdAt: string;
+  likes: number;
+  comments: number;
+  isLiked: boolean;
+}
+
+/**
+ * Hook personnalisé pour la gestion des données du post
+ */
+const usePostData = (postId?: string, postTitle?: string, postAuthor?: string) => {
+  const [postData, setPostData] = useState<PostData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPostData = useCallback(async () => {
+    if (!postId) {
+      setError("ID de post manquant");
+      setLoading(false);
+      return;
     }
-  }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // TODO: Remplacer par votre appel API réel
+      // const response = await fetch(`${API_URL}/posts/${postId}`);
+      // const data = await response.json();
+      
+      // Simulation de données pour l'exemple
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockData: PostData = {
+        id: postId,
+        title: postTitle || "Titre du post",
+        content: "Contenu du post à afficher ici. Ce sera remplacé par les vraies données de votre API.",
+        author: postAuthor || "Utilisateur inconnu",
+        createdAt: new Date().toISOString(),
+        likes: 42,
+        comments: 7,
+        isLiked: false,
+      };
+      
+      setPostData(mockData);
+    } catch (err: any) {
+      console.error('Erreur lors du chargement du post:', err);
+      setError(err.message || "Erreur lors du chargement du post");
+    } finally {
+      setLoading(false);
+    }
+  }, [postId, postTitle, postAuthor]);
+
+  return { postData, loading, error, fetchPostData };
 };
 
 /**
- * Modal de signalement optimisé avec affichage plein écran
+ * Hook personnalisé pour la gestion du modal de signalement
  */
-export const PostReportModal: React.FC<PostReportModalProps> = memo(({ 
-  isVisible, 
-  onClose, 
-  onSendReport,
-  postId,
-  postAuthor,
-  postTitle
-}) => {
-  const insets = useSafeAreaInsets();
-  
-  // États locaux
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [customReason, setCustomReason] = useState<string>('');
-  const [charCount, setCharCount] = useState<number>(0);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<'category' | 'details'>('category');
-  
-  // Animations
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const slideAnim = useState(new Animated.Value(height))[0];
-  const stepAnim = useState(new Animated.Value(0))[0];
+const useReportModal = () => {
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Gestion du clavier optimisée
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (event) => {
-        setKeyboardVisible(true);
+  const openModal = useCallback(() => setIsVisible(true), []);
+  const closeModal = useCallback(() => setIsVisible(false), []);
+
+  return { isVisible, openModal, closeModal };
+};
+
+/**
+ * PostDetailsScreen - Écran principal de détails d'un post
+ * Architecture optimisée avec séparation des responsabilités
+ * Compatible avec React Navigation
+ */
+const PostDetailsScreen: React.FC<PostDetailsScreenProps> = memo(
+  ({ navigation, route }) => {
+    const insets = useSafeAreaInsets();
+    
+    // Extraction des paramètres de navigation
+    const { 
+      postId, 
+      postAuthor, 
+      postTitle, 
+      showReportModal = false 
+    } = route.params || {};
+
+    // Hooks personnalisés pour la gestion d'état
+    const { postData, loading, error, fetchPostData } = usePostData(postId, postTitle, postAuthor);
+    const { isVisible: isReportModalVisible, openModal: openReportModal, closeModal: closeReportModal } = useReportModal();
+
+    /**
+     * Chargement initial des données
+     */
+    useEffect(() => {
+      fetchPostData();
+    }, [fetchPostData]);
+
+    /**
+     * Ouverture automatique du modal si demandé via navigation
+     */
+    useEffect(() => {
+      if (showReportModal) {
+        openReportModal();
       }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardVisible(false);
+    }, [showReportModal, openReportModal]);
+
+    /**
+     * Gestion de l'envoi du signalement avec feedback utilisateur optimisé
+     */
+    const handleSendReport = useCallback(async (reportReason: string, reportType: string) => {
+      try {
+        // TODO: Remplacer par votre appel API réel
+        const reportData = {
+          postId,
+          reason: reportReason,
+          type: reportType,
+          reportedBy: "current_user_id", // À remplacer par l'ID de l'utilisateur actuel
+          timestamp: new Date().toISOString(),
+        };
+        
+        console.log('Données de signalement:', reportData);
+        
+        // Simulation d'appel API
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Fermeture du modal et feedback positif
+        closeReportModal();
+        
+        Alert.alert(
+          "Signalement envoyé",
+          "Merci de contribuer à la sécurité de notre communauté. Notre équipe examinera ce contenu rapidement.",
+          [
+            { 
+              text: "Retour à l'accueil", 
+              onPress: () => navigation.navigate("Main"),
+              style: "default"
+            },
+            { 
+              text: "Rester ici", 
+              style: "cancel"
+            }
+          ]
+        );
+      } catch (error: any) {
+        console.error('Erreur lors de l\'envoi du signalement:', error);
+        
+        Alert.alert(
+          "Erreur",
+          "Une erreur est survenue lors de l'envoi du signalement. Veuillez réessayer.",
+          [{ text: "Réessayer", style: "default" }]
+        );
       }
-    );
+    }, [postId, navigation, closeReportModal]);
 
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
-  
-  // Animations d'ouverture/fermeture optimisées
-  useEffect(() => {
-    if (isVisible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 70,
-          friction: 12,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: height,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Reset du modal à la fermeture
-        setCurrentStep('category');
-        setSelectedCategory('');
-        setCustomReason('');
-        setCharCount(0);
-      });
-    }
-  }, [isVisible, fadeAnim, slideAnim]);
+    /**
+     * Gestion du bouton retour avec confirmation si modal ouvert
+     */
+    const handleBackPress = useCallback(() => {
+      if (isReportModalVisible) {
+        Alert.alert(
+          "Fermer le signalement ?",
+          "Votre signalement en cours sera perdu.",
+          [
+            { text: "Continuer", style: "cancel" },
+            { 
+              text: "Fermer", 
+              style: "destructive", 
+              onPress: () => {
+                closeReportModal();
+                navigation.goBack();
+              }
+            }
+          ]
+        );
+      } else {
+        navigation.goBack();
+      }
+    }, [isReportModalVisible, navigation, closeReportModal]);
 
-  // Animation de transition entre étapes
-  useEffect(() => {
-    Animated.timing(stepAnim, {
-      toValue: currentStep === 'category' ? 0 : 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [currentStep, stepAnim]);
-  
-  // Suivi du nombre de caractères
-  useEffect(() => {
-    setCharCount(customReason.length);
-  }, [customReason]);
+    /**
+     * Gestion des actions sur le post (like, partage, etc.)
+     */
+    const handleLikePress = useCallback(() => {
+      // TODO: Implémenter la logique de like
+      console.log('Like pressed for post:', postId);
+    }, [postId]);
 
-  // Catégorie sélectionnée avec détails
-  const selectedCategoryData = useMemo(() => 
-    REPORT_CATEGORIES.find(cat => cat.id === selectedCategory),
-    [selectedCategory]
-  );
+    const handleCommentPress = useCallback(() => {
+      // TODO: Naviguer vers les commentaires
+      console.log('Comment pressed for post:', postId);
+    }, [postId]);
 
-  /**
-   * Sélection d'une catégorie et passage à l'étape suivante
-   */
-  const handleCategorySelect = useCallback((categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setCurrentStep('details');
-  }, []);
+    const handleSharePress = useCallback(() => {
+      // TODO: Implémenter le partage
+      console.log('Share pressed for post:', postId);
+    }, [postId]);
 
-  /**
-   * Retour à la sélection de catégorie
-   */
-  const handleBackToCategory = useCallback(() => {
-    setCurrentStep('category');
-  }, []);
-
-  /**
-   * Gestion de la soumission du signalement
-   */
-  const handleSendReport = useCallback(async () => {
-    if (!selectedCategory) {
-      Alert.alert(
-        "Catégorie requise",
-        "Veuillez sélectionner une catégorie de signalement.",
-        [{ text: "Compris", style: "default" }]
+    /**
+     * Rendu de l'état de chargement
+     */
+    if (loading) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#667eea" />
+            <Text style={styles.loadingText}>Chargement du post...</Text>
+          </View>
+        </SafeAreaView>
       );
-      return;
     }
 
-    const requiresCustomReason = selectedCategory === 'other' || 
-      ['inappropriate_content', 'harassment', 'false_information'].includes(selectedCategory);
-    
-    if (requiresCustomReason && customReason.trim().length < 10) {
-      Alert.alert(
-        "Détails requis",
-        "Veuillez fournir plus de détails pour nous aider à traiter votre signalement.",
-        [{ text: "Compris", style: "default" }]
+    /**
+     * Rendu de l'état d'erreur
+     */
+    if (error || !postData) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
+            <Text style={styles.errorTitle}>Erreur de chargement</Text>
+            <Text style={styles.errorText}>
+              {error || "Impossible de charger les détails du post"}
+            </Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchPostData}>
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       );
-      return;
     }
-    
-    try {
-      setIsSubmitting(true);
-      
-      // Construction du message de signalement
-      const reportMessage = customReason.trim() 
-        ? `${selectedCategoryData?.label}: ${customReason.trim()}`
-        : selectedCategoryData?.label || 'Signalement';
-      
-      await onSendReport(reportMessage, selectedCategory);
-      
-      // Feedback de succès
-      Alert.alert(
-        "✅ Signalement envoyé",
-        "Merci de contribuer à la sécurité de notre communauté. Notre équipe de modération examinera ce contenu rapidement.",
-        [{ 
-          text: "Fermer", 
-          onPress: onClose,
-          style: "default"
-        }]
-      );
-    } catch (error) {
-      console.error('Erreur lors du signalement:', error);
-      Alert.alert(
-        "❌ Erreur",
-        "Une erreur est survenue lors de l'envoi du signalement. Veuillez réessayer.",
-        [{ text: "Réessayer", style: "default" }]
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [selectedCategory, customReason, selectedCategoryData, onSendReport, onClose]);
 
-  /**
-   * Fermeture avec confirmation si données saisies
-   */
-  const handleCloseModal = useCallback(() => {
-    const hasData = selectedCategory || customReason.trim();
-    
-    if (hasData) {
-      Alert.alert(
-        "Abandonner le signalement ?",
-        "Vos informations ne seront pas sauvegardées.",
-        [
-          { text: "Continuer l'édition", style: "cancel" },
-          { 
-            text: "Abandonner", 
-            style: "destructive", 
-            onPress: onClose
-          }
-        ]
-      );
-    } else {
-      onClose();
-    }
-  }, [selectedCategory, customReason, onClose]);
-
-  /**
-   * Rendu de l'étape sélection de catégorie
-   */
-  const renderCategorySelection = () => (
-    <Animated.View 
-      style={[
-        styles.stepContainer,
-        {
-          opacity: stepAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0]
-          }),
-          transform: [{
-            translateX: stepAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -width]
-            })
-          }]
-        }
-      ]}
-    >
-      <Text style={styles.stepTitle}>Choisissez une catégorie</Text>
-      <Text style={styles.stepSubtitle}>
-        Sélectionnez le type de problème que vous souhaitez signaler
-      </Text>
-      
-      <ScrollView 
-        style={styles.categoriesContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContent}
-      >
-        {REPORT_CATEGORIES.map((category) => (
-          <TouchableOpacity
-            key={category.id}
-            style={[
-              styles.categoryItem,
-              selectedCategory === category.id && styles.categoryItemSelected
-            ]}
-            onPress={() => handleCategorySelect(category.id)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.categoryIconContainer}>
-              <Ionicons 
-                name={category.icon as any} 
-                size={24} 
-                color={selectedCategory === category.id 
-                  ? COLORS.primary.main 
-                  : COLORS.neutral.text.secondary
-                } 
-              />
-            </View>
-            <View style={styles.categoryContent}>
-              <Text style={[
-                styles.categoryLabel,
-                selectedCategory === category.id && styles.categoryLabelSelected
-              ]}>
-                {category.label}
-              </Text>
-              <Text style={styles.categoryDescription}>
-                {category.description}
-              </Text>
-            </View>
-            <Ionicons 
-              name="chevron-forward" 
-              size={20} 
-              color={COLORS.neutral.text.hint} 
-            />
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </Animated.View>
-  );
-
-  /**
-   * Rendu de l'étape détails
-   */
-  const renderDetailsStep = () => (
-    <Animated.View 
-      style={[
-        styles.stepContainer,
-        {
-          opacity: stepAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1]
-          }),
-          transform: [{
-            translateX: stepAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [width, 0]
-            })
-          }]
-        }
-      ]}
-    >
-      <View style={styles.detailsHeader}>
-        <TouchableOpacity 
-          onPress={handleBackToCategory}
-          style={styles.backButton}
-          activeOpacity={0.7}
+    return (
+      <SafeAreaView style={styles.container}>
+        {/* Header optimisé avec dégradé */}
+        <LinearGradient
+          colors={['#667eea', '#764ba2']}
+          style={[styles.header, { paddingTop: insets.top + 10 }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
         >
-          <Ionicons name="chevron-back" size={24} color={COLORS.primary.main} />
-        </TouchableOpacity>
-        <Text style={styles.stepTitle}>Détails du signalement</Text>
-      </View>
-      
-      {selectedCategoryData && (
-        <View style={styles.selectedCategoryBadge}>
-          <Ionicons 
-            name={selectedCategoryData.icon as any} 
-            size={20} 
-            color={COLORS.primary.main} 
-          />
-          <Text style={styles.selectedCategoryText}>
-            {selectedCategoryData.label}
-          </Text>
-        </View>
-      )}
-      
-      <Text style={styles.detailsInstructions}>
-        {selectedCategory === 'other' 
-          ? "Veuillez décrire le problème en détail"
-          : "Ajoutez des détails supplémentaires si nécessaire (optionnel)"
-        }
-      </Text>
-      
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          placeholder={selectedCategory === 'other' 
-            ? "Décrivez le problème rencontré..."
-            : "Informations complémentaires (optionnel)..."
-          }
-          value={customReason}
-          placeholderTextColor={COLORS.neutral.text.hint}
-          onChangeText={setCustomReason}
-          multiline={true}
-          textAlignVertical="top"
-          maxLength={500}
-          autoFocus={selectedCategory === 'other'}
-        />
-        <Text style={[
-          styles.charCount,
-          charCount > 400 ? styles.charCountWarning : null
-        ]}>
-          {charCount}/500
-        </Text>
-      </View>
-      
-      {postId && (
-        <View style={styles.postInfoContainer}>
-          <Ionicons name="document-text" size={16} color={COLORS.neutral.text.hint} />
-          <Text style={styles.postInfoText}>
-            Publication #{postId.slice(-8)}
-            {postAuthor && ` par ${postAuthor}`}
-          </Text>
-        </View>
-      )}
-    </Animated.View>
-  );
-
-  return (
-    <Modal
-      animationType="none"
-      transparent={true}
-      visible={isVisible}
-      onRequestClose={handleCloseModal}
-      statusBarTranslucent={true}
-    >
-      <StatusBar backgroundColor="rgba(0, 0, 0, 0.6)" barStyle="light-content" />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <Animated.View 
-            style={[
-              styles.backdrop,
-              { opacity: fadeAnim }
-            ]}
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleBackPress}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
           >
-            <TouchableWithoutFeedback onPress={handleCloseModal}>
-              <View style={styles.backdropTouchable} />
-            </TouchableWithoutFeedback>
-            
-            <Animated.View 
-              style={[
-                styles.modalContainer,
-                {
-                  transform: [{ translateY: slideAnim }],
-                }
-              ]}
-            >
-              {/* Header avec dégradé */}
-              <LinearGradient
-                colors={[COLORS.danger.main, COLORS.danger.dark]}
-                style={[styles.modalHeader, { paddingTop: insets.top + 15 }]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {postData.title}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              Par {postData.author}
+            </Text>
+          </View>
+          
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={openReportModal}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
+          >
+            <Ionicons name="flag" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </LinearGradient>
+
+        {/* Contenu principal */}
+        <ScrollView 
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Informations du post */}
+          <View style={styles.postContainer}>
+            <View style={styles.postHeader}>
+              <View style={styles.authorContainer}>
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={24} color="#667eea" />
+                </View>
+                <View>
+                  <Text style={styles.authorName}>{postData.author}</Text>
+                  <Text style={styles.postDate}>
+                    {new Date(postData.createdAt).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.postTitle}>{postData.title}</Text>
+            <Text style={styles.postContent}>{postData.content}</Text>
+
+            {/* Actions du post */}
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity 
+                style={[styles.actionButton, postData.isLiked && styles.actionButtonLiked]}
+                onPress={handleLikePress}
+                activeOpacity={0.7}
               >
-                <View style={styles.headerContent}>
-                  <Ionicons name="flag" size={24} color={COLORS.danger.contrast} />
-                  <Text style={styles.modalTitle}>Signaler cette publication</Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.closeButton} 
-                  onPress={handleCloseModal}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="close" size={24} color={COLORS.danger.contrast} />
-                </TouchableOpacity>
-              </LinearGradient>
-              
-              {/* Indicateur de progression */}
-              <View style={styles.progressContainer}>
-                <View style={[
-                  styles.progressStep,
-                  currentStep === 'category' && styles.progressStepActive
+                <Ionicons 
+                  name={postData.isLiked ? "heart" : "heart-outline"} 
+                  size={20} 
+                  color={postData.isLiked ? "#FF6B6B" : "#7D91A7"} 
+                />
+                <Text style={[
+                  styles.actionText,
+                  postData.isLiked && styles.actionTextLiked
                 ]}>
-                  <Text style={[
-                    styles.progressStepText,
-                    currentStep === 'category' && styles.progressStepTextActive
-                  ]}>1</Text>
-                </View>
-                <View style={[
-                  styles.progressLine,
-                  currentStep === 'details' && styles.progressLineActive
-                ]} />
-                <View style={[
-                  styles.progressStep,
-                  currentStep === 'details' && styles.progressStepActive
-                ]}>
-                  <Text style={[
-                    styles.progressStepText,
-                    currentStep === 'details' && styles.progressStepTextActive
-                  ]}>2</Text>
-                </View>
-              </View>
-              
-              {/* Contenu dynamique qui prend tout l'espace disponible */}
-              <View style={styles.contentContainer}>
-                {currentStep === 'category' && renderCategorySelection()}
-                {currentStep === 'details' && renderDetailsStep()}
-              </View>
-              
-              {/* Boutons d'action */}
-              {currentStep === 'details' && (
-                <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 10 }]}>
-                  <TouchableOpacity 
-                    onPress={handleBackToCategory} 
-                    style={styles.cancelButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.cancelButtonText}>Retour</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    onPress={handleSendReport} 
-                    style={[
-                      styles.confirmButton,
-                      (!selectedCategory || 
-                        (selectedCategory === 'other' && customReason.trim().length < 10)
-                      ) && styles.confirmButtonDisabled
-                    ]}
-                    activeOpacity={0.7}
-                    disabled={isSubmitting || !selectedCategory || 
-                      (selectedCategory === 'other' && customReason.trim().length < 10)
-                    }
-                  >
-                    <LinearGradient
-                      colors={isSubmitting 
-                        ? [COLORS.neutral.text.hint, COLORS.neutral.text.hint]
-                        : [COLORS.danger.main, COLORS.danger.dark]
-                      }
-                      style={styles.confirmButtonGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                    >
-                      {isSubmitting ? (
-                        <View style={styles.submitButtonContent}>
-                          <Ionicons name="sync" size={18} color={COLORS.danger.contrast} />
-                          <Text style={styles.confirmButtonText}>Envoi...</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.submitButtonContent}>
-                          <Ionicons name="send" size={18} color={COLORS.danger.contrast} />
-                          <Text style={styles.confirmButtonText}>Signaler</Text>
-                        </View>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </Animated.View>
-          </Animated.View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-});
+                  {postData.likes}
+                </Text>
+              </TouchableOpacity>
 
-PostReportModal.displayName = 'PostReportModal';
+              <TouchableOpacity 
+                style={styles.actionButton} 
+                onPress={handleCommentPress}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chatbubble-outline" size={20} color="#7D91A7" />
+                <Text style={styles.actionText}>{postData.comments}</Text>
+              </TouchableOpacity>
 
-// STYLES CORRIGÉS POUR AFFICHAGE PLEIN ÉCRAN
+              <TouchableOpacity 
+                style={styles.actionButton} 
+                onPress={handleSharePress}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="share-outline" size={20} color="#7D91A7" />
+                <Text style={styles.actionText}>Partager</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Section commentaires (placeholder) */}
+          <View style={styles.commentsContainer}>
+            <Text style={styles.sectionTitle}>Commentaires ({postData.comments})</Text>
+            <View style={styles.commentPlaceholder}>
+              <Text style={styles.placeholderText}>
+                Section commentaires à implémenter
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Modal de signalement */}
+        <PostReportModal
+          isVisible={isReportModalVisible}
+          onClose={closeReportModal}
+          onSendReport={handleSendReport}
+          postId={postData.id}
+          postAuthor={postData.author}
+          postTitle={postData.title}
+        />
+      </SafeAreaView>
+    );
+  }
+);
+
+PostDetailsScreen.displayName = 'PostDetailsScreen';
+
+/**
+ * Styles optimisés avec système de design cohérent
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F9FAFC',
   },
-  backdrop: {
+  
+  // États de chargement et d'erreur
+  loadingContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    // CORRECTION PRINCIPALE : Centrer au lieu de justifyContent: 'flex-end'
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  backdropTouchable: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  modalContainer: {
-    backgroundColor: COLORS.neutral.white,
-    borderRadius: 20,
-    overflow: 'hidden',
-    // CORRECTION : Utiliser toute la hauteur disponible avec des marges
-    width: width * 0.95,
-    height: height * 0.9,
-    maxHeight: height - 100, // Garde une petite marge
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.danger.contrast,
-    marginLeft: 12,
-  },
-  closeButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    backgroundColor: COLORS.neutral.background,
-  },
-  progressStep: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.neutral.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  progressStepActive: {
-    backgroundColor: COLORS.primary.main,
-  },
-  progressStepText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.neutral.text.hint,
-  },
-  progressStepTextActive: {
-    color: COLORS.primary.contrast,
-  },
-  progressLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: COLORS.neutral.border,
-    marginHorizontal: 15,
-  },
-  progressLineActive: {
-    backgroundColor: COLORS.primary.main,
-  },
-  contentContainer: {
-    flex: 1, // CORRECTION : Utilise tout l'espace disponible
-    position: 'relative',
-  },
-  stepContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     padding: 20,
   },
-  stepTitle: {
+  loadingText: {
+    fontSize: 16,
+    color: '#7D91A7',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.neutral.text.primary,
+    fontWeight: '600',
+    color: '#212529',
+    marginTop: 16,
     marginBottom: 8,
   },
-  stepSubtitle: {
-    fontSize: 15,
-    color: COLORS.neutral.text.secondary,
-    marginBottom: 20,
-    lineHeight: 22,
+  errorText: {
+    fontSize: 16,
+    color: '#7D91A7',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
   },
-  categoriesContainer: {
-    flex: 1,
+  retryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  categoriesContent: {
-    paddingBottom: 20,
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
-  categoryItem: {
+
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
-    backgroundColor: COLORS.neutral.white,
-    borderWidth: 1,
-    borderColor: COLORS.neutral.border,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  categoryItemSelected: {
-    borderColor: COLORS.primary.main,
-    backgroundColor: 'rgba(102, 126, 234, 0.05)',
-  },
-  categoryIconContainer: {
+  headerButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.neutral.background,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+
+  // Contenu principal
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  postContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  postHeader: {
+    marginBottom: 16,
+  },
+  authorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F4F8',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  categoryContent: {
-    flex: 1,
-  },
-  categoryLabel: {
+  authorName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.neutral.text.primary,
-    marginBottom: 4,
+    color: '#212529',
+    marginBottom: 2,
   },
-  categoryLabelSelected: {
-    color: COLORS.primary.main,
+  postDate: {
+    fontSize: 12,
+    color: '#7D91A7',
   },
-  categoryDescription: {
-    fontSize: 13,
-    color: COLORS.neutral.text.secondary,
-    lineHeight: 18,
+  postTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#212529',
+    lineHeight: 28,
+    marginBottom: 12,
   },
-  detailsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  postContent: {
+    fontSize: 16,
+    color: '#465670',
+    lineHeight: 24,
     marginBottom: 20,
   },
-  backButton: {
-    marginRight: 15,
-    padding: 5,
-  },
-  selectedCategoryBadge: {
+
+  // Actions du post
+  actionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+    paddingTop: 16,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginBottom: 15,
-  },
-  selectedCategoryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary.main,
-    marginLeft: 8,
-  },
-  detailsInstructions: {
-    fontSize: 15,
-    color: COLORS.neutral.text.secondary,
-    marginBottom: 15,
-    lineHeight: 22,
-  },
-  inputContainer: {
-    position: 'relative',
-    marginBottom: 15,
-  },
-  textInput: {
-    backgroundColor: COLORS.neutral.background,
-    borderWidth: 1,
-    borderColor: COLORS.neutral.border,
-    borderRadius: 12,
-    padding: 15,
-    minHeight: 120,
-    fontSize: 16,
-    color: COLORS.neutral.text.primary,
-    paddingBottom: 40,
-    textAlignVertical: 'top',
-  },
-  charCount: {
-    position: 'absolute',
-    bottom: 12,
-    right: 15,
-    fontSize: 12,
-    color: COLORS.neutral.text.hint,
-  },
-  charCountWarning: {
-    color: COLORS.danger.main,
-  },
-  postInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.neutral.background,
-    padding: 12,
     borderRadius: 8,
-    marginTop: 10,
+    marginRight: 16,
   },
-  postInfoText: {
-    fontSize: 12,
-    color: COLORS.neutral.text.secondary,
-    marginLeft: 8,
+  actionButtonLiked: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  actionText: {
+    fontSize: 14,
+    color: '#7D91A7',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  actionTextLiked: {
+    color: '#FF6B6B',
+  },
+
+  // Section commentaires
+  commentsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.neutral.border,
-    backgroundColor: COLORS.neutral.background,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  confirmButton: {
-    flex: 1,
-    marginLeft: 10,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.5,
-  },
-  confirmButtonGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonText: {
-    color: COLORS.danger.contrast,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    fontSize: 16,
-    marginLeft: 8,
+    color: '#212529',
+    marginBottom: 16,
   },
-  submitButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: COLORS.neutral.white,
-    paddingVertical: 16,
-    paddingHorizontal: 10,
+  commentPlaceholder: {
+    padding: 20,
+    backgroundColor: '#F8F9FA',
     borderRadius: 12,
-    marginRight: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.neutral.border,
   },
-  cancelButtonText: {
-    color: COLORS.neutral.text.secondary,
-    fontWeight: '600',
-    fontSize: 16,
+  placeholderText: {
+    fontSize: 14,
+    color: '#7D91A7',
+    textAlign: 'center',
   },
 });
 
-export default PostReportModal;
+// Export par défaut pour React Navigation
+export default PostDetailsScreen;

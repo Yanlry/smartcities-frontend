@@ -1,7 +1,7 @@
-// src/hooks/reports/useNearbyReports.ts
+// Chemin : frontend/src/hooks/reports/useNearbyReports.ts
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Report, ReportCategory } from '../../types/features/reports/report.types'
+import { Report, ReportCategory } from '../../types/features/reports/report.types';
 import { processReports } from '../../services/reportService';
 import { getTypeLabel, typeColors } from '../../utils/reportHelpers';
 import { hexToRgba, calculateOpacity } from '../../utils/reductOpacity';
@@ -9,93 +9,157 @@ import { formatCity } from '../../utils/formatters';
 import { formatDistance } from '../../utils/formatters';
 
 /**
- * Hook personnalisé pour récupérer et gérer les signalements à proximité
+ * Interface de retour du hook avec fonction refetch
  */
-export const useNearbyReports = (latitude: number | undefined, longitude: number | undefined) => {
-  // États
+interface UseNearbyReportsReturn {
+  reports: Report[];
+  allReports: Report[];
+  categories: ReportCategory[];
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
+  loading: boolean;
+  error: string | null;
+  formatTime: (dateString: string) => string;
+  formatDistance: typeof formatDistance;
+  getTypeLabel: typeof getTypeLabel;
+  typeColors: typeof typeColors;
+  hexToRgba: typeof hexToRgba;
+  calculateOpacity: typeof calculateOpacity;
+  formatCity: typeof formatCity;
+  refetch: () => Promise<void>; // 🎯 Fonction de rechargement
+}
+
+/**
+ * Hook personnalisé pour récupérer et gérer les signalements à proximité
+ * Optimisé avec fonction refetch et gestion d'erreurs améliorée
+ */
+export const useNearbyReports = (
+  latitude: number | undefined, 
+  longitude: number | undefined
+): UseNearbyReportsReturn => {
+  
+  // ===== ÉTATS =====
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Récupère les signalements depuis l'API et normalise les données
+   * 🔄 Fonction principale de récupération des signalements
+   * Extraite pour être réutilisable via refetch
    */
-  useEffect(() => {
-    const fetchReports = async () => {
-      // Vérification des coordonnées
-      if (!latitude || !longitude) {
-        setError("Position non disponible");
-        setLoading(false);
-        return;
-      }
+  const fetchReports = useCallback(async (): Promise<void> => {
+    // Vérification des coordonnées
+    if (!latitude || !longitude) {
+      const errorMsg = "Position non disponible - coordonnées manquantes";
+      console.warn("📍", errorMsg);
+      setError(errorMsg);
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
       
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Récupération des signalements
-        const fetchedReports = await processReports(latitude, longitude, "");
-        
-        // Normalisation des données - conversion explicite pour respecter les types
-        const normalizedReports: Report[] = fetchedReports.map(report => {
-          // Convertir chaque photo au format attendu
-          const normalizedPhotos = Array.isArray(report.photos) 
-            ? report.photos.map(photo => ({
-                // Préserver le type de l'ID tel qu'il est défini dans ReportPhoto
-                id: String(photo.id),
-                url: photo.url
-              }))
-            : [];
-            
-          return {
-            ...report,
-            photos: normalizedPhotos,
-            // Utiliser undefined pour les distances invalides
-            distance: report.distance === null || !isFinite(report.distance as number) 
-              ? undefined 
-              : report.distance,
-          } as Report; // Assertion de type pour chaque élément
-        });
-        
-        setReports(normalizedReports);
-      } catch (error: any) {
-        console.error("❌ Erreur lors du chargement des signalements :", error);
-        setError(error.message || "Erreur lors du chargement des signalements");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReports();
+      console.log(`📡 Récupération des signalements pour: ${latitude}, ${longitude}`);
+      
+      // Récupération des signalements via le service existant
+      const fetchedReports = await processReports(latitude, longitude, "");
+      
+      // 🔧 Normalisation des données - conversion explicite pour respecter les types
+      const normalizedReports: Report[] = fetchedReports.map(report => {
+        // Convertir chaque photo au format attendu
+        const normalizedPhotos = Array.isArray(report.photos) 
+          ? report.photos.map(photo => ({
+              // Préserver le type de l'ID tel qu'il est défini dans ReportPhoto
+              id: String(photo.id),
+              url: photo.url
+            }))
+          : [];
+          
+        return {
+          ...report,
+          photos: normalizedPhotos,
+          // Utiliser undefined pour les distances invalides
+          distance: report.distance === null || !isFinite(report.distance as number) 
+            ? undefined 
+            : report.distance,
+        } as Report; // Assertion de type pour chaque élément
+      });
+      
+      setReports(normalizedReports);
+      console.log(`✅ ${normalizedReports.length} signalements récupérés avec succès`);
+      
+    } catch (error: any) {
+      const errorMessage = error.message || "Erreur lors du chargement des signalements";
+      console.error("❌ Erreur lors du chargement des signalements:", errorMessage);
+      setError(errorMessage);
+      setReports([]); // Reset en cas d'erreur
+    } finally {
+      setLoading(false);
+    }
   }, [latitude, longitude]);
 
   /**
-   * Formate une date en texte relatif (il y a X minutes/heures/jours)
+   * 📅 Chargement initial des données
+   */
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  /**
+   * 🕐 Formate une date en texte relatif (il y a X minutes/heures/jours)
+   * Optimisé avec useCallback pour éviter les re-renders
    */
   const formatTime = useCallback((dateString: string): string => {
-    const eventDate = new Date(dateString);
-    const now = new Date();
+    try {
+      const eventDate = new Date(dateString);
+      
+      // Validation de la date
+      if (isNaN(eventDate.getTime())) {
+        console.warn("Date invalide reçue:", dateString);
+        return "Date inconnue";
+      }
+      
+      const now = new Date();
+      const diffInMs = now.getTime() - eventDate.getTime();
+      
+      // Protection contre les dates futures
+      if (diffInMs < 0) {
+        return "À l'instant";
+      }
+      
+      const diffInSeconds = Math.floor(diffInMs / 1000);
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      const diffInDays = Math.floor(diffInHours / 24);
 
-    const diffInMs = now.getTime() - eventDate.getTime();
-    const diffInSeconds = Math.floor(diffInMs / 1000);
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    if (diffInSeconds < 60) {
-      return `Il y a ${diffInSeconds} seconde${diffInSeconds > 1 ? "s" : ""}`;
-    } else if (diffInMinutes < 60) {
-      return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`;
-    } else if (diffInHours < 24) {
-      return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`;
-    } else {
-      return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
+      if (diffInSeconds < 60) {
+        return diffInSeconds <= 5 ? "À l'instant" : `Il y a ${diffInSeconds} seconde${diffInSeconds > 1 ? "s" : ""}`;
+      } else if (diffInMinutes < 60) {
+        return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`;
+      } else if (diffInHours < 24) {
+        return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`;
+      } else if (diffInDays < 30) {
+        return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
+      } else {
+        // Pour les dates plus anciennes, affichage de la date formatée
+        return eventDate.toLocaleDateString('fr-FR', {
+          day: 'numeric',
+          month: 'short',
+          year: eventDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors du formatage de la date:", error);
+      return "Date inconnue";
     }
   }, []);
 
   /**
-   * Liste des catégories de signalements disponibles
+   * 📂 Liste des catégories de signalements disponibles
+   * Memoïzée pour éviter les re-créations inutiles
    */
   const categories: ReportCategory[] = useMemo(() => [
     {
@@ -131,31 +195,48 @@ export const useNearbyReports = (latitude: number | undefined, longitude: number
   ], []);
 
   /**
-   * Filtre les signalements selon la catégorie sélectionnée
+   * 🔍 Filtre les signalements selon la catégorie sélectionnée
+   * Optimisé avec useMemo pour éviter les recalculs inutiles
    */
-  const filteredReports = useMemo(() => 
-    reports.filter((report) =>
-      selectedCategory === "Tous" ? true : report.type === selectedCategory
-    ),
-    [reports, selectedCategory]
-  );
+  const filteredReports = useMemo(() => {
+    if (selectedCategory === "Tous") {
+      return reports;
+    }
+    
+    return reports.filter((report) => report.type === selectedCategory);
+  }, [reports, selectedCategory]);
 
-  // Retour des valeurs et méthodes du hook
+  /**
+   * 🎯 Mise à jour de la catégorie sélectionnée avec validation
+   */
+  const setSelectedCategoryWithValidation = useCallback((category: string) => {
+    const validCategories = ["Tous", ...categories.map(cat => cat.name)];
+    
+    if (validCategories.includes(category)) {
+      setSelectedCategory(category);
+    } else {
+      console.warn(`Catégorie invalide: ${category}. Utilisation de "Tous" par défaut.`);
+      setSelectedCategory("Tous");
+    }
+  }, [categories]);
+
+  // ===== RETOUR DU HOOK =====
   return {
     reports: filteredReports,
     allReports: reports,
     categories,
     selectedCategory,
-    setSelectedCategory,
+    setSelectedCategory: setSelectedCategoryWithValidation,
     loading,
     error,
     formatTime,
-    formatDistance: formatDistance,
+    formatDistance,
     getTypeLabel,
     typeColors,
     hexToRgba,
     calculateOpacity,
-    formatCity
+    formatCity,
+    refetch: fetchReports, // 🎯 Exposition de la fonction de rechargement
   };
 };
 
