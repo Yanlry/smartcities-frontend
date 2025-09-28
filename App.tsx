@@ -1,3 +1,5 @@
+// Chemin : frontend/App.tsx
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
@@ -8,6 +10,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  Keyboard, // AJOUT : Import de Keyboard pour détecter l'ouverture/fermeture
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -56,7 +59,7 @@ import Animated, {
 import { useFonts } from "expo-font";
 import { BlurView } from "expo-blur";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useUserProfile } from "./hooks/user/useUserProfile"; // Ajoutez cette ligne
+import { useUserProfile } from "./hooks/user/useUserProfile";
 import { UserProfileProvider } from "./context/UserProfileContext";
 
 // Enhanced color system with semantic naming
@@ -450,6 +453,10 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     const actionSheetRef = useRef<typeof ActionSheet | null>(null);
     const activeTab = useSharedValue(0);
+    
+    // AJOUT : State pour gérer la visibilité de la TabBar
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+    const tabBarTranslateY = useSharedValue(0);
 
     const fetchUserId = async () => {
       try {
@@ -476,6 +483,39 @@ export default function App() {
       };
 
       initializeUserId();
+    }, []);
+
+    // AJOUT : Gestion de la visibilité du clavier
+    useEffect(() => {
+      const keyboardWillShow = Keyboard.addListener(
+        Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+        () => {
+          setKeyboardVisible(true);
+          // Animation pour cacher la TabBar
+          tabBarTranslateY.value = withTiming(200, {
+            duration: 250,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          });
+        }
+      );
+
+      const keyboardWillHide = Keyboard.addListener(
+        Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+        () => {
+          setKeyboardVisible(false);
+          // Animation pour montrer la TabBar
+          tabBarTranslateY.value = withTiming(0, {
+            duration: 250,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          });
+        }
+      );
+
+      // Cleanup
+      return () => {
+        keyboardWillShow.remove();
+        keyboardWillHide.remove();
+      };
     }, []);
 
     // Enhanced TabBar with modern design and smooth animations
@@ -509,8 +549,15 @@ export default function App() {
         };
       });
 
+      // AJOUT : Animation pour cacher/montrer la TabBar avec le clavier
+      const tabBarAnimatedStyle = useAnimatedStyle(() => {
+        return {
+          transform: [{ translateY: tabBarTranslateY.value }],
+        };
+      });
+
       return (
-        <View style={styles.tabBarWrapper}>
+        <Animated.View style={[styles.tabBarWrapper, tabBarAnimatedStyle]}>
           <LinearGradient
             colors={["#062C41", "#062C41", "#0F3460"]}
             style={styles.headerGradient}
@@ -643,7 +690,7 @@ export default function App() {
               })}
             </View>
           </LinearGradient>
-        </View>
+        </Animated.View>
       );
     };
 
@@ -937,7 +984,7 @@ export default function App() {
                     onShowNameModal={dummyFn}
                     onShowVoteInfoModal={dummyFn}
                     onNavigateToCity={() => {
-                      /* TODO : remplacer par une navigation appropriée si besoin */
+                      /* TODO : remplacer par une navigation appropriée si besoin */
                     }}
                     updateProfileImage={updateProfileImage}
                   />
@@ -951,6 +998,7 @@ export default function App() {
   );
 }
 
+// Le reste des styles reste identique
 const styles = StyleSheet.create({
   // ===== SPLASH & LOADING SCREENS =====
   initialLoadingContainer: {

@@ -1,3 +1,5 @@
+// Chemin : frontend/screens/NotificationsScreen.tsx
+
 import "react-native-gesture-handler";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -28,7 +30,7 @@ import { API_URL } from "@env";
 import { useNotification } from "../context/NotificationContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
+import { useUserProfile } from "../hooks/user/useUserProfile";
 
 interface Notification {
   id: number;
@@ -338,76 +340,116 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
+  // ✅ FONCTION CORRIGÉE AVEC MEILLEUR DÉBOGAGE ET GESTION D'ERREURS
   const handleNotificationClick = async (notification) => {
-    console.log("Notification cliquée :", notification);
+    console.log("🔔 Notification cliquée :", notification);
+    console.log("📋 Type de notification :", notification.type);
+    console.log("🆔 RelatedId :", notification.relatedId, typeof notification.relatedId);
 
     try {
       await markNotificationAsRead(notification.id);
+      console.log("✅ Notification marquée comme lue");
     } catch (error) {
-      console.error(
-        "Erreur lors de la mise à jour de la notification comme lue :",
-        error
-      );
+      console.error("❌ Erreur lors de la mise à jour de la notification comme lue :", error);
     }
 
-    switch (notification.type) {
-      case "COMMENT":
-        navigation.navigate("ReportDetailsScreen", {
-          reportId: notification.relatedId,
-        });
-        break;
+    // Conversion du relatedId en nombre si c'est une chaîne
+    const relatedId = typeof notification.relatedId === 'string' 
+      ? parseInt(notification.relatedId, 10) 
+      : notification.relatedId;
 
-      case "FOLLOW":
-        navigation.navigate("UserProfileScreen", {
-          userId: notification.relatedId,
-        });
-        break;
+    console.log("🔄 RelatedId converti :", relatedId, typeof relatedId);
 
-      case "VOTE":
-        navigation.navigate("ReportDetailsScreen", {
-          reportId: notification.relatedId,
-        });
-        break;
+    // Vérification que relatedId est valide
+    if (!relatedId || isNaN(relatedId)) {
+      console.error("❌ RelatedId invalide :", notification.relatedId);
+      Alert.alert(
+        "Erreur",
+        "Impossible d'ouvrir cette notification car l'identifiant est invalide."
+      );
+      return;
+    }
 
-      case "new_message":
-        navigation.navigate("ChatScreen", {
-          senderId: notification.userId,
-          receiverId: notification.initiatorId,
-        });
-        break;
+    try {
+      switch (notification.type) {
+        case "COMMENT":
+          console.log("🚀 Navigation vers ReportDetailsScreen avec reportId :", relatedId);
+          navigation.navigate("ReportDetailsScreen", {
+            reportId: relatedId,
+          });
+          break;
 
-      case "comment":
-        navigation.navigate("PostDetailsScreen", {
-          postId: notification.relatedId,
-        });
-        break;
+        case "FOLLOW":
+          console.log("🚀 Navigation vers UserProfileScreen avec userId :", relatedId);
+          navigation.navigate("UserProfileScreen", {
+            userId: relatedId,
+          });
+          break;
 
-      case "post":
-        navigation.navigate("PostDetailsScreen", {
-          postId: notification.relatedId,
-        });
-        break;
+        case "VOTE":
+          console.log("🚀 Navigation vers ReportDetailsScreen avec reportId :", relatedId);
+          navigation.navigate("ReportDetailsScreen", {
+            reportId: relatedId,
+          });
+          break;
 
-      case "NEW_POST":
-        navigation.navigate("PostDetailsScreen", {
-          postId: notification.relatedId,
-        });
-        break;
+        case "new_message":
+          console.log("🚀 Navigation vers ChatScreen");
+          navigation.navigate("ChatScreen", {
+            senderId: notification.userId,
+            receiverId: notification.initiatorId,
+          });
+          break;
 
-      case "comment_reply":
-        navigation.navigate("PostDetailsScreen", {
-          postId: notification.relatedId,
-        });
-        break;
+        case "comment":
+          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          navigation.navigate("PostDetailsScreen", {
+            postId: relatedId,
+          });
+          break;
 
-      case "LIKE":
-        navigation.navigate("PostDetailsScreen", {
-          postId: notification.relatedId,
-        });
-        break;
+        case "post":
+          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          navigation.navigate("PostDetailsScreen", {
+            postId: relatedId,
+          });
+          break;
 
-      default:
-        console.warn("Type de notification inconnu :", notification.type);
+        case "NEW_POST":
+          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          navigation.navigate("PostDetailsScreen", {
+            postId: relatedId,
+          });
+          break;
+
+        case "LIKE":
+          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          navigation.navigate("PostDetailsScreen", {
+            postId: relatedId,
+          });
+          break;
+
+        case "comment_reply":
+          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          navigation.navigate("PostDetailsScreen", {
+            postId: relatedId,
+          });
+          break;
+
+        default:
+          console.warn("⚠️ Type de notification inconnu :", notification.type);
+          Alert.alert(
+            "Type de notification non reconnu",
+            `Le type "${notification.type}" n'est pas pris en charge.`
+          );
+          break;
+      }
+    } catch (navigationError) {
+      console.error("❌ Erreur de navigation :", navigationError);
+      Alert.alert(
+        "Erreur de navigation",
+        "Impossible d'ouvrir cette page. Veuillez réessayer."
+      );
     }
   };
 
@@ -721,7 +763,6 @@ export default function NotificationsScreen({ navigation }) {
 
     return (
       isModalVisible && (
-        // Remplacement de l'ancien modal par une version avec un ScrollView accessible plus facilement
         <Modal
           visible={isModalVisible}
           transparent
@@ -733,7 +774,6 @@ export default function NotificationsScreen({ navigation }) {
           }}
         >
           <View style={styles.modalBackdrop}>
-            {/* Zone vide pour fermer le modal */}
             <TouchableWithoutFeedback onPress={closeModal}>
               <View style={{ flex: 1 }} />
             </TouchableWithoutFeedback>
@@ -746,7 +786,6 @@ export default function NotificationsScreen({ navigation }) {
                 },
               ]}
             >
-              {/* On supprime le TouchableWithoutFeedback englobant pour ne pas interférer avec le scroll */}
               <View>
                 <View style={styles.modalHeader}>
                   <View style={styles.modalHeaderContent}>
@@ -901,7 +940,7 @@ export default function NotificationsScreen({ navigation }) {
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
         onNavigateToCity={() => {
-          /* TODO : remplacer par une navigation appropriée si besoin */
+          /* TODO : remplacer par une navigation appropriée si besoin */
         }}
         updateProfileImage={updateProfileImage}
       />

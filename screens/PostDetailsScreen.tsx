@@ -1,465 +1,500 @@
 // Chemin : frontend/screens/PostDetailsScreen.tsx
 
-import React, { useState, useCallback, memo, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  Alert,
   ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
   ActivityIndicator,
+  RefreshControl,
+  Platform,
   Dimensions,
+  StatusBar,
+  Share,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useToken } from '../hooks/auth/useToken';
+// @ts-ignore
+import { API_URL } from '@env';
 
-// Import du modal de signalement
-import PostReportModal from '../components/interactions/ReportDetails/PostReportModal';
+const { width, height } = Dimensions.get('window');
 
-const { width } = Dimensions.get('window');
-
-/**
- * Interface pour les paramètres de navigation de l'écran
- */
-interface PostDetailsScreenParams {
-  postId?: string;
-  postAuthor?: string;
-  postTitle?: string;
-  showReportModal?: boolean;
-}
-
-/**
- * Props de navigation pour l'écran PostDetails
- * Compatible avec React Navigation Stack Navigator
- */
-interface PostDetailsScreenProps {
-  navigation: StackNavigationProp<any, 'PostDetailsScreen'>;
-  route: RouteProp<{ PostDetailsScreen: PostDetailsScreenParams }, 'PostDetailsScreen'>;
-}
-
-/**
- * Interface pour les données d'un post
- */
+// Interface selon la vraie structure de votre API
 interface PostData {
-  id: string;
-  title: string;
+  id: number;
   content: string;
-  author: string;
   createdAt: string;
-  likes: number;
-  comments: number;
-  isLiked: boolean;
+  updatedAt: string;
+  likesCount: number;
+  likedByUser: boolean;
+  authorId: number;
+  authorName: string;
+  profilePhoto: string;
+  photos: Array<{
+    id: number;
+    url: string;
+  }>;
+  comments: any[];
 }
 
-/**
- * Hook personnalisé pour la gestion des données du post
- */
-const usePostData = (postId?: string, postTitle?: string, postAuthor?: string) => {
-  const [postData, setPostData] = useState<PostData | null>(null);
+interface PostDetailsScreenProps {
+  route: {
+    params: {
+      postId: number;
+    };
+  };
+  navigation: any;
+}
+
+export default function PostDetailsScreen({ route, navigation }: PostDetailsScreenProps) {
+  const { getToken, getUserId } = useToken();
+  const { postId } = route.params;
+
+  // États locaux
+  const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLiking, setIsLiking] = useState(false);
 
-  const fetchPostData = useCallback(async () => {
-    if (!postId) {
-      setError("ID de post manquant");
-      setLoading(false);
-      return;
-    }
+  console.log('📱 PostDetailsScreen monté avec postId:', postId);
 
+  // Fonction pour récupérer les détails du post
+  const fetchPostDetails = useCallback(async () => {
     try {
-      setLoading(true);
+      console.log('🔍 Récupération des détails du post:', postId);
       setError(null);
 
-      // TODO: Remplacer par votre appel API réel
-      // const response = await fetch(`${API_URL}/posts/${postId}`);
-      // const data = await response.json();
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Token non trouvé');
+      }
+
+      const response = await fetch(`${API_URL}/posts/${postId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Réponse API posts:', response.status);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Publication non trouvée');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération du post');
+      }
+
+      const postData: PostData = await response.json();
       
-      // Simulation de données pour l'exemple
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('✅ Post récupéré - ID:', postData.id);
+      console.log('👤 Auteur:', postData.authorName);
+      console.log('💖 Liké par utilisateur:', postData.likedByUser);
+      console.log('📊 Nombre de likes:', postData.likesCount);
       
-      const mockData: PostData = {
-        id: postId,
-        title: postTitle || "Titre du post",
-        content: "Contenu du post à afficher ici. Ce sera remplacé par les vraies données de votre API.",
-        author: postAuthor || "Utilisateur inconnu",
-        createdAt: new Date().toISOString(),
-        likes: 42,
-        comments: 7,
-        isLiked: false,
-      };
+      setPost(postData);
       
-      setPostData(mockData);
-    } catch (err: any) {
-      console.error('Erreur lors du chargement du post:', err);
-      setError(err.message || "Erreur lors du chargement du post");
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la récupération du post:', error.message);
+      setError(error.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [postId, postTitle, postAuthor]);
+  }, [postId, getToken]);
 
-  return { postData, loading, error, fetchPostData };
-};
+  // Chargement initial
+  useEffect(() => {
+    fetchPostDetails();
+  }, [postId]);
 
-/**
- * Hook personnalisé pour la gestion du modal de signalement
- */
-const useReportModal = () => {
-  const [isVisible, setIsVisible] = useState(false);
+  // Fonction pour rafraîchir
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchPostDetails();
+  }, [fetchPostDetails]);
 
-  const openModal = useCallback(() => setIsVisible(true), []);
-  const closeModal = useCallback(() => setIsVisible(false), []);
+  // FONCTION CORRIGÉE : Logique simplifiée qui se base uniquement sur l'état du post
+  const handleLike = useCallback(async () => {
+    if (!post || isLiking) return;
 
-  return { isVisible, openModal, closeModal };
-};
-
-/**
- * PostDetailsScreen - Écran principal de détails d'un post
- * Architecture optimisée avec séparation des responsabilités
- * Compatible avec React Navigation
- */
-const PostDetailsScreen: React.FC<PostDetailsScreenProps> = memo(
-  ({ navigation, route }) => {
-    const insets = useSafeAreaInsets();
-    
-    // Extraction des paramètres de navigation
-    const { 
-      postId, 
-      postAuthor, 
-      postTitle, 
-      showReportModal = false 
-    } = route.params || {};
-
-    // Hooks personnalisés pour la gestion d'état
-    const { postData, loading, error, fetchPostData } = usePostData(postId, postTitle, postAuthor);
-    const { isVisible: isReportModalVisible, openModal: openReportModal, closeModal: closeReportModal } = useReportModal();
-
-    /**
-     * Chargement initial des données
-     */
-    useEffect(() => {
-      fetchPostData();
-    }, [fetchPostData]);
-
-    /**
-     * Ouverture automatique du modal si demandé via navigation
-     */
-    useEffect(() => {
-      if (showReportModal) {
-        openReportModal();
+    try {
+      setIsLiking(true);
+      
+      const userId = await getUserId();
+      if (!userId) {
+        console.error('Impossible de récupérer l\'ID utilisateur.');
+        return;
       }
-    }, [showReportModal, openReportModal]);
 
-    /**
-     * Gestion de l'envoi du signalement avec feedback utilisateur optimisé
-     */
-    const handleSendReport = useCallback(async (reportReason: string, reportType: string) => {
-      try {
-        // TODO: Remplacer par votre appel API réel
-        const reportData = {
-          postId,
-          reason: reportReason,
-          type: reportType,
-          reportedBy: "current_user_id", // À remplacer par l'ID de l'utilisateur actuel
-          timestamp: new Date().toISOString(),
+      // CORRECTION : Capture l'état actuel AVANT la requête
+      const wasLiked = post.likedByUser;
+      const currentLikesCount = post.likesCount;
+
+      console.log('🔄 Avant like - Était liké:', wasLiked, 'Likes:', currentLikesCount);
+
+      // Mise à jour optimiste IMMÉDIATE
+      setPost(prevPost => {
+        if (!prevPost) return null;
+        return {
+          ...prevPost,
+          likedByUser: !wasLiked, // Inverse l'état actuel
+          likesCount: wasLiked ? currentLikesCount - 1 : currentLikesCount + 1
         };
-        
-        console.log('Données de signalement:', reportData);
-        
-        // Simulation d'appel API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Fermeture du modal et feedback positif
-        closeReportModal();
-        
-        Alert.alert(
-          "Signalement envoyé",
-          "Merci de contribuer à la sécurité de notre communauté. Notre équipe examinera ce contenu rapidement.",
-          [
-            { 
-              text: "Retour à l'accueil", 
-              onPress: () => navigation.navigate("Main"),
-              style: "default"
-            },
-            { 
-              text: "Rester ici", 
-              style: "cancel"
-            }
-          ]
-        );
-      } catch (error: any) {
-        console.error('Erreur lors de l\'envoi du signalement:', error);
-        
-        Alert.alert(
-          "Erreur",
-          "Une erreur est survenue lors de l'envoi du signalement. Veuillez réessayer.",
-          [{ text: "Réessayer", style: "default" }]
-        );
+      });
+
+      // Ensuite, envoyer la requête au serveur
+      const response = await fetch(`${API_URL}/posts/${postId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        // CORRECTION : En cas d'erreur, remettre l'état d'origine
+        setPost(prevPost => {
+          if (!prevPost) return null;
+          return {
+            ...prevPost,
+            likedByUser: wasLiked, // Remettre l'état d'origine
+            likesCount: currentLikesCount // Remettre le nombre d'origine
+          };
+        });
+        throw new Error('Erreur lors du like de la publication');
       }
-    }, [postId, navigation, closeReportModal]);
 
-    /**
-     * Gestion du bouton retour avec confirmation si modal ouvert
-     */
-    const handleBackPress = useCallback(() => {
-      if (isReportModalVisible) {
-        Alert.alert(
-          "Fermer le signalement ?",
-          "Votre signalement en cours sera perdu.",
-          [
-            { text: "Continuer", style: "cancel" },
-            { 
-              text: "Fermer", 
-              style: "destructive", 
-              onPress: () => {
-                closeReportModal();
-                navigation.goBack();
-              }
-            }
-          ]
-        );
-      } else {
-        navigation.goBack();
-      }
-    }, [isReportModalVisible, navigation, closeReportModal]);
+      console.log('✅ Like mis à jour avec succès');
 
-    /**
-     * Gestion des actions sur le post (like, partage, etc.)
-     */
-    const handleLikePress = useCallback(() => {
-      // TODO: Implémenter la logique de like
-      console.log('Like pressed for post:', postId);
-    }, [postId]);
-
-    const handleCommentPress = useCallback(() => {
-      // TODO: Naviguer vers les commentaires
-      console.log('Comment pressed for post:', postId);
-    }, [postId]);
-
-    const handleSharePress = useCallback(() => {
-      // TODO: Implémenter le partage
-      console.log('Share pressed for post:', postId);
-    }, [postId]);
-
-    /**
-     * Rendu de l'état de chargement
-     */
-    if (loading) {
-      return (
-        <SafeAreaView style={styles.container}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#667eea" />
-            <Text style={styles.loadingText}>Chargement du post...</Text>
-          </View>
-        </SafeAreaView>
-      );
+    } catch (error: any) {
+      console.error('❌ Erreur toggle like:', error.message);
+      Alert.alert('Erreur', 'Impossible de mettre à jour le like');
+    } finally {
+      setIsLiking(false);
     }
+  }, [post, postId, getUserId, isLiking]);
 
-    /**
-     * Rendu de l'état d'erreur
-     */
-    if (error || !postData) {
-      return (
-        <SafeAreaView style={styles.container}>
-          <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
-            <Text style={styles.errorTitle}>Erreur de chargement</Text>
-            <Text style={styles.errorText}>
-              {error || "Impossible de charger les détails du post"}
-            </Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchPostData}>
-              <Text style={styles.retryButtonText}>Réessayer</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      );
+  // Fonction pour partager le post
+  const sharePost = useCallback(async () => {
+    if (!post) return;
+
+    try {
+      await Share.share({
+        message: `Découvrez cette publication : "${post.content}" par ${post.authorName} sur SmartCities`,
+        url: `smartcities://post/${postId}`,
+      });
+    } catch (error) {
+      console.error('❌ Erreur partage:', error);
     }
+  }, [post, postId]);
 
+  // Fonction pour naviguer vers le profil de l'auteur
+  const navigateToAuthorProfile = useCallback(() => {
+    if (post?.authorId) {
+      navigation.navigate('UserProfileScreen', { userId: post.authorId });
+    }
+  }, [post, navigation]);
+
+  // Fonction pour retourner en arrière
+  const goBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  // Formatage de la date
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Date inconnue';
+    }
+  };
+
+  // Écran de chargement
+  if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        {/* Header optimisé avec dégradé */}
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        
         <LinearGradient
-          colors={['#667eea', '#764ba2']}
-          style={[styles.header, { paddingTop: insets.top + 10 }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          colors={['#062C41', '#0F3460']}
+          style={styles.header}
         >
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleBackPress}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
-          >
+          <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {postData.title}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              Par {postData.author}
-            </Text>
-          </View>
-          
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={openReportModal}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
-          >
-            <Ionicons name="flag" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Publication</Text>
+          <View style={styles.headerRight} />
         </LinearGradient>
 
-        {/* Contenu principal */}
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Informations du post */}
-          <View style={styles.postContainer}>
-            <View style={styles.postHeader}>
-              <View style={styles.authorContainer}>
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={24} color="#667eea" />
-                </View>
-                <View>
-                  <Text style={styles.authorName}>{postData.author}</Text>
-                  <Text style={styles.postDate}>
-                    {new Date(postData.createdAt).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <Text style={styles.postTitle}>{postData.title}</Text>
-            <Text style={styles.postContent}>{postData.content}</Text>
-
-            {/* Actions du post */}
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity 
-                style={[styles.actionButton, postData.isLiked && styles.actionButtonLiked]}
-                onPress={handleLikePress}
-                activeOpacity={0.7}
-              >
-                <Ionicons 
-                  name={postData.isLiked ? "heart" : "heart-outline"} 
-                  size={20} 
-                  color={postData.isLiked ? "#FF6B6B" : "#7D91A7"} 
-                />
-                <Text style={[
-                  styles.actionText,
-                  postData.isLiked && styles.actionTextLiked
-                ]}>
-                  {postData.likes}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.actionButton} 
-                onPress={handleCommentPress}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="chatbubble-outline" size={20} color="#7D91A7" />
-                <Text style={styles.actionText}>{postData.comments}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.actionButton} 
-                onPress={handleSharePress}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="share-outline" size={20} color="#7D91A7" />
-                <Text style={styles.actionText}>Partager</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Section commentaires (placeholder) */}
-          <View style={styles.commentsContainer}>
-            <Text style={styles.sectionTitle}>Commentaires ({postData.comments})</Text>
-            <View style={styles.commentPlaceholder}>
-              <Text style={styles.placeholderText}>
-                Section commentaires à implémenter
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Modal de signalement */}
-        <PostReportModal
-          isVisible={isReportModalVisible}
-          onClose={closeReportModal}
-          onSendReport={handleSendReport}
-          postId={postData.id}
-          postAuthor={postData.author}
-          postTitle={postData.title}
-        />
-      </SafeAreaView>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#062C41" />
+          <Text style={styles.loadingText}>Chargement de la publication...</Text>
+        </View>
+      </View>
     );
   }
-);
 
-PostDetailsScreen.displayName = 'PostDetailsScreen';
+  // Écran d'erreur
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        
+        <LinearGradient
+          colors={['#062C41', '#0F3460']}
+          style={styles.header}
+        >
+          <TouchableOpacity onPress={goBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Erreur</Text>
+          <View style={styles.headerRight} />
+        </LinearGradient>
 
-/**
- * Styles optimisés avec système de design cohérent
- */
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={60} color="#FF5252" />
+          <Text style={styles.errorTitle}>Oups !</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchPostDetails}>
+            <Text style={styles.retryButtonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Vérification que le post existe
+  if (!post) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        
+        <LinearGradient
+          colors={['#062C41', '#0F3460']}
+          style={styles.header}
+        >
+          <TouchableOpacity onPress={goBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Publication</Text>
+          <View style={styles.headerRight} />
+        </LinearGradient>
+
+        <View style={styles.errorContainer}>
+          <Ionicons name="document-outline" size={60} color="#999" />
+          <Text style={styles.errorTitle}>Aucune donnée</Text>
+          <Text style={styles.errorText}>La publication semble vide.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchPostDetails}>
+            <Text style={styles.retryButtonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Écran principal
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+      
+      {/* Header avec actions */}
+      <LinearGradient
+        colors={['#062C41', '#0F3460']}
+        style={styles.header}
+      >
+        <TouchableOpacity onPress={goBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Publication</Text>
+        <TouchableOpacity onPress={sharePost} style={styles.shareButton}>
+          <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
+      </LinearGradient>
+
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#062C41']}
+            tintColor="#062C41"
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.postContainer}>
+          {/* Informations de l'auteur */}
+          <TouchableOpacity 
+            style={styles.authorContainer}
+            onPress={navigateToAuthorProfile}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={{ 
+                uri: post.profilePhoto || 'https://via.placeholder.com/150' 
+              }}
+              style={styles.authorAvatar}
+            />
+            <View style={styles.authorInfo}>
+              <Text style={styles.authorName}>
+                {post.authorName || 'Utilisateur inconnu'}
+              </Text>
+              <Text style={styles.postDate}>
+                {formatDate(post.createdAt)}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#A0A0A0" />
+          </TouchableOpacity>
+
+          {/* Contenu du post */}
+          <View style={styles.postContent}>
+            <Text style={styles.postText}>{post.content}</Text>
+          </View>
+
+          {/* Photos du post */}
+          {post.photos && post.photos.length > 0 && (
+            <ScrollView 
+              horizontal 
+              style={styles.photosContainer}
+              showsHorizontalScrollIndicator={false}
+            >
+              {post.photos.map((photo, index) => (
+                <Image
+                  key={photo?.id || index}
+                  source={{ uri: photo?.url || 'https://via.placeholder.com/200' }}
+                  style={styles.postPhoto}
+                />
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Actions du post - CORRIGÉES */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={handleLike}
+              disabled={isLiking}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name={post.likedByUser ? "heart" : "heart-outline"} // CORRECTION : Se base uniquement sur post.likedByUser
+                size={22} 
+                color={post.likedByUser ? "#FF5252" : "#666"} 
+              />
+              <Text style={[
+                styles.actionText, 
+                post.likedByUser && styles.likedText // CORRECTION : Se base uniquement sur post.likedByUser
+              ]}>
+                {post.likesCount} J'aime
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+              <Ionicons name="chatbubble-outline" size={20} color="#666" />
+              <Text style={styles.actionText}>{post.comments.length} Commentaires</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F8F9FA',
   },
-  
-  // États de chargement et d'erreur
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 15,
+    paddingHorizontal: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  headerRight: {
+    width: 40,
+  },
+  content: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 32,
   },
   loadingText: {
-    fontSize: 16,
-    color: '#7D91A7',
     marginTop: 16,
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 32,
   },
   errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#212529',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
     marginTop: 16,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: '#7D91A7',
+    color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
     marginBottom: 24,
+    lineHeight: 22,
   },
   retryButton: {
-    backgroundColor: '#667eea',
-    paddingHorizontal: 24,
+    backgroundColor: '#062C41',
     paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
   },
   retryButtonText: {
@@ -467,159 +502,81 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-
-  // Contenu principal
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
   postContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    margin: 16,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  postHeader: {
-    marginBottom: 16,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0F4F8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  authorAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E0E0E0',
+  },
+  authorInfo: {
+    flex: 1,
+    marginLeft: 12,
   },
   authorName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#212529',
+    color: '#333',
     marginBottom: 2,
   },
   postDate: {
     fontSize: 12,
-    color: '#7D91A7',
-  },
-  postTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#212529',
-    lineHeight: 28,
-    marginBottom: 12,
+    color: '#999',
   },
   postContent: {
-    fontSize: 16,
-    color: '#465670',
-    lineHeight: 24,
-    marginBottom: 20,
+    marginBottom: 16,
   },
-
-  // Actions du post
+  postText: {
+    fontSize: 16,
+    color: '#555',
+    lineHeight: 22,
+  },
+  photosContainer: {
+    marginBottom: 16,
+  },
+  postPhoto: {
+    width: width * 0.7,
+    height: 200,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#E0E0E0',
+  },
   actionsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
-    paddingTop: 16,
+    borderTopColor: '#E0E0E0',
+    paddingTop: 12,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    marginRight: 16,
-  },
-  actionButtonLiked: {
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
   actionText: {
-    fontSize: 14,
-    color: '#7D91A7',
     marginLeft: 6,
+    fontSize: 14,
+    color: '#666',
     fontWeight: '500',
   },
-  actionTextLiked: {
-    color: '#FF6B6B',
-  },
-
-  // Section commentaires
-  commentsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#212529',
-    marginBottom: 16,
-  },
-  commentPlaceholder: {
-    padding: 20,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 14,
-    color: '#7D91A7',
-    textAlign: 'center',
+  likedText: {
+    color: '#FF5252',
   },
 });
-
-// Export par défaut pour React Navigation
-export default PostDetailsScreen;
