@@ -221,13 +221,13 @@ export default function App() {
   });
 
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  
+
   // Ce useEffect gère le minuteur de 3 secondes
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
     }, 3000); // 3 secondes
-    
+
     return () => clearTimeout(timer); // Nettoyage
   }, []);
 
@@ -316,63 +316,73 @@ export default function App() {
     }
   };
 
-  // Modern Header with enhanced animations and UI refinements
   const CustomHeader = ({ navigation, headerTranslateY }) => {
     const { unreadCount } = useNotification();
     const notificationScale = useSharedValue(1);
     const notificationBgOpacity = useSharedValue(0);
 
-    // Enhanced notification pulse animation
+    // Refs pour contrôler l'animation
+    const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+    const previousCountRef = useRef(0);
+
     useEffect(() => {
-      if (unreadCount > 0) {
-        const pulse = () => {
-          notificationScale.value = withSpring(
-            1.3,
-            {
-              damping: 4,
-              stiffness: 80,
-            },
-            () => {
-              notificationScale.value = withSpring(
-                1,
-                {
-                  damping: 10,
-                  stiffness: 100,
-                },
-                pulse
-              );
-            }
-          );
-
-          notificationBgOpacity.value = withTiming(
-            0.6,
-            {
-              duration: 300,
-            },
-            () => {
-              notificationBgOpacity.value = withTiming(0, {
-                duration: 600,
-              });
-            }
-          );
-        };
-
-        // Delayed start for better UX
-        setTimeout(pulse, 500);
+      // Nettoyer le timeout précédent
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+        animationTimeoutRef.current = null;
       }
+
+      // Animation uniquement si le count AUGMENTE
+      if (unreadCount > previousCountRef.current && unreadCount > 0) {
+        // Animation simple - UNE SEULE FOIS
+        animationTimeoutRef.current = setTimeout(() => {
+          // Scale up
+          notificationScale.value = withSpring(1.2, {
+            damping: 10,
+            stiffness: 100,
+          });
+
+          // Background pulse
+          notificationBgOpacity.value = withTiming(0.6, { duration: 200 });
+
+          // Retour à la normale après 600ms
+          setTimeout(() => {
+            notificationScale.value = withSpring(1, {
+              damping: 10,
+              stiffness: 100,
+            });
+            notificationBgOpacity.value = withTiming(0, { duration: 400 });
+          }, 600);
+        }, 300);
+      }
+
+      // Mémoriser le count actuel
+      previousCountRef.current = unreadCount;
+
+      // Reset si plus de notifications
+      if (unreadCount === 0) {
+        notificationScale.value = 1;
+        notificationBgOpacity.value = 0;
+      }
+
+      // CRITIQUE : Cleanup au démontage
+      return () => {
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+          animationTimeoutRef.current = null;
+        }
+      };
     }, [unreadCount]);
 
-    const notificationStyle = useAnimatedStyle(() => {
-      return {
-        transform: [{ scale: notificationScale.value }],
-      };
-    });
+    const notificationStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: notificationScale.value }],
+    }));
 
-    const notificationBgStyle = useAnimatedStyle(() => {
-      return {
-        opacity: notificationBgOpacity.value,
-      };
-    });
+    const notificationBgStyle = useAnimatedStyle(() => ({
+      opacity: notificationBgOpacity.value,
+    }));
 
     return (
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
@@ -382,7 +392,6 @@ export default function App() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          {/* Enhanced glassmorphism effect */}
           {Platform.OS === "ios" && (
             <BlurView
               intensity={15}
@@ -453,7 +462,7 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     const actionSheetRef = useRef<typeof ActionSheet | null>(null);
     const activeTab = useSharedValue(0);
-    
+
     // AJOUT : State pour gérer la visibilité de la TabBar
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
     const tabBarTranslateY = useSharedValue(0);
@@ -488,7 +497,7 @@ export default function App() {
     // AJOUT : Gestion de la visibilité du clavier
     useEffect(() => {
       const keyboardWillShow = Keyboard.addListener(
-        Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+        Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
         () => {
           setKeyboardVisible(true);
           // Animation pour cacher la TabBar
@@ -500,7 +509,7 @@ export default function App() {
       );
 
       const keyboardWillHide = Keyboard.addListener(
-        Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+        Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
         () => {
           setKeyboardVisible(false);
           // Animation pour montrer la TabBar
@@ -631,7 +640,16 @@ export default function App() {
                   }
                 };
 
-                let iconName: "home" | "home-outline" | "chatbubble-ellipses" | "chatbubble-ellipses-outline" | "people" | "people-outline" | "map" | "map-outline" | "add-circle" = "home";
+                let iconName:
+                  | "home"
+                  | "home-outline"
+                  | "chatbubble-ellipses"
+                  | "chatbubble-ellipses-outline"
+                  | "people"
+                  | "people-outline"
+                  | "map"
+                  | "map-outline"
+                  | "add-circle" = "home";
                 if (route.name === "Accueil") {
                   iconName = isFocused ? "home" : "home-outline";
                 } else if (route.name === "Messages") {
@@ -917,7 +935,9 @@ export default function App() {
 
                         <Stack.Screen
                           name="ReportDetailsScreen"
-                          component={ReportDetailsScreen as React.ComponentType<any>}
+                          component={
+                            ReportDetailsScreen as React.ComponentType<any>
+                          }
                         />
                         <Stack.Screen
                           name="ReportScreen"
@@ -969,7 +989,9 @@ export default function App() {
                         />
                         <Stack.Screen
                           name="PostDetailsScreen"
-                          component={PostDetailsScreen}
+                          component={
+                            PostDetailsScreen as React.ComponentType<any>
+                          }
                         />
                       </>
                     )}
