@@ -13,7 +13,12 @@ import { Linking } from "react-native";
 import MayorInfoCard from "../components/home/MayorInfoSection/MayorInfoCard";
 import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
 
-export default function CityScreen({ navigation }) {
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../types/navigation"; // Ensure this file exists and defines your navigation types
+
+type CityScreenNavigationProp = StackNavigationProp<RootStackParamList, "CityScreen">;
+
+export default function CityScreen({ navigation }: { navigation: CityScreenNavigationProp }) {
   const { unreadCount } = useNotification();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

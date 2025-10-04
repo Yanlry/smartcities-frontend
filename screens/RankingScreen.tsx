@@ -147,7 +147,11 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setTotalUsers(data.totalUsers);
     } catch (error) {
       console.warn("Erreur lors de la récupération du classement :", error);
-      setError(error.message || "Erreur inconnue.");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Erreur inconnue.");
+      }
     } finally {
       setLoading(false);
       if (isRefreshing) {

@@ -12,7 +12,7 @@ export { default as AddressSuggestionModal } from './AddressSuggestionModal';
 export { default as ProgressModal } from './ProgressModal';
 
 // Export des types de modèle de données
-export { 
+export type { 
   EventFormData, 
   LocationData,
   SubmissionStep,
@@ -20,7 +20,7 @@ export {
 } from '../../../types/entities/event.types';
 
 // Export des types de props de composants
-export {
+export type {
   EventFormProps,
   EventDatePickerProps,
   LocationSelectorProps,

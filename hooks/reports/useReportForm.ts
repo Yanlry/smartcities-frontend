@@ -130,7 +130,8 @@ export const useReportForm = (onSuccess: () => void) => {
       onSuccess();
     } catch (error) {
       console.error("Erreur lors de la soumission:", error);
-      Alert.alert("Erreur", error.message || "Une erreur est survenue.");
+      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue.";
+      Alert.alert("Erreur", errorMessage);
     } finally {
       setProgressModalVisible(false);
       setIsSubmitting(false);

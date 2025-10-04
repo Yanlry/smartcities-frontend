@@ -1,3 +1,5 @@
+// Chemin : frontend/components/home/ReportsSection/ReportsSection.tsx
+
 import React, { memo, useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
@@ -18,7 +20,8 @@ import {
 } from "react-native";
 import ReportItem from "./ReportItem";
 import { Report, ReportCategory } from "../../../types/entities/report.types";
-import { getTypeLabel, typeColors } from "../../../utils/reportHelpers";
+// ✅ CORRECTION : Importer ReportType depuis reportHelpers au lieu de report.types
+import { getTypeLabel, typeColors, ReportType } from "../../../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../../../utils/reductOpacity";
 import { formatCity } from "../../../utils/formatters";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -37,26 +40,22 @@ if (Platform.OS === "android") {
 
 // Configuration des couleurs pour le thème - Style harmonisé avec teinte rouge
 const THEME = {
-  primary: "#FF4D4F", // Rouge principal
-  primaryDark: "#E73A3C", // Rouge foncé
-  secondary: "#FF7875", // Rouge clair
-  background: "#F9FAFE", // Fond très légèrement bleuté
-  backgroundDark: "#ECF0F7", // Fond légèrement plus sombre
-  cardBackground: "#FFFFFF", // Blanc pur pour les cartes
-  text: "#2D3748", // Texte principal presque noir
-  textLight: "#718096", // Texte secondaire gris
-  textMuted: "#A0AEC0", // Texte tertiaire gris clair
-  border: "#E2E8F0", // Bordures légères
-  shadow: "rgba(13, 26, 83, 0.12)", // Ombres avec teinte bleuâtre
+  primary: "#FF4D4F",
+  primaryDark: "#E73A3C",
+  secondary: "#FF7875",
+  background: "#F9FAFE",
+  backgroundDark: "#ECF0F7",
+  cardBackground: "#FFFFFF",
+  text: "#2D3748",
+  textLight: "#718096",
+  textMuted: "#A0AEC0",
+  border: "#E2E8F0",
+  shadow: "rgba(13, 26, 83, 0.12)",
 };
 
-// Couleur de fond optimisées pour l'état ouvert/fermé
 const EXPANDED_BACKGROUND = "rgba(250, 251, 255, 0.97)";
 const COLLAPSED_BACKGROUND = "#FFFFFF";
 
-/**
- * Interface pour les propriétés du composant ReportsSection
- */
 interface ReportsSectionProps {
   reports: Report[];
   categories: ReportCategory[];
@@ -67,13 +66,9 @@ interface ReportsSectionProps {
   onPressReport: (id: number) => void;
   isVisible: boolean;
   toggleVisibility: () => void;
-  userCity?: string; // Nouvelle prop pour la ville de l'utilisateur
+  userCity?: string;
 }
 
-/**
- * Section de signalements avec animations avancées, design moderne et filtrage en temps réel
- * Gère l'affichage de rapports en mode carte ou liste avec alignement cohérent
- */
 const ReportsSection: React.FC<ReportsSectionProps> = memo(
   ({
     reports,
@@ -87,7 +82,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
     toggleVisibility,
     userCity = null,
   }) => {
-    // Utilisation du hook de filtrage
     const {
       filters,
       filteredReports,
@@ -96,18 +90,15 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       activeFiltersCount,
     } = useReportsFilters(reports);
 
-    // Synchronisation du filtre de catégorie externe avec notre système de filtrage
     useEffect(() => {
       updateFilter("category", selectedCategory);
     }, [selectedCategory, updateFilter]);
 
-    // Nouveau callback pour réinitialiser tous les filtres ET la catégorie externe
     const handleResetFilters = useCallback(() => {
       resetFilters();
-      setSelectedCategory("Tous"); // Réinitialiser la catégorie à "Tous"
+      setSelectedCategory("Tous");
     }, [resetFilters, setSelectedCategory]);
 
-    // Références pour les animations
     const rotateAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const opacityAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const headerScaleAnim = useRef(new Animated.Value(1)).current;
@@ -118,40 +109,28 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
     const scrollViewRef = useRef<ScrollView>(null);
     const swipeHintAnim = useRef(new Animated.Value(0)).current;
 
-    // État local pour le mode d'affichage
     const [displayMode, setDisplayMode] = useState<"card" | "list">("card");
-
-    // État pour suivre la position du défilement
     const [scrollPosition, setScrollPosition] = useState(0);
-
-    // État pour suivre si l'utilisateur a déjà fait défiler
     const [hasScrolled, setHasScrolled] = useState(false);
-
-    // Nouvel état pour gérer le chargement complet du contenu de la section
     const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
 
-    // Animation de rotation pour l'icône de flèche
     const arrowRotation = rotateAnim.interpolate({
       inputRange: [0, 1],
       outputRange: ["0deg", "180deg"],
     });
 
-    // Animation de glissement pour le contenu
     const contentSlide = contentSlideAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [-20, 0],
     });
 
-    // Animation pour l'indication de défilement
     const swipeIndicatorTranslate = swipeHintAnim.interpolate({
       inputRange: [0, 1, 2],
       outputRange: [0, 20, 0],
     });
 
-    // Animation de pulsation optimisée pour le badge
     useEffect(() => {
       if (reports.length > 0) {
-        // Création d'une référence à l'animation pour pouvoir la nettoyer
         const pulseAnimation = Animated.loop(
           Animated.sequence([
             Animated.timing(badgePulse, {
@@ -169,17 +148,14 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
           ])
         );
 
-        // Démarrer l'animation
         pulseAnimation.start();
 
-        // Fonction de nettoyage appelée lors du démontage du composant
         return () => {
           pulseAnimation.stop();
         };
       }
     }, [reports.length, badgePulse]);
 
-    // Animation d'indication de défilement
     useEffect(() => {
       if (
         isVisible &&
@@ -210,9 +186,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       swipeHintAnim,
     ]);
 
-    // Gestion de la visibilité avec LayoutAnimation
     useEffect(() => {
-      // Configuration de l'animation de layout
       LayoutAnimation.configureNext({
         duration: 300,
         update: {
@@ -220,21 +194,18 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         },
       });
 
-      // Animation de rotation de la flèche
       Animated.timing(rotateAnim, {
         toValue: isVisible ? 1 : 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
 
-      // Animation de l'opacité du contenu
       Animated.timing(opacityAnim, {
         toValue: isVisible ? 1 : 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
 
-      // Animation de glissement pour le contenu
       Animated.timing(contentSlideAnim, {
         toValue: isVisible ? 1 : 0,
         duration: 300,
@@ -243,10 +214,8 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       }).start();
     }, [isVisible, rotateAnim, opacityAnim, contentSlideAnim]);
 
-    // Déclencheur de chargement lors d'un changement de visibilité
     useEffect(() => {
       if (isVisible) {
-        // Simuler un délai de chargement (remplacer ou adapter la logique selon vos besoins)
         const timer = setTimeout(() => {
           setSectionContentLoaded(true);
         }, 500);
@@ -256,7 +225,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       }
     }, [isVisible]);
 
-    // Animation pour l'effet de pression sur l'en-tête
     const handleHeaderPressIn = useCallback(() => {
       Animated.spring(headerScaleAnim, {
         toValue: 0.98,
@@ -274,9 +242,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       }).start();
     }, [headerScaleAnim]);
 
-    /**
-     * Gestionnaire pour le changement de filtre par ville
-     */
     const handleCityFilterChange = useCallback(
       (city: string | null) => {
         if (city === "utilisateur" && userCity) {
@@ -288,9 +253,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       [updateFilter, userCity]
     );
 
-    /**
-     * Gestionnaire pour le changement de tri par date
-     */
     const handleChangeSortOrder = useCallback(
       (order: "date" | "distance") => {
         console.log("Changement du mode de tri:", order);
@@ -299,9 +261,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       [updateFilter]
     );
 
-    /**
-     * Gestionnaire de changement de mode d'affichage
-     */
     const handleDisplayModeChange = useCallback((mode: "card" | "list") => {
       LayoutAnimation.configureNext(
         LayoutAnimation.create(
@@ -311,7 +270,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
         )
       );
       setDisplayMode(mode);
-      // Réinitialiser l'indicateur de défilement lors du changement de mode
       setHasScrolled(false);
       setScrollPosition(0);
       if (scrollViewRef.current) {
@@ -319,9 +277,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       }
     }, []);
 
-    /**
-     * Défilement automatique vers le haut lors du changement de catégorie ou de filtres
-     */
     useEffect(() => {
       if (scrollViewRef.current && isVisible) {
         scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: true });
@@ -329,15 +284,11 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       }
     }, [selectedCategory, filters, isVisible]);
 
-    /**
-     * Gestionnaire de défilement pour le calcul de la position
-     */
     const handleScroll = useCallback(
       (e: { nativeEvent: { contentOffset: { x: number } } }) => {
         const offsetX = e.nativeEvent.contentOffset.x;
         setScrollPosition(offsetX);
 
-        // Marquer comme défilé si l'utilisateur a scrollé de plus de 10px
         if (!hasScrolled && offsetX > 10) {
           setHasScrolled(true);
         }
@@ -345,17 +296,10 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       [hasScrolled]
     );
 
-    /**
-     * Calcul de l'index actuel pour la pagination
-     */
     const getCurrentIndex = useCallback(() => {
-      // En mode carte, on considère les cartes réelles + la carte d'instruction
       return Math.round(scrollPosition / SCREEN_WIDTH);
     }, [scrollPosition]);
 
-    /**
-     * Rendu de l'état vide (aucun signalement trouvé)
-     */
     const renderEmptyState = useCallback(
       () => (
         <View style={styles.emptyStateContainer}>
@@ -396,9 +340,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
       [activeFiltersCount, resetFilters]
     );
 
-    /**
-     * Rendu de la carte d'instruction pour le scroll
-     */
     const renderScrollInstructionCard = useCallback(() => {
       return (
         <View style={styles.cardItemContainer}>
@@ -419,7 +360,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                   signalés à proximité
                 </Text>
 
-                {/* Indicateur animé */}
                 <Animated.View
                   style={[
                     styles.swipeIndicator,
@@ -446,11 +386,8 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
           </View>
         </View>
       );
-    }, [filteredReports.length, swipeIndicatorTranslate]);
+    }, [swipeIndicatorTranslate]);
 
-    /**
-     * Rendu du contenu principal selon l'état de chargement et la disponibilité des données
-     */
     const renderContent = useCallback(() => {
       if (loading) {
         return (
@@ -485,10 +422,8 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            {/* Instruction card en mode carte uniquement */}
             {displayMode === "card" && renderScrollInstructionCard()}
 
-            {/* Cartes de signalement */}
             {filteredReports.map((report) => (
               <View
                 key={report.id}
@@ -502,9 +437,9 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                   report={report}
                   onPress={onPressReport}
                   typeLabel={getTypeLabel(report.type)}
-                  typeColor={typeColors[report.type] || "#0066CC"}
+                  typeColor={typeColors[report.type as ReportType] || "#0066CC"}
                   backgroundColor={hexToRgba(
-                    typeColors[report.type] || "#0066CC",
+                    typeColors[report.type as ReportType] || "#0066CC",
                     calculateOpacity(report.createdAt, 0.05) + 0.02
                   )}
                   formattedCity={formatCity(report.city)}
@@ -514,10 +449,8 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
             ))}
           </ScrollView>
 
-          {/* Indicateur de pagination optimisé */}
           {filteredReports.length > 0 && displayMode === "card" && (
             <View style={styles.paginationContainer}>
-              {/* Point pour la carte d'instruction */}
               <Animated.View
                 style={[
                   styles.paginationDot,
@@ -532,9 +465,8 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                   },
                 ]}
               />
-              {/* Points pour les cartes de signalement */}
               {filteredReports.map((_, index) => {
-                const isActive = getCurrentIndex() === index + 1; // +1 pour tenir compte de la carte d'instruction
+                const isActive = getCurrentIndex() === index + 1;
                 return (
                   <Animated.View
                     key={index}
@@ -571,9 +503,7 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
 
     return (
       <View style={styles.container}>
-        {/* Conteneur principal avec position relative pour le z-index */}
         <View style={{ position: "relative", zIndex: 1 }}>
-          {/* En-tête de section avec design harmonisé */}
           <Animated.View
             style={[
               styles.headerContainer,
@@ -602,7 +532,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
               }}
             >
               <View style={styles.headerContent}>
-                {/* Icône et titre */}
                 <View style={styles.titleContainer}>
                   <LinearGradient
                     colors={[THEME.primary, THEME.primaryDark]}
@@ -628,7 +557,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                   </View>
                 </View>
 
-                {/* Badge de nombre d'utilisateurs et flèche */}
                 <View style={styles.headerControls}>
                   {reports.length > 0 && (
                     <Animated.View
@@ -679,7 +607,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
             </Pressable>
           </Animated.View>
 
-          {/* Contenu de la section */}
           {isVisible && (
             sectionContentLoaded ? (
               <View style={styles.sectionContentContainer}>
@@ -696,7 +623,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                       },
                     ]}
                   >
-                    {/* Panneau de filtres */}
                     <FiltersPanel
                       categories={categories}
                       selectedCategory={selectedCategory}
@@ -707,10 +633,9 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                       sortOrder={filters.sortOrder}
                       onChangeSortOrder={handleChangeSortOrder}
                       activeFiltersCount={activeFiltersCount}
-                      onResetFilters={handleResetFilters} // Remplacé ici
+                      onResetFilters={handleResetFilters}
                     />
 
-                    {/* Options de mode d'affichage */}
                     <View style={styles.filtersContainer}>
                       <View style={styles.displayControls}>
                         <TouchableOpacity
@@ -769,7 +694,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
                       </View>
                     </View>
 
-                    {/* Contenu principal avec chargement/vide/liste de rapports */}
                     <View style={styles.contentSection}>{renderContent()}</View>
                   </Animated.View>
                 </LinearGradient>
@@ -786,7 +710,6 @@ const ReportsSection: React.FC<ReportsSectionProps> = memo(
   }
 );
 
-// Définition de type pour les styles
 type ReportsSectionStyles = {
   container: ViewStyle;
   unifiedContainer: ViewStyle;
@@ -836,7 +759,6 @@ type ReportsSectionStyles = {
   paginationContainer: ViewStyle;
   paginationDot: ViewStyle;
   activePaginationDot: ViewStyle;
-  // Nouveaux styles pour la carte d'instruction
   instructionCardContainer: ViewStyle;
   instructionCardGradient: ViewStyle;
   instructionCardContent: ViewStyle;
@@ -855,7 +777,6 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     borderRadius: 24,
     marginHorizontal: 10,
   },
-  // Styles du header harmonisés avec les autres composants
   headerContainer: {
     borderRadius: 20,
     ...Platform.select({
@@ -920,7 +841,6 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     flexDirection: "row",
     alignItems: "center",
   },
-  // Badge de comptage avec animation de pulsation et dégradé
   countBadge: {
     width: 32,
     height: 32,
@@ -983,19 +903,16 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     shadowRadius: 8,
     elevation: 5,
   },
-  unifiedContainerActive: {
-    // Styles spécifiques quand le conteneur est actif
-  },
+  unifiedContainerActive: {},
   contentContainer: {
     paddingVertical: 20,
     backgroundColor: "#fff",
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
   },
-  // Styles du contenu
   sectionContentContainer: {
     overflow: "hidden",
-    marginTop: -1, // Chevauchement léger pour éliminer toute ligne visible
+    marginTop: -1,
     borderTopWidth: 0,
     zIndex: 0,
   },
@@ -1166,16 +1083,13 @@ const styles = StyleSheet.create<ReportsSectionStyles>({
     borderRadius: 4,
     backgroundColor: "#EAEAEA",
     marginHorizontal: 4,
-    // La largeur sera définie dynamiquement
   },
   activePaginationDot: {
     backgroundColor: THEME.primary,
   },
-
-  // Nouveaux styles pour la carte d'instruction
   instructionCardContainer: {
     width: SCREEN_WIDTH - 60,
-    height: 280, // Hauteur augmentée pour afficher toute l'icône
+    height: 280,
     borderRadius: 24,
     overflow: "hidden",
     backgroundColor: "#FFFFFF",

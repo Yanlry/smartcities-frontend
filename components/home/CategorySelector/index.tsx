@@ -1,6 +1,6 @@
 // src/components/home/CategoryReportsSection/index.ts
 export { default } from './CategorySelectorSection';
-export { 
+export type { 
   CategoryReportsSectionProps,
   SectionHeaderProps,
   CategoryItemProps,

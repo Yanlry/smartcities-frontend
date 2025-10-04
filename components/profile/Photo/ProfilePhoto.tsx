@@ -303,7 +303,7 @@ const ProfilePhotoModal: React.FC<ProfilePhotoModalProps> = ({
                 disabled={isLoading}
               >
                 <LinearGradient
-                  colors={["#0F84FE", "#0A64CE"]}
+                  colors={["#5F92FE", "#0A64CE"]}
                   style={[
                     styles.actionButtonGradient,
                     isLoading && styles.disabledButton,

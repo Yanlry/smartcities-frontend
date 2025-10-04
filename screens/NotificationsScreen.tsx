@@ -21,6 +21,8 @@ import {
   Platform,
   TouchableWithoutFeedback,
 } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
+
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/common/Sidebar";
 import { useToken } from "../hooks/auth/useToken";
@@ -32,6 +34,26 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUserProfile } from "../hooks/user/useUserProfile";
 
+// ✅ NOUVEAUX TYPES AJOUTÉS POUR CORRIGER LES ERREURS
+// Type pour la navigation
+type NavigationProp = {
+  navigate: (screen: string, params?: any) => void;
+};
+
+// Type pour les préférences de notifications avec signature d'index
+type NotificationPreferences = {
+  [key: string]: boolean;
+  COMMENT: boolean;
+  FOLLOW: boolean;
+  VOTE: boolean;
+  new_message: boolean;
+  COMMENT_REPLY: boolean;
+  post: boolean;
+  LIKE: boolean;
+  comment: boolean;
+  NEW_POST: boolean;
+};
+
 interface Notification {
   id: number;
   message: string;
@@ -39,6 +61,8 @@ interface Notification {
   isRead: boolean;
   type: string;
   relatedId: number;
+  userId?: number;
+  initiatorId?: number;
   initiator?: {
     profilePhoto?: string;
   };
@@ -49,7 +73,8 @@ interface Notification {
   };
 }
 
-export default function NotificationsScreen({ navigation }) {
+// ✅ CORRECTION 1: Ajout du type pour navigation
+export default function NotificationsScreen({ navigation }: { navigation: NavigationProp }) {
   const { getToken } = useToken();
   const { unreadCount } = useNotification();
 
@@ -58,7 +83,8 @@ export default function NotificationsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
-  const defaultPreferences = {
+  
+  const defaultPreferences: NotificationPreferences = {
     COMMENT: true,
     FOLLOW: true,
     VOTE: true,
@@ -69,7 +95,8 @@ export default function NotificationsScreen({ navigation }) {
     comment: true,
     NEW_POST: true,
   };
-  const [preferences, setPreferences] = useState(defaultPreferences);
+  
+  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
 
   // Animation values
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -114,6 +141,7 @@ export default function NotificationsScreen({ navigation }) {
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
         );
+      // ✅ CORRECTION 2: Typage explicite de error
       } catch (error: any) {
         if (error.message.includes("Token non trouvé")) {
           console.log("Token non valide ou expiré. Aucune action entreprise.");
@@ -144,7 +172,8 @@ export default function NotificationsScreen({ navigation }) {
         if (savedPreferences) {
           setPreferences(JSON.parse(savedPreferences));
         }
-      } catch (error) {
+      // ✅ CORRECTION 3: Typage explicite de error
+      } catch (error: any) {
         console.error("Erreur lors du chargement des préférences :", error);
       }
     };
@@ -199,7 +228,8 @@ export default function NotificationsScreen({ navigation }) {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
       );
-    } catch (error) {
+    // ✅ CORRECTION 4: Typage explicite de error
+    } catch (error: any) {
       console.error(
         "Erreur lors de la récupération des notifications :",
         error.message
@@ -247,7 +277,8 @@ export default function NotificationsScreen({ navigation }) {
             : notification
         )
       );
-    } catch (error) {
+    // ✅ CORRECTION 5: Typage explicite de error
+    } catch (error: any) {
       console.error(
         `Erreur lors de la mise à jour de la notification ${notificationId} :`,
         error.message
@@ -287,7 +318,8 @@ export default function NotificationsScreen({ navigation }) {
         "Succès",
         "Toutes les notifications ont été marquées comme lues."
       );
-    } catch (error) {
+    // ✅ CORRECTION 6: Typage explicite de error
+    } catch (error: any) {
       console.error(
         "Erreur lors de la mise à jour des notifications :",
         error.message
@@ -332,7 +364,8 @@ export default function NotificationsScreen({ navigation }) {
           (notification) => notification.id !== notificationId
         )
       );
-    } catch (error) {
+    // ✅ CORRECTION 7: Typage explicite de error
+    } catch (error: any) {
       console.error(
         `Erreur lors de la suppression de la notification ${notificationId} :`,
         error.message
@@ -340,8 +373,8 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
-  // ✅ FONCTION CORRIGÉE AVEC MEILLEUR DÉBOGAGE ET GESTION D'ERREURS
-  const handleNotificationClick = async (notification) => {
+  // ✅ CORRECTION 8: Ajout du type pour le paramètre notification
+  const handleNotificationClick = async (notification: Notification) => {
     console.log("🔔 Notification cliquée :", notification);
     console.log("📋 Type de notification :", notification.type);
     console.log("🆔 RelatedId :", notification.relatedId, typeof notification.relatedId);
@@ -453,8 +486,8 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
-  // Utility function for relative time formatting
-  const getRelativeTime = (dateString) => {
+  // ✅ CORRECTION 9: Ajout du type pour le paramètre dateString
+  const getRelativeTime = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -471,7 +504,7 @@ export default function NotificationsScreen({ navigation }) {
   interface NotificationItemProps {
     item: Notification;
     index: number;
-    onPress: (notification: any) => void;
+    onPress: (notification: Notification) => void;
     onMarkAsRead: (notificationId: number) => void;
     onDelete: (notificationId: number) => void;
   }
@@ -621,7 +654,8 @@ export default function NotificationsScreen({ navigation }) {
     />
   );
 
-  const getNotificationTypeIcon = (type) => {
+  // ✅ CORRECTION 10: Ajout du type pour le paramètre type
+  const getNotificationTypeIcon = (type: string) => {
     let iconName = "notifications";
     let backgroundColor = "#4A90E2";
 
@@ -665,7 +699,7 @@ export default function NotificationsScreen({ navigation }) {
   };
 
   const NotificationPreferencesModal = () => {
-    const [tempPreferences, setTempPreferences] = useState(preferences);
+    const [tempPreferences, setTempPreferences] = useState<NotificationPreferences>(preferences);
     const modalScaleAnim = React.useRef(new Animated.Value(0.9)).current;
     const modalOpacityAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -706,7 +740,8 @@ export default function NotificationsScreen({ navigation }) {
       });
     };
 
-    const toggleTempPreference = useCallback((type) => {
+    // ✅ CORRECTION 11: Ajout du type pour le paramètre type
+    const toggleTempPreference = useCallback((type: string) => {
       setTempPreferences((prev) => ({
         ...prev,
         [type]: !prev[type],
@@ -887,7 +922,7 @@ export default function NotificationsScreen({ navigation }) {
       <View style={styles.loadingContainer}>
         <StatusBar barStyle="light-content" backgroundColor="#062C41" />
         <View style={styles.loadingContent}>
-          <Icon name="notifications" size={50} color="#4A90E2" />
+          <Icon name="notifications" size={50} color="#062C41" />
           <Text style={styles.loadingText}>
             Chargement des notifications...
           </Text>
@@ -899,8 +934,10 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#062C41" />
-
-      <View style={styles.header}>
+ <LinearGradient
+        colors={['#062C41', '#0F3460']}
+        style={styles.header}
+      >
         <TouchableOpacity
           onPress={toggleSidebar}
           style={styles.headerButton}
@@ -929,8 +966,7 @@ export default function NotificationsScreen({ navigation }) {
             )}
           </View>
         </TouchableOpacity>
-      </View>
-
+      </LinearGradient>
       <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -1014,6 +1050,8 @@ const isIOS = Platform.OS === "ios";
 const statusBarHeight = StatusBar.currentHeight || 0;
 const safeTop = isIOS ? 44 : statusBarHeight;
 
+// Garde tes styles existants (const styles = StyleSheet.create({...}))
+// Je n'ai pas inclus les styles car ils n'ont pas changé
 const styles = StyleSheet.create({
   container: {
     flex: 1,

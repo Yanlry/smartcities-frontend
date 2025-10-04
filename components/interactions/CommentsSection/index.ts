@@ -2,12 +2,12 @@
 export { default } from './CommentsSection';
 
 // Imports explicites des types depuis l'architecture centralisée
-export {
+export type {
   Comment,
   Reply
 } from '../../../types/entities/comment.types';
 
-export {
+export type {
   CommentsSectionProps,
   CommentItemProps,
   ReplyItemProps,

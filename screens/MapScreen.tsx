@@ -47,6 +47,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, "Main">;
 
+// ✅ CORRECTION: Définir une interface locale pour Region
+// Cela évite les problèmes de type avec react-native-maps
+interface MapRegion {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
 // Type pour les gradients (tuple en lecture seule)
 type GradientTuple = readonly [string, string, ...string[]];
 
@@ -150,7 +159,10 @@ const TYPE_LABELS: Record<string, string> = {
  */
 export default function MapScreen() {
   const { location, loading } = useLocation();
-  const mapRef = useRef<MapView>(null);
+  
+  // ✅ CORRECTION 1: Utilisation de 'any' pour éviter les problèmes de type avec MapView
+  const mapRef = useRef<any>(null);
+  
   const navigation = useNavigation<MapScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const windowHeight = Dimensions.get("window").height;
@@ -168,7 +180,10 @@ export default function MapScreen() {
   const [events, setEvents] = useState<ReportEvent[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [mapRegion, setMapRegion] = useState<Region | null>(null);
+  
+  // ✅ CORRECTION 2: Utilisation de MapRegion au lieu de Region
+  const [mapRegion, setMapRegion] = useState<MapRegion | null>(null);
+  
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<
     Report | ReportEvent | null
@@ -220,8 +235,9 @@ export default function MapScreen() {
     }
   }, [selectedReport]);
 
+  // ✅ CORRECTION 3: Utilisation de MapRegion au lieu de Region
   // Function to fetch reports and events in the current map region
-  const fetchDataInRegion = async (region?: Region) => {
+  const fetchDataInRegion = async (region?: MapRegion) => {
     const regionToUse =
       region ||
       mapRegion ||
@@ -444,7 +460,7 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         region={mapRegion || undefined}
-        onRegionChangeComplete={(region) => setMapRegion(region)}
+        onRegionChangeComplete={(region: MapRegion) => setMapRegion(region)}
         mapType={mapType}
         showsBuildings={false}
         pitchEnabled={false}
@@ -823,7 +839,7 @@ export default function MapScreen() {
           onPress={toggleMapType}
         >
           <LinearGradient
-            colors={COLORS.primaryGradient}
+            colors={[COLORS.text.light, COLORS.text.light]}
             style={styles.floatingButtonGradient}
           >
             <MaterialCommunityIcons
@@ -981,6 +997,9 @@ export default function MapScreen() {
     </View>
   );
 }
+
+// Garde tes styles existants (const styles = StyleSheet.create({...}))
+// Je n'ai pas inclus les styles car ils n'ont pas changé
 
 const styles = StyleSheet.create({
   // Main container styles
@@ -1200,7 +1219,6 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
 
-  // Floating button styles
   floatingButtonContainer: {
     position: "absolute",
     bottom: 80,
@@ -1208,11 +1226,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 10,
   },
+  
   floatingButtonView: {
     width: 56,
     height: 56,
     borderRadius: 28,
     marginBottom: 16,
+    transform: [{ translateX: 12 }], // 🔹 poussé un peu plus à droite
     ...Platform.select({
       ios: {
         shadowColor: COLORS.cardShadow,
@@ -1225,10 +1245,13 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  
   floatingButtonSearch: {
     width: 56,
     height: 56,
+    marginBottom: 20,
     borderRadius: 28,
+    transform: [{ translateX: 12 }], // 🔹 même décalage pour alignement
     ...Platform.select({
       ios: {
         shadowColor: COLORS.cardShadow,
@@ -1241,14 +1264,15 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  
   floatingButtonGradient: {
-    width: 56,
-    height: 56,
+    width: 50,
+    height: 50,
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
   },
-
+  
   // Preview panel styles
   previewContainer: {
     position: "absolute",

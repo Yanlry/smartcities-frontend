@@ -1,22 +1,17 @@
+// types/entities/report.types.ts
+
 import { Photo } from './photo.types';
 import { Ionicons } from '@expo/vector-icons';
+import { User } from './user.types'; // ✅ importer le vrai type User ici
 
 /**
  * Représente un signalement dans le système
  */
-export interface User {
-  id: number;
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  useFullName: boolean;
-  
-}
-
 export interface Report {
   /** Identifiant unique du signalement */
   id: number;
- user: User;
+  /** Utilisateur ayant créé le signalement */
+  user: User;
 
   /** Titre du signalement */
   title: string;
@@ -51,7 +46,6 @@ export interface Report {
   /** Nombre de votes négatifs */
   downVotes: number;
   gpsDistance?: number;
-
 }
 
 /**
@@ -63,9 +57,7 @@ export interface ReportCategory {
   color: string;
   value: string;
   description: string;
-  icon: keyof typeof Ionicons.glyphMap; // Restrict icon to valid Ionicons names
-
-  //   description: string;
+  icon: keyof typeof Ionicons.glyphMap;
 }
 
 /**
@@ -87,7 +79,7 @@ export interface VoteResult {
  * Type pour les onglets disponibles dans la vue de détail
  */
 export const TABS = ['Détails', 'Carte', 'Commentaires'] as const;
-export type ReportTabType = typeof TABS[number]; 
+export type ReportTabType = typeof TABS[number];
 
 /**
  * Données pour la création d'un nouveau signalement
@@ -127,4 +119,3 @@ export interface ProgressStep {
   label: string;
   progress: number;
 }
-

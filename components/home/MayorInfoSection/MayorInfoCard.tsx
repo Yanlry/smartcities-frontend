@@ -25,7 +25,6 @@ import { getUserIdFromToken } from "../../../utils/tokenUtils";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import LottieView from "lottie-react-native";
 
 interface MayorInfoCardProps {
   handlePressPhoneNumber: () => void;
@@ -424,7 +423,7 @@ export default function MayorInfoCard({
       >
         {/* City header with background */}
         <LinearGradient
-          colors={["#062C41", "#0D4671"]}
+          colors={['#062C41', '#0F3460']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.cityHeader}
@@ -1562,7 +1561,7 @@ export default function MayorInfoCard({
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={["#3498db", "#2980b9"]}
+                  colors={['#062C41', '#0F3460']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.communitySupportGradient}

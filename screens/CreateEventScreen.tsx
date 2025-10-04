@@ -29,7 +29,13 @@ import { useEventSubmission } from "../hooks/events/useEventSubmission";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-export default function CreateEventScreen({ navigation }) {
+import { NavigationProp } from "@react-navigation/native";
+
+export default function CreateEventScreen({
+  navigation,
+}: {
+  navigation: NavigationProp<any>;
+}) {
   // Original form state management
   const [formData, setFormData] = useState<Partial<EventFormData>>({
     title: "",

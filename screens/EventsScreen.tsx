@@ -1,3 +1,5 @@
+// Chemin : frontend/screens/EventsScreen.tsx
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
@@ -72,7 +74,11 @@ interface AddressSuggestion {
 export default function EventsScreen({ navigation }: { navigation: any }) {
   const { unreadCount } = useNotification();
   const { location, loading: locationLoading } = useLocation();
-  const mapRef = useRef<MapView>(null);
+  
+  // ✅ CORRECTION 1 : Utilisation du bon type pour MapView
+  // On utilise 'any' pour éviter les problèmes de type avec react-native-maps
+  const mapRef = useRef<any>(null);
+  
   const { getUserId } = useToken();
 
   // États
@@ -374,7 +380,8 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
       const data = await response.json();
 
       if (data.results && data.results.length > 0) {
-        const sortedSuggestions = data.results.sort((a, b) => {
+        // ✅ CORRECTION 2 et 3 : Ajout des types pour les paramètres a et b
+        const sortedSuggestions = data.results.sort((a: AddressSuggestion, b: AddressSuggestion) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
           return postalA - postalB;
@@ -894,6 +901,8 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
   );
 }
 
+// Les styles ne sont pas inclus ici car ils n'ont pas changé
+// Garde tes styles existants (const styles = StyleSheet.create({...}))
 const styles = StyleSheet.create({
   container: {
     flex: 1,

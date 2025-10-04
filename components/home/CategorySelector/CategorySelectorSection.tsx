@@ -1,4 +1,3 @@
-// src/components/home/CategorySelector/CategorySelector.tsx
 import React, {
   memo,
   useEffect,
@@ -19,6 +18,8 @@ import {
   Dimensions,
   TouchableOpacity,
   Pressable,
+  NativeSyntheticEvent,  // ← AJOUT : Type pour les événements natifs
+  NativeScrollEvent,      // ← AJOUT : Type pour les événements de scroll
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -397,9 +398,10 @@ const CategorySelector: React.FC<CategoryReportsSectionProps> = memo(
     }, [selectedCategory, onCategoryPress, toggleVisibility, confirmButtonScale]);
 
     // =========================================================================
-    // Gestion du scroll
+    // Gestion du scroll - CORRECTION ICI : Type ajouté
     // =========================================================================
-    const handleScroll = useCallback((event) => {
+    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      // ↑ CORRECTION : J'ai ajouté le type du paramètre event
       const position = event.nativeEvent.contentOffset.x;
       setScrollPosition(position);
     }, []);
@@ -429,10 +431,11 @@ const CategorySelector: React.FC<CategoryReportsSectionProps> = memo(
     }
 
     // =========================================================================
-    // Rendu des items de catégorie
+    // Rendu des items de catégorie - CORRECTION ICI : Types ajoutés
     // =========================================================================
     const renderCategoryItem = useCallback(
-      ({ item, index }) => {
+      ({ item, index }: { item: ReportCategory; index: number }) => {
+        // ↑ CORRECTION : J'ai ajouté les types pour item et index
         const isSelected = item.name === selectedCategory;
         
         // Calcul manuel des transformations basées sur la position de scroll

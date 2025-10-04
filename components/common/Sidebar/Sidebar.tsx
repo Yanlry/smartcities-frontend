@@ -860,7 +860,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         ]}
       >
         <LinearGradient
-          colors={["#062C41", "#062C41", "#0F3460"]}
+          colors={['#062C41', '#0F3460']}
           style={styles.sidebarBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}

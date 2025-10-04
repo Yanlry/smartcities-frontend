@@ -1,3 +1,5 @@
+// Chemin : frontend/screens/EventDetailsScreen.tsx
+
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
@@ -28,6 +30,13 @@ import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import { useUserProfile } from "../hooks/user/useUserProfile";
 import { LinearGradient } from 'expo-linear-gradient';
+
+// ✅ NOUVEAU TYPE AJOUTÉ: Type pour les paramètres de route
+type EventDetailsScreenRouteProp = {
+  params: {
+    eventId: string;
+  };
+};
 
 // Constantes pour le design system
 const { width, height } = Dimensions.get("window");
@@ -83,7 +92,8 @@ interface FormattedDate {
   time: string;
 }
 
-export default function EventDetails({ route }) {
+// ✅ CORRECTION 1: Ajout du type pour le paramètre route
+export default function EventDetails({ route }: { route: EventDetailsScreenRouteProp }) {
   const { eventId } = route.params;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { unreadCount } = useNotification();
@@ -173,7 +183,8 @@ export default function EventDetails({ route }) {
       try {
         const userId = await getUserId();
         setCurrentUserId(userId);
-      } catch (error) {
+      // ✅ CORRECTION 2: Typage explicite de error
+      } catch (error: any) {
         console.error("Erreur lors de la récupération de l'utilisateur :", error);
         Alert.alert(
           "Erreur de connexion",
@@ -206,7 +217,8 @@ export default function EventDetails({ route }) {
         }
         
         setIsLoading(false);
-      } catch (error) {
+      // ✅ CORRECTION 3: Typage explicite de error
+      } catch (error: any) {
         console.error("Erreur lors du chargement des détails de l'événement :", error);
         Alert.alert(
           "Erreur de chargement",
@@ -328,7 +340,8 @@ export default function EventDetails({ route }) {
 
       const updatedEventResponse = await axios.get(`${API_URL}/events/${eventId}`);
       setEvent(updatedEventResponse.data);
-    } catch (error) {
+    // ✅ CORRECTION 4: Typage explicite de error
+    } catch (error: any) {
       if (error.response?.status === 404) {
         Alert.alert("Erreur", "Événement ou utilisateur introuvable.");
       } else if (error.response?.status === 400) {
@@ -384,7 +397,7 @@ export default function EventDetails({ route }) {
           photos: prevEvent.photos || [],
         };
       });
-    } catch (error) {
+    } catch (error: any) {
       // Vérifier si l'erreur est liée à une tentative de désinscription de l'organisateur
       if (error.response?.status === 403) {
         Alert.alert(
@@ -858,6 +871,9 @@ export default function EventDetails({ route }) {
     </View>
   );
 }
+
+// Garde tes styles existants (const styles = StyleSheet.create({...}))
+// Je n'ai pas inclus les styles car ils n'ont pas changé
 
 const styles = StyleSheet.create({
   container: {

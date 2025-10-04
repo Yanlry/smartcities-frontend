@@ -72,7 +72,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   onBack
 }) => {
   const insets = useSafeAreaInsets();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const [mapError, setMapError] = useState<boolean>(false);
   
   // État pour contrôler l'affichage de la tooltip d'information
@@ -203,14 +203,6 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Localisation</Text>
-        {/* Placeholder pour maintenir l'équilibre visuel */}
-        <TouchableOpacity
-              style={styles.infoButton}
-              onPress={toggleInfoTooltip}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="alert" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
       </View>
       
       {/* Tooltip d'information */}
@@ -259,7 +251,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
               onPress={onSearchAddress}
             >
               <LinearGradient
-                colors={['#062C41', '#062C41']}
+              colors={['#062C41', '#0F3460']}
                 style={styles.buttonGradient}
               >
                 <Ionicons name="search" size={22} color="#fff" />

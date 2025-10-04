@@ -29,7 +29,6 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBadge } from "../../../hooks/ui/useBadge";
 import * as Haptics from 'expo-haptics';
-import { SharedElement } from 'react-navigation-shared-element';
 import { BadgeStyle } from "../../../types/entities/user.types";
 
 const { height, width } = Dimensions.get("window");
@@ -88,10 +87,11 @@ interface ProgressPathProps {
   tiers: TierItem[];
   currentTierIndex: number;
   onSelectTier: (index: number) => void;
-  scrollRef: React.RefObject<ScrollView>;
+  scrollRef: React.RefObject<ScrollView | null>;  // ← CORRECTION ICI : ajout de "| null"
   getBadgeStyles: (votes: number) => BadgeStyle;
   colorScheme: ColorScheme;
 }
+
 
 /**
  * Interface pour les propriétés de la carte de niveau

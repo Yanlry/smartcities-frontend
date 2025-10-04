@@ -1,4 +1,4 @@
-import { User, UserStats, Post, TabType } from '../../entities/user.types';
+import { User, UserStats, Post, UserTabType } from '../../entities/user.types';
 import { Report } from '../../entities/report.types';
 import { Event } from '../../entities/event.types';
 
@@ -7,9 +7,9 @@ import { Event } from '../../entities/event.types';
  */
 export interface ProfileTabsProps {
   /** Onglet actuellement sélectionné */
-  selectedTab: TabType;
+  selectedTab: UserTabType;
   /** Fonction de rappel lorsqu'un onglet est sélectionné */
-  onSelectTab: (tab: TabType) => void;
+  onSelectTab: (tab: UserTabType) => void;
 }
 
 /**

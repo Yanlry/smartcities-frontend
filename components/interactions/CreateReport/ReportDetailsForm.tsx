@@ -107,13 +107,6 @@ const ReportDetailsForm: React.FC<ReportDetailsFormProps> = ({
             </TouchableOpacity>
         <Text style={styles.headerTitle}>Décrivez le problème</Text>
 
-        <TouchableOpacity
-              style={styles.infoButton}
-              onPress={toggleInfoTooltip}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="alert" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
       </View>
       
       {/* Tooltip d'information (positionnée à gauche) */}

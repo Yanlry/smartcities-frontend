@@ -23,11 +23,10 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation/routes.types";
 import { processReports } from "../services/reportService";
 import { formatCity } from "../utils/formatters";
-import { typeColors, categoryDescriptions } from "../utils/reportHelpers";
+import { typeColors, categoryDescriptions, ReportType } from "../utils/reportHelpers";
 import { hexToRgba, calculateOpacity } from "../utils/reductOpacity";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -382,12 +381,12 @@ export default function CategoryReportsScreen() {
   );
   
   const categoryColor = useMemo(() => 
-    typeColors[category.toLowerCase()] ?? "#6366F1", 
+    typeColors[category.toLowerCase() as ReportType] ?? "#6366F1", 
     [category]
   );
-
+  
   const categoryDescription = useMemo(() => 
-    categoryDescriptions[category.toLowerCase()] ??
+    categoryDescriptions[category.toLowerCase() as ReportType] ??
     "Aucune information disponible.", 
     [category]
   );

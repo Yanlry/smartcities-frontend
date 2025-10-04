@@ -1,3 +1,5 @@
+// Chemin : frontend/context/NotificationContext.tsx
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useToken } from "../hooks/auth/useToken"; 
 // @ts-ignore
@@ -8,7 +10,9 @@ const NotificationContext = createContext({
   fetchUnreadCount: () => {},
 });
 
-export const NotificationProvider = ({ children }) => {
+// ✅ CORRECTION ICI : Ajout du type pour 'children'
+// children est de type React.ReactNode (ça veut dire "n'importe quel contenu React")
+export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const { getToken, refreshAccessToken } = useToken();
 
@@ -62,6 +66,7 @@ export const NotificationProvider = ({ children }) => {
       return null; 
     }
   };
+
   const fetchUnreadCount = async () => {
     try {
       const response = await fetchWithAuth(`${API_URL}/notifications/unread/count`);

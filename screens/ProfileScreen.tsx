@@ -110,7 +110,13 @@ type User = ImportedUser & {
   attendedEvents?: any[];
 };
 
-export default function ProfileScreen({ navigation }) {
+interface ProfileScreenProps {
+  navigation: any;
+  onLogout?: () => void;
+}
+
+// Modification de la ligne 113
+export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const { unreadCount } = useNotification();
 
   // Désactivation du fade: initialisation avec 1

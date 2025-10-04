@@ -1075,15 +1075,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   emptyButton: {
+    flexDirection: "row",
     backgroundColor: COLORS.primary,
     marginTop: 24,
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
     borderRadius: 8,
   },
   emptyButtonText: {
     color: "#FFFFFF",
+    paddingVertical: 3,
     fontSize: 16,
+    marginLeft: 8,
     fontWeight: "600",
   },
 

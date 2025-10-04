@@ -1,6 +1,6 @@
 export const typeIcons = {
   events: {
-    icon: require("../assets/icons/event.png"), // ✅ Ajout de l'image pour "events"
+    icon: require("../assets/icons/event.png"),
     label: "Événements",
   },
   danger: {
@@ -21,11 +21,14 @@ export const typeIcons = {
   },
   reparation: {
     icon: require("../assets/icons/reparation.png"),
-    label: "Reparation",
+    label: "Réparation",
   },
-  
-};
+} as const; // ✅ important : rend les clés littérales et immuables
+
+export type TypeIconKey = keyof typeof typeIcons;
+// => "events" | "danger" | "travaux" | "nuisance" | "pollution" | "reparation"
 
 export const getTypeIcon = (type: string) => {
-  return typeIcons[type.toLowerCase()]?.icon || null;
+  const key = type.toLowerCase() as TypeIconKey;
+  return typeIcons[key]?.icon || null;
 };

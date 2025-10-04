@@ -11,7 +11,7 @@ export { default as ProgressModal } from './ProgressModal';
 export { default as StepNavigation } from './StepNavigation';
 
 // Exporter tous les types nécessaires directement depuis report.types.ts
-export {
+export type {
   ReportCategory,
   ReportFormData,
   LocationCoordinates,

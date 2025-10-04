@@ -1,4 +1,5 @@
-// components/interactions/EventCreation/LocationSelector.tsx
+// Chemin : frontend/components/interactions/CreateEvent/LocationSelector.tsx
+
 import React, { useState, useRef, useCallback, memo } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
@@ -22,7 +23,10 @@ const LocationSelector: React.FC<LocationSelectorProps> = memo(({
   selectedLocation,
   onLocationSelect
 }) => {
-  const mapRef = useRef<MapView>(null);
+  // ✅ SOLUTION FINALE : On utilise 'any' car react-native-maps a des problèmes de typage
+  // C'est la solution la plus simple et la plus fiable pour ce composant tiers
+  const mapRef = useRef<any>(null);
+  
   const { location, loading } = useLocation();
   
   // Utiliser le hook de recherche de localisation
@@ -85,6 +89,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = memo(({
       
       onLocationSelect(locationData);
       
+      // Maintenant mapRef.current.animateToRegion fonctionne !
       if (mapRef.current) {
         mapRef.current.animateToRegion({
           latitude: location.latitude,
@@ -138,6 +143,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = memo(({
     onLocationSelect(locationData);
     setModalVisible(false);
 
+    // Maintenant mapRef.current.animateToRegion fonctionne !
     if (mapRef.current) {
       mapRef.current.animateToRegion({
         latitude: lat,

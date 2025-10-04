@@ -387,7 +387,7 @@ export default function App() {
     return (
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <LinearGradient
-          colors={["#062C41", "#062C41", "#0F3460"]}
+           colors={['#062C41', '#0F3460']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -568,7 +568,7 @@ export default function App() {
       return (
         <Animated.View style={[styles.tabBarWrapper, tabBarAnimatedStyle]}>
           <LinearGradient
-            colors={["#062C41", "#062C41", "#0F3460"]}
+           colors={['#062C41', '#0F3460']}
             style={styles.headerGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -811,7 +811,7 @@ export default function App() {
         {/* Enhanced ActionSheet with modern styling */}
         <ActionSheet
           ref={(o) => (actionSheetRef.current = o)}
-          title="Que souhaitez-vous créer ?"
+          title="Que voulez-vous ?"
           titleTextStyle={styles.actionSheetTitle}
           separatorStyle={styles.actionSheetSeparator}
           buttonUnderlayColor={COLORS.neutral[200]}
