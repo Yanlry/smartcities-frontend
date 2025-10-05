@@ -16,7 +16,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 const COLORS = {
   primary: "#8E2DE2",
   primaryDark: "#4A00E0",
-  accent: "#00C6FB",
+  accent: "#0F3460",
   accentDark: "#005BEA",
   secondary: "#FF416C",
   secondaryDark: "#FF4B2B",
@@ -86,19 +86,6 @@ export const LoadingState = memo(({ message = "Chargement des détails..." }: Lo
   return (
     <View style={styles.loadingContainer}>
       <View style={styles.loadingContent}>
-        <Animated.View 
-          style={[
-            styles.loaderGlowContainer,
-            { 
-              transform: [
-                { scale: pulseAnim },
-                { rotate: interpolatedRotate }
-              ] 
-            }
-          ]}
-        >
-          <View style={styles.loaderGlow} />
-        </Animated.View>
         
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color={COLORS.accent} />
@@ -208,7 +195,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 75,
-    opacity: 0.3,
     backgroundColor: COLORS.accent,
   },
   loaderContainer: {

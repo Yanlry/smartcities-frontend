@@ -544,11 +544,6 @@ const VotingSection: React.FC<VotingSectionProps> = ({
             {positivePercent}% des utilisateurs confirment cet événement
           </Text>
         </View>
-        
-        {/* Texte d'information */}
-        <Text style={styles.infoText}>
-          Votre vote aide la communauté à valider cet événement
-        </Text>
       </View>
     </Animated.View>
   );
@@ -682,14 +677,6 @@ const styles = StyleSheet.create({
     fontSize: DESIGN_SYSTEM.typography.size.sm,
     color: DESIGN_SYSTEM.colors.gray[600],
   },
-  
-  // Texte d'information
-  infoText: {
-    fontSize: DESIGN_SYSTEM.typography.size.sm,
-    color: DESIGN_SYSTEM.colors.gray[500],
-    textAlign: 'center',
-    marginTop: DESIGN_SYSTEM.spacing.lg,
-  }
 });
 
 export default memo(VotingSection);

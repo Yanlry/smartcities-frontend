@@ -452,7 +452,7 @@ const MapTabContent: React.FC<MapTabContentProps> = ({
   onMapReady,
 }) => {
   // Références pour la carte et animations
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Debug: Afficher les données du rapport

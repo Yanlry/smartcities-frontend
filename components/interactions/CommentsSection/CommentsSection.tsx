@@ -1,3 +1,5 @@
+// Chemin : src/components/interactions/CommentsSection/CommentsSection.tsx
+
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   View,
@@ -159,13 +161,16 @@ const CommentsSection: React.FC<CommentsSectionProps> = memo(({ report }) => {
     try {
       const userId = await getUserId();
       
+      // ✅ CORRECTION PRINCIPALE : S'assurer que reportId est bien un NUMBER
       const payload = {
-        reportId: report.id,
-        userId,
+        reportId: Number(report.id), // ← Conversion explicite en nombre
+        userId: Number(userId),       // ← Aussi pour userId par sécurité
         text: trimmedCommentText,
         latitude: report.latitude,
         longitude: report.longitude,
       };
+
+      console.log("📤 Payload envoyé au backend :", payload); // Pour debug
 
       const response = await fetch(`${API_URL}/reports/comment`, {
         method: "POST",
@@ -174,7 +179,8 @@ const CommentsSection: React.FC<CommentsSectionProps> = memo(({ report }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'envoi du commentaire.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de l'envoi du commentaire.");
       }
 
       const newComment = await response.json();
@@ -197,11 +203,12 @@ const CommentsSection: React.FC<CommentsSectionProps> = memo(({ report }) => {
     try {
       const userId = await getUserId();
       
+      // ✅ CORRECTION : S'assurer que reportId est un NUMBER
       const payload = {
-        reportId: report.id,
-        userId,
+        reportId: Number(report.id), // ← Conversion en nombre
+        userId: Number(userId),
         text,
-        parentId,
+        parentId: Number(parentId),  // ← Aussi pour parentId
       };
 
       const response = await fetch(`${API_URL}/reports/comment`, {
@@ -476,7 +483,6 @@ const styles = StyleSheet.create({
   alertContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
     padding: 10,
     borderRadius: 10,
     shadowColor: "#000",
@@ -486,9 +492,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   alert: {
-    fontSize: 12,
-    color: "#f00",
-    fontWeight: "bold",
+    fontSize: 9,
+    color: "#656765",
   },
   noCommentsText: {
     textAlign: "center",

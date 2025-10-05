@@ -83,7 +83,7 @@ const COLORS: ColorSystem = {
     accent: ["#00C6FB", "#005BEA"] as const,
     rose: ["#FF416C", "#FF4B2B"] as const,
     success: ["#00B09B", "#96C93D"] as const,
-    header: ["rgba(37, 95, 240, 0.85)", "rgba(35, 76, 203, 0.92)"] as const,
+    header: ['#062C41', '#0F3460'] as const,
     titleBar: ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"] as const,
     buttonHover: ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"] as const,
     reportDanger: ["#FF6B6B", "#FF4757"] as const,
@@ -741,14 +741,18 @@ const styles = StyleSheet.create({
     ...SHADOWS.header,
   },
   header: {
+    paddingTop: Platform.OS === 'ios' ? 44 : 0,
+
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 68,
+    height: 108,
     paddingHorizontal: 16,
     overflow: 'hidden',
   },
   headerDecoration: {
+    
+    
     position: 'absolute',
     top: 0,
     left: 0,

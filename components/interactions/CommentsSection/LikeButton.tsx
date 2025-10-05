@@ -18,14 +18,14 @@ const LikeButton: React.FC<LikeButtonProps> = memo(({
     >
       <View style={styles.likeButtonContent}>
         <Ionicons
-          name={isLiked ? "thumbs-up" : "thumbs-up-outline"}
+          name={isLiked ? "heart" : "heart-outline"}
           size={22}
-          color={isLiked ? "#007bff" : "#656765"}
+          color={isLiked ? "#E53935" : "#656765"}
         />
         <Text
           style={[
             styles.likeButtonText,
-            { color: isLiked ? "#007bff" : "#656765" },
+            { color: isLiked ? "#E53935" : "#656765" },
           ]}
         >
           {count || 0}

@@ -1,3 +1,5 @@
+// Chemin : frontend/screens/SocialScreen.tsx
+
 import React, {
   useState,
   useEffect,
@@ -410,39 +412,41 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
       const data = await response.json();
 
       // Process and sort data
+      // ✅ CORRECTION: Ajout du type explicite pour les paramètres
       const sortedData = data
         .map((post: Post) => ({
           ...post,
           comments: post.comments
-            .map((comment) => ({
+            .map((comment: Comment) => ({
               ...comment,
               likedByUser: comment.likedByUser || false,
               likesCount: comment.likesCount || 0,
               replies: comment.replies
                 ? comment.replies.sort(
-                    (a, b) =>
+                    (a: Reply, b: Reply) =>
                       new Date(a.createdAt).getTime() -
                       new Date(b.createdAt).getTime()
                   )
                 : [],
             }))
             .sort(
-              (a, b) =>
+              (a: Comment, b: Comment) =>
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime()
             ),
         }))
         .sort(
-          (a, b) =>
+          (a: Post, b: Post) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
       setPosts(sortedData);
 
       // Update liked posts
+      // ✅ CORRECTION: Ajout du type explicite pour le paramètre 'post'
       const userLikedPosts = sortedData
-        .filter((post) => post.likedByUser)
-        .map((post) => post.id);
+        .filter((post: Post) => post.likedByUser)
+        .map((post: Post) => post.id);
 
       setLikedPosts(userLikedPosts);
     } catch (error) {
@@ -1380,7 +1384,6 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
     </KeyboardAvoidingView>
   );
 }
-
 /**
  * Component styles
  */

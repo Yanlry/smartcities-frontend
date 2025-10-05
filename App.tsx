@@ -387,7 +387,7 @@ export default function App() {
     return (
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <LinearGradient
-           colors={['#062C41', '#0F3460']}
+          colors={["#062C41", "#0F3460"]}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -568,7 +568,7 @@ export default function App() {
       return (
         <Animated.View style={[styles.tabBarWrapper, tabBarAnimatedStyle]}>
           <LinearGradient
-           colors={['#062C41', '#0F3460']}
+            colors={["#062C41", "#0F3460"]}
             style={styles.headerGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -945,7 +945,9 @@ export default function App() {
                         />
                         <Stack.Screen
                           name="EventDetailsScreen"
-                          component={EventDetailsScreen}
+                          component={
+                            EventDetailsScreen as React.ComponentType<any>
+                          }
                         />
                         <Stack.Screen
                           name="EventsScreen"

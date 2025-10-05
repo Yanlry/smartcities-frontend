@@ -18,7 +18,7 @@ const { width } = Dimensions.get("window");
 const COLORS = {
   primary: "#8E2DE2",
   primaryDark: "#4A00E0",
-  accent: "#00C6FB",
+  accent: "#0F3460",
   accentDark: "#005BEA",
   secondary: "#FF416C",
   secondaryDark: "#FF4B2B",
@@ -160,6 +160,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     height: 56,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 198, 251, 0.1)",
     position: "relative",

@@ -1,8 +1,8 @@
-// src/screens/ReportDetailsScreen.tsx - CORRECTIONS TYPESCRIPT
+// src/screens/ReportDetailsScreen.tsx - VERSION CORRIGÉE COMPLÈTE
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { 
-  SafeAreaView, 
+  View, 
   StatusBar, 
   StyleSheet, 
   Alert,
@@ -436,7 +436,7 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
       : reportIdString;
 
     return {
-      postId: reportIdString, // ✅ Maintenant string comme attendu
+      postId: reportIdString,
       postAuthor: `Rapport #${reportIdShort}`,
       postTitle: report?.title || "Rapport SmartCities",
     };
@@ -452,8 +452,13 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+    <View style={styles.container}>
+      {/* ✅ StatusBar translucent pour qu'elle ne prenne pas d'espace */}
+      <StatusBar 
+        translucent 
+        backgroundColor="transparent" 
+        barStyle="dark-content" 
+      />
       
       {/* Header avec bouton de signalement intégré */}
       <HeaderSection
@@ -516,19 +521,19 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
         isVisible={isReportModalVisible}
         onClose={handleCloseReportModal}
         onSendReport={handleSubmitReport}
-        {...reportModalProps} // ✅ Types maintenant compatibles
+        {...reportModalProps}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 /**
- * Styles optimisés
+ * Styles optimisés - ✅ Fond modifié pour correspondre au nouveau thème
  */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#F2F2F7", // Couleur de fond iOS
   },
 });
 

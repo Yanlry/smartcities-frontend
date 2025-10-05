@@ -1,3 +1,5 @@
+// Chemin : src/components/interactions/CommentsSection/CommentItem.tsx
+
 import React, { useState, memo } from 'react';
 import { View, Text, TouchableOpacity, TouchableWithoutFeedback, Image, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,15 +52,45 @@ const CommentItem: React.FC<CommentItemProps> = memo(({
     );
   };
 
+  // ✅ CORRECTION : Meilleure gestion de la photo de profil
+  // Cette fonction essaie plusieurs sources possibles pour la photo
+  const getProfilePhotoUrl = () => {
+    // Cas 1 : profilePhoto est un objet avec une propriété url
+    if (comment.user?.profilePhoto && typeof comment.user.profilePhoto === 'object') {
+      return comment.user.profilePhoto.url;
+    }
+    
+    // Cas 2 : profilePhoto est directement une string (URL)
+    if (comment.user?.profilePhoto && typeof comment.user.profilePhoto === 'string') {
+      return comment.user.profilePhoto;
+    }
+    
+    // Cas 3 : Aucune photo disponible, utiliser le placeholder
+    return "https://via.placeholder.com/50";
+  };
+
+  // ✅ DEBUG : Afficher dans la console ce qui est reçu (tu peux retirer ce log après)
+  React.useEffect(() => {
+    console.log('🖼️ Photo de profil du commentaire:', {
+      commentId: comment.id,
+      user: comment.user,
+      profilePhoto: comment.user?.profilePhoto,
+      finalUrl: getProfilePhotoUrl()
+    });
+  }, [comment]);
+
   return (
     <TouchableWithoutFeedback onLongPress={() => onReport(comment.id)}>
       <View style={styles.commentContainer}>
         <View style={styles.userInfoContainer}>
+          {/* ✅ CORRECTION : Utilisation de la fonction améliorée */}
           <Image
-            source={{
-              uri: comment.user?.profilePhoto?.url || "https://via.placeholder.com/50",
-            }}
+            source={{ uri: getProfilePhotoUrl() }}
             style={styles.userPhoto}
+            // ✅ AJOUT : Gestion des erreurs de chargement d'image
+            onError={(error) => {
+              console.log('❌ Erreur chargement photo commentaire:', error.nativeEvent.error);
+            }}
           />
           <View>
             <Text style={styles.userName}>
@@ -94,7 +126,7 @@ const CommentItem: React.FC<CommentItemProps> = memo(({
             isLiked={comment.likedByUser}
             onPress={() => onLike(comment.id, false)}
           />
-          
+{/*           
           <TouchableOpacity
             onPress={toggleExpanded}
             style={styles.commentButton}
@@ -115,7 +147,7 @@ const CommentItem: React.FC<CommentItemProps> = memo(({
                 {comment.replies?.length ?? 0}
               </Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {expanded && (

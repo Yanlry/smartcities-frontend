@@ -1,3 +1,5 @@
+// Chemin : frontend/screens/ReportScreen.tsx
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
@@ -73,7 +75,11 @@ interface AddressSuggestion {
 export default function ReportScreen({ navigation }: { navigation: any }) {
   const { unreadCount } = useNotification();
   const { location, loading: locationLoading } = useLocation();
-  const mapRef = useRef<MapView>(null);
+  
+  // ✅ CORRECTION 1: Utilisation du bon type pour la référence de MapView
+  // Au lieu de <MapView>, on utilise React.ElementRef<typeof MapView>
+  const mapRef = useRef<any>(null);
+  
   const { getUserId } = useToken();
 
   // États
@@ -359,7 +365,8 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
       const data = await response.json();
 
       if (data.results && data.results.length > 0) {
-        const sortedSuggestions = data.results.sort((a, b) => {
+        // ✅ CORRECTION 2 & 3: Ajout du type explicite AddressSuggestion pour a et b
+        const sortedSuggestions = data.results.sort((a: AddressSuggestion, b: AddressSuggestion) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
           return postalA - postalB;
@@ -844,6 +851,7 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

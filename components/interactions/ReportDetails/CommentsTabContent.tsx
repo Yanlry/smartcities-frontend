@@ -1,4 +1,4 @@
-// src/components/interactions/ReportDetails/CommentsTabContent.tsx
+// Chemin : src/components/interactions/ReportDetails/CommentsTabContent.tsx
 
 import React, { memo, useMemo, useRef, useEffect } from "react";
 import {
@@ -23,8 +23,9 @@ const COLORS = {
 };
 
 // Interface pour le type attendu par le composant CommentsSection
+// ✅ CORRECTION : id doit être un NUMBER, pas un string
 interface CommentsSectionReport {
-  id: string;
+  id: number;  // ← Changé de string à number
   latitude: number;
   longitude: number;
   comments: any[];
@@ -62,8 +63,9 @@ const CommentsTabContent: React.FC<CommentsTabContentProps> = ({
   }, []);
 
   // Adapter le format du signalement pour correspondre à ce qu'attend CommentsSection
+  // ✅ CORRECTION : On garde report.id comme number, on ne le convertit PAS en string
   const adaptedReport = useMemo<CommentsSectionReport>(() => ({
-    id: String(report.id), // Conversion explicite du number en string
+    id: report.id, // ← Supprimé String(), on garde le nombre tel quel
     latitude: report.latitude,
     longitude: report.longitude,
     comments: report.comments || [],
