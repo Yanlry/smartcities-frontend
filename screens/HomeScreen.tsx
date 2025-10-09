@@ -322,7 +322,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
 
         <RefreshSuccessAnimation
           visible={showRefreshSuccess}
-          message="✓ Succès! La page va être rafraîchie"
+          message="Succès !"
         />
         <Animated.ScrollView
           style={styles.container}
@@ -410,13 +410,13 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
             getMarkedDatesForMonth={getMarkedDatesForMonth}
           />
 
-          {/* Section Catégories de signalements - Utilise les données adaptées */}
+          {/* Section Catégories de signalements - Utilise les données adaptées
           <CategorySelector
             categories={categories}
             onCategoryPress={handleCategoryClick}
             isVisible={isCategoryReportsVisible}
             toggleVisibility={() => setCategoryReportsVisible((prev) => !prev)}
-          />
+          /> */}
 
           {/* Section Informations Mairie */}
           <MayorInfoSection
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     color: "#888",
     fontSize: 12,
     marginVertical: 20,
-    paddingBottom: 100,
+    paddingBottom: 70,
   },
 });
 

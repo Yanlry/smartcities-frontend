@@ -24,11 +24,15 @@ import HomeScreen from "./screens/HomeScreen";
 import EventsScreen from "./screens/EventsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import ReportScreen from "./screens/ReportScreen";
+import VotesScreen from "./screens/VotesScreen";
 import MapScreen from "./screens/MapScreen";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import RegisterScreen from "./screens/Auth/RegisterScreen";
 import CreateReportScreen from "./screens/CreateReportScreen";
 import ReportDetailsScreen from "./screens/ReportDetailsScreen";
+import PostsScreen from "./screens/PostsScreen";
+import CommentsScreen from "./screens/CommentsScreen";
+import StatisticsScreen from "./screens/StatisticsScreen";
 import CategoryReportsScreen from "./screens/CategoryReportsScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import CreateEventScreen from "./screens/CreateEventScreen";
@@ -950,6 +954,11 @@ export default function App() {
                           }
                         />
                         <Stack.Screen
+                          name="StatisticsScreen"
+                          component={StatisticsScreen}
+                          options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
                           name="EventsScreen"
                           component={EventsScreen}
                         />
@@ -960,6 +969,10 @@ export default function App() {
                         <Stack.Screen
                           name="CreateEventScreen"
                           component={CreateEventScreen}
+                        />
+                        <Stack.Screen
+                          name="VotesScreen"
+                          component={VotesScreen}
                         />
                         <Stack.Screen
                           name="CreateReportScreen"
@@ -988,6 +1001,14 @@ export default function App() {
                         <Stack.Screen
                           name="CityScreen"
                           component={CityScreen}
+                        />
+                        <Stack.Screen
+                          name="PostsScreen"
+                          component={PostsScreen}
+                        />
+                        <Stack.Screen
+                          name="CommentsScreen"
+                          component={CommentsScreen}
                         />
                         <Stack.Screen
                           name="PostDetailsScreen"

@@ -19,7 +19,8 @@ export type RootStackParamList = {
   ConversationsScreen: undefined; 
   CityScreen: undefined; 
   PostDetailsScreen: { postId: number };
-
+  PostsScreen: undefined;      // ← AJOUTE cette ligne
+  CommentsScreen: undefined;
 };
 
 /**

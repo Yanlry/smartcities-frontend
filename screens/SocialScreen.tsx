@@ -36,7 +36,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Share } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../types/navigation/routes.types";
 
@@ -113,6 +113,7 @@ interface Filter {
  */
 export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   const navigation = useNavigation<UserProfileScreenNavigationProp>();
+  const route = useRoute();
   const { getUserId, getToken } = useToken();
 
   // State management
@@ -149,6 +150,9 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [showRefreshSuccess, setShowRefreshSuccess] = useState<boolean>(false);
 
+  const flatListRef = useRef<any>(null);
+
+
   // Screen dimensions for responsive design
   const { width: screenWidth } = Dimensions.get("window");
 
@@ -176,6 +180,46 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
 
     initialize();
   }, []);
+
+   // ✅ NOUVEAU : Effet pour scroller vers le post quand on arrive depuis CommentsScreen
+   useEffect(() => {
+    // On récupère le paramètre scrollToPostId depuis la navigation
+    const scrollToPostId = (route.params as any)?.scrollToPostId;
+    
+    if (scrollToPostId && posts.length > 0 && flatListRef.current) {
+      console.log(`🎯 Scroll automatique vers le post ${scrollToPostId}`);
+      
+      // On attend un peu que la liste soit bien rendue
+      setTimeout(() => {
+        // On trouve l'index du post dans la liste
+        const postIndex = posts.findIndex(post => post.id === scrollToPostId);
+        
+        if (postIndex !== -1) {
+          // On scrolle vers ce post
+          flatListRef.current?.scrollToIndex({
+            index: postIndex,
+            animated: true,
+            viewPosition: 0.1, // Position du post à 10% du haut de l'écran
+          });
+          
+          // On ouvre automatiquement les commentaires de ce post
+          setVisibleComments(prev => ({
+            ...prev,
+            [scrollToPostId]: true
+          }));
+          
+          setVisibleCommentSection(prev => ({
+            ...prev,
+            [scrollToPostId]: true
+          }));
+          
+          console.log(`✅ Scroll terminé et commentaires ouverts pour le post ${scrollToPostId}`);
+        } else {
+          console.log(`⚠️ Post ${scrollToPostId} non trouvé dans la liste`);
+        }
+      }, 500); // Délai pour laisser le temps à la FlatList de se rendre
+    }
+  }, [route.params, posts]); 
 
   const uploadImage = async (file: {
     uri: string;
@@ -956,7 +1000,7 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
               style={styles.deleteIcon}
               onPress={() => handleDeletePost(item.id)}
             >
-              <Icon name="trash-outline" size={20} color="#656765" />
+              <Icon name="trash-outline" size={16} color="#656765" />
             </TouchableOpacity>
           )}
         </TouchableOpacity>
@@ -1211,7 +1255,7 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
                         >
                           <Icon
                             name="trash-outline"
-                            size={16}
+                            size={15}
                             color="#656765"
                           />
                         </TouchableOpacity>
@@ -1249,9 +1293,10 @@ export default function SocialScreen({ handleScroll }: SocialScreenProps) {
       />
       <RefreshSuccessAnimation
         visible={showRefreshSuccess}
-        message="✓ Mis à jour avec succès!"
+        message="Succès !"
       />
       <Animated.FlatList
+      ref={flatListRef}
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
@@ -1587,7 +1632,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   deleteIcon: {
-    padding: 8,
+    padding: 10,
   },
   postContent: {
     paddingHorizontal: 16,
@@ -1773,6 +1818,7 @@ paddingHorizontal: 16,
   },
   deleteCommentIcon: {
     alignSelf: "flex-start",
+
   },
 
   // Reply Section
