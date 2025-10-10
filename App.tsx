@@ -24,7 +24,7 @@ import HomeScreen from "./screens/HomeScreen";
 import EventsScreen from "./screens/EventsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import ReportScreen from "./screens/ReportScreen";
-import VotesScreen from "./screens/VotesScreen";
+import VotesScreen from "./screens/ReportScreen";
 import MapScreen from "./screens/MapScreen";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import RegisterScreen from "./screens/Auth/RegisterScreen";

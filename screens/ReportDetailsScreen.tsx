@@ -1,4 +1,4 @@
-// src/screens/ReportDetailsScreen.tsx - VERSION CORRIGÉE COMPLÈTE
+// src/screens/ReportDetailsScreen.tsx - VERSION AVEC TEMPS RESTANT
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { 
@@ -46,10 +46,40 @@ interface ReportSubmissionState {
   error: string | null;
   canReport: boolean;
   reportCooldown: boolean;
+  timeRemaining?: number; // Temps restant en millisecondes
 }
 
 /**
- * Service de signalement pour les rapports - TYPES CORRIGÉS
+ * ✅ FONCTION MAGIQUE : Transforme les millisecondes en texte français
+ * 
+ * Exemples de ce qu'elle fait :
+ * - 270000 millisecondes → "4 minutes et 30 secondes"
+ * - 120000 millisecondes → "2 minutes"
+ * - 45000 millisecondes → "45 secondes"
+ */
+function formatTimeRemaining(milliseconds: number): string {
+  // On transforme les millisecondes en secondes (on arrondit vers le haut)
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  
+  // On calcule combien de minutes et de secondes
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  // On crée le texte en français
+  if (minutes > 0 && seconds > 0) {
+    // Si on a des minutes ET des secondes : "4 minutes et 30 secondes"
+    return `${minutes} minute${minutes > 1 ? 's' : ''} et ${seconds} seconde${seconds > 1 ? 's' : ''}`;
+  } else if (minutes > 0) {
+    // Si on a seulement des minutes : "4 minutes"
+    return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+  } else {
+    // Si on a seulement des secondes : "45 secondes"
+    return `${seconds} seconde${seconds > 1 ? 's' : ''}`;
+  }
+}
+
+/**
+ * Service de signalement pour les rapports
  */
 class ReportService {
   private static readonly API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -57,42 +87,47 @@ class ReportService {
   private static readonly COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes
 
   /**
-   * Vérifie si l'utilisateur peut signaler ce rapport
-   * @param reportId ID du rapport (number ou string)
-   * @param currentUserId ID utilisateur actuel
+   * ✅ FONCTION MODIFIÉE : Maintenant elle retourne AUSSI le temps restant !
+   * 
+   * Avant : { canReport: true }
+   * Maintenant : { canReport: false, timeRemaining: 180000 } (3 minutes)
    */
   static async canUserReport(
     reportId: number | string, 
     currentUserId: number | null
-  ): Promise<boolean> {
-    if (!currentUserId) return false;
+  ): Promise<{ canReport: boolean; timeRemaining: number }> {
+    if (!currentUserId) {
+      return { canReport: false, timeRemaining: 0 };
+    }
     
     try {
-      // Conversion sécurisée en string pour la clé
       const reportIdString = String(reportId);
       const cooldownKey = `${this.COOLDOWN_KEY}${reportIdString}_${currentUserId}`;
       const lastReportTime = await AsyncStorage.getItem(cooldownKey);
       
       if (lastReportTime) {
+        // On calcule combien de temps s'est écoulé depuis le dernier signalement
         const timeDiff = Date.now() - parseInt(lastReportTime, 10);
+        
+        // On calcule combien de temps il reste à attendre
+        const timeRemaining = this.COOLDOWN_DURATION - timeDiff;
+        
         if (timeDiff < this.COOLDOWN_DURATION) {
-          return false;
+          // ✅ COOLDOWN ACTIF : On dit "NON tu peux pas" + "il reste X temps"
+          return { canReport: false, timeRemaining };
         }
       }
       
-      return true;
+      // ✅ PAS DE COOLDOWN : On dit "OUI tu peux !"
+      return { canReport: true, timeRemaining: 0 };
     } catch (error) {
       console.warn('Erreur vérification signalement:', error);
-      return true; // En cas d'erreur, autoriser le signalement
+      return { canReport: true, timeRemaining: 0 };
     }
   }
 
   /**
-   * Envoie un signalement de rapport - TYPES CORRIGÉS
-   * @param reportId ID du rapport (number ou string)
-   * @param reportReason Raison du signalement
-   * @param reportType Type de signalement
-   * @param currentUserId ID utilisateur actuel
+   * Envoie un signalement de rapport
    */
   static async submitReport(
     reportId: number | string,
@@ -106,11 +141,10 @@ class ReportService {
         throw new Error('Token d\'authentification manquant');
       }
 
-      // Conversion sécurisée en string
       const reportIdString = String(reportId);
 
       const payload = {
-        to: "yannleroy23@gmail.com", // Email administrateur
+        to: "yannleroy23@gmail.com",
         subject: "Signalement d'un rapport",
         reportId: reportIdString,
         reporterId: currentUserId.toString(),
@@ -136,7 +170,6 @@ class ReportService {
         throw new Error(errorData.message || `Erreur ${response.status}`);
       }
 
-      // Enregistrer le cooldown avec clé string
       const cooldownKey = `${this.COOLDOWN_KEY}${reportIdString}_${currentUserId}`;
       await AsyncStorage.setItem(cooldownKey, Date.now().toString());
 
@@ -149,7 +182,7 @@ class ReportService {
 }
 
 /**
- * Hook personnalisé pour la gestion des signalements - TYPES CORRIGÉS
+ * Hook personnalisé pour la gestion des signalements
  */
 const useReportSubmission = (reportId: number | string, currentUserId: number | null) => {
   const [state, setState] = useState<ReportSubmissionState>({
@@ -157,6 +190,7 @@ const useReportSubmission = (reportId: number | string, currentUserId: number | 
     error: null,
     canReport: true,
     reportCooldown: false,
+    timeRemaining: 0,
   });
 
   const isMountedRef = useRef(true);
@@ -168,17 +202,19 @@ const useReportSubmission = (reportId: number | string, currentUserId: number | 
   }, []);
 
   /**
-   * Vérifie les permissions de signalement
+   * ✅ FONCTION MODIFIÉE : Elle récupère maintenant le temps restant aussi !
    */
   const checkReportPermissions = useCallback(async () => {
     try {
-      const canReport = await ReportService.canUserReport(reportId, currentUserId);
+      // On demande : "Est-ce qu'il peut signaler ?" et "Combien de temps reste ?"
+      const { canReport, timeRemaining } = await ReportService.canUserReport(reportId, currentUserId);
       
       if (isMountedRef.current) {
         setState(prev => ({
           ...prev,
           canReport,
           reportCooldown: !canReport,
+          timeRemaining, // ✅ On stocke le temps restant ici !
         }));
       }
     } catch (error) {
@@ -208,6 +244,7 @@ const useReportSubmission = (reportId: number | string, currentUserId: number | 
           isLoading: false,
           canReport: false,
           reportCooldown: true,
+          timeRemaining: 5 * 60 * 1000, // 5 minutes
         }));
       }
     } catch (error) {
@@ -225,7 +262,6 @@ const useReportSubmission = (reportId: number | string, currentUserId: number | 
     }
   }, [reportId, currentUserId]);
 
-  // Vérification initiale des permissions
   useEffect(() => {
     if (currentUserId) {
       checkReportPermissions();
@@ -240,7 +276,7 @@ const useReportSubmission = (reportId: number | string, currentUserId: number | 
 };
 
 /**
- * Écran de détails de rapport optimisé - TYPES CORRIGÉS
+ * Écran de détails de rapport optimisé
  */
 const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
   route,
@@ -248,7 +284,6 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
 }) => {
   const { reportId } = route.params;
   
-  // Hooks de données
   const { location } = useLocation();
   const { getUserId } = useToken();
   const { report, routeCoords, loading } = useFetchReportDetails(
@@ -257,11 +292,9 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     location?.longitude
   );
 
-  // États locaux
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isReportModalVisible, setIsReportModalVisible] = useState<boolean>(false);
 
-  // Hooks de fonctionnalités
   const { votes, selectedVote, handleVote, restoreVote } = useReportVoting({
     report,
     currentUserId,
@@ -288,19 +321,16 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     measureLayout,
   } = useTooltip();
 
-  // Hook de signalement avec types corrigés
   const {
     isLoading: isReportLoading,
     error: reportError,
     canReport,
     reportCooldown,
+    timeRemaining, // ✅ On récupère le temps restant ici !
     submitReport,
     refreshPermissions,
   } = useReportSubmission(reportId, currentUserId);
 
-  /**
-   * Récupération de l'ID utilisateur au montage
-   */
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -313,13 +343,9 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     fetchUserId();
   }, [getUserId]);
 
-  /**
-   * Restauration du vote depuis le stockage local - CLÉS CORRIGÉES
-   */
   useEffect(() => {
     const loadVote = async () => {
       try {
-        // Conversion sécurisée en string pour la clé AsyncStorage
         const reportIdString = String(reportId);
         const storedVote = await AsyncStorage.getItem(`selectedVoteReport_${reportIdString}`);
         if (storedVote) {
@@ -335,13 +361,9 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     }
   }, [reportId, restoreVote]);
 
-  /**
-   * Gestion optimisée du vote avec sauvegarde - CLÉS CORRIGÉES
-   */
   const handleVoteWithStorage = useCallback(async (type: "up" | "down") => {
     try {
       handleVote(type);
-      // Conversion sécurisée en string pour la clé
       const reportIdString = String(reportId);
       await AsyncStorage.setItem(`selectedVoteReport_${reportIdString}`, type);
     } catch (error) {
@@ -349,9 +371,6 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     }
   }, [handleVote, reportId]);
 
-  /**
-   * Navigation vers le profil utilisateur
-   */
   const handleUserPress = useCallback(
     (userId: number) => {
       navigation.navigate("UserProfileScreen", { userId });
@@ -360,9 +379,13 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
   );
 
   /**
-   * Ouverture du modal de signalement
+   * ✅✅✅ FONCTION SUPER IMPORTANTE : C'est ici que le message s'affiche !
+   * 
+   * Quand tu cliques sur le bouton de signalement, cette fonction s'active.
+   * Elle vérifie si tu es en cooldown et affiche le temps restant.
    */
   const handleReportPress = useCallback(() => {
+    // 1️⃣ Vérifier si l'utilisateur est connecté
     if (!currentUserId) {
       Alert.alert(
         "Connexion requise",
@@ -372,33 +395,32 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
       return;
     }
 
-    if (reportCooldown) {
+    // 2️⃣ ✅ PARTIE MAGIQUE : Si en cooldown, afficher le temps restant !
+    if (reportCooldown && timeRemaining) {
+      // On transforme les millisecondes en texte français
+      const formattedTime = formatTimeRemaining(timeRemaining);
+      
+      // On affiche le message avec le temps exact
       Alert.alert(
         "Signalement récent",
-        "Vous avez déjà signalé ce contenu récemment. Veuillez patienter avant de signaler à nouveau.",
+        `Vous avez déjà signalé ce rapport. Veuillez attendre encore ${formattedTime} avant de faire un nouveau signalement.`,
         [{ text: "Compris", style: "default" }]
       );
       return;
     }
 
-    // Feedback haptique
+    // 3️⃣ Si pas de cooldown, on ouvre le modal de signalement
     if (Platform.OS !== 'web') {
       Vibration.vibrate(50);
     }
 
     setIsReportModalVisible(true);
-  }, [currentUserId, reportCooldown]);
+  }, [currentUserId, reportCooldown, timeRemaining]);
 
-  /**
-   * Fermeture du modal de signalement
-   */
   const handleCloseReportModal = useCallback(() => {
     setIsReportModalVisible(false);
   }, []);
 
-  /**
-   * Soumission du signalement
-   */
   const handleSubmitReport = useCallback(async (
     reportReason: string,
     reportType: string
@@ -408,7 +430,7 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
       setIsReportModalVisible(false);
       
       Alert.alert(
-        "✅ Signalement envoyé",
+        "Signalement envoyé",
         "Merci de contribuer à la sécurité de notre communauté. Votre signalement sera examiné par notre équipe.",
         [{ text: "OK", style: "default" }]
       );
@@ -418,18 +440,11 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     }
   }, [submitReport]);
 
-  /**
-   * Gestion d'erreur avec retry
-   */
   const handleErrorRetry = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
 
-  /**
-   * Mémoisation des propriétés pour optimiser les performances - TYPES CORRIGÉS
-   */
   const reportModalProps = useMemo(() => {
-    // Conversion sécurisée du reportId en string pour le modal
     const reportIdString = String(reportId);
     const reportIdShort = reportIdString.length > 6 
       ? reportIdString.slice(-6) 
@@ -442,7 +457,6 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     };
   }, [reportId, report?.title]);
 
-  // États de chargement et d'erreur
   if (loading || !location) {
     return <LoadingState />;
   }
@@ -453,14 +467,12 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* ✅ StatusBar translucent pour qu'elle ne prenne pas d'espace */}
       <StatusBar 
         translucent 
         backgroundColor="transparent" 
         barStyle="dark-content" 
       />
       
-      {/* Header avec bouton de signalement intégré */}
       <HeaderSection
         title={report.title}
         onBack={() => navigation.goBack()}
@@ -471,7 +483,6 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
         reportDisabled={!canReport || !currentUserId}
       />
       
-      {/* Tooltip du titre */}
       <TitleTooltip
         visible={titleTooltipVisible}
         title={report.title}
@@ -481,14 +492,12 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
         onClose={hideTooltip}
       />
       
-      {/* Navigation par onglets */}
       <TabNavigation
         activeTab={activeTab}
         indicatorPosition={indicatorPosition}
         onTabChange={changeTab}
       />
       
-      {/* Contenu des onglets */}
       {activeTab === 0 && (
         <DetailsTabContent
           report={report}
@@ -516,7 +525,6 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
         <CommentsTabContent report={report} />
       )}
 
-      {/* Modal de signalement avec props corrigées */}
       <PostReportModal
         isVisible={isReportModalVisible}
         onClose={handleCloseReportModal}
@@ -527,13 +535,10 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
   );
 };
 
-/**
- * Styles optimisés - ✅ Fond modifié pour correspondre au nouveau thème
- */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7", // Couleur de fond iOS
+    backgroundColor: "#F2F2F7",
   },
 });
 

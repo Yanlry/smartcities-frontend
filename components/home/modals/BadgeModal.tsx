@@ -1595,10 +1595,10 @@ const BadgeModal: React.FC<BadgeModalProps> = memo(
             }
           ]}>
             <Text style={[styles.quoteText, { color: colorScheme.text.secondary }]}>
-              "Chaque vote est un pas vers un quartier meilleur pour tous."
+              "Un petit vote pour l’humanité, un grand bond pour le quartier."
             </Text>
             <Text style={[styles.quoteAuthor, { color: colorScheme.text.tertiary }]}>
-              L'équipe CitizenConnect
+              L'équipe Smartcities
             </Text>
           </View>
         </Animated.View>

@@ -37,6 +37,7 @@ import { useToken } from "../hooks/auth/useToken";
 // @ts-ignore
 import { API_URL } from "@env";
 import axios from "axios";
+import ConversationReportModal from "../components/home/modals/ConversationReportModal"; // ✅ AJOUTE CETTE LIGNE
 
 // Types et interfaces
 type Message = {
@@ -58,7 +59,6 @@ export default function ChatScreen({ route, navigation }: any) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [lastSentMessage, setLastSentMessage] = useState<Message | null>(null);
-  const [reportReason, setReportReason] = useState("");
   const [isReportModalVisible, setReportModalVisible] = useState(false);
   const [currentUserProfilePhoto, setCurrentUserProfilePhoto] = useState<string | null>(null);
   const [userDetails, setUserDetails] = useState<{
@@ -73,8 +73,7 @@ export default function ChatScreen({ route, navigation }: any) {
   const messageAnimation = useRef(new Animated.Value(0)).current;
   const inputContainerAnim = useRef(new Animated.Value(1)).current;
   
-  // Animation pour le modal de rapport
-  const reportModalAnim = useRef(new Animated.Value(0)).current;
+
   
   useEffect(() => {
     const messagesRef = collection(db, "messages");
@@ -360,77 +359,56 @@ export default function ChatScreen({ route, navigation }: any) {
     }
   };
 
-  const reportConversation = async (): Promise<void> => {
-    if (!reportReason.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir une raison pour le signalement.");
-      return;
-    }
-  
-    try {
-      const reporterId = senderId; 
-      const conversationId = [senderId, receiverId].sort().join("_");
-  
-      const payload = {
-        to: "yannleroy23@gmail.com",
-        subject: "Signalement d'une conversation",
-        conversationId, 
-        reporterId,
-        reportReason,
-      };
-  
-      console.log("Payload envoyé au backend :", payload);
-  
-      const response = await fetch(`${API_URL}/mails/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await getToken()}`,
-        },
-        body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erreur renvoyée par l'API :", errorData);
-        throw new Error(errorData.message || "Erreur lors du signalement.");
-      }
-  
-      const result = await response.json();
-      console.log("Signalement envoyé :", result);
-      Alert.alert("Succès", "Le signalement a été envoyé.");
-      setReportReason("");
-      setReportModalVisible(false);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Erreur lors de l'envoi du signalement :", error.message);
-      } else {
-        console.error("Erreur lors de l'envoi du signalement :", error);
-      }
-      Alert.alert("Erreur", "Une erreur s'est produite lors du signalement.");
-    }
-  };
+// ✅ NOUVELLE VERSION : Simplement envoyer le signalement au backend
+const reportConversation = async (reportReason: string, reportType: string): Promise<void> => {
+  try {
+    const reporterId = senderId; 
+    const conversationId = [senderId, receiverId].sort().join("_");
 
-  const closeReportModal = () => {
-    // Animation de fermeture du modal
-    Animated.timing(reportModalAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setReportModalVisible(false);
-      setReportReason("");
+    const payload = {
+      to: "yannleroy23@gmail.com",
+      subject: "Signalement d'une conversation",
+      conversationId, 
+      reporterId,
+      reportReason,
+    };
+
+    console.log("Payload envoyé au backend :", payload);
+
+    const response = await fetch(`${API_URL}/mails/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getToken()}`,
+      },
+      body: JSON.stringify(payload),
     });
-  };
 
-  const openReportModal = () => {
-    setReportModalVisible(true);
-    Animated.timing(reportModalAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Erreur renvoyée par l'API :", errorData);
+      throw new Error(errorData.message || "Erreur lors du signalement.");
+    }
 
+    const result = await response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Erreur lors de l'envoi du signalement :", error.message);
+    } else {
+      console.error("Erreur lors de l'envoi du signalement :", error);
+    }
+    throw error; // ✅ Le modal gère l'affichage de l'erreur
+  }
+};
+
+// ✅ Versions simplifiées - le modal gère ses propres animations
+const closeReportModal = () => {
+  setReportModalVisible(false);
+};
+
+const openReportModal = () => {
+  setReportModalVisible(true);
+};
   // Fonctions pour la gestion du clavier
   const handleInputFocus = () => {
     Animated.timing(inputContainerAnim, {
@@ -708,79 +686,14 @@ export default function ChatScreen({ route, navigation }: any) {
         </View>
       </Animated.View>
 
-      {/* Modal de signalement */}
-      <Modal
-        animationType="none"
-        transparent={true}
-        visible={isReportModalVisible}
-        onRequestClose={closeReportModal}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalBackdrop}>
-            <Animated.View 
-              style={[
-                styles.modalContainer,
-                {
-                  opacity: reportModalAnim,
-                  transform: [{
-                    translateY: reportModalAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0]
-                    })
-                  }]
-                }
-              ]}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Signaler cette conversation</Text>
-                <TouchableOpacity
-                  style={styles.modalCloseButton}
-                  onPress={closeReportModal}
-                >
-                  <Icon name="close" size={24} color="#757575" />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.modalBody}>
-                <Text style={styles.modalDescription}>
-                  Veuillez expliquer la raison de votre signalement. Notre équipe examinera votre signalement dans les plus brefs délais.
-                </Text>
-                
-                <TextInput
-                  style={styles.reportInput}
-                  placeholder="Décrivez le problème..."
-                  placeholderTextColor="#A0A0A0"
-                  value={reportReason}
-                  onChangeText={setReportReason}
-                  multiline
-                  numberOfLines={5}
-                  textAlignVertical="top"
-                />
-              </View>
-              
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={closeReportModal}
-                >
-                  <Text style={styles.cancelButtonText}>Annuler</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[
-                    styles.confirmButton,
-                    !reportReason.trim() && styles.confirmButtonDisabled
-                  ]}
-                  onPress={reportConversation}
-                  disabled={!reportReason.trim()}
-                >
-                  <Text style={styles.confirmButtonText}>Envoyer</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+   
+  {/* ✅ NOUVEAU MODAL MODERNE */}
+<ConversationReportModal
+  isVisible={isReportModalVisible}
+  onClose={closeReportModal}
+  onSendReport={reportConversation}
+  conversationWith={userDetails.name}
+/>
     </View>
   );
 }

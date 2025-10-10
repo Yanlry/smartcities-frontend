@@ -43,7 +43,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = memo(({
       accessibilityRole="button"
     >
       <MaterialIcons 
-        name="error" 
+        name="flag" 
         size={24} 
         color="#FFFFFC" 
         style={{ marginRight: 10 }} 

@@ -1,4 +1,4 @@
-// src/components/interactions/ReportDetails/HeaderSection.tsx
+// Chemin : src/components/interactions/ReportDetails/HeaderSection.tsx
 
 import React, { memo, useRef, useEffect, useState, useCallback } from "react";
 import {
@@ -18,19 +18,9 @@ import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
-/**
- * Type pour les fonctions d'easing React Native
- */
 type EasingFunction = (value: number) => number;
-
-/**
- * Type pour les animations composites
- */
 type CompositeAnimation = Animated.CompositeAnimation;
 
-/**
- * Configuration des couleurs avec typage strict
- */
 interface ColorSystem {
   gradients: {
     primary: readonly [string, string];
@@ -73,9 +63,6 @@ interface ColorSystem {
   };
 }
 
-/**
- * Système de couleurs premium optimisé avec support signalement
- */
 const COLORS: ColorSystem = {
   gradients: {
     primary: ["#2B32B2", "#1488CC"] as const,
@@ -134,9 +121,6 @@ const COLORS: ColorSystem = {
   },
 } as const;
 
-/**
- * Système d'ombres optimisé par plateforme
- */
 const SHADOWS = {
   button: Platform.select({
     ios: {
@@ -187,9 +171,6 @@ const SHADOWS = {
   }),
 } as const;
 
-/**
- * Configuration d'animation avec types optimisés
- */
 interface AnimationConfig {
   duration: {
     veryFast: number;
@@ -207,9 +188,6 @@ interface AnimationConfig {
   };
 }
 
-/**
- * Système d'animation avancé avec courbes sophistiquées
- */
 const ANIMATIONS: AnimationConfig = {
   duration: {
     veryFast: 120,
@@ -228,9 +206,6 @@ const ANIMATIONS: AnimationConfig = {
   },
 } as const;
 
-/**
- * Helpers d'animation optimisés avec types stricts
- */
 class AnimationHelpers {
   static fadeIn(
     value: Animated.Value,
@@ -325,9 +300,6 @@ class AnimationHelpers {
   }
 }
 
-/**
- * Badge d'alerte de signalement avec animation spécialisée
- */
 interface ReportAlertBadgeProps {
   severity: 'low' | 'medium' | 'high' | 'critical';
   visible?: boolean;
@@ -358,10 +330,8 @@ const ReportAlertBadge: React.FC<ReportAlertBadgeProps> = memo(({
   
   useEffect(() => {
     if (visible) {
-      // Animation d'entrée
       AnimationHelpers.springEnter(scaleAnim).start();
       
-      // Pulsation continue pour les alertes critiques
       if (severity === 'critical') {
         const interval = setInterval(() => {
           AnimationHelpers.pulse(pulseAnim, 1.3, 800).start();
@@ -386,10 +356,7 @@ const ReportAlertBadge: React.FC<ReportAlertBadgeProps> = memo(({
         styles.reportAlertBadge,
         { 
           backgroundColor: badgeConfig.color,
-          transform: [
-            { scale: scaleAnim },
-            { scale: pulseAnim }
-          ]
+          transform: [{ scale: scaleAnim }, { scale: pulseAnim }]
         }
       ]}
     >
@@ -400,18 +367,12 @@ const ReportAlertBadge: React.FC<ReportAlertBadgeProps> = memo(({
 
 ReportAlertBadge.displayName = 'ReportAlertBadge';
 
-/**
- * Interface pour le titre d'en-tête
- */
 interface HeaderTitleProps {
   title: string;
   onPress: () => void;
   onLayout?: (event: LayoutChangeEvent) => void;
 }
 
-/**
- * Composant titre avec animations fluides
- */
 const HeaderTitle: React.FC<HeaderTitleProps> = memo(({ title, onPress, onLayout }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-10)).current;
@@ -448,10 +409,7 @@ const HeaderTitle: React.FC<HeaderTitleProps> = memo(({ title, onPress, onLayout
             styles.headerTitleContainer,
             {
               opacity: fadeAnim,
-              transform: [
-                { translateY: slideAnim },
-                { scale: scaleAnim }
-              ]
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }]
             }
           ]}
         >
@@ -469,9 +427,6 @@ const HeaderTitle: React.FC<HeaderTitleProps> = memo(({ title, onPress, onLayout
 
 HeaderTitle.displayName = 'HeaderTitle';
 
-/**
- * Interface pour les boutons d'action
- */
 interface HeaderActionButtonProps {
   iconName: string;
   onPress: () => void;
@@ -482,24 +437,19 @@ interface HeaderActionButtonProps {
 }
 
 /**
- * Bouton d'action avec interactions fluides et support signalement
+ * ✅ MODIFICATION IMPORTANTE : Le bouton est TOUJOURS cliquable
+ * Même quand il est grisé, on peut cliquer dessus pour voir le message
  */
-const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({ 
-  iconName, 
-  onPress, 
-  position = 'right',
-  variant = 'default',
-  isLoading = false,
-  disabled = false
-}) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(position === 'left' ? -15 : 15)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
+const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo((props) => {
+  const iconName = props.iconName;
+  const onPress = props.onPress;
+  const position = props.position || 'right';
+  const variant = props.variant || 'default';
+  const isLoading = props.isLoading || false;
+  const disabled = props.disabled || false;
   
   const [isPressed, setIsPressed] = useState<boolean>(false);
   
-  // Configuration basée sur la variante
   const getButtonConfig = useCallback(() => {
     if (variant === 'report') {
       return {
@@ -520,74 +470,27 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({
   
   const buttonConfig = getButtonConfig();
   
-  useEffect(() => {
-    const animationDelay = position === 'left' ? 0 : 100;
-    const slideValue = position === 'left' ? -15 : 15;
-    
-    Animated.parallel([
-      AnimationHelpers.fadeIn(fadeAnim, ANIMATIONS.duration.medium, animationDelay),
-      AnimationHelpers.slideInY(slideAnim, slideValue, ANIMATIONS.duration.medium, animationDelay),
-      AnimationHelpers.springEnter(scaleAnim),
-    ]).start();
-  }, [fadeAnim, slideAnim, scaleAnim, position]);
-  
-  // Animation de loading pour le bouton report
-  useEffect(() => {
-    if (isLoading && variant === 'report') {
-      const rotateAnimation = Animated.loop(
-        Animated.timing(rotateAnim, {
-          toValue: 1,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      );
-      rotateAnimation.start();
-      
-      return () => rotateAnimation.stop();
-    } else {
-      rotateAnim.setValue(0);
-    }
-  }, [isLoading, variant, rotateAnim]);
-  
   const handlePressIn = useCallback((): void => {
-    if (disabled) return;
-    
+    // ✅ CHANGEMENT : On permet toujours de presser, même si disabled
     setIsPressed(true);
     
-    if (variant === 'report') {
-      // Feedback haptique pour le signalement
-      if (Platform.OS !== 'web') {
-        Vibration.vibrate(50);
-      }
-      
-      AnimationHelpers.reportAlert(scaleAnim).start();
-    } else {
-      Animated.timing(scaleAnim, {
-        toValue: 0.92,
-        duration: ANIMATIONS.duration.veryFast,
-        easing: ANIMATIONS.easing.standard,
-        useNativeDriver: true,
-      }).start();
+    // Vibration seulement si pas disabled et c'est un bouton report
+    if (!disabled && variant === 'report' && Platform.OS !== 'web') {
+      Vibration.vibrate(50);
     }
-  }, [scaleAnim, variant, disabled]);
+  }, [variant, disabled]);
   
   const handlePressOut = useCallback((): void => {
-    if (disabled) return;
-    
+    // ✅ CHANGEMENT : On permet toujours de relâcher
     setIsPressed(false);
-    AnimationHelpers.springEnter(scaleAnim, 1, 4, 300).start();
-  }, [scaleAnim, disabled]);
+  }, []);
   
   const handlePress = useCallback((): void => {
-    if (disabled || isLoading) return;
+    // ✅ CHANGEMENT CRUCIAL : On appelle TOUJOURS onPress
+    // Même si disabled ou isLoading, on laisse le parent gérer
+    // C'est ReportDetailsScreen qui affichera le bon message
     onPress();
-  }, [onPress, disabled, isLoading]);
-  
-  const rotateInterpolate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  }, [onPress]);
   
   return (
     <TouchableOpacity
@@ -595,37 +498,30 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-      activeOpacity={1}
-      disabled={disabled}
+      activeOpacity={0.7}
+      // ✅ SUPER IMPORTANT : On n'utilise JAMAIS disabled={true} !
+      // Le bouton est TOUJOURS cliquable, mais juste grisé visuellement
     >
-      <Animated.View 
+      <View 
         style={[
           styles.actionButton,
           buttonConfig.shadow,
           { 
-            opacity: fadeAnim,
             backgroundColor: isPressed 
               ? `${buttonConfig.backgroundColor}80`
               : buttonConfig.backgroundColor,
             borderColor: buttonConfig.borderColor,
-            transform: [
-              { translateX: slideAnim },
-              { scale: scaleAnim }
-            ],
+            // ✅ Opacity pour montrer visuellement que c'est désactivé
+            // Mais le bouton reste cliquable pour afficher le message
+            opacity: disabled ? 0.5 : 1,
           }
         ]}
       >
-        <Animated.View
-          style={{
-            transform: isLoading ? [{ rotate: rotateInterpolate }] : undefined
-          }}
-        >
-          <Icon 
-            name={isLoading ? "sync" : iconName} 
-            size={22} 
-            color={disabled ? COLORS.lightText.disabled : buttonConfig.iconColor} 
-          />
-        </Animated.View>
+        <Icon 
+          name={isLoading ? "sync" : iconName} 
+          size={22} 
+          color={disabled ? COLORS.lightText.disabled : buttonConfig.iconColor} 
+        />
         
         {variant === 'report' && !isLoading && (
           <ReportAlertBadge 
@@ -633,16 +529,13 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = memo(({
             visible={!disabled}
           />
         )}
-      </Animated.View>
+      </View>
     </TouchableOpacity>
   );
 });
 
 HeaderActionButton.displayName = 'HeaderActionButton';
 
-/**
- * Interface principale du composant HeaderSection
- */
 interface HeaderSectionProps {
   title: string;
   onBack: () => void;
@@ -653,13 +546,6 @@ interface HeaderSectionProps {
   reportDisabled?: boolean;
 }
 
-/**
- * Composant d'en-tête premium avec bouton de signalement optimisé
- * 
- * @description En-tête avec animations fluides, design moderne et signalement intégré
- * @param props Propriétés du composant avec support signalement
- * @returns Composant HeaderSection optimisé avec fonctionnalités de signalement
- */
 const HeaderSection: React.FC<HeaderSectionProps> = memo(({
   title,
   onBack,
@@ -669,39 +555,19 @@ const HeaderSection: React.FC<HeaderSectionProps> = memo(({
   isReportLoading = false,
   reportDisabled = false,
 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const translateYAnim = useRef(new Animated.Value(-10)).current;
-  
-  useEffect(() => {
-    Animated.parallel([
-      AnimationHelpers.fadeIn(fadeAnim),
-      AnimationHelpers.slideInY(translateYAnim, -10),
-    ]).start();
-  }, [fadeAnim, translateYAnim]);
-
   return (
-    <Animated.View 
-      style={[
-        styles.headerContainer,
-        { 
-          opacity: fadeAnim,
-          transform: [{ translateY: translateYAnim }]
-        }
-      ]}
-    >
+    <View style={styles.headerContainer}>
       <LinearGradient
         colors={COLORS.gradients.header}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
       >
-        {/* Éléments décoratifs */}
         <View style={styles.headerDecoration}>
           <View style={styles.decorationCircle1} />
           <View style={styles.decorationCircle2} />
         </View>
         
-        {/* Bouton Retour */}
         <HeaderActionButton 
           iconName="arrow-back" 
           onPress={onBack}
@@ -709,14 +575,13 @@ const HeaderSection: React.FC<HeaderSectionProps> = memo(({
           variant="default"
         />
         
-        {/* Titre Central */}
         <HeaderTitle 
           title={title} 
           onPress={onTitlePress}
           onLayout={onTitleLayout}
         />
         
-        {/* Bouton de Signalement */}
+        {/* ✅ Le bouton est TOUJOURS cliquable, même si reportDisabled=true */}
         <HeaderActionButton 
           iconName="flag" 
           onPress={onReportPress}
@@ -726,15 +591,12 @@ const HeaderSection: React.FC<HeaderSectionProps> = memo(({
           disabled={reportDisabled}
         />
       </LinearGradient>
-    </Animated.View>
+    </View>
   );
 });
 
 HeaderSection.displayName = 'HeaderSection';
 
-/**
- * Styles optimisés avec organisation modulaire et support signalement
- */
 const styles = StyleSheet.create({
   headerContainer: {
     zIndex: 10,
@@ -742,7 +604,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 44 : 0,
-
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -751,8 +612,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerDecoration: {
-    
-    
     position: 'absolute',
     top: 0,
     left: 0,

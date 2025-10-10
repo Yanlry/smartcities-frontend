@@ -1,4 +1,4 @@
-// components/profile/modals/ReportModal.tsx
+// Chemin : src/components/chat/ConversationReportModal.tsx
 
 import React, { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { 
@@ -17,49 +17,56 @@ import {
   KeyboardAvoidingView,
   ScrollView
 } from "react-native";
-import { ReportModalProps } from "../../../types/features/profile/modals.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
-// ✅ MÊMES CATÉGORIES que PostReportModal
+// Interface pour les props du modal
+interface ConversationReportModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  onSendReport: (reportReason: string, reportType: string) => Promise<void>;
+  conversationWith?: string; // Nom de la personne avec qui on discute
+}
+
+// ✅ CATÉGORIES ADAPTÉES AUX CONVERSATIONS
 const REPORT_CATEGORIES = [
-  {
-    id: 'inappropriate_content',
-    label: 'Contenu inapproprié',
-    icon: 'warning-outline',
-    description: 'Contenu offensant, vulgaire ou déplacé'
-  },
-  {
-    id: 'spam',
-    label: 'Spam ou publicité',
-    icon: 'ban-outline',
-    description: 'Contenu publicitaire non désiré ou répétitif'
-  },
   {
     id: 'harassment',
     label: 'Harcèlement',
     icon: 'shield-outline',
-    description: 'Intimidation, menaces ou harcèlement'
+    description: 'Messages insultants, menaçants ou intimidants'
   },
   {
-    id: 'fake_account',
-    label: 'Faux compte',
-    icon: 'person-remove-outline',
-    description: 'Compte frauduleux ou usurpation d\'identité'
+    id: 'spam',
+    label: 'Spam',
+    icon: 'ban-outline',
+    description: 'Messages répétitifs ou publicité non désirée'
   },
   {
-    id: 'violence',
-    label: 'Violence ou danger',
+    id: 'inappropriate_content',
+    label: 'Contenu inapproprié',
+    icon: 'warning-outline',
+    description: 'Contenu offensant, sexuel ou déplacé'
+  },
+  {
+    id: 'scam',
+    label: 'Arnaque',
     icon: 'alert-circle-outline',
-    description: 'Incitation à la violence ou contenu dangereux'
+    description: 'Tentative d\'escroquerie ou fraude'
   },
   {
-    id: 'privacy',
-    label: 'Atteinte à la vie privée',
-    icon: 'eye-off-outline',
-    description: 'Partage d\'informations privées sans consentement'
+    id: 'threat',
+    label: 'Menaces',
+    icon: 'flash-outline',
+    description: 'Menaces de violence ou chantage'
+  },
+  {
+    id: 'impersonation',
+    label: 'Usurpation d\'identité',
+    icon: 'person-remove-outline',
+    description: 'Fausse identité ou imitation'
   },
   {
     id: 'other',
@@ -69,7 +76,7 @@ const REPORT_CATEGORIES = [
   }
 ] as const;
 
-// ✅ MÊMES COULEURS que PostReportModal
+// ✅ MÊMES COULEURS que les autres modaux
 const COLORS = {
   primary: {
     main: "#667eea",
@@ -109,14 +116,15 @@ const COLORS = {
 };
 
 /**
- * ✅ MODAL DE SIGNALEMENT MODERNE POUR LES PROFILS UTILISATEURS
+ * ✅ MODAL DE SIGNALEMENT MODERNE POUR LES CONVERSATIONS
  * 
- * Exactement le même style que PostReportModal, mais pour signaler des profils !
+ * Exactement le même style que ReportModal et PostReportModal !
  */
-export const ReportModal: React.FC<ReportModalProps> = memo(({ 
+export const ConversationReportModal: React.FC<ConversationReportModalProps> = memo(({ 
   isVisible, 
   onClose, 
-  onSendReport 
+  onSendReport,
+  conversationWith = "cet utilisateur"
 }) => {
   // États locaux
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -227,7 +235,7 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
 
     // Validation : Vérifier les détails si nécessaire
     const requiresCustomReason = selectedCategory === 'other' || 
-      ['inappropriate_content', 'harassment', 'fake_account'].includes(selectedCategory);
+      ['harassment', 'threat', 'scam'].includes(selectedCategory);
     
     if (requiresCustomReason && customReason.trim().length < 10) {
       Alert.alert(
@@ -246,7 +254,7 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
         ? `${selectedCategoryData?.label}: ${customReason.trim()}`
         : selectedCategoryData?.label || 'Signalement';
       
-      await onSendReport(reportMessage);
+      await onSendReport(reportMessage, selectedCategory);
       
       // Reset du formulaire
       setCurrentStep('category');
@@ -256,7 +264,7 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
       // Feedback de succès
       Alert.alert(
         "Signalement envoyé",
-        "Merci de contribuer à la sécurité de notre communauté. Notre équipe de modération examinera ce profil rapidement.",
+        "Merci de contribuer à la sécurité de notre communauté. Notre équipe examinera cette conversation rapidement.",
         [{ 
           text: "Fermer", 
           onPress: onClose,
@@ -388,7 +396,7 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
       <Text style={styles.detailsInstructions}>
         {selectedCategory === 'other' 
           ? "Veuillez décrire le problème en détail"
-          : "Ajoutez des détails supplémentaires si nécessaire"
+          : "Ajoutez des détails supplémentaires si nécessaire (optionnel)"
         }
       </Text>
       
@@ -397,7 +405,7 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
           style={styles.textInput}
           placeholder={selectedCategory === 'other' 
             ? "Décrivez le problème rencontré..."
-            : "Informations complémentaires..."
+            : "Informations complémentaires (optionnel)..."
           }
           value={customReason}
           placeholderTextColor={COLORS.neutral.text.hint}
@@ -416,9 +424,9 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
       </View>
       
       <View style={styles.postInfoContainer}>
-        <Ionicons name="person" size={16} color={COLORS.neutral.text.hint} />
+        <Ionicons name="chatbubbles" size={16} color={COLORS.neutral.text.hint} />
         <Text style={styles.postInfoText}>
-        Veuillez écrire un rapport d'au moins 10 caractères.
+         Veuillez noter que nous ne partageons pas votre signalement avec {conversationWith}.
         </Text>
       </View>
     </View>
@@ -464,7 +472,7 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
               >
                 <View style={styles.headerContent}>
                   <Ionicons name="flag" size={24} color={COLORS.danger.contrast} />
-                  <Text style={styles.modalTitle}>Signaler ce profil</Text>
+                  <Text style={styles.modalTitle}>Signaler cette conversation</Text>
                 </View>
                 <TouchableOpacity 
                   style={styles.closeButton} 
@@ -563,9 +571,9 @@ export const ReportModal: React.FC<ReportModalProps> = memo(({
   );
 });
 
-ReportModal.displayName = 'ReportModal';
+ConversationReportModal.displayName = 'ConversationReportModal';
 
-// ✅ EXACTEMENT LES MÊMES STYLES que PostReportModal
+// ✅ EXACTEMENT LES MÊMES STYLES que les autres modaux
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -840,3 +848,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+export default ConversationReportModal;

@@ -605,10 +605,12 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                 <Text style={styles.statLabel}>Abonnements</Text>
               </TouchableOpacity>
               <View style={styles.statDivider} />
-              <View style={styles.statItem}>
+              <TouchableOpacity style={styles.statItem}
+              onPress={() => handleNavigation("ReportScreen")}>
                 <Text style={styles.statValue}>{stats?.numberOfReports || 0}</Text>
                 <Text style={styles.statLabel}>Signalements</Text>
-              </View>
+              </TouchableOpacity>
+
             </Animated.View>
 
             <TouchableOpacity onPress={() => setShowLikeInfoModal(true)}>

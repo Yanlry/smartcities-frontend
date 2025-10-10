@@ -140,7 +140,6 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
   // Animations
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(height))[0];
-  const stepAnim = useState(new Animated.Value(0))[0];
   
   // Gestion du clavier
   useEffect(() => {
@@ -196,15 +195,6 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       });
     }
   }, [isVisible, fadeAnim, slideAnim]);
-
-  // Animation de transition entre étapes
-  useEffect(() => {
-    Animated.timing(stepAnim, {
-      toValue: currentStep === 'category' ? 0 : 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [currentStep, stepAnim]);
   
   // Suivi du nombre de caractères
   useEffect(() => {
@@ -233,9 +223,11 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
   }, []);
 
   /**
-   * Gestion de la soumission du signalement
+   * ✅ FONCTION MODIFIÉE : Plus d'alerte ici, juste l'envoi
+   * L'alerte sera affichée par ReportDetailsScreen
    */
   const handleSendReport = useCallback(async () => {
+    // Validation : Vérifier qu'une catégorie est sélectionnée
     if (!selectedCategory) {
       Alert.alert(
         "Catégorie requise",
@@ -245,6 +237,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       return;
     }
 
+    // Validation : Vérifier les détails si nécessaire
     const requiresCustomReason = selectedCategory === 'other' || 
       ['inappropriate_content', 'harassment', 'false_information'].includes(selectedCategory);
     
@@ -267,17 +260,8 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       
       await onSendReport(reportMessage, selectedCategory);
       
-      // Feedback de succès
-      Alert.alert(
-        "✅ Signalement envoyé",
-        "Merci de contribuer à la sécurité de notre communauté. Notre équipe de modération examinera ce contenu rapidement.",
-        [{ 
-          text: "Fermer", 
-          onPress: onClose,
-          style: "default"
-        }]
-      );
     } catch (error) {
+      // ⚠️ On garde SEULEMENT l'alerte d'erreur ici
       console.error('Erreur lors du signalement:', error);
       Alert.alert(
         "❌ Erreur",
@@ -287,7 +271,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedCategory, customReason, selectedCategoryData, onSendReport, onClose]);
+  }, [selectedCategory, customReason, selectedCategoryData, onSendReport]);
 
   /**
    * Fermeture avec confirmation si données saisies
@@ -317,23 +301,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
    * Rendu de l'étape sélection de catégorie
    */
   const renderCategorySelection = () => (
-    <Animated.View 
-      style={[
-        styles.stepContainer,
-        {
-          opacity: stepAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0]
-          }),
-          transform: [{
-            translateX: stepAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -width]
-            })
-          }]
-        }
-      ]}
-    >
+    <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Choisissez une catégorie</Text>
       <Text style={styles.stepSubtitle}>
         Sélectionnez le type de problème que vous souhaitez signaler
@@ -342,6 +310,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       <ScrollView 
         style={styles.categoriesContainer}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
         {REPORT_CATEGORIES.map((category) => (
           <TouchableOpacity
@@ -382,30 +351,14 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 
   /**
    * Rendu de l'étape détails
    */
   const renderDetailsStep = () => (
-    <Animated.View 
-      style={[
-        styles.stepContainer,
-        {
-          opacity: stepAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1]
-          }),
-          transform: [{
-            translateX: stepAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [width, 0]
-            })
-          }]
-        }
-      ]}
-    >
+    <View style={styles.stepContainer}>
       <View style={styles.detailsHeader}>
         <TouchableOpacity 
           onPress={handleBackToCategory}
@@ -433,7 +386,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
       <Text style={styles.detailsInstructions}>
         {selectedCategory === 'other' 
           ? "Veuillez décrire le problème en détail"
-          : "Ajoutez des détails supplémentaires si nécessaire (optionnel)"
+          : "Ajoutez des détails supplémentaires si nécessaire "
         }
       </Text>
       
@@ -442,7 +395,7 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
           style={styles.textInput}
           placeholder={selectedCategory === 'other' 
             ? "Décrivez le problème rencontré..."
-            : "Informations complémentaires (optionnel)..."
+            : "Informations complémentaires..."
           }
           value={customReason}
           placeholderTextColor={COLORS.neutral.text.hint}
@@ -460,16 +413,13 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
         </Text>
       </View>
       
-      {postId && (
         <View style={styles.postInfoContainer}>
           <Ionicons name="document-text" size={16} color={COLORS.neutral.text.hint} />
           <Text style={styles.postInfoText}>
-            Publication #{postId.slice(-8)}
-            {postAuthor && ` par ${postAuthor}`}
+            Veuillez écrire un rapport d'au moins 10 caractères.
           </Text>
         </View>
-      )}
-    </Animated.View>
+    </View>
   );
 
   return (
@@ -500,7 +450,6 @@ export const PostReportModal: React.FC<PostReportModalProps> = memo(({
                 styles.modalContainer,
                 {
                   transform: [{ translateY: slideAnim }],
-                  maxHeight: keyboardVisible ? '85%' : '75%'
                 }
               ]}
             >
@@ -624,6 +573,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
+    height: height * 0.85,
     backgroundColor: COLORS.neutral.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -697,14 +647,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    position: 'relative',
   },
   stepContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     padding: 20,
   },
   stepTitle: {

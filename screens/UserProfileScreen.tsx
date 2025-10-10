@@ -184,9 +184,6 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
         if (!response.ok) {
           throw new Error("Erreur lors du signalement du profil.");
         }
-
-        Alert.alert("Succès", "Le signalement a été envoyé avec succès.");
-        closeReportModal();
       } catch (error: any) {
         console.error("Erreur lors de l'envoi du signalement :", error.message);
         Alert.alert(
