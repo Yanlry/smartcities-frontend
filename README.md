@@ -1,96 +1,71 @@
+<p align="center">
+  <a href="https://smartcities.app" target="blank">
+    <img src="https://cdn-icons-png.flaticon.com/512/854/854894.png" width="120" alt="SmartCities Logo" />
+  </a>
+</p>
 
-__________________________________________________________LES TYPES_________________________________________________________
+<p align="center">
+  <b>SmartCities</b> — Construisons ensemble des villes plus intelligentes 🌍  
+  <br/>
+  <i>Un projet participatif et durable pour rapprocher citoyens et collectivités.</i>
+</p>
 
-types/
-│
-├── 📁 entities/                  // Les bases de notre application
-│   ├── user.types.ts             // Qui sont nos utilisateurs
-│   ├── report.types.ts           // Comment on décrit un signalement
-│   ├── event.types.ts            // Comment on organise un événement
-│   ├── comment.types.ts          // Comment on gère un commentaire
-│   ├── photo.types.ts            // Comment on stocke une photo
-│   └── index.ts                  // Liste tous nos types principaux
-│
-│   // Info : C'est ici qu'on définit les éléments de base
-│   // Conseil : Nouveau type ? Créez un nouveau fichier ici
-│
-├── 📁 features/                  // Détails spécifiques à chaque partie
-│   ├── profile/                  // Tout ce qui concerne le profil
-│   │   ├── tabs.types.ts         // Comment sont les onglets du profil
-│   │   ├── modals.types.ts       // Comment fonctionnent les fenêtres du profil
-│   │   └── user.types.ts         // Détails supplémentaires sur l'utilisateur
-│   ├── reports/                  // Tout sur les signalements
-│   │   ├── category.types.ts     // Comment on classe les signalements
-│   │   └── report.types.ts       // Détails supplémentaires sur les signalements
-│   ├── events/                   // Tout sur les événements
-│   │   └── creation.types.ts     // Comment on crée un événement
-│   └── conversations/            // Tout sur les conversations
-│       └── item.types.ts         // Comment sont les messages
-│
-│   // Info : Chaque fonctionnalité a ses propres détails
-│   // Conseil : Nouvelle fonctionnalité ? Créez un nouveau dossier ici
-│
-├── 📁 components/                // Comment nos composants visuels sont construits
-│   ├── common/                   // Composants utilisés partout
-│   │   ├── keyboard-wrapper.types.ts
-│   │   └── sidebar.types.ts
-│   ├── charts/                   // Graphiques
-│   │   └── chart.types.ts
-│   ├── photo/                    // Gestion des photos
-│   │   └── photo-manager.types.ts
-│   └── index.ts                  // Liste tous nos composants
-│
-│   // Info : Définit l'apparence de nos éléments
-│   // Conseil : Nouveau composant ? Décrivez-le ici
-│
-├── 📁 ui/                        // Style général de l'application
-│   ├── theme.types.ts            // Couleurs et design
-│   ├── animation.types.ts        // Mouvements et transitions
-│   └── index.ts                  // Résume nos styles
-│
-│   // Info : Comment notre app va ressembler
-│   // Conseil : Nouveau style ? Ajoutez-le ici
-│
-├── 📁 navigation/                // Comment on se déplace dans l'app
-│   ├── routes.types.ts           // Liste des écrans
-│   ├── params.types.ts           // Comment on passe des informations entre écrans
-│   └── index.ts                  // Résume nos routes
-│
-│   // Info : Définit les chemins dans l'application
-│   // Conseil : Nouvel écran ? Ajoutez-le ici
-│
-└── 📁 declarations/              // Informations techniques supplémentaires
-    ├── env.d.ts                  // Paramètres secrets de l'application
-    ├── maps.d.ts                 // Types pour les cartes
-    ├── icons.d.ts                // Types pour les icônes
-    ├── global.d.ts               // Réglages généraux
-    └── index.ts                  // Résume nos paramètres techniques
-    
-    // Info : Configurations avancées
-    // Conseil : Nouvelle librairie ? Configurez-la ici
+<p align="center">
+  <a href="https://github.com/ton-github/smartcities/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/ton-github/smartcities/ci.yml?branch=main" alt="Build Status"/>
+  </a>
+  <a href="https://www.npmjs.com/package/smartcities">
+    <img src="https://img.shields.io/npm/v/smartcities.svg" alt="NPM Version" />
+  </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/github/license/ton-github/smartcities.svg" alt="License" />
+  </a>
+  <a href="https://discord.gg/xxxxxx">
+    <img src="https://img.shields.io/badge/Discord-Join%20us-blue.svg" alt="Discord" />
+  </a>
+  <a href="https://twitter.com/smartcities_app">
+    <img src="https://img.shields.io/twitter/follow/smartcities_app.svg?style=social" alt="Follow us on Twitter" />
+  </a>
+</p>
 
+---
 
-L'idée générale est de créer une structure claire où chaque dossier a un rôle précis :
+## 🏙️ Description
 
-- 🏠 `entities/` : Les bases
-- 🧩 `features/` : Les détails de chaque partie
-- 🎨 `components/` : L'apparence visuelle
-- 🌈 `ui/` : Le style général
-- 🗺️ `navigation/` : Les chemins
-- ⚙️ `declarations/` : Les réglages techniques
+**SmartCities** est une application mobile et web qui permet aux citoyens de :
+- signaler des problèmes dans leur quartier,  
+- voter pour des projets locaux,  
+- suivre les décisions municipales en temps réel.  
 
+> 🎯 Objectif : renforcer la participation citoyenne et construire des villes plus durables, collaboratives et intelligentes.
 
+---
 
+## ✨ Fonctionnalités
 
-src/
-└── components/
-    └── badge/
-        ├── index.ts                     // Export des composants publics
-        ├── BadgeModal.tsx               // Composant principal orchestrateur
-        ├── InfoModal.tsx                // Modal d'informations
-        ├── TierItem.tsx                 // Composant pour chaque niveau de badge
-        ├── HeroSection.tsx              // Section héro du modal 
-        ├── types/
-        │   ├── index.ts                 // Export des types
-        │   ├── BadgeTypes.ts            // Types liés aux badges
-        │   └── StyleTypes.ts            // Types pour les styles
+- 🗳️ **Votes citoyens** — soutenez les projets qui vous tiennent à cœur  
+- 🗺️ **Signalements géolocalisés** — indiquez les problèmes autour de vous  
+- 🧠 **Algorithmes intelligents** — priorisent les besoins selon les données locales  
+- 💬 **Fil d’actualité municipal** — suivez les décisions et annonces en direct  
+- 👥 **Profils citoyens** — badges, historique et statistiques d’impact  
+
+---
+
+## 🧩 Stack technique
+
+| Composant | Technologie |
+|------------|--------------|
+| **Frontend** | React Native (Expo), TypeScript, Tailwind |
+| **Backend** | Node.js, Express, Prisma, PostgreSQL |
+| **Authentification** | JWT / Auth0 |
+| **API** | REST + Prisma ORM |
+| **Design** | Couleurs : `#062C41`, `#1B5D85`, `#041E2D` |
+
+---
+
+## ⚙️ Installation & démarrage
+
+### Cloner le projet
+```bash
+git clone https://github.com/ton-github/smartcities.git
+cd smartcities
