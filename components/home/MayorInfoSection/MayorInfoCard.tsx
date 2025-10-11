@@ -24,10 +24,6 @@ interface MayorInfoCardProps {
   handlePressPhoneNumber: () => void;
 }
 
-/**
- * Composant MayorInfoCard simplifié avec UX améliorée
- * Affiche les informations de la ville, du maire, les événements et le classement
- */
 export default function MayorInfoCard({
   handlePressPhoneNumber,
 }: MayorInfoCardProps) {
@@ -47,93 +43,88 @@ export default function MayorInfoCard({
   }
 
   // ========== ÉTATS ==========
-  // Données
   const [smarterData, setSmarterData] = useState<User[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [ranking, setRanking] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const city = "HAUBOURDIN";
 
-  // UI
+  const [isMunicipality, setIsMunicipality] = useState<boolean>(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [cityInfo, setCityInfo] = useState<any>(null);
+
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("updates");
   const [activeNewsIndex, setActiveNewsIndex] = useState(0);
 
-  // Animations (simplifiées)
+  // NOUVEL ÉTAT : Mode prévisualisation
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // ========== CONTENU STATIQUE ==========
-  const [newsContent] = useState([
-    {
-      id: 1,
-      type: "alert",
-      title: "Vigilance météo",
-      date: "18 septembre 2024",
-      content: "En raison des fortes pluies prévues cette semaine, nous vous recommandons de limiter vos déplacements.",
-      icon: "🌧️",
-      color: "#E53935"
-    },
-    {
-      id: 2,
-      type: "work",
-      title: "Travaux Avenue de la Liberté",
-      date: "15 septembre 2024",
-      content: "Des travaux de réfection de la chaussée auront lieu du 25 au 30 septembre.",
-      icon: "🚧",
-      color: "#FF9800"
-    },
-    {
-      id: 3,
-      type: "success",
-      title: "Fuite d'eau réparée",
-      date: "20 septembre 2024",
-      content: "La fuite d'eau signalée rue des Fleurs a été réparée. Merci pour votre signalement.",
-      icon: "✅",
-      color: "#43A047"
-    },
-    {
-      id: 4,
-      type: "event",
-      title: "Festival des Arts Urbains",
-      date: "30 septembre 2024",
-      content: "Venez découvrir les talents locaux. Musique, danse, graffiti et bien plus encore!",
-      icon: "🎭",
-      color: "#1E88E5"
-    },
-  ]);
-
-  const [publicServices] = useState([
-    { id: 1, title: "Démarches", icon: "📝", description: "Carte d'identité, passeport..." },
-    { id: 2, title: "Signaler", icon: "🚨", description: "Voirie, éclairage..." },
-    { id: 3, title: "Sports", icon: "🏆", description: "Gymnases, stades..." },
-    { id: 4, title: "Médiathèque", icon: "📚", description: "Horaires, catalogue..." },
-  ]);
 
   // ========== EFFETS ==========
   useEffect(() => {
-    // Animation d'entrée simple
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true,
     }).start();
 
+    fetchUserInfo();
     fetchData();
+    fetchCityInfo();
   }, []);
 
-  // ========== FONCTIONS DE RÉCUPÉRATION DE DONNÉES ==========
+  // ========== RÉCUPÉRER LES INFOS UTILISATEUR ==========
+  const fetchUserInfo = async () => {
+    try {
+      const userId = await getUserIdFromToken();
+      if (!userId) return;
+
+      const response = await fetch(`${API_URL}/users/${userId}`);
+      if (!response.ok) return;
+
+      const userData = await response.json();
+      setUserInfo(userData);
+      setIsMunicipality(userData.isMunicipality || false);
+    } catch (error: any) {
+      console.error("Erreur fetchUserInfo:", error);
+    }
+  };
+
+  // ========== VÉRIFIER SI LA MAIRIE A REMPLI SES INFOS ==========
+  const fetchCityInfo = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/cityinfo?cityName=${encodeURIComponent(city)}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Infos de la ville trouvées:", data);
+        setCityInfo(data);
+      } else if (response.status === 404) {
+        console.log("ℹ️ La ville n'a pas encore configuré ses informations (c'est normal)");
+        setCityInfo(null);
+      } else {
+        console.error("❌ Erreur inattendue:", response.status);
+        setCityInfo(null);
+      }
+    } catch (error) {
+      console.error("❌ Erreur réseau lors de la récupération des infos:", error);
+      setCityInfo(null);
+    }
+  };
+
+  // ========== RÉCUPÉRER LES DONNÉES DE BASE ==========
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError(null);
 
       const cityName = city;
       const userId = String(await getUserIdFromToken());
-      if (!userId) {
-        throw new Error("Impossible de récupérer l'ID utilisateur.");
-      }
+      if (!userId) return;
 
       const [eventsData, rankingData] = await Promise.all([
         fetchEvents(cityName),
@@ -154,8 +145,7 @@ export default function MayorInfoCard({
       setRanking(rankingData.ranking);
       setTotalUsers(rankingData.totalUsers);
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des données:", error);
-      setError(error.message || "Erreur inconnue.");
+      console.error("Erreur fetchData:", error);
     } finally {
       setLoading(false);
     }
@@ -165,9 +155,7 @@ export default function MayorInfoCard({
     const response = await fetch(
       `${API_URL}/events?cityName=${encodeURIComponent(cityName)}`
     );
-    if (!response.ok) {
-      throw new Error("Erreur lors de la récupération des événements.");
-    }
+    if (!response.ok) throw new Error("Erreur événements");
     return response.json();
   };
 
@@ -175,22 +163,174 @@ export default function MayorInfoCard({
     const response = await fetch(
       `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
     );
-    if (!response.ok) {
-      throw new Error("Erreur lors de la récupération du classement.");
-    }
+    if (!response.ok) throw new Error("Erreur classement");
     return response.json();
   };
 
-  // ========== FONCTION DE RAFRAÎCHISSEMENT ==========
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await fetchData();
+    await Promise.all([fetchData(), fetchCityInfo()]);
     setRefreshing(false);
   }, []);
 
   const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-  // ========== RENDU ==========
+  // FONCTION : Basculer entre vue mairie et vue citoyen
+  const togglePreviewMode = () => {
+    setIsPreviewMode(!isPreviewMode);
+  };
+
+  // ========== COMPOSANT : MESSAGE SECTION NON REMPLIE ==========
+  const EmptySection = ({ icon, title, message }: { icon: string; title: string; message: string }) => (
+    <View style={styles.emptySection}>
+      <Text style={styles.emptySectionIcon}>{icon}</Text>
+      <Text style={styles.emptySectionTitle}>{title}</Text>
+      <Text style={styles.emptySectionText}>{message}</Text>
+    </View>
+  );
+
+  // ========== VERSION MAIRIE (Admin) ==========
+  if (isMunicipality && !isPreviewMode) {
+    return (
+      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#43A047"]}
+              tintColor="#43A047"
+            />
+          }
+        >
+          <LinearGradient
+            colors={['#43A047', '#2E7D32']}
+            style={styles.header}
+          >
+            <View style={styles.headerContent}>
+              <View>
+                <Text style={styles.cityName}>Mairie de {city}</Text>
+                <Text style={styles.citySubtitle}>Espace administration</Text>
+              </View>
+              <View style={[styles.weatherBadge, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
+                <Text style={styles.weatherIcon}>🏛️</Text>
+              </View>
+            </View>
+
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{totalUsers || "..."}</Text>
+                <Text style={styles.statLabel}>Citoyens</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{events?.length || "0"}</Text>
+                <Text style={styles.statLabel}>Événements</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>
+                  {cityInfo ? "✓" : "✗"}
+                </Text>
+                <Text style={styles.statLabel}>Profil rempli</Text>
+              </View>
+            </View>
+
+            {/* ✅ NOUVEAU : BOUTON DE PRÉVISUALISATION EN BAS DU HEADER */}
+            <TouchableOpacity 
+              style={styles.previewButton}
+              onPress={togglePreviewMode}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.previewButtonIcon}>👁️</Text>
+              <Text style={styles.previewButtonText}>Voir comme un citoyen</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+
+          <View style={styles.content}>
+            {/* Message encouragement */}
+            {!cityInfo && (
+              <View style={styles.encourageCard}>
+                <Text style={styles.encourageIcon}>🚀</Text>
+                <Text style={styles.encourageTitle}>
+                  Complétez votre profil municipal
+                </Text>
+                <Text style={styles.encourageText}>
+                  Remplissez les informations de votre mairie pour apparaître sur l'application 
+                  et devenir une ville Smarter !
+                </Text>
+                <TouchableOpacity 
+                  style={styles.encourageBtn}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate("EditCityInfoScreen")}
+                >
+                  <Text style={styles.encourageBtnText}>Compléter maintenant</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Formulaire de gestion */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardIcon}>✏️</Text>
+                <Text style={styles.cardTitle}>Gérer le contenu</Text>
+              </View>
+
+              <TouchableOpacity 
+                style={styles.manageBtn} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("EditCityInfoScreen")}
+              >
+                <Text style={styles.manageBtnIcon}>👨‍💼</Text>
+                <View style={styles.manageBtnInfo}>
+                  <Text style={styles.manageBtnTitle}>Informations du maire</Text>
+                  <Text style={styles.manageBtnDesc}>
+                    {cityInfo?.mayorName ? "Configuré" : "Non configuré"}
+                  </Text>
+                </View>
+                <Text style={styles.manageBtnArrow}>→</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.manageBtn} activeOpacity={0.7}>
+                <Text style={styles.manageBtnIcon}>👥</Text>
+                <View style={styles.manageBtnInfo}>
+                  <Text style={styles.manageBtnTitle}>Équipe municipale</Text>
+                  <Text style={styles.manageBtnDesc}>
+                    {cityInfo?.teamMembers?.length || 0} membres
+                  </Text>
+                </View>
+                <Text style={styles.manageBtnArrow}>→</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.manageBtn} activeOpacity={0.7}>
+                <Text style={styles.manageBtnIcon}>📢</Text>
+                <View style={styles.manageBtnInfo}>
+                  <Text style={styles.manageBtnTitle}>Actualités</Text>
+                  <Text style={styles.manageBtnDesc}>
+                    {cityInfo?.news?.length || 0} actualités publiées
+                  </Text>
+                </View>
+                <Text style={styles.manageBtnArrow}>→</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.manageBtn} activeOpacity={0.7}>
+                <Text style={styles.manageBtnIcon}>📋</Text>
+                <View style={styles.manageBtnInfo}>
+                  <Text style={styles.manageBtnTitle}>Services municipaux</Text>
+                  <Text style={styles.manageBtnDesc}>
+                    {cityInfo?.services?.length || 0} services
+                  </Text>
+                </View>
+                <Text style={styles.manageBtnArrow}>→</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </Animated.View>
+    );
+  }
+
+  // ========== VERSION CITOYENNE ==========
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView
@@ -205,7 +345,6 @@ export default function MayorInfoCard({
           />
         }
       >
-        {/* ========== EN-TÊTE VILLE ========== */}
         <LinearGradient
           colors={['#1E88E5', '#1565C0']}
           style={styles.header}
@@ -221,7 +360,6 @@ export default function MayorInfoCard({
             </View>
           </View>
 
-          {/* Stats rapides */}
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statNumber}>{totalUsers || "..."}</Text>
@@ -237,12 +375,7 @@ export default function MayorInfoCard({
             </View>
           </View>
 
-          {/* Actions rapides */}
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.quickBtn} activeOpacity={0.7}>
-              <Text style={styles.quickBtnIcon}>📢</Text>
-              <Text style={styles.quickBtnText}>Actualités</Text>
-            </TouchableOpacity>
             <TouchableOpacity 
               style={styles.quickBtn} 
               activeOpacity={0.7}
@@ -255,10 +388,25 @@ export default function MayorInfoCard({
               <Text style={styles.quickBtnIcon}>📅</Text>
               <Text style={styles.quickBtnText}>Événements</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.quickBtn} activeOpacity={0.7}>
+              <Text style={styles.quickBtnIcon}>🏆</Text>
+              <Text style={styles.quickBtnText}>Classement</Text>
+            </TouchableOpacity>
           </View>
+
+          {/* ✅ NOUVEAU : BOUTON RETOUR À L'ADMIN (seulement en mode prévisualisation) */}
+          {isMunicipality && isPreviewMode && (
+            <TouchableOpacity 
+              style={styles.backToAdminButton}
+              onPress={togglePreviewMode}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backToAdminButtonIcon}>👨‍💼</Text>
+              <Text style={styles.backToAdminButtonText}>Retour à l'admin</Text>
+            </TouchableOpacity>
+          )}
         </LinearGradient>
 
-        {/* ========== NAVIGATION PAR ONGLETS ========== */}
         <View style={styles.tabs}>
           {["updates", "events", "services"].map((tab) => (
             <TouchableOpacity
@@ -274,134 +422,151 @@ export default function MayorInfoCard({
           ))}
         </View>
 
-        {/* ========== CONTENU ONGLET ACTUALITÉS ========== */}
-        {activeTab === "updates" && (
-          <View style={styles.content}>
-            {/* Section Maire */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>👨‍💼</Text>
-                <Text style={styles.cardTitle}>Le maire</Text>
+        <View style={styles.content}>
+          {activeTab === "updates" && (
+            <>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardIcon}>👨‍💼</Text>
+                  <Text style={styles.cardTitle}>Le maire</Text>
+                </View>
+                
+                {cityInfo?.mayorName ? (
+                  <>
+                    <View style={styles.mayorContent}>
+                      <Image
+                        source={
+                          cityInfo.mayorPhoto 
+                            ? { uri: cityInfo.mayorPhoto }
+                            : require("../../../assets/images/mayor.png")
+                        }
+                        style={styles.mayorImage}
+                      />
+                      <View style={styles.mayorInfo}>
+                        <Text style={styles.mayorName}>{cityInfo.mayorName}</Text>
+                        <Text style={styles.mayorRole}>Maire de {city}</Text>
+                        {cityInfo.mayorPhone && (
+                          <TouchableOpacity
+                            style={styles.phoneBtn}
+                            onPress={handlePressPhoneNumber}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.phoneBtnText}>
+                              📞 {cityInfo.mayorPhone}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+
+                    {cityInfo?.teamMembers?.length > 0 && (
+                      <View style={styles.teamSection}>
+                        <Text style={styles.teamTitle}>L'équipe municipale</Text>
+                        <ScrollView 
+                          horizontal 
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={styles.teamScroll}
+                        >
+                          {cityInfo.teamMembers.map((member: any, index: number) => (
+                            <View key={index} style={styles.teamMember}>
+                              <Image
+                                source={{ uri: member.photo || "https://via.placeholder.com/150" }}
+                                style={styles.teamMemberImage}
+                              />
+                              <Text style={styles.teamMemberName}>{member.name}</Text>
+                            </View>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <EmptySection
+                    icon="🏛️"
+                    title="Informations non disponibles"
+                    message={`La mairie de ${city} n'a pas encore renseigné les informations du maire. Encouragez votre ville à devenir partenaire Smarter !`}
+                  />
+                )}
               </View>
-              
-              <View style={styles.mayorContent}>
-                <Image
-                  source={require("../../../assets/images/mayor.png")}
-                  style={styles.mayorImage}
-                />
-                <View style={styles.mayorInfo}>
-                  <Text style={styles.mayorName}>Pierre BÉHARELLE</Text>
-                  <Text style={styles.mayorRole}>Maire de {city}</Text>
+
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardIcon}>📢</Text>
+                  <Text style={styles.cardTitle}>Dernières actualités</Text>
+                </View>
+
+                {cityInfo?.news?.length > 0 ? (
+                  <ScrollView
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    onMomentumScrollEnd={(e) => {
+                      const index = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40));
+                      setActiveNewsIndex(index);
+                    }}
+                  >
+                    {cityInfo.news.map((news: any) => (
+                      <View key={news.id} style={[styles.newsCard, { width: SCREEN_WIDTH - 40 }]}>
+                        <View style={[styles.newsBadge, { backgroundColor: news.color || "#1E88E5" }]}>
+                          <Text style={styles.newsIcon}>{news.icon || "📰"}</Text>
+                        </View>
+                        <Text style={styles.newsTitle}>{news.title}</Text>
+                        <Text style={styles.newsDate}>{news.date}</Text>
+                        <Text style={styles.newsContent}>{news.content}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <EmptySection
+                    icon="📰"
+                    title="Aucune actualité"
+                    message={`La mairie de ${city} n'a pas encore publié d'actualités. Revenez plus tard !`}
+                  />
+                )}
+
+                {cityInfo?.news?.length > 0 && (
+                  <View style={styles.indicators}>
+                    {cityInfo.news.map((_: any, index: number) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.indicator,
+                          activeNewsIndex === index && styles.indicatorActive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardIcon}>🏆</Text>
+                  <Text style={styles.cardTitle}>Top contributeurs</Text>
+                </View>
+
+                {smarterData.slice(0, 5).map((user, index) => (
                   <TouchableOpacity
-                    style={styles.phoneBtn}
-                    onPress={handlePressPhoneNumber}
+                    key={user.id}
+                    style={styles.rankingItem}
+                    onPress={() => navigation.navigate("UserProfileScreen", { userId: user.id })}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.phoneBtnText}>📞 03 20 44 02 51</Text>
+                    <View style={styles.rankBadge}>
+                      <Text style={styles.rankNumber}>{index + 1}</Text>
+                    </View>
+                    <Image
+                      source={{ uri: user.image?.uri || "https://via.placeholder.com/150" }}
+                      style={styles.userImage}
+                    />
+                    <Text style={styles.userName}>{user.displayName}</Text>
                   </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Équipe municipale */}
-              <View style={styles.teamSection}>
-                <Text style={styles.teamTitle}>L'équipe municipale</Text>
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.teamScroll}
-                >
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <View key={index} style={styles.teamMember}>
-                      <Image
-                        source={{
-                          uri: `https://randomuser.me/api/portraits/${
-                            index % 2 === 0 ? "men" : "women"
-                          }/${index + 25}.jpg`,
-                        }}
-                        style={styles.teamMemberImage}
-                      />
-                      <Text style={styles.teamMemberName}>
-                        {["M. Laurent", "Mme Dupont", "M. Moreau", "Mme Leroy", "M. Petit"][index]}
-                      </Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-
-            {/* Actualités */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>📢</Text>
-                <Text style={styles.cardTitle}>Dernières actualités</Text>
-              </View>
-
-              <ScrollView
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) => {
-                  const index = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40));
-                  setActiveNewsIndex(index);
-                }}
-              >
-                {newsContent.map((news) => (
-                  <View key={news.id} style={[styles.newsCard, { width: SCREEN_WIDTH - 40 }]}>
-                    <View style={[styles.newsBadge, { backgroundColor: news.color }]}>
-                      <Text style={styles.newsIcon}>{news.icon}</Text>
-                    </View>
-                    <Text style={styles.newsTitle}>{news.title}</Text>
-                    <Text style={styles.newsDate}>{news.date}</Text>
-                    <Text style={styles.newsContent}>{news.content}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-
-              {/* Indicateurs */}
-              <View style={styles.indicators}>
-                {newsContent.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.indicator,
-                      activeNewsIndex === index && styles.indicatorActive,
-                    ]}
-                  />
                 ))}
               </View>
-            </View>
+            </>
+          )}
 
-            {/* Top contributeurs */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>🏆</Text>
-                <Text style={styles.cardTitle}>Top contributeurs</Text>
-              </View>
-
-              {smarterData.slice(0, 5).map((user, index) => (
-                <TouchableOpacity
-                  key={user.id}
-                  style={styles.rankingItem}
-                  onPress={() => navigation.navigate("UserProfileScreen", { userId: user.id })}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.rankBadge}>
-                    <Text style={styles.rankNumber}>{index + 1}</Text>
-                  </View>
-                  <Image
-                    source={{ uri: user.image?.uri || "https://via.placeholder.com/150" }}
-                    style={styles.userImage}
-                  />
-                  <Text style={styles.userName}>{user.displayName}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ========== CONTENU ONGLET ÉVÉNEMENTS ========== */}
-        {activeTab === "events" && (
-          <View style={styles.content}>
+          {activeTab === "events" && (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardIcon}>📅</Text>
@@ -428,86 +593,105 @@ export default function MayorInfoCard({
               ) : (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>📅</Text>
-                  <Text style={styles.emptyText}>Aucun événement prévu</Text>
+                  <Text style={styles.emptyText}>Aucun événement prévu pour le moment</Text>
                 </View>
               )}
             </View>
-          </View>
-        )}
+          )}
 
-        {/* ========== CONTENU ONGLET SERVICES ========== */}
-        {activeTab === "services" && (
-          <View style={styles.content}>
-            {/* Mairie */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>🏢</Text>
-                <Text style={styles.cardTitle}>Mairie de {city}</Text>
+          {activeTab === "services" && (
+            <>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardIcon}>🏢</Text>
+                  <Text style={styles.cardTitle}>Mairie de {city}</Text>
+                </View>
+
+                {cityInfo?.address ? (
+                  <>
+                    <Text style={styles.serviceText}>{cityInfo.address}</Text>
+                    {cityInfo.phone && (
+                      <TouchableOpacity style={styles.phoneBtn} onPress={handlePressPhoneNumber}>
+                        <Text style={styles.phoneBtnText}>📞 {cityInfo.phone}</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {cityInfo.hours && (
+                      <View style={styles.hoursSection}>
+                        <Text style={styles.hoursTitle}>Horaires d'ouverture</Text>
+                        <Text style={styles.hoursText}>{cityInfo.hours}</Text>
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <EmptySection
+                    icon="🏛️"
+                    title="Informations non disponibles"
+                    message={`La mairie de ${city} n'a pas encore renseigné ses coordonnées.`}
+                  />
+                )}
               </View>
 
-              <Text style={styles.serviceText}>11 rue Sadi Carnot, 59320 {city}</Text>
-              <TouchableOpacity style={styles.phoneBtn} onPress={handlePressPhoneNumber}>
-                <Text style={styles.phoneBtnText}>📞 03 20 44 02 90</Text>
-              </TouchableOpacity>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardIcon}>📋</Text>
+                  <Text style={styles.cardTitle}>Services en ligne</Text>
+                </View>
 
-              <View style={styles.hoursSection}>
-                <Text style={styles.hoursTitle}>Horaires d'ouverture</Text>
-                <Text style={styles.hoursText}>Lun - Ven: 08:30 - 12:00, 13:30 - 17:00</Text>
-                <Text style={styles.hoursText}>Sam: 09:00 - 12:00</Text>
-              </View>
-            </View>
-
-            {/* Services */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>📋</Text>
-                <Text style={styles.cardTitle}>Services en ligne</Text>
-              </View>
-
-              <View style={styles.servicesGrid}>
-                {publicServices.map((service) => (
-                  <TouchableOpacity
-                    key={service.id}
-                    style={styles.serviceItem}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.serviceIcon}>{service.icon}</Text>
-                    <Text style={styles.serviceTitle}>{service.title}</Text>
-                    <Text style={styles.serviceDesc}>{service.description}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Urgences */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>🚨</Text>
-                <Text style={styles.cardTitle}>Numéros d'urgence</Text>
+                {cityInfo?.services?.length > 0 ? (
+                  <View style={styles.servicesGrid}>
+                    {cityInfo.services.map((service: any) => (
+                      <TouchableOpacity
+                        key={service.id}
+                        style={styles.serviceItem}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.serviceIcon}>{service.icon}</Text>
+                        <Text style={styles.serviceTitle}>{service.title}</Text>
+                        <Text style={styles.serviceDesc}>{service.description}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <EmptySection
+                    icon="📋"
+                    title="Services non configurés"
+                    message={`La mairie de ${city} n'a pas encore configuré ses services en ligne.`}
+                  />
+                )}
               </View>
 
-              <View style={styles.emergencyGrid}>
-                {[
-                  { number: "15", name: "SAMU", color: "#E53935" },
-                  { number: "17", name: "Police", color: "#1E88E5" },
-                  { number: "18", name: "Pompiers", color: "#FF9800" },
-                  { number: "112", name: "Urgences", color: "#43A047" },
-                ].map((emergency) => (
-                  <TouchableOpacity
-                    key={emergency.number}
-                    style={[styles.emergencyBtn, { backgroundColor: emergency.color }]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.emergencyNumber}>{emergency.number}</Text>
-                    <Text style={styles.emergencyName}>{emergency.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardIcon}>🚨</Text>
+                  <Text style={styles.cardTitle}>Numéros d'urgence</Text>
+                </View>
 
-        {/* Footer */}
+                <View style={styles.emergencyGrid}>
+                  {[
+                    { number: "15", name: "SAMU", color: "#E53935" },
+                    { number: "17", name: "Police", color: "#1E88E5" },
+                    { number: "18", name: "Pompiers", color: "#FF9800" },
+                    { number: "112", name: "Urgences", color: "#43A047" },
+                  ].map((emergency) => (
+                    <TouchableOpacity
+                      key={emergency.number}
+                      style={[styles.emergencyBtn, { backgroundColor: emergency.color }]}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        console.log(`Appeler le ${emergency.number}`);
+                      }}
+                    >
+                      <Text style={styles.emergencyNumber}>{emergency.number}</Text>
+                      <Text style={styles.emergencyName}>{emergency.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>© 2024 Smartcities</Text>
         </View>
@@ -516,9 +700,8 @@ export default function MayorInfoCard({
   );
 }
 
-// ========== STYLES SIMPLIFIÉS ==========
+// ========== STYLES ==========
 const styles = StyleSheet.create({
-  // Conteneur principal
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -526,8 +709,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-
-  // En-tête
   header: {
     paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight! + 10,
     paddingBottom: 20,
@@ -566,14 +747,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
-
-  // Stats
   statsRow: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   statBox: {
     flex: 1,
@@ -589,8 +768,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     marginTop: 4,
   },
-
-  // Actions rapides
   quickActions: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -612,8 +789,9 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
-
-  // Onglets
+  content: {
+    padding: 20,
+  },
   tabs: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
@@ -644,13 +822,6 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: "#1E88E5",
   },
-
-  // Contenu
-  content: {
-    padding: 20,
-  },
-
-  // Cartes
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -676,8 +847,100 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#212121",
   },
-
-  // Maire
+  emptySection: {
+    alignItems: "center",
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderStyle: "dashed",
+  },
+  emptySectionIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptySectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#212121",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptySectionText: {
+    fontSize: 14,
+    color: "#757575",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  encourageCard: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 16,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#43A047",
+    borderStyle: "dashed",
+  },
+  encourageIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  encourageTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2E7D32",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  encourageText: {
+    fontSize: 14,
+    color: "#558B2F",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  encourageBtn: {
+    backgroundColor: "#43A047",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  encourageBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  manageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  manageBtnIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  manageBtnInfo: {
+    flex: 1,
+  },
+  manageBtnTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#212121",
+    marginBottom: 4,
+  },
+  manageBtnDesc: {
+    fontSize: 14,
+    color: "#757575",
+  },
+  manageBtnArrow: {
+    fontSize: 20,
+    color: "#757575",
+  },
   mayorContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -715,8 +978,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1E88E5",
   },
-
-  // Équipe
   teamSection: {
     borderTopWidth: 1,
     borderTopColor: "#EEEEEE",
@@ -746,8 +1007,6 @@ const styles = StyleSheet.create({
     color: "#757575",
     textAlign: "center",
   },
-
-  // Actualités
   newsCard: {
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
@@ -797,8 +1056,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E88E5",
     width: 24,
   },
-
-  // Classement
   rankingItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -831,8 +1088,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#212121",
   },
-
-  // Événements
   eventItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -871,8 +1126,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#757575",
   },
-
-  // État vide
   emptyState: {
     alignItems: "center",
     paddingVertical: 40,
@@ -885,8 +1138,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#757575",
   },
-
-  // Services
   serviceText: {
     fontSize: 14,
     color: "#424242",
@@ -934,8 +1185,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#757575",
   },
-
-  // Urgences
   emergencyGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -959,8 +1208,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     textAlign: "center",
   },
-
-  // Footer
   footer: {
     alignItems: "center",
     paddingVertical: 20,
@@ -968,5 +1215,83 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     color: "#757575",
+  },
+
+  // ✅ NOUVEAUX STYLES POUR LE MODE PRÉVISUALISATION (VERSION PROPRE)
+  
+  // Bouton "Voir comme un citoyen" - EN BAS DU HEADER (Vue Mairie)
+  previewButton: {
+    backgroundColor: "rgba(255,255,255,0.25)",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  previewButtonIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  previewButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+
+  // Bouton "Retour à l'admin" - EN BAS DU HEADER (Vue Citoyen en mode preview)
+  backToAdminButton: {
+    backgroundColor: "rgba(67,160,71,0.95)",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  backToAdminButtonIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  backToAdminButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+
+  // Badge "Mode prévisualisation" - EN BAS DU HEADER (Vue Citoyen en mode preview)
+  previewModeBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  previewModeBadgeIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  previewModeBadgeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

@@ -10,8 +10,10 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  Alert,
   Keyboard, // AJOUT : Import de Keyboard pour détecter l'ouverture/fermeture
 } from "react-native";
+import { Image } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -23,11 +25,13 @@ import KeyboardWrapper from "./components/common/KeyboardWrapper";
 import HomeScreen from "./screens/HomeScreen";
 import EventsScreen from "./screens/EventsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import EditCityInfoScreen from "./screens/EditCityInfoScreen";
 import ReportScreen from "./screens/ReportScreen";
 import VotesScreen from "./screens/ReportScreen";
 import MapScreen from "./screens/MapScreen";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import RegisterScreen from "./screens/Auth/RegisterScreen";
+import TutorialScreen from "./screens/TutorialScreen";
 import CreateReportScreen from "./screens/CreateReportScreen";
 import ReportDetailsScreen from "./screens/ReportDetailsScreen";
 import PostsScreen from "./screens/PostsScreen";
@@ -388,6 +392,24 @@ export default function App() {
       opacity: notificationBgOpacity.value,
     }));
 
+    const handlePress = () => {
+      Alert.alert(
+        "Voulez-vous voir le tutoriel ?",
+        "",
+        [
+          {
+            text: "Non",
+            style: "cancel",
+          },
+          {
+            text: "Oui",
+            onPress: () => navigation.navigate("TutorialScreen"), // ou "Tutoriel" si tu veux une autre page
+          },
+        ],
+        { cancelable: true }
+      );
+    };
+
     return (
       <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
         <LinearGradient
@@ -414,16 +436,17 @@ export default function App() {
               <Ionicons name="menu" size={24} color={COLORS.primary.contrast} />
             </TouchableOpacity>
 
-            <View style={styles.headerTitleContainer}>
-              <LinearGradient
-                colors={["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.headerTitleGradient}
-              >
-                <Text style={styles.headerTitle}>SmartCities</Text>
-              </LinearGradient>
-            </View>
+            <TouchableOpacity
+              style={styles.headerTitleContainer}
+              onPress={handlePress}
+              activeOpacity={0.8}
+            >
+              <Image
+                source={require("./assets/images/logo.png")}
+                style={styles.headerLogo}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.headerIconButton}
@@ -844,23 +867,23 @@ export default function App() {
     Insanibc: require("../frontend/assets/fonts/Insanibc.ttf"),
   });
 
-  // Enhanced loading screen with animations
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.initialLoadingContainer}>
-        <LinearGradient
-          colors={[COLORS.primary.base, COLORS.primary.dark]}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color={COLORS.primary.contrast} />
-          </View>
-        </LinearGradient>
-      </View>
-    );
-  }
+  // // Enhanced loading screen with animations
+  // if (!fontsLoaded) {
+  //   return (
+  //     <View style={styles.initialLoadingContainer}>
+  //       <LinearGradient
+  //         colors={[COLORS.primary.base, COLORS.primary.dark]}
+  //         style={StyleSheet.absoluteFill}
+  //         start={{ x: 0, y: 0 }}
+  //         end={{ x: 1, y: 1 }}
+  //       >
+  //         <View style={styles.loadingContent}>
+  //           <ActivityIndicator size="large" color={COLORS.primary.contrast} />
+  //         </View>
+  //       </LinearGradient>
+  //     </View>
+  //   );
+  // }
 
   // Enhanced splash screen with brand styling
   if (loading || !minTimeElapsed) {
@@ -872,14 +895,17 @@ export default function App() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color={COLORS.primary.contrast} />
-            <View style={styles.brandContainer}>
-              <Text style={styles.brandText}>SmartCities</Text>
-              <Text style={styles.brandSubtitle}>
-                Votre ville, plus intelligente
-              </Text>
-            </View>
+          <View style={styles.loadingContainer}>
+            <Image
+              source={require("./assets/images/logo-accueil.png")}
+              style={styles.fullscreenLogo}
+              resizeMode="cover" // ou "contain" selon l'effet que tu veux
+            />
+            <ActivityIndicator
+              size="large"
+              color={COLORS.primary.contrast}
+              style={styles.loader}
+            />
           </View>
         </LinearGradient>
       </View>
@@ -952,6 +978,22 @@ export default function App() {
                           component={
                             EventDetailsScreen as React.ComponentType<any>
                           }
+                        />
+                        <Stack.Screen
+                          name="TutorialScreen"
+                          component={(props) => (
+                            <TutorialScreen
+                              {...props}
+                              visible={true}
+                              title="Tutorial"
+                              description="Learn how to use the app"
+                              onNext={() => {}}
+                            />
+                          )}
+                        />
+                        <Stack.Screen
+                          name="EditCityInfoScreen"
+                          component={EditCityInfoScreen}
                         />
                         <Stack.Screen
                           name="StatisticsScreen"
@@ -1051,54 +1093,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  loadingContent: {
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  brandContainer: {
-    alignItems: "center",
-    marginTop: SPACE.xl,
+  fullscreenLogo: {
+    ...StyleSheet.absoluteFillObject, // prend tout l’écran
+    width: undefined,
+    height: undefined,
   },
-  brandText: {
-    color: COLORS.primary.contrast,
-    fontSize: 32,
-    fontWeight: FONT.weight.bold as "bold",
-    fontFamily: FONT.family.brand,
-    letterSpacing: 2,
-    marginBottom: SPACE.xs,
+  loader: {
+    position: "absolute",
+    bottom: 180, // ajuste selon la hauteur que tu veux
   },
-  brandSubtitle: {
-    color: COLORS.neutral[300],
-    fontSize: FONT.size.md,
-    fontWeight: FONT.weight.medium as
-      | "400"
-      | "500"
-      | "600"
-      | "700"
-      | "bold"
-      | "normal"
-      | "100"
-      | "200"
-      | "300"
-      | "800"
-      | "900"
-      | 100
-      | 200
-      | 300
-      | 400
-      | 500
-      | 600
-      | 700
-      | 800
-      | 900
-      | "ultralight"
-      | "thin"
-      | "light"
-      | "medium",
-    letterSpacing: 0.5,
-  },
-
   // ===== HEADER =====
   headerContainer: {
     position: "absolute",
@@ -1133,13 +1141,17 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.15)",
   },
   headerTitleContainer: {
-    borderRadius: LAYOUT.radius.lg,
-    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitleGradient: {
-    paddingHorizontal: SPACE.md,
-    paddingVertical: SPACE.xs,
-    borderRadius: LAYOUT.radius.lg,
+    padding: 8,
+    borderRadius: 10,
+  },
+  headerLogo: {
+    width: 180, // ajuste selon la taille du header
+    height: 80,
+    marginTop: 30,
   },
   headerTitle: {
     fontSize: FONT.size.lg,

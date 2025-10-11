@@ -33,6 +33,7 @@
     "expo-status-bar": "~3.0.8",
     "firebase": "^11.10.0",
     "jwt-decode": "^4.0.0",
+    "lottie-react-native": "^7.3.4",
     "prop-types": "^15.8.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",

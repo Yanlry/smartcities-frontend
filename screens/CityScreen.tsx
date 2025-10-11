@@ -50,7 +50,7 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
 
         {/* Titre de la page */}
         <View style={styles.typeBadgeNav}>
-          <Text style={styles.headerTitleNav}>MA ville</Text>
+          <Text style={styles.headerTitleNav}>Ma ville</Text>
         </View>
 
         {/* Bouton de notifications avec compteur */}

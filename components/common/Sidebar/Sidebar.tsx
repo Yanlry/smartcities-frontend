@@ -714,7 +714,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
               >
-                <Text style={styles.versionText}>v1.07.23</Text>
+                <Text style={styles.versionText}>Smartcities | v1.07.25</Text>
               </LinearGradient>
             </View>
           </ScrollView>

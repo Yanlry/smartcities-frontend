@@ -112,7 +112,6 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
     const reports = useMemo<EntityReport[]>(() => {
       return rawReports.map((report) => ({
         ...report,
-        // Ajout de la propriété user requise par le type EntityReport
         user: {
           id: parseInt(report.userId || "0"),
           username: report.userId || "",
@@ -120,7 +119,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
           lastName: "",
           useFullName: true,
         },
-      })) as EntityReport[];
+      })) as unknown as EntityReport[];
     }, [rawReports]);
 
     // Adaptation des categories pour correspondre au type attendu
