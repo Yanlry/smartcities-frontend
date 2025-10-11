@@ -30,20 +30,20 @@ import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import { useUserProfile } from "../hooks/user/useUserProfile";
 import { LinearGradient } from 'expo-linear-gradient';
+// 🆕 AJOUT : Import du nouveau modal de signalement
+import EventReportModal from "../components/home/modals/EventReportModal";
 
-// ✅ NOUVEAU TYPE AJOUTÉ: Type pour les paramètres de route
 type EventDetailsScreenRouteProp = {
   params: {
     eventId: string;
   };
 };
 
-// Constantes pour le design system
 const { width, height } = Dimensions.get("window");
 const COLORS = {
   primary: "#062C41",
   secondary: "#FF9800",
-  accent: "#5D7FDB", // nouvelle couleur accent bleu
+  accent: "#5D7FDB",
   danger: "#f44336",
   success: "#4CAF50",
   background: "#F8F9FA",
@@ -92,17 +92,16 @@ interface FormattedDate {
   time: string;
 }
 
-// ✅ CORRECTION 1: Ajout du type pour le paramètre route
 export default function EventDetails({ route }: { route: EventDetailsScreenRouteProp }) {
   const { eventId } = route.params;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { unreadCount } = useNotification();
-  const { getUserId } = useToken();
+  const { getUserId, getToken } = useToken(); // 🆕 AJOUT : On récupère aussi getToken
   const scrollY = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
   const animatedButtonScale = useRef(new Animated.Value(1)).current;
   
-  // États
+  // États existants
   const [isRegistered, setIsRegistered] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,10 +111,75 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
   const [refreshing, setRefreshing] = useState(false);
   const [autoPlayInterval, setAutoPlayInterval] = useState<ReturnType<typeof setInterval> | null>(null);
   const [isOrganizer, setIsOrganizer] = useState(false);
+  
+  // 🆕 AJOUT : État pour le modal de signalement
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
   const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
-
   const dummyFn = () => {};
+
+  // 🆕 AJOUT : Fonction pour ouvrir le modal de signalement
+  const openReportModal = useCallback(() => {
+    setIsReportModalVisible(true);
+  }, []);
+
+  // 🆕 AJOUT : Fonction pour fermer le modal de signalement
+  const closeReportModal = useCallback(() => {
+    setIsReportModalVisible(false);
+  }, []);
+
+  // 🆕 AJOUT : Fonction pour envoyer le signalement par email
+  const handleSendEventReport = useCallback(async (reportReason: string, reportType: string) => {
+    if (!currentUserId) {
+      Alert.alert("Erreur", "Utilisateur non identifié. Veuillez vous reconnecter.");
+      return;
+    }
+
+    try {
+      console.log('📧 Envoi du signalement pour l\'événement:', {
+        eventId,
+        reporterId: currentUserId,
+        reportReason,
+        reportType
+      });
+
+      // Récupérer le token d'authentification
+      const token = await getToken();
+
+      // Envoyer l'email de signalement au backend
+      const response = await fetch(`${API_URL}/mails/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          to: "yannleroy23@gmail.com", // 📧 Ton email pour recevoir les signalements
+          subject: "Signalement d'un événement",
+          eventId: eventId,
+          reporterId: String(currentUserId),
+          reportReason: reportReason,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Erreur API:", errorData);
+        throw new Error(errorData.message || "Erreur lors de l'envoi du signalement.");
+      }
+
+      const result = await response.json();
+      console.log("✅ Signalement envoyé avec succès:", result);
+      
+      // ✅ Le modal affiche déjà l'alerte de succès, on ferme juste le modal
+      closeReportModal();
+      
+    } catch (error) {
+      console.error("❌ Erreur lors de l'envoi du signalement:", error);
+      // ⚠️ On laisse le modal gérer l'affichage de l'erreur
+      throw error;
+    }
+  }, [currentUserId, eventId, getToken, closeReportModal]);
 
   // Animation de bouton
   const animateButton = useCallback(() => {
@@ -139,16 +203,13 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
     
     const date = new Date(dateString);
     
-    // Format pour jour et mois
     const dayMonth = date.toLocaleDateString("fr-FR", {
       day: "numeric",
       month: "short"
     });
     
-    // Format pour l'année
     const year = date.getFullYear();
     
-    // Format pour l'heure
     const time = date.toLocaleTimeString("fr-FR", {
       hour: "2-digit",
       minute: "2-digit"
@@ -159,12 +220,10 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
 
   // Fonction pour obtenir la photo de l'organisateur
   const getOrganizerPhotoUrl = useCallback((event: Event): string => {
-    // Maintenant que le backend inclut les photos dans l'objet organizer
     if (event.organizer?.photos?.[0]?.url) {
       return event.organizer.photos[0].url;
     }
     
-    // Chercher l'organisateur dans la liste des participants comme fallback
     const organizerInAttendees = event.attendees.find(
       attendee => attendee.user.id === event.organizer.id
     );
@@ -173,7 +232,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
       return organizerInAttendees.user.photos[0].url;
     }
     
-    // Fallback sur une image par défaut
     return "https://via.placeholder.com/50";
   }, []);
 
@@ -183,7 +241,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
       try {
         const userId = await getUserId();
         setCurrentUserId(userId);
-      // ✅ CORRECTION 2: Typage explicite de error
       } catch (error: any) {
         console.error("Erreur lors de la récupération de l'utilisateur :", error);
         Alert.alert(
@@ -196,7 +253,7 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
     fetchUserId();
   }, [getUserId]);
 
-  // Effet pour récupérer les détails de l'événement et vérifier l'inscription
+  // Effet pour récupérer les détails de l'événement
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
@@ -205,19 +262,16 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
         const response = await axios.get(url);
         setEvent(response.data);
         
-        // Vérifier si l'utilisateur actuel est l'organisateur
         if (currentUserId && response.data.organizer) {
           const isUserOrganizer = response.data.organizer.id === currentUserId;
           setIsOrganizer(isUserOrganizer);
           
-          // Si l'utilisateur est l'organisateur, on le considère automatiquement comme inscrit
           if (isUserOrganizer) {
             setIsRegistered(true);
           }
         }
         
         setIsLoading(false);
-      // ✅ CORRECTION 3: Typage explicite de error
       } catch (error: any) {
         console.error("Erreur lors du chargement des détails de l'événement :", error);
         Alert.alert(
@@ -340,7 +394,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
 
       const updatedEventResponse = await axios.get(`${API_URL}/events/${eventId}`);
       setEvent(updatedEventResponse.data);
-    // ✅ CORRECTION 4: Typage explicite de error
     } catch (error: any) {
       if (error.response?.status === 404) {
         Alert.alert("Erreur", "Événement ou utilisateur introuvable.");
@@ -362,7 +415,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
       return;
     }
 
-    // Vérifier si l'utilisateur est l'organisateur
     if (isOrganizer) {
       Alert.alert(
         "Action impossible",
@@ -398,7 +450,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
         };
       });
     } catch (error: any) {
-      // Vérifier si l'erreur est liée à une tentative de désinscription de l'organisateur
       if (error.response?.status === 403) {
         Alert.alert(
           "Action impossible",
@@ -467,7 +518,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
     extrapolate: 'clamp'
   });
 
-  // Effet de réduction du titre lors du défilement
   const titleScale = scrollY.interpolate({
     inputRange: [0, 150],
     outputRange: [1, 0.8],
@@ -559,12 +609,13 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
               <Ionicons name="share-outline" size={24} color="#FFF" />
             </TouchableOpacity>
             
+            {/* 🆕 MODIFICATION : Bouton menu remplacé par bouton signalement */}
             <TouchableOpacity 
               style={styles.headerActionButton}
-              onPress={toggleSidebar}
+              onPress={openReportModal}
               hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
             >
-              <Ionicons name="menu-outline" size={24} color="#FFF" />
+              <Ionicons name="flag-outline" size={24} color="#FFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -591,15 +642,9 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
         )}
         scrollEventThrottle={16}
       >
-        {/* Espace pour compenser la hauteur du header */}
         <View style={{ height: 390 }} />
         
-        {/* Contenu principal */}
         <View style={styles.mainContent}>
-          {/* Badge date */}
-        
-          
-          {/* Titre et description */}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{event.title}</Text>
             
@@ -624,7 +669,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
             </View>
           </View>
           
-          {/* Boutons d'action */}
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity
               style={styles.locationButton}
@@ -647,10 +691,7 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
               flex: 2
             }}>
               {isOrganizer ? (
-                // Si l'utilisateur est l'organisateur, afficher le bouton Organisateur
-                <View
-                  style={styles.organizerOnlyButton}
-                >
+                <View style={styles.organizerOnlyButton}>
                   <LinearGradient
                     colors={COLORS.gradient.secondary as readonly [string, string]}
                     style={styles.buttonGradient}
@@ -662,7 +703,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
                   </LinearGradient>
                 </View>
               ) : isRegistered ? (
-                // Si l'utilisateur est inscrit mais n'est pas l'organisateur
                 <TouchableOpacity
                   style={styles.unregisterButton}
                   onPress={unregisterFromEvent}
@@ -686,7 +726,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
                   </LinearGradient>
                 </TouchableOpacity>
               ) : (
-                // Si l'utilisateur n'est ni l'organisateur ni inscrit
                 <TouchableOpacity
                   style={styles.registerButton}
                   onPress={registerForEvent}
@@ -713,7 +752,6 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
             </Animated.View>
           </View>
           
-          {/* Détails de l'événement */}
           <View style={styles.detailsCard}>
             <View style={styles.detailRow}>
               <View style={styles.detailIconContainer}>
@@ -766,13 +804,11 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
             </View>
           </View>
           
-          {/* Description */}
           <View style={styles.descriptionCard}>
             <Text style={styles.descriptionTitle}>À propos de cet événement</Text>
             <Text style={styles.descriptionText}>{event.description}</Text>
           </View>
           
-          {/* Participants */}
           <View style={styles.participantsCard}>
             <View style={styles.participantsHeader}>
               <Text style={styles.participantsTitle}>Participants</Text>
@@ -832,12 +868,10 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
             )}
           </View>
           
-          {/* Espace en bas */}
           <View style={{ height: 100 }} />
         </View>
       </Animated.ScrollView>
       
-      {/* Bouton flottant d'inscription rapide (visible seulement en mode non inscrit et pour les non-organisateurs) */}
       {!isRegistered && !isOrganizer && (
         <View style={styles.floatingButtonContainer}>
           <TouchableOpacity
@@ -868,12 +902,17 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
         onNavigateToCity={() => {}}
         updateProfileImage={updateProfileImage}
       />
+      
+      {/* 🆕 AJOUT : Modal de signalement d'événement */}
+      <EventReportModal
+        isVisible={isReportModalVisible}
+        onClose={closeReportModal}
+        onSendReport={handleSendEventReport}
+        eventTitle={event.title}
+      />
     </View>
   );
 }
-
-// Garde tes styles existants (const styles = StyleSheet.create({...}))
-// Je n'ai pas inclus les styles car ils n'ont pas changé
 
 const styles = StyleSheet.create({
   container: {
@@ -970,40 +1009,6 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-  },
-  dateBadge: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    zIndex: 20,
-    backgroundColor: COLORS.secondary,
-    borderRadius: 8,
-    overflow: "hidden",
-    width: 80,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  dateTop: {
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 5,
-    alignItems: "center",
-  },
-  dateDay: {
-    color: COLORS.text.light,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  dateBottom: {
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
-    paddingVertical: 3,
-    alignItems: "center",
-  },
-  dateTime: {
-    color: COLORS.text.light,
-    fontSize: 12,
   },
   scrollContent: {
     backgroundColor: COLORS.background,
@@ -1192,9 +1197,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     maxWidth: "33.33%",
   },
-  organizerParticipantItem: {
-    // Styles spécifiques pour l'organisateur dans la liste des participants
-  },
+  organizerParticipantItem: {},
   participantImageContainer: {
     position: 'relative',
     marginBottom: 8,

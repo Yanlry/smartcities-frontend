@@ -31,7 +31,6 @@ import { Keyboard, TouchableWithoutFeedback } from "react-native";
 import { useUserProfile } from "../hooks/user/useUserProfile";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-// Constantes pour le design system
 const { width, height } = Dimensions.get("window");
 const COLORS = {
   primary: "#062C41",
@@ -49,7 +48,6 @@ const COLORS = {
   },
 };
 
-// Interfaces
 interface Event {
   id: number;
   title: string;
@@ -74,11 +72,7 @@ interface AddressSuggestion {
 export default function EventsScreen({ navigation }: { navigation: any }) {
   const { unreadCount } = useNotification();
   const { location, loading: locationLoading } = useLocation();
-  
-  // ✅ CORRECTION 1 : Utilisation du bon type pour MapView
-  // On utilise 'any' pour éviter les problèmes de type avec react-native-maps
   const mapRef = useRef<any>(null);
-  
   const { getUserId } = useToken();
 
   // États
@@ -97,16 +91,23 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
 
   const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
     
-  // Chargement des données au démarrage
+  // Chargement des événements
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
         setLoading(true);
+        // ✅ On récupère l'userId ICI
         const userId = await getUserId();
         if (!userId) {
-          console.error("Impossible de récupérer l'ID utilisateur.");
+          console.error("❌ Impossible de récupérer l'ID utilisateur.");
+          Alert.alert(
+            "Erreur",
+            "Impossible de récupérer vos informations. Veuillez vous reconnecter."
+          );
           return;
         }
+
+        console.log("✅ ID utilisateur récupéré:", userId);
 
         const response = await fetch(`${API_URL}/events?userId=${userId}`);
         if (!response.ok) {
@@ -115,7 +116,7 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         const data = await response.json();
         setEvents(data);
       } catch (error) {
-        console.error("Erreur lors de la récupération des événements :", error);
+        console.error("❌ Erreur lors de la récupération des événements :", error);
         Alert.alert(
           "Erreur",
           "Impossible de charger vos événements. Veuillez réessayer."
@@ -129,12 +130,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     if (shouldRefreshEvents) {
       fetchUserEvents();
     }
-  }, [shouldRefreshEvents]);
+  }, [shouldRefreshEvents, getUserId]);
 
-  // Functions
   const dummyFn = () => {};
 
-  // Rendu de chaque élément d'événement
   const renderItem = useCallback(({ item }: { item: Event }) => (
     <View style={styles.eventCard}>
       <TouchableOpacity
@@ -142,13 +141,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         activeOpacity={0.7}
         onPress={() => navigation.navigate("EventDetailsScreen", { eventId: item.id })}
       >
-        {/* Indicateur visuel de statut */}
         <View style={styles.statusIndicator} />
 
         <View style={styles.eventCardContent}>
-          {/* Section image et informations principales */}
           <View style={styles.eventCardMainSection}>
-            {/* Affichage de l'image avec placeholder si besoin */}
             <View style={styles.imageContainer}>
               {Array.isArray(item.photos) && item.photos.length > 0 ? (
                 <Image
@@ -163,7 +159,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
               )}
             </View>
 
-            {/* Informations textuelles */}
             <View style={styles.eventInfo}>
               <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
               <Text style={styles.eventDate}>
@@ -175,7 +170,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
             </View>
           </View>
 
-          {/* Actions */}
           <View style={styles.eventActions}>
             <TouchableOpacity
               style={styles.editButton}
@@ -198,35 +192,87 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     </View>
   ), []);
 
-  // Gestion du sidebar
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
   }, []);
 
-  // Suppression d'un événement
+  // 🔧 FONCTION DE SUPPRESSION CORRIGÉE
   const deleteEvent = useCallback(async (eventId: number) => {
     try {
-      const response = await fetch(`${API_URL}/events/${eventId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Erreur lors de la suppression de l'événement.");
+      console.log("🗑️ Début de la suppression pour l'événement:", eventId);
+
+      // ✅ CORRECTION : On récupère l'userId DIRECTEMENT ici
+      const userId = await getUserId();
+      
+      // ✅ Vérification avec logs détaillés
+      if (!userId) {
+        console.error("❌ userId est null ou undefined");
+        Alert.alert(
+          "Erreur d'authentification",
+          "Impossible de récupérer vos informations. Veuillez vous reconnecter à l'application.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Optionnel : rediriger vers l'écran de connexion
+                // navigation.navigate("LoginScreen");
+              }
+            }
+          ]
+        );
+        return;
       }
 
+      console.log("✅ userId récupéré:", userId);
+      console.log("📤 Envoi de la requête DELETE...");
+
+      // ✅ On envoie la requête avec l'userId
+      const response = await fetch(`${API_URL}/events/${eventId}?userId=${userId}`, {
+        method: "DELETE",
+      });
+
+      console.log("📥 Réponse reçue, status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Erreur serveur:", errorData);
+        
+        if (response.status === 403) {
+          Alert.alert(
+            "Action interdite",
+            "Vous n'êtes pas autorisé à supprimer cet événement. Seul le créateur peut le supprimer."
+          );
+        } else if (response.status === 404) {
+          Alert.alert(
+            "Événement introuvable",
+            "Cet événement n'existe plus ou a déjà été supprimé."
+          );
+        } else {
+          Alert.alert(
+            "Erreur",
+            errorData.message || "Une erreur est survenue lors de la suppression."
+          );
+        }
+        return;
+      }
+
+      console.log("✅ Événement supprimé avec succès !");
+
+      // ✅ On retire l'événement de la liste
       setEvents((prevEvents) =>
         prevEvents.filter((event) => event.id !== eventId)
       );
+
       Alert.alert("Succès", "Événement supprimé avec succès");
     } catch (error) {
-      console.error("Erreur lors de la suppression de l'événement :", error);
+      console.error("❌ Erreur lors de la suppression:", error);
       Alert.alert(
-        "Erreur",
-        "Impossible de supprimer l'événement. Veuillez réessayer."
+        "Erreur réseau",
+        "Impossible de supprimer l'événement. Vérifiez votre connexion internet et réessayez."
       );
     }
-  }, []);
+  }, [getUserId]); // ✅ IMPORTANT : getUserId dans les dépendances
 
-  // Confirmation de suppression
   const confirmDelete = useCallback((eventId: number) => {
     Alert.alert(
       "Confirmer la suppression",
@@ -242,23 +288,19 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     );
   }, [deleteEvent]);
 
-  // Ouverture du modal de modification
   const openModal = useCallback((event: Event) => {
     setCurrentEvent(event);
-    setIsAddressValidated(true); // Si on modifie un événement existant, l'adresse est déjà validée
+    setIsAddressValidated(true);
     setIsModalVisible(true);
   }, []);
 
-  // Fermeture du modal de modification
   const closeModal = useCallback(() => {
     setIsModalVisible(false);
     setCurrentEvent(null);
     setIsAddressValidated(false);
-    // Assurez-vous que le modal de suggestion est également fermé lors de la fermeture du modal principal
     setModalVisible(false);
   }, []);
 
-  // Mise à jour d'un événement
   const updateEventHandler = useCallback(async (updatedEvent: Event) => {
     if (!updatedEvent) return;
 
@@ -299,7 +341,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
 
       Alert.alert("Succès", "Événement mis à jour avec succès");
       closeModal();
-      // Plutôt que de dépendre de currentEvent, on déclenche explicitement le rafraîchissement
       setShouldRefreshEvents(true);
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error);
@@ -309,7 +350,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     }
   }, [closeModal]);
 
-  // Utilisation de la position actuelle
   const handleUseLocation = useCallback(async () => {
     if (locationLoading) {
       Alert.alert("Chargement", "Récupération de votre position en cours...");
@@ -324,13 +364,11 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
       return;
     }
 
-    // D'abord ouvrir le modal avec l'indicateur de chargement
     setIsLoadingSuggestions(true);
     setSuggestions([]);
     setModalVisible(true);
     
     try {
-      // Attendre un court délai pour garantir que le modal s'affiche avec le loader
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
@@ -356,20 +394,17 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     }
   }, [location, locationLoading]);
 
-  // Recherche d'adresse
   const handleAddressSearch = useCallback(async (city: string) => {
     if (!city || !city.trim()) {
       Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
       return;
     }
 
-    // D'abord ouvrir le modal avec l'indicateur de chargement
     setIsLoadingSuggestions(true);
     setSuggestions([]);
     setModalVisible(true);
     
     try {
-      // Attendre un court délai pour garantir que le modal s'affiche avec le loader
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
@@ -380,7 +415,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
       const data = await response.json();
 
       if (data.results && data.results.length > 0) {
-        // ✅ CORRECTION 2 et 3 : Ajout des types pour les paramètres a et b
         const sortedSuggestions = data.results.sort((a: AddressSuggestion, b: AddressSuggestion) => {
           const postalA = extractPostalCode(a.formatted);
           const postalB = extractPostalCode(b.formatted);
@@ -400,13 +434,11 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     }
   }, []);
 
-  // Extraction du code postal
   const extractPostalCode = useCallback((address: string) => {
     const postalCodeMatch = address.match(/\b\d{5}\b/);
     return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
   }, []);
 
-  // Sélection d'une suggestion d'adresse
   const handleSuggestionSelect = useCallback((item: AddressSuggestion) => {
     if (!currentEvent) return;
 
@@ -443,7 +475,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     setModalVisible(false);
   }, [currentEvent]);
 
-  // Validation des entrées
   const isValidInput = useCallback(() => {
     return (
       (currentEvent?.title?.trim().length ?? 0) > 4 &&
@@ -453,7 +484,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     );
   }, [currentEvent, isAddressValidated]);
 
-  // Obtention des erreurs de validation
   const getValidationErrors = useCallback((): string[] => {
     const errors: string[] = [];
     if (!isAddressValidated) {
@@ -473,7 +503,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     return errors;
   }, [isAddressValidated, currentEvent]);
 
-  // Rendu conditionnel pour l'état de chargement
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -491,7 +520,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         translucent
       />
 
-      {/* Header modernisé */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerIcon}
@@ -521,7 +549,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         </TouchableOpacity>
       </View>
 
-      {/* Contenu principal */}
       <View style={styles.content}>
         {events.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -551,7 +578,7 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         )}
       </View>
 
-      {/* Modal de modification */}
+      {/* Modal de modification - inchangé */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -576,7 +603,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
               showsVerticalScrollIndicator={true}
               nestedScrollEnabled={true}
             >
-              {/* Titre */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Titre</Text>
                 <View style={styles.inputContainer}>
@@ -594,7 +620,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 </View>
               </View>
 
-              {/* Description */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Description</Text>
                 <View style={[styles.inputContainer, styles.textAreaContainer]}>
@@ -618,7 +643,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 </View>
               </View>
 
-              {/* Date */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Date de l'événement</Text>
                 <TouchableOpacity 
@@ -649,7 +673,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 )}
               </View>
 
-              {/* Localisation */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Adresse</Text>
                 <View style={styles.locationContainer}>
@@ -663,19 +686,15 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                         value={currentEvent?.location || ""}
                         onChangeText={(text) => {
                           if (currentEvent) {
-                            // Mise à jour du texte sans ouvrir le modal
                             setCurrentEvent({...currentEvent, location: text});
                             
-                            // Ne réinitialise l'état de validation que si le texte change vraiment
                             if (text !== currentEvent.location) {
                               setIsAddressValidated(false);
                             }
                           }
                         }}
-                        // Désactiver l'auto-correction et les suggestions pour éviter les problèmes
                         autoCorrect={false}
                         autoCapitalize="none"
-                        // Désactiver la soumission automatique
                         returnKeyType="done"
                       />
                     </View>
@@ -721,7 +740,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 </View>
               </View>
 
-              {/* Carte */}
               {currentEvent?.latitude && currentEvent?.longitude && (
                 <View style={styles.mapContainer}>
                   <MapView
@@ -746,7 +764,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 </View>
               )}
 
-              {/* Photos */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Photos</Text>
                 <PhotoManager
@@ -766,7 +783,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 />
               </View>
 
-              {/* Actions */}
               <View style={styles.modalActions}>
                 <TouchableOpacity
                   style={[
@@ -806,7 +822,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
           </View>
         </KeyboardAvoidingView>
 
-        {/* Modal d'adresses - Maintenant à l'intérieur du modal principal pour un meilleur z-index */}
         {modalVisible && (
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View style={styles.addressModalOverlay}>
@@ -875,7 +890,6 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         )}
       </Modal>
 
-      {/* Floating Action Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate("CreateEventScreen")}
@@ -892,584 +906,91 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         voteSummary={voteSummary}
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
-        onNavigateToCity={() => {
-          /* TODO : remplacer par une navigation appropriée si besoin */
-        }}
+        onNavigateToCity={() => {}}
         updateProfileImage={updateProfileImage}
       />
     </View>
   );
 }
 
-// Les styles ne sont pas inclus ici car ils n'ont pas changé
-// Garde tes styles existants (const styles = StyleSheet.create({...}))
+// Les styles restent exactement les mêmes
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-
-  // État de chargement
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: COLORS.text.secondary,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-    paddingHorizontal: 20,
-    height: 200,
-  },
-  loaderText: {
-    fontSize: 16,
-    color: COLORS.text.secondary,
-    marginTop: 16,
-    textAlign: 'center',
-  },
-
-  // Header styles - modernisés
-  header: {
-    backgroundColor: COLORS.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: Platform.OS === 'ios' ? 55 : 45,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  headerIcon: {
-    width: 42,
-    height: 42,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 21,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  headerTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: COLORS.text.light,
-    letterSpacing: 1,
-  },
-  badge: {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    backgroundColor: COLORS.danger,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-  },
-  badgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-
-  // Content & List styles - améliorés
-  content: {
-    flex: 1,
-    backgroundColor: '#F2F5F8', // Légère teinte bleutée pour le fond
-  },
-  listContainer: {
-    padding: 20,
-    paddingBottom: 90, // Espace pour le FAB
-  },
-
-  // Event card styles - Nouveau design modernisé
-  eventCard: {
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
-  },
-  eventCardTouchable: {
-    backgroundColor: COLORS.card,
-  },
-  statusIndicator: {
-    height: 5,
-    backgroundColor: COLORS.secondary,
-    width: '40%',
-    borderBottomRightRadius: 8,
-  },
-  eventCardContent: {
-    padding: 16,
-  },
-  eventCardMainSection: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  imageContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#F5F5F5",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  placeholderContainer: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
-  },
-  eventImage: {
-    width: "100%",
-    height: "100%",
-  },
-  eventInfo: {
-    flex: 1,
-    marginLeft: 16,
-    justifyContent: 'space-between',
-  },
-  eventTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.text.primary,
-    marginBottom: 6,
-  },
-  eventDate: {
-    fontSize: 13,
-    color: COLORS.text.secondary,
-    marginBottom: 8,
-    paddingLeft: 20,
-    position: 'relative',
-  },
-  eventDescription: {
-    fontSize: 14,
-    color: COLORS.text.secondary,
-    lineHeight: 21,
-  },
-  eventActions: {
-    flexDirection: "row",
-    marginTop: 20,
-    justifyContent: 'flex-end',
-  },
-  editButton: {
-    backgroundColor: COLORS.secondary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginRight: 10,
-    elevation: 2,
-    shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  deleteButton: {
-    backgroundColor: COLORS.danger,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    elevation: 2,
-    shadowColor: COLORS.danger,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 6,
-  },
-
-  // Empty state
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.text.primary,
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: COLORS.text.secondary,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  emptyButton: {
-    backgroundColor: COLORS.primary,
-    marginTop: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-
-  // Modal principal
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: "90%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFEFEF",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.text.primary,
-  },
-  closeModalButton: {
-    padding: 4,
-    height: 40,
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalScroll: {
-    maxHeight: height * 0.8,
-  },
-  modalScrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-
-  // Styles pour l'overlay du modal d'adresses (nouveau)
-  addressModalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-
-  // Form styles
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.text.primary,
-    marginBottom: 8,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8F8",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#EFEFEF",
-    height: 50,
-    paddingHorizontal: 12,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    height: "100%",
-    fontSize: 16,
-    color: COLORS.text.primary,
-  },
-  textAreaContainer: {
-    height: 120,
-    alignItems: "flex-start",
-    paddingVertical: 10,
-  },
-  textArea: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.text.primary,
-    textAlignVertical: "top",
-    height: "100%",
-    width: "100%",
-  },
-  // Style pour l'icône de suggestion d'adresse
-  suggestionIconContainer: {
-    width: 32, 
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  // Location styles
-  locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: '100%',
-  },
-  addressInputWrapper: {
-    flex: 1,
-  },
-  locationButtons: {
-    flexDirection: "row",
-    marginLeft: 8,
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  locationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: COLORS.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  validatedAddressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  validatedAddressText: {
-    fontSize: 13,
-    color: COLORS.success,
-    marginLeft: 6,
-  },
-  invalidAddressText: {
-    fontSize: 13,
-    color: COLORS.danger,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-
-  // Date styles
-  datePickerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8F8",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#EFEFEF",
-    height: 50,
-    paddingHorizontal: 12,
-  },
-  datePickerText: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.text.primary,
-  },
-
-  // Carte dans le modal
-  mapContainer: {
-    height: 200,
-    marginBottom: 20,
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-
-  // Action buttons
-  modalActions: {
-    marginVertical: 16,
-  },
-  saveButton: {
-    backgroundColor: COLORS.success,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  cancelButton: {
-    backgroundColor: COLORS.danger,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  disabledButton: {
-    backgroundColor: "#BBBBBB",
-  },
-
-  // Suggestions modal - Avec z-index élevé et style amélioré
-  suggestionsContent: {
-    width: width * 0.92,
-    maxHeight: height * 0.7,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
-    zIndex: 1100,
-    elevation: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-  },
-  suggestionsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFEFEF",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    backgroundColor: COLORS.primary,
-  },
-  suggestionsTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  closeSuggestionsButton: {
-    padding: 4,
-    height: 36,
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 18,
-  },
-  suggestionsList: {
-    maxHeight: height * 0.5,
-    paddingTop: 8,
-  },
-  suggestionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-    backgroundColor: "#FFFFFF",
-  },
-  suggestionText: {
-    flex: 1,
-    fontSize: 15,
-    color: COLORS.text.primary,
-    lineHeight: 22,
-  },
-  emptyContentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 200,
-    paddingHorizontal: 20,
-  },
-  noSuggestionsText: {
-    fontSize: 16,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  closeModalFullButton: {
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginVertical: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  closeModalButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-
-  // FAB
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
+  loadingText: { marginTop: 16, fontSize: 16, color: COLORS.text.secondary },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50, paddingHorizontal: 20, height: 200 },
+  loaderText: { fontSize: 16, color: COLORS.text.secondary, marginTop: 16, textAlign: 'center' },
+  header: { backgroundColor: COLORS.primary, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: Platform.OS === 'ios' ? 55 : 45, paddingBottom: 20, paddingHorizontal: 20, elevation: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
+  headerIcon: { width: 42, height: 42, justifyContent: "center", alignItems: "center", borderRadius: 21, backgroundColor: "rgba(255, 255, 255, 0.15)" },
+  headerTitle: { fontSize: 19, fontWeight: "700", color: COLORS.text.light, letterSpacing: 1 },
+  badge: { position: "absolute", top: -6, right: -6, backgroundColor: COLORS.danger, width: 20, height: 20, borderRadius: 10, justifyContent: "center", alignItems: "center", borderWidth: 2, borderColor: COLORS.primary },
+  badgeText: { color: "#FFFFFF", fontSize: 11, fontWeight: "bold" },
+  content: { flex: 1, backgroundColor: '#F2F5F8' },
+  listContainer: { padding: 20, paddingBottom: 90 },
+  eventCard: { marginBottom: 16, borderRadius: 16, overflow: 'hidden', elevation: 3, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.1, shadowRadius: 8, backgroundColor: COLORS.card, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' },
+  eventCardTouchable: { backgroundColor: COLORS.card },
+  statusIndicator: { height: 5, backgroundColor: COLORS.secondary, width: '40%', borderBottomRightRadius: 8 },
+  eventCardContent: { padding: 16 },
+  eventCardMainSection: { flexDirection: "row", alignItems: "center" },
+  imageContainer: { width: 90, height: 90, borderRadius: 12, overflow: "hidden", backgroundColor: "#F5F5F5", elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3 },
+  placeholderContainer: { width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: "#F5F5F5" },
+  eventImage: { width: "100%", height: "100%" },
+  eventInfo: { flex: 1, marginLeft: 16, justifyContent: 'space-between' },
+  eventTitle: { fontSize: 18, fontWeight: "700", color: COLORS.text.primary, marginBottom: 6 },
+  eventDate: { fontSize: 13, color: COLORS.text.secondary, marginBottom: 8, paddingLeft: 20, position: 'relative' },
+  eventDescription: { fontSize: 14, color: COLORS.text.secondary, lineHeight: 21 },
+  eventActions: { flexDirection: "row", marginTop: 20, justifyContent: 'flex-end' },
+  editButton: { backgroundColor: COLORS.secondary, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, marginRight: 10, elevation: 2, shadowColor: COLORS.secondary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
+  deleteButton: { backgroundColor: COLORS.danger, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, elevation: 2, shadowColor: COLORS.danger, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 },
+  buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", marginLeft: 6 },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
+  emptyTitle: { fontSize: 20, fontWeight: "700", color: COLORS.text.primary, marginTop: 16 },
+  emptySubtitle: { fontSize: 14, color: COLORS.text.secondary, textAlign: "center", marginTop: 8 },
+  emptyButton: { backgroundColor: COLORS.primary, marginTop: 24, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, flexDirection: "row", alignItems: "center", justifyContent: "center" },
+  emptyButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600", marginLeft: 8 },
+  modalContainer: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)", justifyContent: "flex-end" },
+  modalContent: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: "90%" },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#EFEFEF", paddingVertical: 16, paddingHorizontal: 16 },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: COLORS.text.primary },
+  closeModalButton: { padding: 4, height: 40, width: 40, alignItems: 'center', justifyContent: 'center' },
+  modalScroll: { maxHeight: height * 0.8 },
+  modalScrollContent: { padding: 16, paddingBottom: 40 },
+  addressModalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  inputGroup: { marginBottom: 20 },
+  inputLabel: { fontSize: 15, fontWeight: "600", color: COLORS.text.primary, marginBottom: 8 },
+  inputContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "#F8F8F8", borderRadius: 8, borderWidth: 1, borderColor: "#EFEFEF", height: 50, paddingHorizontal: 12 },
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, height: "100%", fontSize: 16, color: COLORS.text.primary },
+  textAreaContainer: { height: 120, alignItems: "flex-start", paddingVertical: 10 },
+  textArea: { flex: 1, fontSize: 16, color: COLORS.text.primary, textAlignVertical: "top", height: "100%", width: "100%" },
+  suggestionIconContainer: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  locationContainer: { flexDirection: "row", alignItems: "center", width: '100%' },
+  addressInputWrapper: { flex: 1 },
+  locationButtons: { flexDirection: "row", marginLeft: 8 },
+  searchButton: { width: 40, height: 40, borderRadius: 8, backgroundColor: COLORS.primary, justifyContent: "center", alignItems: "center" },
+  locationButton: { width: 40, height: 40, borderRadius: 8, backgroundColor: COLORS.secondary, justifyContent: "center", alignItems: "center", marginLeft: 8 },
+  validatedAddressContainer: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  validatedAddressText: { fontSize: 13, color: COLORS.success, marginLeft: 6 },
+  invalidAddressText: { fontSize: 13, color: COLORS.danger, marginLeft: 6, fontWeight: '500' },
+  datePickerButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#F8F8F8", borderRadius: 8, borderWidth: 1, borderColor: "#EFEFEF", height: 50, paddingHorizontal: 12 },
+  datePickerText: { flex: 1, fontSize: 16, color: COLORS.text.primary },
+  mapContainer: { height: 200, marginBottom: 20, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#EFEFEF' },
+  map: { width: '100%', height: '100%' },
+  modalActions: { marginVertical: 16 },
+  saveButton: { backgroundColor: COLORS.success, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 8, marginBottom: 12 },
+  cancelButton: { backgroundColor: COLORS.danger, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 8 },
+  actionButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  disabledButton: { backgroundColor: "#BBBBBB" },
+  suggestionsContent: { width: width * 0.92, maxHeight: height * 0.7, backgroundColor: "#FFFFFF", borderRadius: 16, overflow: "hidden", zIndex: 1100, elevation: 25, shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
+  suggestionsHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#EFEFEF", paddingVertical: 18, paddingHorizontal: 20, backgroundColor: COLORS.primary },
+  suggestionsTitle: { fontSize: 17, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5 },
+  closeSuggestionsButton: { padding: 4, height: 36, width: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 18 },
+  suggestionsList: { maxHeight: height * 0.5, paddingTop: 8 },
+  suggestionItem: { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: "#F0F0F0", backgroundColor: "#FFFFFF" },
+  suggestionText: { flex: 1, fontSize: 15, color: COLORS.text.primary, lineHeight: 22 },
+  emptyContentContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 200, paddingHorizontal: 20 },
+  noSuggestionsText: { fontSize: 16, color: COLORS.text.secondary, textAlign: 'center', lineHeight: 24 },
+  closeModalFullButton: { backgroundColor: COLORS.secondary, paddingVertical: 15, alignItems: 'center', marginHorizontal: 20, marginVertical: 16, borderRadius: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  closeModalButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
+  fab: { position: "absolute", right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primary, justifyContent: "center", alignItems: "center", elevation: 6, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
 });
