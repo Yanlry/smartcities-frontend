@@ -28,7 +28,7 @@ import Sidebar from "../components/common/Sidebar";
 import { useNotification } from "../context/NotificationContext";
 import franceCitiesRaw from "../assets/france.json";
 import { LinearGradient } from "expo-linear-gradient";
-import { useUserProfile } from "../context/UserProfileContext"; // Ajoutez cette ligne
+import { useUserProfile } from "../context/UserProfileContext";
 import { FollowersModal, FollowingModal } from "../components/home/modals";
 import ProfilePhotoModal from "../components/profile/Photo/ProfilePhoto";
 
@@ -115,16 +115,11 @@ interface ProfileScreenProps {
   onLogout?: () => void;
 }
 
-// Modification de la ligne 113
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const { unreadCount } = useNotification();
-
-  // Désactivation du fade: initialisation avec 1
   const fadeAnim = useState(new Animated.Value(1))[0];
+  const [showProfilePhotoModal, setShowProfilePhotoModal] = useState<boolean>(false);
 
-  const [showProfilePhotoModal, setShowProfilePhotoModal] =
-    useState<boolean>(false);
-  // Ajout d’un listener pour réinitialiser la Sidebar lors du blur du screen
   useEffect(() => {
     const unsubscribe = navigation.addListener("blur", () => {
       setIsSidebarOpen(false);
@@ -156,11 +151,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-
-  // Local states for modals
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
-  // Importez les fonctions du context
+  
   const { updateUserCity, refreshUserData } = useUserProfile();
 
   useEffect(() => {
@@ -271,8 +264,6 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         name: "profile.jpg",
       } as any);
 
-      console.log("FormData clé et valeur:", formData);
-
       const userId = await getUserIdFromToken();
       if (!userId) throw new Error("ID utilisateur non trouvé");
 
@@ -284,8 +275,6 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         }
       );
 
-      console.log("Response status:", responsePost.status);
-
       if (!responsePost.ok) {
         const errorBody = await responsePost.text();
         console.error("Response body:", errorBody);
@@ -293,7 +282,6 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       }
 
       const updatedUser = await responsePost.json();
-      console.log("Response body:", updatedUser);
 
       navigation.replace("ProfileScreen");
     } catch (err: any) {
@@ -307,7 +295,6 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const handleProfileImageUpdateWrapper = async (
     uri: string
   ): Promise<boolean> => {
-    // Vous pouvez ignorer le paramètre 'uri' si votre fonction existante ne l'utilise pas
     await handleProfileImageUpdate();
     return true;
   };
@@ -430,13 +417,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   const normalizeCommune = (communeName: string): string => {
     if (!communeName) return "";
-
-    // Étape 1: Nettoyer la chaîne (supprimer caractères spéciaux, espaces multiples)
-    let normalized = communeName.trim().replace(/\s+/g, " "); // Remplacer espaces multiples par un seul espace
-
-    // Étape 2: Remplacer les espaces par des tirets
+    let normalized = communeName.trim().replace(/\s+/g, " ");
     normalized = normalized.replace(/\s/g, "-");
-
     return normalized;
   };
 
@@ -450,21 +432,12 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     }
 
     try {
-      // Normaliser le nom de la commune
       const normalizedCommuneName = normalizeCommune(selectedCity.Nom_commune);
-      console.log(
-        `Normalisation: "${selectedCity.Nom_commune}" → "${normalizedCommuneName}"`
-      );
 
-      // Utilisez la fonction du context pour mettre à jour la ville
       await updateUserCity(normalizedCommuneName, selectedCity.Code_postal);
-
-      // Optionnel : rafraîchir les données pour s'assurer que le profil est à jour
       await refreshUserData();
 
       Alert.alert("Succès", "Votre ville a été mise à jour avec succès.");
-
-      // Recharger la page ProfileScreen pour actualiser le champ localisation
       navigation.replace("ProfileScreen");
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error);
@@ -474,7 +447,6 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   const handlePhotoUpdateSuccess = useCallback(() => {
     refreshUserData();
-
     navigation.replace("ProfileScreen");
   }, [refreshUserData, navigation]);
 
@@ -640,242 +612,251 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
           {/* Cartes d'information */}
           <View style={styles.cardsContainer}>
-            {/* Localisation */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Icon
-                  name="location-on"
-                  size={22}
-                  color={COLORS.secondary.base}
-                />
-                <Text style={styles.cardTitle}>Localisation</Text>
-                <TouchableOpacity
-                  style={styles.editIconButton}
-                  onPress={() => setIsEditingCity(true)}
-                >
-                  <Icon name="edit" size={20} color={COLORS.secondary.base} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.cardContent}>
-                <View style={styles.locationDisplay}>
-                  <Icon name="place" size={32} color={COLORS.secondary.base} />
-                  <View style={styles.locationInfo}>
-                    <Text style={styles.locationCity}>
-                      {user?.nomCommune || "Aucune ville définie"}
-                    </Text>
-                    <Text style={styles.locationPostal}>
-                      {user?.codePostal || ""}
-                    </Text>
-                  </View>
-                </View>
-
-                {isEditingCity && (
-                  <View style={styles.cityEditContainer}>
-                    <View style={styles.searchBar}>
-                      <TextInput
-                        style={styles.searchInput}
-                        placeholder="Rechercher par ville ou code postal"
-                        placeholderTextColor={COLORS.neutral[400]}
-                        value={query}
-                        onChangeText={setQuery}
-                      />
-                      <TouchableOpacity
-                        style={styles.searchButton}
-                        onPress={handleSearchCity}
-                      >
-                        <Icon
-                          name="search"
-                          size={20}
-                          color={COLORS.primary.contrast}
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.cityActionButtons}>
-                      <TouchableOpacity
-                        style={styles.cityActionButton}
-                        onPress={handleSaveCity}
-                      >
-                        <Text style={styles.cityActionButtonText}>
-                          Enregistrer
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.cityActionButton,
-                          styles.cityActionButtonCancel,
-                        ]}
-                        onPress={() => setIsEditingCity(false)}
-                      >
-                        <Text style={styles.cityActionButtonTextCancel}>
-                          Annuler
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Informations personnelles */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Icon name="person" size={22} color={COLORS.secondary.base} />
-                <Text style={styles.cardTitle}>Informations personnelles</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.editIconButton,
-                    editable && styles.saveIconButton,
-                  ]}
-                  onPress={() => {
-                    if (editable) {
-                      handleSave();
-                    } else {
-                      if (!formData.showEmail) {
-                        Alert.alert(
-                          "Afficher l'email",
-                          "Veuillez afficher votre email avant de pouvoir entamer des modifications."
-                        );
-                        return;
-                      }
-                      setEditable(true);
-                    }
-                  }}
-                >
+            {/* 
+              ✅ MODIFICATION 1: La section Localisation n'apparaît PAS si c'est une mairie
+              Si user.isMunicipality est true, on ne rend rien (null)
+            */}
+            {!user?.isMunicipality && (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
                   <Icon
-                    name={editable ? "check" : "edit"}
-                    size={20}
-                    color={
-                      editable ? COLORS.state.success : COLORS.secondary.base
-                    }
+                    name="location-on"
+                    size={22}
+                    color={COLORS.secondary.base}
                   />
-                </TouchableOpacity>
+                  <Text style={styles.cardTitle}>Localisation</Text>
+                  <TouchableOpacity
+                    style={styles.editIconButton}
+                    onPress={() => setIsEditingCity(true)}
+                  >
+                    <Icon name="edit" size={20} color={COLORS.secondary.base} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.cardContent}>
+                  <View style={styles.locationDisplay}>
+                    <Icon name="place" size={32} color={COLORS.secondary.base} />
+                    <View style={styles.locationInfo}>
+                      <Text style={styles.locationCity}>
+                        {user?.nomCommune || "Aucune ville définie"}
+                      </Text>
+                      <Text style={styles.locationPostal}>
+                        {user?.codePostal || ""}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {isEditingCity && (
+                    <View style={styles.cityEditContainer}>
+                      <View style={styles.searchBar}>
+                        <TextInput
+                          style={styles.searchInput}
+                          placeholder="Rechercher par ville ou code postal"
+                          placeholderTextColor={COLORS.neutral[400]}
+                          value={query}
+                          onChangeText={setQuery}
+                        />
+                        <TouchableOpacity
+                          style={styles.searchButton}
+                          onPress={handleSearchCity}
+                        >
+                          <Icon
+                            name="search"
+                            size={20}
+                            color={COLORS.primary.contrast}
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.cityActionButtons}>
+                        <TouchableOpacity
+                          style={styles.cityActionButton}
+                          onPress={handleSaveCity}
+                        >
+                          <Text style={styles.cityActionButtonText}>
+                            Enregistrer
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.cityActionButton,
+                            styles.cityActionButtonCancel,
+                          ]}
+                          onPress={() => setIsEditingCity(false)}
+                        >
+                          <Text style={styles.cityActionButtonTextCancel}>
+                            Annuler
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
               </View>
+            )}
 
-              <View style={styles.cardContent}>
-                {/* Champs du formulaire */}
-                <View style={styles.formField}>
-                  <Text style={styles.fieldLabel}>Prénom</Text>
-                  <TextInput
+            {/* 
+              ✅ MODIFICATION 2: La section Informations personnelles n'apparaît PAS si c'est une mairie
+              Si user.isMunicipality est true, on ne rend rien (null)
+            */}
+            {!user?.isMunicipality && (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Icon name="person" size={22} color={COLORS.secondary.base} />
+                  <Text style={styles.cardTitle}>Informations personnelles</Text>
+                  <TouchableOpacity
                     style={[
-                      styles.fieldInput,
-                      !editable && styles.fieldInputDisabled,
+                      styles.editIconButton,
+                      editable && styles.saveIconButton,
                     ]}
-                    value={formData.firstName}
-                    onChangeText={(text) =>
-                      handleInputChange("firstName", text)
-                    }
-                    editable={editable}
-                    placeholderTextColor={COLORS.neutral[400]}
-                  />
+                    onPress={() => {
+                      if (editable) {
+                        handleSave();
+                      } else {
+                        if (!formData.showEmail) {
+                          Alert.alert(
+                            "Afficher l'email",
+                            "Veuillez afficher votre email avant de pouvoir entamer des modifications."
+                          );
+                          return;
+                        }
+                        setEditable(true);
+                      }
+                    }}
+                  >
+                    <Icon
+                      name={editable ? "check" : "edit"}
+                      size={20}
+                      color={
+                        editable ? COLORS.state.success : COLORS.secondary.base
+                      }
+                    />
+                  </TouchableOpacity>
                 </View>
 
-                <View style={styles.formField}>
-                  <Text style={styles.fieldLabel}>Nom</Text>
-                  <TextInput
-                    style={[
-                      styles.fieldInput,
-                      !editable && styles.fieldInputDisabled,
-                    ]}
-                    value={formData.lastName}
-                    onChangeText={(text) => handleInputChange("lastName", text)}
-                    editable={editable}
-                    placeholderTextColor={COLORS.neutral[400]}
-                  />
-                </View>
-
-                <View style={styles.formField}>
-                  <Text style={styles.fieldLabel}>Nom d'utilisateur</Text>
-                  <TextInput
-                    style={[
-                      styles.fieldInput,
-                      !editable && styles.fieldInputDisabled,
-                    ]}
-                    value={formData.username}
-                    onChangeText={(text) => handleInputChange("username", text)}
-                    editable={editable}
-                    placeholderTextColor={COLORS.neutral[400]}
-                  />
-                </View>
-
-                {formData.showEmail && (
+                <View style={styles.cardContent}>
                   <View style={styles.formField}>
-                    <Text style={styles.fieldLabel}>Email</Text>
+                    <Text style={styles.fieldLabel}>Prénom</Text>
                     <TextInput
                       style={[
                         styles.fieldInput,
                         !editable && styles.fieldInputDisabled,
                       ]}
-                      value={formData.email}
-                      onChangeText={(text) => handleInputChange("email", text)}
+                      value={formData.firstName}
+                      onChangeText={(text) =>
+                        handleInputChange("firstName", text)
+                      }
                       editable={editable}
                       placeholderTextColor={COLORS.neutral[400]}
-                      keyboardType="email-address"
                     />
                   </View>
-                )}
 
-                <View style={styles.switchContainer}>
-                  <View style={styles.switchInfo}>
-                    <Icon
-                      name="visibility"
-                      size={20}
-                      color={COLORS.secondary.base}
+                  <View style={styles.formField}>
+                    <Text style={styles.fieldLabel}>Nom</Text>
+                    <TextInput
+                      style={[
+                        styles.fieldInput,
+                        !editable && styles.fieldInputDisabled,
+                      ]}
+                      value={formData.lastName}
+                      onChangeText={(text) => handleInputChange("lastName", text)}
+                      editable={editable}
+                      placeholderTextColor={COLORS.neutral[400]}
                     />
-                    <Text style={styles.switchLabel}>
-                      Partager mon email avec les autres utilisateurs
-                    </Text>
                   </View>
-                  <Switch
-                    value={formData.showEmail}
-                    onValueChange={async (value) => {
-                      try {
-                        const response = await axios.post(
-                          `${API_URL}/users/show-email`,
-                          {
-                            userId: user?.id,
-                            showEmail: value,
-                          }
-                        );
 
-                        const updatedShowEmail = response.data.showEmail;
+                  <View style={styles.formField}>
+                    <Text style={styles.fieldLabel}>Nom d'utilisateur</Text>
+                    <TextInput
+                      style={[
+                        styles.fieldInput,
+                        !editable && styles.fieldInputDisabled,
+                      ]}
+                      value={formData.username}
+                      onChangeText={(text) => handleInputChange("username", text)}
+                      editable={editable}
+                      placeholderTextColor={COLORS.neutral[400]}
+                    />
+                  </View>
 
-                        setFormData((prevState) => ({
-                          ...prevState,
-                          showEmail: updatedShowEmail,
-                          email: updatedShowEmail ? user?.email || "" : "",
-                        }));
+                  {formData.showEmail && (
+                    <View style={styles.formField}>
+                      <Text style={styles.fieldLabel}>Email</Text>
+                      <TextInput
+                        style={[
+                          styles.fieldInput,
+                          !editable && styles.fieldInputDisabled,
+                        ]}
+                        value={formData.email}
+                        onChangeText={(text) => handleInputChange("email", text)}
+                        editable={editable}
+                        placeholderTextColor={COLORS.neutral[400]}
+                        keyboardType="email-address"
+                      />
+                    </View>
+                  )}
 
-                        const refreshedUser = await fetch(
-                          `${API_URL}/users/${user?.id}`
-                        ).then((res) => res.json());
-                        setUser(refreshedUser);
-                      } catch (error) {
-                        console.error(
-                          "Erreur lors de la mise à jour de la préférence :",
-                          error
-                        );
-                        Alert.alert(
-                          "Erreur",
-                          "Impossible de mettre à jour la préférence."
-                        );
+                  <View style={styles.switchContainer}>
+                    <View style={styles.switchInfo}>
+                      <Icon
+                        name="visibility"
+                        size={20}
+                        color={COLORS.secondary.base}
+                      />
+                      <Text style={styles.switchLabel}>
+                        Partager mon email avec les autres utilisateurs
+                      </Text>
+                    </View>
+                    <Switch
+                      value={formData.showEmail}
+                      onValueChange={async (value) => {
+                        try {
+                          const response = await axios.post(
+                            `${API_URL}/users/show-email`,
+                            {
+                              userId: user?.id,
+                              showEmail: value,
+                            }
+                          );
+
+                          const updatedShowEmail = response.data.showEmail;
+
+                          setFormData((prevState) => ({
+                            ...prevState,
+                            showEmail: updatedShowEmail,
+                            email: updatedShowEmail ? user?.email || "" : "",
+                          }));
+
+                          const refreshedUser = await fetch(
+                            `${API_URL}/users/${user?.id}`
+                          ).then((res) => res.json());
+                          setUser(refreshedUser);
+                        } catch (error) {
+                          console.error(
+                            "Erreur lors de la mise à jour de la préférence :",
+                            error
+                          );
+                          Alert.alert(
+                            "Erreur",
+                            "Impossible de mettre à jour la préférence."
+                          );
+                        }
+                      }}
+                      trackColor={{
+                        false: COLORS.neutral[300],
+                        true: COLORS.secondary.light,
+                      }}
+                      thumbColor={
+                        formData.showEmail
+                          ? COLORS.secondary.base
+                          : COLORS.neutral[50]
                       }
-                    }}
-                    trackColor={{
-                      false: COLORS.neutral[300],
-                      true: COLORS.secondary.light,
-                    }}
-                    thumbColor={
-                      formData.showEmail
-                        ? COLORS.secondary.base
-                        : COLORS.neutral[50]
-                    }
-                    ios_backgroundColor={COLORS.neutral[300]}
-                  />
+                      ios_backgroundColor={COLORS.neutral[300]}
+                    />
+                  </View>
                 </View>
               </View>
-            </View>
+            )}
 
             {/* Sécurité */}
             <View style={styles.card}>
@@ -1232,7 +1213,6 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     </View>
   );
 }
-
 // Styles modernisés avec un design épuré et une meilleure hiérarchie visuelle
 const styles = StyleSheet.create({
   container: {
