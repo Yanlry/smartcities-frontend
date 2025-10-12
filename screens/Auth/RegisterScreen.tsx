@@ -31,9 +31,8 @@ import { checkUsernameAvailability, checkEmailAvailability } from "../../service
 const { width, height } = Dimensions.get("window");
 const franceCities: City[] = franceCitiesRaw as City[];
 
-// ✨ RÈGLES DE VALIDATION DU MOT DE PASSE
 const MIN_LENGTH = 3;
-const PASSWORD_MIN_LENGTH = 8; // Au moins 8 caractères
+const PASSWORD_MIN_LENGTH = 8;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface City {
@@ -46,7 +45,6 @@ interface City {
 }
 
 export default function RegisterScreen({ navigation, onLogin }: any) {
-  // États et hooks d'authentification
   const {
     email,
     setEmail,
@@ -65,35 +63,36 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     isLoading,
   } = useAuth();
 
-  // États de validation des champs
+  const [accountType, setAccountType] = useState<"citizen" | "municipality">("citizen");
+  
+  const [municipalityName, setMunicipalityName] = useState("");
+  const [municipalitySIREN, setMunicipalitySIREN] = useState("");
+  const [municipalityPhone, setMunicipalityPhone] = useState("");
+  const [municipalityAddress, setMunicipalityAddress] = useState("");
+
   const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [lastNameError, setLastNameError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  // ✨ ÉTATS POUR LE MOT DE PASSE
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   
-  // ✨ ÉTATS POUR LES 5 RÈGLES DE VALIDATION DU MOT DE PASSE
   const [passwordHasMinLength, setPasswordHasMinLength] = useState(false);
   const [passwordHasUppercase, setPasswordHasUppercase] = useState(false);
-  const [passwordHasNumber, setPasswordHasNumber] = useState(false); // ✨ NOUVEAU : Règle chiffre
+  const [passwordHasNumber, setPasswordHasNumber] = useState(false);
   const [passwordHasSpecialChar, setPasswordHasSpecialChar] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
 
-  // États pour les vérifications d'unicité en temps réel
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
 
-  // Refs pour les timeouts de debounce
   const usernameTimeoutRef = useRef<number | null>(null);
   const emailTimeoutRef = useRef<number | null>(null);
 
-  // États de localisation et recherche
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -107,19 +106,25 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     nom_commune: "",
     code_postal: "",
   });
-  const [currentStep, setCurrentStep] = useState(1);
+  
+  const [currentStep, setCurrentStep] = useState(0);
   const [formValid, setFormValid] = useState(false);
 
-  // Refs pour les animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const translateY = useRef(new Animated.Value(50)).current;
-  const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
+  const inputRefs = useRef<Array<TextInput | null>>(Array(50).fill(null));
   const modalScaleAnim = useRef(new Animated.Value(0.8)).current;
   const searchBounceAnim = useRef(new Animated.Value(1)).current;
   const checkingAnim = useRef(new Animated.Value(0)).current;
 
-  // Animation d'entrée
+  // 🔍 DEBUG : Logger les changements d'étape
+  useEffect(() => {
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log(`📍 ÉTAPE ${currentStep} | Type: ${accountType}`);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  }, [currentStep, accountType]);
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -143,7 +148,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     ]).start();
   }, []);
 
-  // Animation pour les vérifications en cours
   useEffect(() => {
     if (isCheckingUsername || isCheckingEmail) {
       Animated.loop(
@@ -160,9 +164,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     }
   }, [isCheckingUsername, isCheckingEmail]);
 
-  /**
-   * Vérification de la disponibilité du nom d'utilisateur
-   */
   const checkUsernameAvailabilityHandler = useCallback(async (usernameToCheck: string): Promise<boolean> => {
     try {
       setIsCheckingUsername(true);
@@ -185,9 +186,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     }
   }, []);
 
-  /**
-   * Vérification de la disponibilité de l'email
-   */
   const checkEmailAvailabilityHandler = useCallback(async (emailToCheck: string): Promise<boolean> => {
     try {
       setIsCheckingEmail(true);
@@ -210,51 +208,42 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     }
   }, []);
 
-  // Fonction pour basculer la visibilité du mot de passe
   const togglePasswordVisibility = () => {
+    console.log("👁️ Toggle visibility mot de passe");
     setIsPasswordVisible(!isPasswordVisible);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // Fonction pour basculer la visibilité de la confirmation
   const toggleConfirmPasswordVisibility = () => {
+    console.log("👁️ Toggle visibility confirmation mot de passe");
     setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // Fonction pour capitaliser la première lettre
   const capitalizeFirstLetter = (text: string): string => {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
 
-  // ✨ FONCTION DE VALIDATION COMPLÈTE DU MOT DE PASSE (AVEC CHIFFRE)
   const validatePasswordRules = (passwordValue: string, confirmValue: string) => {
-    // ✅ Règle 1 : Au moins 8 caractères
     const hasMinLength = passwordValue.length >= PASSWORD_MIN_LENGTH;
     setPasswordHasMinLength(hasMinLength);
 
-    // ✅ Règle 2 : Au moins 1 majuscule
     const hasUppercase = /[A-Z]/.test(passwordValue);
     setPasswordHasUppercase(hasUppercase);
 
-    // ✅ Règle 3 : Au moins 1 chiffre (0-9)
-    const hasNumber = /\d/.test(passwordValue); // ou /[0-9]/.test(passwordValue)
+    const hasNumber = /\d/.test(passwordValue);
     setPasswordHasNumber(hasNumber);
 
-    // ✅ Règle 4 : Au moins 1 caractère spécial
     const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passwordValue);
     setPasswordHasSpecialChar(hasSpecialChar);
 
-    // ✅ Règle 5 : Les deux mots de passe correspondent
     const doPasswordsMatch = passwordValue.length > 0 && passwordValue === confirmValue;
     setPasswordsMatch(doPasswordsMatch);
 
-    // Le mot de passe est valide si TOUTES les 5 règles sont respectées
     return hasMinLength && hasUppercase && hasNumber && hasSpecialChar && doPasswordsMatch;
   };
 
-  // Effet pour vérification en temps réel du nom d'utilisateur
   useEffect(() => {
     if (usernameTimeoutRef.current) {
       clearTimeout(usernameTimeoutRef.current);
@@ -279,7 +268,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     };
   }, [username, checkUsernameAvailabilityHandler]);
 
-  // Effet pour vérification en temps réel de l'email
   useEffect(() => {
     if (emailTimeoutRef.current) {
       clearTimeout(emailTimeoutRef.current);
@@ -304,12 +292,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     };
   }, [email, checkEmailAvailabilityHandler]);
 
-  // ✨ EFFET POUR VALIDER LE MOT DE PASSE EN TEMPS RÉEL (AVEC CHIFFRE)
   useEffect(() => {
     validatePasswordRules(password, confirmPassword);
   }, [password, confirmPassword]);
 
-  // Fonctions de validation des champs
   const validateFirstName = (value: string): boolean => {
     const isValid = value.length >= MIN_LENGTH;
     if (!isValid && value.length > 0) {
@@ -330,7 +316,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     return isValid || value.length === 0;
   };
 
-  // Gestionnaires de modification des champs avec validation
   const handleFirstNameChange = (value: string) => {
     const capitalizedValue = capitalizeFirstLetter(value);
     setFirstName(capitalizedValue);
@@ -344,66 +329,108 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   };
 
   const handleUsernameChange = (value: string) => {
+    console.log("✏️ Username changé:", value);
     setUsername(value);
   };
 
   const handleEmailChange = (value: string) => {
+    console.log("✏️ Email changé:", value);
     setEmail(value);
   };
 
-  // Gestionnaires pour les mots de passe
+  // 🔍 DEBUG : Logger TOUS les changements de mot de passe
   const handlePasswordChange = (value: string) => {
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("🔐 MOT DE PASSE CHANGÉ");
+    console.log("Nouvelle valeur:", value);
+    console.log("Longueur:", value.length);
+    console.log("Type:", typeof value);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     setPassword(value);
   };
 
   const handleConfirmPasswordChange = (value: string) => {
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("🔐 CONFIRMATION MOT DE PASSE CHANGÉE");
+    console.log("Nouvelle valeur:", value);
+    console.log("Longueur:", value.length);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     setConfirmPassword(value);
   };
 
-  // ✨ VALIDER LE FORMULAIRE SELON L'ÉTAPE COURANTE (AVEC RÈGLE CHIFFRE)
   useEffect(() => {
-    if (currentStep === 1) {
-      const step1Valid = 
-        !!firstName && !!lastName && !!username && 
-        firstNameError === null && lastNameError === null && usernameError === null &&
-        firstName.length >= MIN_LENGTH && lastName.length >= MIN_LENGTH && username.length >= MIN_LENGTH &&
-        usernameAvailable === true;
-      setFormValid(step1Valid);
+    if (currentStep === 0) {
+      setFormValid(true);
+    } else if (currentStep === 1) {
+      if (accountType === "citizen") {
+        const step1Valid = 
+          !!firstName && !!lastName && !!username && 
+          firstNameError === null && lastNameError === null && usernameError === null &&
+          firstName.length >= MIN_LENGTH && lastName.length >= MIN_LENGTH && username.length >= MIN_LENGTH &&
+          usernameAvailable === true;
+        setFormValid(step1Valid);
+      } else {
+        const step1Valid = 
+          !!municipalityName && !!municipalitySIREN && !!municipalityPhone && !!username &&
+          municipalityName.length >= MIN_LENGTH &&
+          municipalitySIREN.length === 9 &&
+          usernameError === null &&
+          username.length >= MIN_LENGTH &&
+          usernameAvailable === true;
+        setFormValid(step1Valid);
+      }
     } else if (currentStep === 2) {
-      // ✅ TOUTES LES 5 RÈGLES DU MOT DE PASSE DOIVENT ÊTRE RESPECTÉES
       const step2Valid = 
         !!email && !!password && !!confirmPassword &&
         emailError === null &&
         EMAIL_REGEX.test(email) &&
         emailAvailable === true &&
-        passwordHasMinLength &&      // ✅ 8 caractères
-        passwordHasUppercase &&      // ✅ 1 majuscule
-        passwordHasNumber &&         // ✅ 1 chiffre (NOUVEAU)
-        passwordHasSpecialChar &&    // ✅ 1 caractère spécial
-        passwordsMatch;              // ✅ Identiques
+        passwordHasMinLength &&
+        passwordHasUppercase &&
+        passwordHasNumber &&
+        passwordHasSpecialChar &&
+        passwordsMatch;
       setFormValid(step2Valid);
     } else if (currentStep === 3) {
-      setFormValid(!!selectedLocation && !!photos?.length);
+      if (accountType === "citizen") {
+        setFormValid(!!selectedLocation && !!photos?.length);
+      } else {
+        setFormValid(!!selectedLocation && !!municipalityAddress);
+      }
     }
   }, [
     firstName, lastName, username, email, password, confirmPassword,
     firstNameError, lastNameError, usernameError, emailError,
     currentStep, selectedLocation, photos, usernameAvailable, emailAvailable,
-    passwordHasMinLength, passwordHasUppercase, passwordHasNumber, passwordHasSpecialChar, passwordsMatch
+    passwordHasMinLength, passwordHasUppercase, passwordHasNumber, passwordHasSpecialChar, passwordsMatch,
+    accountType, municipalityName, municipalitySIREN, municipalityPhone, municipalityAddress
   ]);
 
-  // Gestion de l'inscription
   const handleRegisterClick = () => {
-    if (!selectedLocation || !latitude || !longitude) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Emplacement manquant", "Veuillez sélectionner une ville avant de vous inscrire.");
-      return;
-    }
+    if (accountType === "citizen") {
+      if (!selectedLocation || !latitude || !longitude) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Emplacement manquant", "Veuillez sélectionner une ville avant de vous inscrire.");
+        return;
+      }
 
-    if (!photos || photos.length === 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Photo manquante", "Veuillez ajouter une photo de profil pour continuer.");
-      return;
+      if (!photos || photos.length === 0) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Photo manquante", "Veuillez ajouter une photo de profil pour continuer.");
+        return;
+      }
+    } else {
+      if (!selectedLocation || !latitude || !longitude) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Emplacement manquant", "Veuillez sélectionner la ville de votre mairie.");
+        return;
+      }
+
+      if (!municipalityAddress) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Adresse manquante", "Veuillez renseigner l'adresse de la mairie.");
+        return;
+      }
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -429,12 +456,39 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       longitude,
     };
 
-    handleRegister(onLogin, cityData);
+    const municipalityData = accountType === "municipality" ? {
+      isMunicipality: true,
+      municipalityName,
+      municipalitySIREN,
+      municipalityPhone,
+      municipalityAddress,
+    } : { isMunicipality: false };
+
+    handleRegister(onLogin, { ...cityData, ...municipalityData });
   };
 
-  // Navigation vers la prochaine étape
+  const focusNextInput = (index: number, step: number) => {
+    console.log(`⏭️ focusNextInput appelé: index=${index}, step=${step}`);
+    
+    if (step === 1) {
+      if (accountType === "citizen") {
+        if (index < 2 && inputRefs.current[index + 1]) {
+          inputRefs.current[index + 1]?.focus();
+        }
+      } else {
+        if (index < 13 && inputRefs.current[index + 1]) {
+          inputRefs.current[index + 1]?.focus();
+        }
+      }
+    } else if (step === 2) {
+      if (index < 22 && inputRefs.current[index + 1]) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    }
+  };
+
   const goToNextStep = async () => {
-    if (!formValid) {
+    if (!formValid && currentStep !== 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       
       Animated.sequence([
@@ -499,7 +553,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     });
   };
 
-  // Retour à l'étape précédente
   const goToPreviousStep = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
@@ -532,7 +585,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     });
   };
 
-  // Recherche d'adresse
   const handleAddressSearch = () => {
     const trimmedQuery = query.trim();
 
@@ -590,7 +642,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     }
   };
 
-  // Sélection d'une suggestion
   const handleSuggestionSelect = (item: any) => {
     const [lat, lng] = item.coordonnees_gps
       .split(",")
@@ -619,7 +670,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     });
   };
 
-  // Navigation vers la page de connexion
   const handleLogin = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
@@ -639,28 +689,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     });
   };
 
-  // Transition entre champs du formulaire
-  const focusNextInput = (index: number, step: number) => {
-    if (step === 1) {
-      if (index < 2 && inputRefs.current[index + 1]) {
-        inputRefs.current[index + 1]?.focus();
-      } else if (index === 2) {
-        inputRefs.current[index]?.blur();
-        goToNextStep();
-      }
-    } else if (step === 2) {
-      if (index < 5 && index > 2 && inputRefs.current[index + 1]) {
-        inputRefs.current[index + 1]?.focus();
-      } else if (index === 5) {
-        inputRefs.current[index]?.blur();
-        goToNextStep();
-      }
-    }
-  };
-
-  // Calculer la largeur de la barre de progression
   const getProgressWidth = () => {
     switch (currentStep) {
+      case 0:
+        return "0%";
       case 1:
         return "33%";
       case 2:
@@ -668,11 +700,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       case 3:
         return "100%";
       default:
-        return "33%";
+        return "0%";
     }
   };
 
-  // Afficher l'indicateur de vérification avec animations
   const renderVerificationIndicator = (isChecking: boolean, isAvailable: boolean | null, fieldName: string) => {
     if (isChecking) {
       return (
@@ -708,7 +739,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     return null;
   };
 
-  // ✨ COMPOSANT : Affichage des règles de validation du mot de passe
   const renderPasswordRule = (isValid: boolean, text: string) => (
     <View style={styles.passwordRuleContainer}>
       <Ionicons 
@@ -725,7 +755,130 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </View>
   );
 
-  // Rendu de l'étape 1: Informations personnelles
+  const renderStepZero = () => (
+    <Animated.View
+      style={[
+        styles.stepContainer,
+        {
+          opacity: fadeAnim,
+          transform: [
+            { translateY: translateY },
+            { scale: scaleAnim }
+          ],
+        },
+      ]}
+    >
+      <Text style={styles.stepTitle}>Bienvenue !</Text>
+      <Text style={styles.stepDescription}>
+        Choisissez le type de compte que vous souhaitez créer
+      </Text>
+
+      <View style={styles.accountTypeContainer}>
+        <TouchableOpacity
+          style={[
+            styles.accountTypeCard,
+            accountType === "citizen" && styles.accountTypeCardSelected
+          ]}
+          onPress={() => {
+            console.log("👤 Type de compte sélectionné: CITOYEN");
+            setAccountType("citizen");
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={accountType === "citizen" ? ['#6366f1', '#4f46e5'] : ['#f1f5f9', '#e2e8f0']}
+            style={styles.accountTypeGradient}
+          >
+            <Ionicons 
+              name="person" 
+              size={48} 
+              color={accountType === "citizen" ? "#fff" : "#64748b"} 
+            />
+            <Text style={[
+              styles.accountTypeTitle,
+              accountType === "citizen" && styles.accountTypeTitleSelected
+            ]}>
+              Citoyen
+            </Text>
+            <Text style={[
+              styles.accountTypeDescription,
+              accountType === "citizen" && styles.accountTypeDescriptionSelected
+            ]}>
+              Signaler des incidents et participer à la vie locale
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.accountTypeCard,
+            accountType === "municipality" && styles.accountTypeCardSelected
+          ]}
+          onPress={() => {
+            console.log("🏛️ Type de compte sélectionné: MAIRIE");
+            setAccountType("municipality");
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={accountType === "municipality" ? ['#6366f1', '#4f46e5'] : ['#f1f5f9', '#e2e8f0']}
+            style={styles.accountTypeGradient}
+          >
+            <FontAwesome5 
+              name="landmark" 
+              size={42} 
+              color={accountType === "municipality" ? "#fff" : "#64748b"} 
+            />
+            <Text style={[
+              styles.accountTypeTitle,
+              accountType === "municipality" && styles.accountTypeTitleSelected
+            ]}>
+              Mairie
+            </Text>
+            <Text style={[
+              styles.accountTypeDescription,
+              accountType === "municipality" && styles.accountTypeDescriptionSelected
+            ]}>
+              Gérer les signalements et communiquer avec les citoyens
+            </Text>
+            <View style={styles.validationBadge}>
+              <Ionicons name="shield-checkmark" size={14} color="#10b981" />
+              <Text style={styles.validationBadgeText}>Validation requise</Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={styles.nextButton}
+        onPress={goToNextStep}
+        activeOpacity={0.9}
+      >
+        <LinearGradient
+          colors={['#6366f1', '#4f46e5', '#4338ca']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.gradientButton}
+        >
+          <Text style={styles.nextButtonText}>Continuer</Text>
+          <Ionicons name="arrow-forward" size={20} color="#fff" />
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <View style={styles.loginLink}>
+        <Text style={styles.loginText}>Déjà membre ?</Text>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={handleLogin}
+        >
+          <Text style={styles.loginButtonText}>Se connecter</Text>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+
   const renderStepOne = () => (
     <Animated.View
       style={[
@@ -746,147 +899,273 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         <Text style={styles.progressText}>Étape 1/3</Text>
       </View>
 
-      <Text style={styles.stepTitle}>Qui êtes-vous ?</Text>
+      <Text style={styles.stepTitle}>
+        {accountType === "citizen" ? "Qui êtes-vous ?" : "Informations de la mairie"}
+      </Text>
       <Text style={styles.stepDescription}>
-        Commençons par vos informations personnelles
+        {accountType === "citizen" 
+          ? "Commençons par vos informations personnelles" 
+          : "Renseignez les informations officielles de votre mairie"}
       </Text>
 
       <View style={styles.formContainer}>
-        <View>
-          <View style={[
-            styles.inputWrapper,
-            lastNameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
-          ]}>
-            <Ionicons 
-              name="people-outline" 
-              size={22} 
-              color={lastNameError ? "#ef4444" : "#5e5ce6"} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={styles.input}
-              value={lastName}
-              placeholder="Nom"
-              placeholderTextColor="#94a3b8"
-              onChangeText={handleLastNameChange}
-              autoCorrect={false}
-              spellCheck={false}
-              returnKeyType="next"
-              ref={(el) => { inputRefs.current[1] = el; }}
-              onSubmitEditing={() => focusNextInput(1, 1)}
-            />
-          </View>
-          {lastNameError && (
-            <Text style={styles.errorText}>{lastNameError}</Text>
-          )}
-        </View>
+        {accountType === "citizen" ? (
+          <>
+            <View>
+              <View style={[
+                styles.inputWrapper,
+                lastNameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
+              ]}>
+                <Ionicons 
+                  name="people-outline" 
+                  size={22} 
+                  color={lastNameError ? "#ef4444" : "#5e5ce6"} 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={lastName}
+                  placeholder="Nom"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleLastNameChange}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[1] = el; }}
+                  onSubmitEditing={() => focusNextInput(1, 1)}
+                />
+              </View>
+              {lastNameError && (
+                <Text style={styles.errorText}>{lastNameError}</Text>
+              )}
+            </View>
 
-        <View>
-          <View style={[
-            styles.inputWrapper,
-            firstNameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
-          ]}>
-            <Ionicons 
-              name="person-outline" 
-              size={22} 
-              color={firstNameError ? "#ef4444" : "#5e5ce6"} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={styles.input}
-              value={firstName}
-              placeholder="Prénom"
-              placeholderTextColor="#94a3b8"
-              onChangeText={handleFirstNameChange}
-              autoCorrect={false}
-              spellCheck={false}
-              returnKeyType="next"
-              ref={(el) => { inputRefs.current[0] = el; }}
-              onSubmitEditing={() => focusNextInput(0, 1)}
-            />
-          </View>
-          {firstNameError && (
-            <Text style={styles.errorText}>{firstNameError}</Text>
-          )}
-        </View>
+            <View>
+              <View style={[
+                styles.inputWrapper,
+                firstNameError && { borderColor: 'rgba(239, 68, 68, 0.5)' }
+              ]}>
+                <Ionicons 
+                  name="person-outline" 
+                  size={22} 
+                  color={firstNameError ? "#ef4444" : "#5e5ce6"} 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={firstName}
+                  placeholder="Prénom"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleFirstNameChange}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[0] = el; }}
+                  onSubmitEditing={() => focusNextInput(0, 1)}
+                />
+              </View>
+              {firstNameError && (
+                <Text style={styles.errorText}>{firstNameError}</Text>
+              )}
+            </View>
 
-        <View>
-          <View style={[
-            styles.inputWrapper,
-            usernameError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
-            usernameAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
-          ]}>
-            <Ionicons 
-              name="at" 
-              size={22} 
-              color={usernameError ? "#ef4444" : usernameAvailable === true ? "#10b981" : "#5e5ce6"} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={styles.input}
-              value={username}
-              placeholder="Nom d'utilisateur"
-              placeholderTextColor="#94a3b8"
-              onChangeText={handleUsernameChange}
-              autoCorrect={false}
-              spellCheck={false}
-              returnKeyType="next"
-              ref={(el) => { inputRefs.current[2] = el; }}
-              onSubmitEditing={() => focusNextInput(2, 1)}
-            />
-            {renderVerificationIndicator(isCheckingUsername, usernameAvailable, 'username')}
-          </View>
-          {usernameError && (
-            <Text style={styles.errorText}>{usernameError}</Text>
-          )}
-          {usernameAvailable === true && !usernameError && (
-            <Text style={styles.successText}>✓ Ce nom d'utilisateur est disponible</Text>
-          )}
-        </View>
+            <View>
+              <View style={[
+                styles.inputWrapper,
+                usernameError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
+                usernameAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
+              ]}>
+                <Ionicons 
+                  name="at" 
+                  size={22} 
+                  color={usernameError ? "#ef4444" : usernameAvailable === true ? "#10b981" : "#5e5ce6"} 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={username}
+                  placeholder="Nom d'utilisateur"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleUsernameChange}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="done"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[2] = el; }}
+                  onSubmitEditing={() => inputRefs.current[2]?.blur()}
+                />
+                {renderVerificationIndicator(isCheckingUsername, usernameAvailable, 'username')}
+              </View>
+              {usernameError && (
+                <Text style={styles.errorText}>{usernameError}</Text>
+              )}
+              {usernameAvailable === true && !usernameError && (
+                <Text style={styles.successText}>✓ Ce nom d'utilisateur est disponible</Text>
+              )}
+            </View>
+          </>
+        ) : (
+          <>
+            <View>
+              <View style={styles.inputWrapper}>
+                <FontAwesome5 
+                  name="landmark" 
+                  size={18} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={municipalityName}
+                  placeholder="Nom de la mairie (ex: Mairie de Paris)"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={setMunicipalityName}
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[10] = el; }}
+                  onSubmitEditing={() => focusNextInput(10, 1)}
+                />
+              </View>
+            </View>
+
+            <View>
+              <View style={styles.inputWrapper}>
+                <MaterialIcons 
+                  name="business" 
+                  size={22} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={municipalitySIREN}
+                  placeholder="Numéro SIREN (9 chiffres)"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={setMunicipalitySIREN}
+                  keyboardType="numeric"
+                  maxLength={9}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[11] = el; }}
+                  onSubmitEditing={() => focusNextInput(11, 1)}
+                />
+              </View>
+            </View>
+
+            <View>
+              <View style={styles.inputWrapper}>
+                <Ionicons 
+                  name="call-outline" 
+                  size={22} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={municipalityPhone}
+                  placeholder="Téléphone de la mairie"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={setMunicipalityPhone}
+                  keyboardType="phone-pad"
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[12] = el; }}
+                  onSubmitEditing={() => focusNextInput(12, 1)}
+                />
+              </View>
+            </View>
+
+            <View>
+              <View style={[
+                styles.inputWrapper,
+                usernameError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
+                usernameAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
+              ]}>
+                <Ionicons 
+                  name="at" 
+                  size={22} 
+                  color={usernameError ? "#ef4444" : usernameAvailable === true ? "#10b981" : "#5e5ce6"} 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={username}
+                  placeholder="Nom d'utilisateur (unique)"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleUsernameChange}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="done"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[13] = el; }}
+                  onSubmitEditing={() => inputRefs.current[13]?.blur()}
+                />
+                {renderVerificationIndicator(isCheckingUsername, usernameAvailable, 'username')}
+              </View>
+              {usernameError && (
+                <Text style={styles.errorText}>{usernameError}</Text>
+              )}
+              {usernameAvailable === true && !usernameError && (
+                <Text style={styles.successText}>✓ Ce nom d'utilisateur est disponible</Text>
+              )}
+            </View>
+
+            <View style={styles.infoBox}>
+              <Ionicons name="information-circle" size={20} color="#6366f1" />
+              <Text style={styles.infoBoxText}>
+                Votre compte devra être validé par un administrateur avant de pouvoir être utilisé.
+              </Text>
+            </View>
+          </>
+        )}
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.nextButton,
-          (!formValid || isCheckingUsername) && styles.buttonDisabled,
-        ]}
-        onPress={goToNextStep}
-        disabled={!formValid || isCheckingUsername}
-        activeOpacity={0.9}
-      >
-        <LinearGradient
-          colors={(formValid && !isCheckingUsername) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.gradientButton}
-        >
-          {isCheckingUsername ? (
-            <>
-              <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.nextButtonText}>Vérification...</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.nextButtonText}>Continuer</Text>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
-            </>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
-
-      <View style={styles.loginLink}>
-        <Text style={styles.loginText}>Déjà membre ?</Text>
+      <View style={styles.navigationButtons}>
         <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleLogin}
+          style={styles.backButton}
+          onPress={goToPreviousStep}
+          activeOpacity={0.9}
         >
-          <Text style={styles.loginButtonText}>Se connecter</Text>
+          <Text style={styles.backButtonText}>Précédent</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            styles.nextButtonInRow,
+            (!formValid || isCheckingUsername) && styles.buttonDisabled,
+          ]}
+          onPress={goToNextStep}
+          disabled={!formValid || isCheckingUsername}
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={(formValid && !isCheckingUsername) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.gradientButton}
+          >
+            {isCheckingUsername ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.nextButtonText}>Vérification...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.nextButtonText}>Continuer</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </Animated.View>
   );
 
-  // ✨ ÉTAPE 2 AVEC LES 5 RÈGLES DE VALIDATION (AVEC CHIFFRE)
+  // 🔍 ÉTAPE 2 AVEC DEBUG COMPLET
   const renderStepTwo = () => (
     <Animated.View
       style={[
@@ -937,8 +1216,14 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="next"
-              ref={(el) => { inputRefs.current[3] = el; }}
-              onSubmitEditing={() => focusNextInput(3, 2)}
+              editable={true}
+              ref={(el) => { 
+                console.log("📝 Ref EMAIL assignée (index 20)");
+                inputRefs.current[20] = el; 
+              }}
+              onSubmitEditing={() => focusNextInput(20, 2)}
+              onFocus={() => console.log("✅ EMAIL a le focus")}
+              onBlur={() => console.log("❌ EMAIL a perdu le focus")}
             />
             {renderVerificationIndicator(isCheckingEmail, emailAvailable, 'email')}
           </View>
@@ -950,9 +1235,15 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           )}
         </View>
 
-        {/* MOT DE PASSE */}
+        {/* 🔍 MOT DE PASSE AVEC DEBUG COMPLET */}
         <View>
-          <View style={styles.inputWrapper}>
+          <Text style={{ color: '#fff', fontSize: 12, marginBottom: 5 }}>
+            🔍 DEBUG: Password value = "{password}" | Length = {password.length}
+          </Text>
+          <View style={[
+            styles.inputWrapper,
+            { borderWidth: 2, borderColor: '#10b981' } // Bordure verte pour le repérer
+          ]}>
             <Ionicons 
               name="lock-closed-outline" 
               size={22} 
@@ -960,17 +1251,37 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               style={styles.inputIcon} 
             />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: 'rgba(255,255,255,0.05)' }]}
               value={password}
-              placeholder="Mot de passe"
+              placeholder="🔐 MOT DE PASSE (TESTEZ MOI)"
               placeholderTextColor="#94a3b8"
               onChangeText={handlePasswordChange}
               secureTextEntry={!isPasswordVisible}
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="next"
-              ref={(el) => { inputRefs.current[4] = el; }}
-              onSubmitEditing={() => focusNextInput(4, 2)}
+              editable={true}
+              keyboardType="default"
+              ref={(el) => { 
+                console.log("📝 Ref MOT DE PASSE assignée (index 21)");
+                inputRefs.current[21] = el; 
+              }}
+              onSubmitEditing={() => {
+                console.log("⏭️ onSubmitEditing appelé pour mot de passe");
+                focusNextInput(21, 2);
+              }}
+              onFocus={() => {
+                console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                console.log("✅ MOT DE PASSE A LE FOCUS !");
+                console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+              }}
+              onBlur={() => {
+                console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                console.log("❌ MOT DE PASSE A PERDU LE FOCUS");
+                console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+              }}
+              onPressIn={() => console.log("👆 PRESS IN sur champ mot de passe")}
+              onPressOut={() => console.log("👆 PRESS OUT sur champ mot de passe")}
             />
             <TouchableOpacity
               onPress={togglePasswordVisibility}
@@ -1005,8 +1316,14 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               autoCorrect={false}
               spellCheck={false}
               returnKeyType="done"
-              ref={(el) => { inputRefs.current[5] = el; }}
-              onSubmitEditing={() => focusNextInput(5, 2)}
+              editable={true}
+              ref={(el) => { 
+                console.log("📝 Ref CONFIRMATION assignée (index 22)");
+                inputRefs.current[22] = el; 
+              }}
+              onSubmitEditing={() => inputRefs.current[22]?.blur()}
+              onFocus={() => console.log("✅ CONFIRMATION a le focus")}
+              onBlur={() => console.log("❌ CONFIRMATION a perdu le focus")}
             />
             <TouchableOpacity
               onPress={toggleConfirmPasswordVisibility}
@@ -1022,7 +1339,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </View>
         </View>
 
-        {/* ✨ AFFICHAGE DES 5 RÈGLES DE VALIDATION (AVEC CHIFFRE) */}
         <View style={styles.passwordRulesContainer}>
           <Text style={styles.passwordRulesTitle}>Votre mot de passe doit contenir :</Text>
           {renderPasswordRule(passwordHasMinLength, "Au moins 8 caractères")}
@@ -1075,7 +1391,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
-  // Rendu de l'étape 3: Finalisation du profil
   const renderStepThree = () => (
     <Animated.View
       style={[
@@ -1098,21 +1413,55 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
       <Text style={styles.stepTitle}>Finalisez votre profil</Text>
       <Text style={styles.stepDescription}>
-        Personnalisez votre profil avec une photo et votre ville
+        {accountType === "citizen"
+          ? "Personnalisez votre profil avec une photo et votre ville"
+          : "Indiquez l'adresse et la localisation de votre mairie"}
       </Text>
 
       <View style={styles.formContainer}>
-        <Text style={styles.sectionTitle}>Photo de profil</Text>
-        <View style={styles.photoManagerContainer}>
-          <View>
-            <PhotoManager photos={photos} setPhotos={setPhotos} maxPhotos={1} />
-          </View>
-          <Text style={styles.photoHelperText}>
-            {photos?.length ? 'Votre photo de profil' : 'Appuyez ici pour ajouter une photo'}
-          </Text>
-        </View>
+        {accountType === "citizen" && (
+          <>
+            <Text style={styles.sectionTitle}>Photo de profil</Text>
+            <View style={styles.photoManagerContainer}>
+              <View>
+                <PhotoManager photos={photos} setPhotos={setPhotos} maxPhotos={1} />
+              </View>
+              <Text style={styles.photoHelperText}>
+                {photos?.length ? 'Votre photo de profil' : 'Appuyez ici pour ajouter une photo'}
+              </Text>
+            </View>
+          </>
+        )}
 
-        <Text style={styles.sectionTitle}>Votre ville</Text>
+        {accountType === "municipality" && (
+          <>
+            <Text style={styles.sectionTitle}>Adresse de la mairie</Text>
+            <View>
+              <View style={styles.inputWrapper}>
+                <MaterialIcons 
+                  name="location-city" 
+                  size={22} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={municipalityAddress}
+                  placeholder="Adresse complète de la mairie"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={setMunicipalityAddress}
+                  multiline
+                  numberOfLines={2}
+                  editable={true}
+                />
+              </View>
+            </View>
+          </>
+        )}
+
+        <Text style={styles.sectionTitle}>
+          {accountType === "citizen" ? "Votre ville" : "Localisation"}
+        </Text>
         <View style={styles.searchContainer}>
           <View style={styles.inputWrapper}>
             <Ionicons name="location-outline" size={22} color="#5e5ce6" style={styles.inputIcon} />
@@ -1122,6 +1471,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               value={query}
               placeholderTextColor="#94a3b8"
               onChangeText={setQuery}
+              editable={true}
             />
           </View>
           
@@ -1149,6 +1499,15 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
             <MaterialIcons name="location-on" size={22} color="#10b981" />
             <Text style={styles.selectedLocationText}>
               {selectedCity.nom_commune} ({selectedCity.code_postal})
+            </Text>
+          </View>
+        )}
+
+        {accountType === "municipality" && (
+          <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
+            <Ionicons name="alert-circle" size={20} color="#f59e0b" />
+            <Text style={[styles.infoBoxText, { color: '#92400e' }]}>
+              Votre compte sera soumis à validation. Vous recevrez un email une fois votre compte approuvé.
             </Text>
           </View>
         )}
@@ -1188,9 +1547,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
-  // Rendu conditionnel selon l'étape
   const renderCurrentStep = () => {
     switch (currentStep) {
+      case 0:
+        return renderStepZero();
       case 1:
         return renderStepOne();
       case 2:
@@ -1198,7 +1558,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       case 3:
         return renderStepThree();
       default:
-        return renderStepOne();
+        return renderStepZero();
     }
   };
 
@@ -1302,18 +1662,100 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   );
 }
 
+// 🆕 STYLES AJOUTÉS POUR LES NOUVEAUX ÉLÉMENTS
 const styles = StyleSheet.create({
+  // ... (tous les styles existants restent identiques)
+  
+  // Nouveaux styles pour le choix du type de compte
+  accountTypeContainer: {
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  accountTypeCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  accountTypeCardSelected: {
+    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  accountTypeGradient: {
+    padding: 24,
+    alignItems: 'center',
+    minHeight: 180,
+    justifyContent: 'center',
+  },
+  accountTypeTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  accountTypeTitleSelected: {
+    color: '#ffffff',
+  },
+  accountTypeDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+  accountTypeDescriptionSelected: {
+    color: '#e0e7ff',
+  },
+  validationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  validationBadgeText: {
+    fontSize: 12,
+    color: '#10b981',
+    marginLeft: 6,
+    fontWeight: '600',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    backgroundColor: '#eff6ff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6366f1',
+    marginTop: 16,
+    gap: 12,
+  },
+  infoBoxText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1e40af',
+    lineHeight: 18,
+  },
+  
+  // ... (tous les autres styles existants)
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
   },
   background: {
     flex: 1,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
   backgroundImage: {
-    opacity: 0.8,
+    resizeMode: 'cover',
   },
   gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1322,24 +1764,23 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingTop: 120,
-    paddingBottom: 40,
+    paddingVertical: 40,
   },
   blurContainer: {
-    borderRadius: 32,
+    borderRadius: 24,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    padding: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   stepContainer: {
-    padding: 24,
+    width: '100%',
   },
   progressContainer: {
     marginBottom: 24,
   },
   progressBar: {
     height: 6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 8,
@@ -1350,275 +1791,236 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: '#cbd5e1',
+    fontSize: 13,
+    textAlign: 'center',
     fontWeight: '500',
   },
   stepTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '700',
+    color: '#ffffff',
     marginBottom: 8,
+    textAlign: 'center',
   },
   stepDescription: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.7)',
+    color: '#94a3b8',
+    textAlign: 'center',
     marginBottom: 24,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   formContainer: {
+    gap: 16,
     marginBottom: 24,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 12,
-    marginBottom: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 14,
     paddingHorizontal: 16,
+    paddingVertical: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 52,
-    color: '#fff',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '500',
   },
   verificationIndicator: {
-    position: 'absolute',
-    right: 16,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginLeft: 8,
   },
   passwordToggle: {
-    position: 'absolute',
-    right: 16,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 5,
+    padding: 4,
   },
   errorText: {
-    color: '#ef4444',
+    color: '#fca5a5',
     fontSize: 12,
-    marginBottom: 12,
-    marginLeft: 16,
-    fontWeight: '500',
+    marginTop: 6,
+    marginLeft: 4,
   },
   successText: {
-    color: '#10b981',
+    color: '#6ee7b7',
     fontSize: 12,
-    marginBottom: 12,
-    marginLeft: 16,
-    fontWeight: '500',
+    marginTop: 6,
+    marginLeft: 4,
   },
-  // ✨ STYLES POUR LES 5 RÈGLES DE MOT DE PASSE
   passwordRulesContainer: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    gap: 8,
   },
   passwordRulesTitle: {
-    fontSize: 14,
+    fontSize: 13,
+    color: '#cbd5e1',
+    marginBottom: 4,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 12,
   },
   passwordRuleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 8,
   },
   passwordRuleText: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
-    marginLeft: 8,
+    color: '#94a3b8',
   },
   passwordRuleTextValid: {
-    color: '#10b981',
-    fontWeight: '500',
-  },
-  nextButton: {
-    height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  nextButtonInRow: {
-    flex: 1,
-    marginLeft: 12,
-    marginBottom: 0,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  gradientButton: {
-    height: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  nextButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  loginLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loginText: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 15,
-  },
-  loginButton: {
-    marginLeft: 8,
-  },
-  loginButtonText: {
-    color: '#6366f1',
-    fontSize: 15,
-    fontWeight: '600',
+    color: '#6ee7b7',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: '#ffffff',
+    marginBottom: 8,
   },
   photoManagerContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 28,
-    width: '100%',
-    paddingVertical: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderStyle: 'dashed',
-  },
-  photoHelperText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    marginTop: 12,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  searchContainer: {
     marginBottom: 16,
   },
+  photoHelperText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  searchContainer: {
+    gap: 12,
+  },
   searchButtonContainer: {
-    marginTop: 12,
-    marginBottom: 8,
+    width: '100%',
   },
   searchButton: {
-    width: '100%',
-    height: 48,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
   searchButtonGradient: {
-    height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
   },
   searchButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '600',
-    marginRight: 8,
   },
   selectedLocationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    marginTop: 4,
+    gap: 8,
+    marginTop: 12,
   },
   selectedLocationText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 15,
+    flex: 1,
+    color: '#6ee7b7',
+    fontSize: 14,
     fontWeight: '500',
   },
   navigationButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   backButton: {
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   backButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#cbd5e1',
+    fontSize: 15,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  nextButton: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  nextButtonInRow: {
+    flex: 2,
   },
   registerButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 28,
+    flex: 2,
+    borderRadius: 14,
     overflow: 'hidden',
-    marginLeft: 12,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  gradientButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+  },
+  nextButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   registerButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 8,
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+  loginLink: {
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 24,
+    gap: 8,
+  },
+  loginText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  loginButton: {
+    paddingHorizontal: 4,
+  },
+  loginButtonText: {
+    color: '#6366f1',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    padding: 20,
   },
   modalContent: {
-    width: width * 0.9,
-    maxHeight: height * 0.7,
     backgroundColor: '#1e293b',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    maxHeight: height * 0.7,
     overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '700',
+    color: '#ffffff',
   },
   suggestionsList: {
     maxHeight: height * 0.5,
@@ -1626,10 +2028,10 @@ const styles = StyleSheet.create({
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    gap: 12,
   },
   suggestionIconContainer: {
     width: 36,
@@ -1638,24 +2040,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(99, 102, 241, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
   suggestionTextContainer: {
     flex: 1,
   },
   suggestionCityName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 2,
   },
   suggestionPostalCode: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginTop: 2,
+    color: '#94a3b8',
   },
   noResultsText: {
-    padding: 24,
+    padding: 40,
     textAlign: 'center',
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: '#94a3b8',
+    fontSize: 14,
   },
 });
