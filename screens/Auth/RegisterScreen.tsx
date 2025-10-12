@@ -65,7 +65,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
   const [accountType, setAccountType] = useState<"citizen" | "municipality">("citizen");
   
-  const [municipalityName, setMunicipalityName] = useState("");
+  // ✅ CHANGEMENT : On utilise municipalityCity au lieu de municipalityName
+  const [municipalityCity, setMunicipalityCity] = useState("");
   const [municipalitySIREN, setMunicipalitySIREN] = useState("");
   const [municipalityPhone, setMunicipalityPhone] = useState("");
   const [municipalityAddress, setMunicipalityAddress] = useState("");
@@ -370,9 +371,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           usernameAvailable === true;
         setFormValid(step1Valid);
       } else {
+        // ✅ CHANGEMENT : Validation avec municipalityCity
         const step1Valid = 
-          !!municipalityName && !!municipalitySIREN && !!municipalityPhone && !!username &&
-          municipalityName.length >= MIN_LENGTH &&
+          !!municipalityCity && !!municipalitySIREN && !!municipalityPhone && !!username &&
+          municipalityCity.length >= MIN_LENGTH &&
           municipalitySIREN.length === 9 &&
           usernameError === null &&
           username.length >= MIN_LENGTH &&
@@ -403,7 +405,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     firstNameError, lastNameError, usernameError, emailError,
     currentStep, selectedLocation, photos, usernameAvailable, emailAvailable,
     passwordHasMinLength, passwordHasUppercase, passwordHasNumber, passwordHasSpecialChar, passwordsMatch,
-    accountType, municipalityName, municipalitySIREN, municipalityPhone, municipalityAddress
+    accountType, municipalityCity, municipalitySIREN, municipalityPhone, municipalityAddress
   ]);
 
   const handleRegisterClick = () => {
@@ -456,9 +458,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       longitude,
     };
 
+    // ✅ CHANGEMENT : On envoie municipalityCity au lieu de municipalityName
     const municipalityData = accountType === "municipality" ? {
       isMunicipality: true,
-      municipalityName,
+      municipalityCity,  // ← Ville uniquement
       municipalitySIREN,
       municipalityPhone,
       municipalityAddress,
@@ -1008,6 +1011,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </>
         ) : (
           <>
+            {/* ✅ CHANGEMENT : Nouveau champ pour la ville uniquement */}
             <View>
               <View style={styles.inputWrapper}>
                 <FontAwesome5 
@@ -1018,10 +1022,10 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
                 />
                 <TextInput
                   style={styles.input}
-                  value={municipalityName}
-                  placeholder="Nom de la mairie (ex: Mairie de Paris)"
+                  value={municipalityCity}
+                  placeholder="Ville de la mairie (ex: Haubourdin)"
                   placeholderTextColor="#94a3b8"
-                  onChangeText={setMunicipalityName}
+                  onChangeText={setMunicipalityCity}
                   autoCorrect={false}
                   returnKeyType="next"
                   editable={true}
@@ -1029,6 +1033,12 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
                   onSubmitEditing={() => focusNextInput(10, 1)}
                 />
               </View>
+              {/* ✅ APERÇU du nom final de la mairie */}
+              {municipalityCity && (
+                <Text style={styles.municipalityPreview}>
+                  📋 Dénomination : Mairie de {municipalityCity}
+                </Text>
+              )}
             </View>
 
             <View>
@@ -1165,7 +1175,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
-  // 🔍 ÉTAPE 2 AVEC DEBUG COMPLET
+  // 🔍 ÉTAPE 2 - ON GARDE TOUT TEL QUEL (avec les logs)
   const renderStepTwo = () => (
     <Animated.View
       style={[
@@ -1235,14 +1245,14 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           )}
         </View>
 
-        {/* 🔍 MOT DE PASSE AVEC DEBUG COMPLET */}
+        {/* 🔍 MOT DE PASSE - ON GARDE EXACTEMENT TEL QUEL */}
         <View>
           <Text style={{ color: '#fff', fontSize: 12, marginBottom: 5 }}>
             🔍 DEBUG: Password value = "{password}" | Length = {password.length}
           </Text>
           <View style={[
             styles.inputWrapper,
-            { borderWidth: 2, borderColor: '#10b981' } // Bordure verte pour le repérer
+            { borderWidth: 2, borderColor: '#10b981' }
           ]}>
             <Ionicons 
               name="lock-closed-outline" 
@@ -1662,90 +1672,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   );
 }
 
-// 🆕 STYLES AJOUTÉS POUR LES NOUVEAUX ÉLÉMENTS
 const styles = StyleSheet.create({
-  // ... (tous les styles existants restent identiques)
-  
-  // Nouveaux styles pour le choix du type de compte
-  accountTypeContainer: {
-    flexDirection: 'column',
-    gap: 16,
-    marginTop: 24,
-    marginBottom: 24,
-  },
-  accountTypeCard: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  accountTypeCardSelected: {
-    elevation: 8,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-  },
-  accountTypeGradient: {
-    padding: 24,
-    alignItems: 'center',
-    minHeight: 180,
-    justifyContent: 'center',
-  },
-  accountTypeTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  accountTypeTitleSelected: {
-    color: '#ffffff',
-  },
-  accountTypeDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 16,
-  },
-  accountTypeDescriptionSelected: {
-    color: '#e0e7ff',
-  },
-  validationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginTop: 12,
-  },
-  validationBadgeText: {
-    fontSize: 12,
-    color: '#10b981',
-    marginLeft: 6,
-    fontWeight: '600',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: '#eff6ff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#6366f1',
-    marginTop: 16,
-    gap: 12,
-  },
-  infoBoxText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#1e40af',
-    lineHeight: 18,
-  },
-  
-  // ... (tous les autres styles existants)
   container: {
     flex: 1,
   },
@@ -1850,6 +1777,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 6,
     marginLeft: 4,
+  },
+  // ✅ NOUVEAU STYLE pour l'aperçu du nom de la mairie
+  municipalityPreview: {
+    color: '#6ee7b7',
+    fontSize: 13,
+    marginTop: 8,
+    marginLeft: 4,
+    fontWeight: '600',
+    fontStyle: 'italic',
   },
   passwordRulesContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1996,6 +1932,83 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     fontSize: 14,
     fontWeight: '600',
+  },
+  accountTypeContainer: {
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  accountTypeCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  accountTypeCardSelected: {
+    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  accountTypeGradient: {
+    padding: 24,
+    alignItems: 'center',
+    minHeight: 180,
+    justifyContent: 'center',
+  },
+  accountTypeTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  accountTypeTitleSelected: {
+    color: '#ffffff',
+  },
+  accountTypeDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+  accountTypeDescriptionSelected: {
+    color: '#e0e7ff',
+  },
+  validationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  validationBadgeText: {
+    fontSize: 12,
+    color: '#10b981',
+    marginLeft: 6,
+    fontWeight: '600',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    backgroundColor: '#eff6ff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6366f1',
+    marginTop: 16,
+    gap: 12,
+  },
+  infoBoxText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1e40af',
+    lineHeight: 18,
   },
   modalOverlay: {
     flex: 1,

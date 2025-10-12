@@ -65,7 +65,14 @@ export function useAuth() {
     }
   };
   
-  // ✅ FONCTION FINALE MODIFIÉE - Accepte les données de mairie dans cityData
+  /**
+   * ✅ FONCTION MODIFIÉE - Gère l'inscription des citoyens ET des mairies
+   * 
+   * Pour les mairies :
+   * - cityData.municipalityCity contient juste la ville (ex: "Haubourdin")
+   * - On construit automatiquement "Mairie de Haubourdin"
+   * - On l'envoie dans firstName pour l'affichage professionnel
+   */
   const handleRegister = async (
     onSuccess: () => void,
     cityData: { 
@@ -73,9 +80,9 @@ export function useAuth() {
       code_postal: string; 
       latitude: number; 
       longitude: number;
-      // 🆕 NOUVEAUX CHAMPS pour les mairies (tous optionnels)
+      // 🏛️ Champs pour les mairies (tous optionnels)
       isMunicipality?: boolean;
-      municipalityName?: string;
+      municipalityCity?: string; // ✅ Changé : juste la ville maintenant
       municipalitySIREN?: string;
       municipalityPhone?: string;
       municipalityAddress?: string;
@@ -101,8 +108,8 @@ export function useAuth() {
       }
   
       // ✅ Si c'est une mairie, on vérifie les infos de mairie
-      if (cityData.isMunicipality && (!cityData.municipalityName || !cityData.municipalitySIREN)) {
-        Alert.alert("Erreur", "Nom de la mairie et numéro SIREN sont obligatoires.");
+      if (cityData.isMunicipality && (!cityData.municipalityCity || !cityData.municipalitySIREN)) {
+        Alert.alert("Erreur", "Ville de la mairie et numéro SIREN sont obligatoires.");
         return;
       }
   
@@ -124,18 +131,23 @@ export function useAuth() {
       formData.append("password", password);
       formData.append("username", username);
   
-      // 🆕 Si c'est une MAIRIE, on ajoute les infos de mairie
+      // 🏛️ Si c'est une MAIRIE
       if (cityData.isMunicipality) {
         console.log("🏛️ Inscription d'une MAIRIE");
+        
+        // ✅ CHANGEMENT PRINCIPAL : Construction du nom complet
+        const fullMunicipalityName = `Mairie de ${cityData.municipalityCity}`;
+        console.log(`📝 Nom complet généré : "${fullMunicipalityName}"`);
+        
         formData.append("isMunicipality", "true");
-        formData.append("municipalityName", cityData.municipalityName || "");
+        formData.append("municipalityName", fullMunicipalityName); // ← Nom complet
         formData.append("municipalitySIREN", cityData.municipalitySIREN || "");
         formData.append("municipalityPhone", cityData.municipalityPhone || "");
         formData.append("municipalityAddress", cityData.municipalityAddress || "");
         
-        // Pour les mairies, on met des valeurs par défaut pour nom/prénom
-        formData.append("lastName", "Mairie");
-        formData.append("firstName", cityData.municipalityName || "Municipalité");
+        // ✅ Pour l'affichage dans l'app, on met le nom complet dans firstName
+        formData.append("firstName", fullMunicipalityName);
+        formData.append("lastName", ""); // ← Vide pour les mairies
       } else {
         // 👤 Si c'est un CITOYEN, on ajoute nom/prénom normalement
         console.log("👤 Inscription d'un CITOYEN");
@@ -173,7 +185,7 @@ export function useAuth() {
         const data = await response.json();
         console.log("✅ Inscription réussie :", data);
   
-        // 🆕 SI C'EST UNE MAIRIE, on affiche un message spécial
+        // 🏛️ SI C'EST UNE MAIRIE, on affiche un message spécial
         if (cityData.isMunicipality) {
           Alert.alert(
             "Demande envoyée",
@@ -183,7 +195,7 @@ export function useAuth() {
           // On ne connecte PAS automatiquement les mairies
           onSuccess();
         } else {
-          // Pour les citoyens, connexion automatique
+          // 👤 Pour les citoyens, connexion automatique
           const { id, token } = data;
           if (!id || !token) {
             Alert.alert("Erreur", "Problème lors de la récupération des données utilisateur.");
