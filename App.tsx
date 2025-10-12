@@ -37,6 +37,9 @@ import ReportDetailsScreen from "./screens/ReportDetailsScreen";
 import PostsScreen from "./screens/PostsScreen";
 import CommentsScreen from "./screens/CommentsScreen";
 import StatisticsScreen from "./screens/StatisticsScreen";
+import EditTeamScreen from "./screens/EditTeamScreen";
+import EditNewsScreen from "./screens/EditNewsScreen";
+import EditServicesScreen from "./screens/EditServicesScreen";
 import CategoryReportsScreen from "./screens/CategoryReportsScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import CreateEventScreen from "./screens/CreateEventScreen";
@@ -994,6 +997,18 @@ export default function App() {
                         <Stack.Screen
                           name="EditCityInfoScreen"
                           component={EditCityInfoScreen}
+                        />
+                         <Stack.Screen
+                          name="EditTeamScreen"
+                          component={EditTeamScreen}
+                        />
+                         <Stack.Screen
+                          name="EditNewsScreen"
+                          component={EditNewsScreen}
+                        />
+                         <Stack.Screen
+                          name="EditServicesScreen"
+                          component={EditServicesScreen}
                         />
                         <Stack.Screen
                           name="StatisticsScreen"

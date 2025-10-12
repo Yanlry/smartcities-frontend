@@ -58,7 +58,6 @@ export default function MayorInfoCard({
   const [activeTab, setActiveTab] = useState("updates");
   const [activeNewsIndex, setActiveNewsIndex] = useState(0);
 
-  // NOUVEL ÉTAT : Mode prévisualisation
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -76,7 +75,6 @@ export default function MayorInfoCard({
     fetchCityInfo();
   }, []);
 
-  // ========== RÉCUPÉRER LES INFOS UTILISATEUR ==========
   const fetchUserInfo = async () => {
     try {
       const userId = await getUserIdFromToken();
@@ -93,7 +91,6 @@ export default function MayorInfoCard({
     }
   };
 
-  // ========== VÉRIFIER SI LA MAIRIE A REMPLI SES INFOS ==========
   const fetchCityInfo = async () => {
     try {
       const response = await fetch(
@@ -105,19 +102,18 @@ export default function MayorInfoCard({
         console.log("✅ Infos de la ville trouvées:", data);
         setCityInfo(data);
       } else if (response.status === 404) {
-        console.log("ℹ️ La ville n'a pas encore configuré ses informations (c'est normal)");
+        console.log("ℹ️ La ville n'a pas encore configuré ses informations");
         setCityInfo(null);
       } else {
         console.error("❌ Erreur inattendue:", response.status);
         setCityInfo(null);
       }
     } catch (error) {
-      console.error("❌ Erreur réseau lors de la récupération des infos:", error);
+      console.error("❌ Erreur réseau:", error);
       setCityInfo(null);
     }
   };
 
-  // ========== RÉCUPÉRER LES DONNÉES DE BASE ==========
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -173,14 +169,24 @@ export default function MayorInfoCard({
     setRefreshing(false);
   }, []);
 
-  const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-  // FONCTION : Basculer entre vue mairie et vue citoyen
-  const togglePreviewMode = () => {
+  // ✨ MODIFICATION : Actualise automatiquement avant de passer en mode preview
+  const togglePreviewMode = async () => {
+    if (!isPreviewMode) {
+      // Si on passe en mode preview (citoyen), actualiser d'abord les données
+      console.log("🔄 Actualisation des données avant affichage citoyen...");
+      await Promise.all([
+        fetchUserInfo(),
+        fetchData(),
+        fetchCityInfo(),
+      ]);
+      console.log("✅ Données actualisées !");
+    }
+    // Ensuite, bascule le mode
     setIsPreviewMode(!isPreviewMode);
   };
 
-  // ========== COMPOSANT : MESSAGE SECTION NON REMPLIE ==========
+  const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
   const EmptySection = ({ icon, title, message }: { icon: string; title: string; message: string }) => (
     <View style={styles.emptySection}>
       <Text style={styles.emptySectionIcon}>{icon}</Text>
@@ -214,9 +220,6 @@ export default function MayorInfoCard({
                 <Text style={styles.cityName}>Mairie de {city}</Text>
                 <Text style={styles.citySubtitle}>Espace administration</Text>
               </View>
-              <View style={[styles.weatherBadge, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
-                <Text style={styles.weatherIcon}>🏛️</Text>
-              </View>
             </View>
 
             <View style={styles.statsRow}>
@@ -236,7 +239,7 @@ export default function MayorInfoCard({
               </View>
             </View>
 
-            {/* ✅ NOUVEAU : BOUTON DE PRÉVISUALISATION EN BAS DU HEADER */}
+            {/* Bouton "Voir comme un citoyen" - Actualise automatiquement maintenant ! */}
             <TouchableOpacity 
               style={styles.previewButton}
               onPress={togglePreviewMode}
@@ -248,7 +251,6 @@ export default function MayorInfoCard({
           </LinearGradient>
 
           <View style={styles.content}>
-            {/* Message encouragement */}
             {!cityInfo && (
               <View style={styles.encourageCard}>
                 <Text style={styles.encourageIcon}>🚀</Text>
@@ -262,14 +264,13 @@ export default function MayorInfoCard({
                 <TouchableOpacity 
                   style={styles.encourageBtn}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate("EditCityInfoScreen")}
+                  onPress={() => navigation.navigate("EditMayorInfoScreen")}
                 >
                   <Text style={styles.encourageBtnText}>Compléter maintenant</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* Formulaire de gestion */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardIcon}>✏️</Text>
@@ -291,7 +292,11 @@ export default function MayorInfoCard({
                 <Text style={styles.manageBtnArrow}>→</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.manageBtn} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.manageBtn} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("EditTeamScreen")}
+              >
                 <Text style={styles.manageBtnIcon}>👥</Text>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>Équipe municipale</Text>
@@ -302,7 +307,11 @@ export default function MayorInfoCard({
                 <Text style={styles.manageBtnArrow}>→</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.manageBtn} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.manageBtn} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("EditNewsScreen")}
+              >
                 <Text style={styles.manageBtnIcon}>📢</Text>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>Actualités</Text>
@@ -313,7 +322,11 @@ export default function MayorInfoCard({
                 <Text style={styles.manageBtnArrow}>→</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.manageBtn} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.manageBtn} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("EditServicesScreen")}
+              >
                 <Text style={styles.manageBtnIcon}>📋</Text>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>Services municipaux</Text>
@@ -394,7 +407,6 @@ export default function MayorInfoCard({
             </TouchableOpacity>
           </View>
 
-          {/* ✅ NOUVEAU : BOUTON RETOUR À L'ADMIN (seulement en mode prévisualisation) */}
           {isMunicipality && isPreviewMode && (
             <TouchableOpacity 
               style={styles.backToAdminButton}
@@ -434,14 +446,18 @@ export default function MayorInfoCard({
                 {cityInfo?.mayorName ? (
                   <>
                     <View style={styles.mayorContent}>
-                      <Image
-                        source={
-                          cityInfo.mayorPhoto 
-                            ? { uri: cityInfo.mayorPhoto }
-                            : require("../../../assets/images/mayor.png")
-                        }
-                        style={styles.mayorImage}
-                      />
+                      {cityInfo.mayorPhoto ? (
+                        <Image
+                          source={{ uri: cityInfo.mayorPhoto }}
+                          style={styles.mayorImage}
+                        />
+                      ) : (
+                        <View style={styles.mayorImagePlaceholder}>
+                          <Text style={styles.mayorImagePlaceholderText}>
+                            Photo non disponible
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.mayorInfo}>
                         <Text style={styles.mayorName}>{cityInfo.mayorName}</Text>
                         <Text style={styles.mayorRole}>Maire de {city}</Text>
@@ -469,10 +485,18 @@ export default function MayorInfoCard({
                         >
                           {cityInfo.teamMembers.map((member: any, index: number) => (
                             <View key={index} style={styles.teamMember}>
-                              <Image
-                                source={{ uri: member.photo || "https://via.placeholder.com/150" }}
-                                style={styles.teamMemberImage}
-                              />
+                              {member.photo && member.photo !== "https://via.placeholder.com/150" ? (
+                                <Image
+                                  source={{ uri: member.photo }}
+                                  style={styles.teamMemberImage}
+                                />
+                              ) : (
+                                <View style={styles.teamMemberImagePlaceholder}>
+                                  <Text style={styles.teamMemberImagePlaceholderText}>
+                                    Photo non disponible
+                                  </Text>
+                                </View>
+                              )}
                               <Text style={styles.teamMemberName}>{member.name}</Text>
                             </View>
                           ))}
@@ -484,7 +508,7 @@ export default function MayorInfoCard({
                   <EmptySection
                     icon="🏛️"
                     title="Informations non disponibles"
-                    message={`La mairie de ${city} n'a pas encore renseigné les informations du maire. Encouragez votre ville à devenir partenaire Smarter !`}
+                    message={`La mairie de ${city} n'a pas encore renseigné les informations du maire.`}
                   />
                 )}
               </View>
@@ -520,7 +544,7 @@ export default function MayorInfoCard({
                   <EmptySection
                     icon="📰"
                     title="Aucune actualité"
-                    message={`La mairie de ${city} n'a pas encore publié d'actualités. Revenez plus tard !`}
+                    message={`La mairie de ${city} n'a pas encore publié d'actualités.`}
                   />
                 )}
 
@@ -593,7 +617,7 @@ export default function MayorInfoCard({
               ) : (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>📅</Text>
-                  <Text style={styles.emptyText}>Aucun événement prévu pour le moment</Text>
+                  <Text style={styles.emptyText}>Aucun événement prévu</Text>
                 </View>
               )}
             </View>
@@ -656,7 +680,7 @@ export default function MayorInfoCard({
                   <EmptySection
                     icon="📋"
                     title="Services non configurés"
-                    message={`La mairie de ${city} n'a pas encore configuré ses services en ligne.`}
+                    message={`La mairie de ${city} n'a pas encore configuré ses services.`}
                   />
                 )}
               </View>
@@ -678,9 +702,6 @@ export default function MayorInfoCard({
                       key={emergency.number}
                       style={[styles.emergencyBtn, { backgroundColor: emergency.color }]}
                       activeOpacity={0.7}
-                      onPress={() => {
-                        console.log(`Appeler le ${emergency.number}`);
-                      }}
                     >
                       <Text style={styles.emergencyNumber}>{emergency.number}</Text>
                       <Text style={styles.emergencyName}>{emergency.name}</Text>
@@ -952,6 +973,23 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     marginRight: 16,
   },
+  mayorImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+    padding: 8,
+  },
+  mayorImagePlaceholderText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#757575",
+    textAlign: "center",
+    lineHeight: 13,
+  },
   mayorInfo: {
     flex: 1,
   },
@@ -1002,10 +1040,28 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginBottom: 8,
   },
+  teamMemberImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    padding: 6,
+  },
+  teamMemberImagePlaceholderText: {
+    fontSize: 8,
+    fontWeight: "600",
+    color: "#757575",
+    textAlign: "center",
+    lineHeight: 10,
+  },
   teamMemberName: {
     fontSize: 12,
     color: "#757575",
     textAlign: "center",
+    maxWidth: 70,
   },
   newsCard: {
     backgroundColor: "#F5F5F5",
@@ -1216,10 +1272,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#757575",
   },
-
-  // ✅ NOUVEAUX STYLES POUR LE MODE PRÉVISUALISATION (VERSION PROPRE)
-  
-  // Bouton "Voir comme un citoyen" - EN BAS DU HEADER (Vue Mairie)
   previewButton: {
     backgroundColor: "rgba(255,255,255,0.25)",
     paddingVertical: 14,
@@ -1242,8 +1294,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     letterSpacing: 0.5,
   },
-
-  // Bouton "Retour à l'admin" - EN BAS DU HEADER (Vue Citoyen en mode preview)
   backToAdminButton: {
     backgroundColor: "rgba(67,160,71,0.95)",
     paddingVertical: 14,
@@ -1255,11 +1305,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.3)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
   },
   backToAdminButtonIcon: {
     fontSize: 18,
@@ -1270,28 +1315,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     letterSpacing: 0.5,
-  },
-
-  // Badge "Mode prévisualisation" - EN BAS DU HEADER (Vue Citoyen en mode preview)
-  previewModeBadge: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  previewModeBadgeIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  previewModeBadgeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#FFFFFF",
   },
 });

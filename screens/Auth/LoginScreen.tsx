@@ -18,7 +18,7 @@ import {
   Keyboard,
   Easing,
   Pressable,
-  ScrollView,
+  Image,
 } from "react-native";
 import { useAuth } from "../../hooks/auth/useAuth";
 import { BlurView } from "expo-blur";
@@ -860,8 +860,11 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
               },
             ]}
           >
-            <Text style={styles.appName}>Smartcities</Text>
-            <Text style={styles.appTagline}>Connectez-vous avec votre ville</Text>
+          <Image
+                source={require("../../assets/images/logo.png")}
+                style={styles.headerLogo}
+                resizeMode="contain"
+              />
           </Animated.View>
 
           {/* Section principale avec animation */}
@@ -886,8 +889,8 @@ export default function LoginScreen({ navigation, onLogin }: LoginScreenProps) {
                 style={styles.gradientOverlay}
               />
               
-              <Text style={styles.welcomeTitle}>Bienvenue</Text>
-              <Text style={styles.welcomeSubtitle}>Accédez à votre espace connecté</Text>
+              <Text style={styles.welcomeTitle}>SMARTCITIES</Text>
+              <Text style={styles.welcomeSubtitle}>Entrer dans le coeur de votre ville</Text>
 
               <View style={styles.inputGroup}>
                 <View style={[
@@ -1116,7 +1119,6 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 30,
     width: '100%',
   },
   logoContainer: {
@@ -1154,6 +1156,10 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  headerLogo: {
+    width: 230, // ajuste selon la taille du header
+    height: 180,
   },
   mainContainer: {
     width: '90%',
