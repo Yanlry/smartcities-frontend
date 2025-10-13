@@ -177,7 +177,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       
       return isAvailable;
     } catch (error) {
-      console.error('Erreur lors de la vérification du nom d\'utilisateur:', error);
       setUsernameError("Erreur lors de la vérification. Veuillez réessayer.");
       return false;
     } finally {
