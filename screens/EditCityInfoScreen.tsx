@@ -126,21 +126,17 @@ export default function EditMayorInfoScreen() {
   const uploadMayorPhoto = async (photoUri: string) => {
     try {
       setUploadingPhoto(true);
-
-      // Préparer les données à envoyer (FormData)
+  
       const formData = new FormData();
       
-      // Ajouter l'image au FormData
       formData.append("mayorPhoto", {
         uri: photoUri,
         type: "image/jpeg",
         name: "mayor.jpg",
       } as any);
-
-      // Ajouter le nom de la ville
+  
       formData.append("cityName", cityName);
-
-      // Récupérer le token d'authentification
+  
       const token = await AsyncStorage.getItem("authToken");
       
       if (!token) {
@@ -148,24 +144,23 @@ export default function EditMayorInfoScreen() {
         setUploadingPhoto(false);
         return;
       }
-
+  
       console.log("📤 Envoi de la photo au serveur...");
-
-      // Envoyer au serveur
+  
+      // ⬅️ ✅ URL CORRIGÉE : Plus besoin de  l'URL du serveur, S3 gère ça
       const response = await fetch(`${API_URL}/cityinfo/upload-mayor-photo`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
-          // ⚠️ NE PAS mettre "Content-Type" pour FormData, il se génère automatiquement
         },
         body: formData,
       });
-
+  
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Photo uploadée:", data);
         
-        // Mettre à jour l'état avec la nouvelle URL de la photo
+        // ⬅️ ✅ On récupère l'URL S3 retournée par le backend
         setMayorPhoto(data.mayorPhotoUrl);
         
         Alert.alert("Succès", "La photo du maire a été mise à jour !");
@@ -181,6 +176,7 @@ export default function EditMayorInfoScreen() {
       setUploadingPhoto(false);
     }
   };
+  
 
   // ========== SAUVEGARDER LES INFORMATIONS ==========
   const handleSave = async () => {

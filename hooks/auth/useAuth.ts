@@ -68,10 +68,16 @@ export function useAuth() {
   /**
    * ✅ FONCTION MODIFIÉE - Gère l'inscription des citoyens ET des mairies
    * 
-   * Pour les mairies :
-   * - cityData.municipalityCity contient juste la ville (ex: "Haubourdin")
-   * - On construit automatiquement "Mairie de Haubourdin"
-   * - On l'envoie dans firstName pour l'affichage professionnel
+   * DIFFÉRENCES ENTRE CITOYENS ET MAIRIES :
+   * 
+   * CITOYENS :
+   * - Doivent avoir : email, password, username, firstName, lastName
+   * - Le username est choisi par l'utilisateur et vérifié côté frontend
+   * 
+   * MAIRIES :
+   * - Doivent avoir : email, password, municipalityCity, municipalitySIREN
+   * - PAS DE USERNAME à saisir ! Le backend génère automatiquement "mairie-ville"
+   * - Le firstName devient "Mairie de [Ville]" pour l'affichage
    */
   const handleRegister = async (
     onSuccess: () => void,
@@ -82,7 +88,7 @@ export function useAuth() {
       longitude: number;
       // 🏛️ Champs pour les mairies (tous optionnels)
       isMunicipality?: boolean;
-      municipalityCity?: string; // ✅ Changé : juste la ville maintenant
+      municipalityCity?: string; // Juste la ville (ex: "Haubourdin")
       municipalitySIREN?: string;
       municipalityPhone?: string;
       municipalityAddress?: string;
@@ -95,25 +101,33 @@ export function useAuth() {
       setIsRegisterClicked(true);
       setIsLoading(true);
   
-      // ✅ Validation des champs de base
-      if (!email || !password || !username) {
-        Alert.alert("Erreur", "Email, mot de passe et nom d'utilisateur sont obligatoires.");
+      // ✅ MODIFICATION 1 : Validation différente selon le type de compte
+      if (!email || !password) {
+        Alert.alert("Erreur", "Email et mot de passe sont obligatoires.");
         return;
       }
   
-      // ✅ Si c'est un citoyen, on vérifie qu'il a un nom/prénom
-      if (!cityData.isMunicipality && (!lastName || !firstName)) {
-        Alert.alert("Erreur", "Nom et prénom sont obligatoires pour un compte citoyen.");
-        return;
+      // ✅ Si c'est un CITOYEN, on vérifie nom/prénom/username
+      if (!cityData.isMunicipality) {
+        if (!lastName || !firstName) {
+          Alert.alert("Erreur", "Nom et prénom sont obligatoires pour un compte citoyen.");
+          return;
+        }
+        if (!username) {
+          Alert.alert("Erreur", "Le nom d'utilisateur est obligatoire pour un compte citoyen.");
+          return;
+        }
       }
   
-      // ✅ Si c'est une mairie, on vérifie les infos de mairie
-      if (cityData.isMunicipality && (!cityData.municipalityCity || !cityData.municipalitySIREN)) {
-        Alert.alert("Erreur", "Ville de la mairie et numéro SIREN sont obligatoires.");
-        return;
+      // ✅ Si c'est une MAIRIE, on vérifie les infos de mairie (PAS de username !)
+      if (cityData.isMunicipality) {
+        if (!cityData.municipalityCity || !cityData.municipalitySIREN) {
+          Alert.alert("Erreur", "Ville de la mairie et numéro SIREN sont obligatoires.");
+          return;
+        }
       }
   
-      // ✅ Validation de la localisation
+      // ✅ Validation de la localisation (obligatoire pour tous)
       if (!cityData.nom_commune || !cityData.code_postal || !cityData.latitude || !cityData.longitude) {
         Alert.alert("Erreur", "Veuillez sélectionner une ville valide.");
         return;
@@ -129,18 +143,27 @@ export function useAuth() {
       const formData = new FormData();
       formData.append("email", email.toLowerCase());
       formData.append("password", password);
-      formData.append("username", username);
+  
+      // ✅ MODIFICATION 2 : Username seulement pour les citoyens
+      if (!cityData.isMunicipality) {
+        // 👤 CITOYEN : on envoie le username choisi par l'utilisateur
+        formData.append("username", username);
+        console.log(`👤 Username citoyen : "${username}"`);
+      } else {
+        // 🏛️ MAIRIE : on n'envoie PAS de username, le backend le générera automatiquement
+        console.log("🏛️ Mairie : pas de username envoyé (sera généré par le backend)");
+      }
   
       // 🏛️ Si c'est une MAIRIE
       if (cityData.isMunicipality) {
         console.log("🏛️ Inscription d'une MAIRIE");
         
-        // ✅ CHANGEMENT PRINCIPAL : Construction du nom complet
+        // ✅ Construction du nom complet de la mairie
         const fullMunicipalityName = `Mairie de ${cityData.municipalityCity}`;
         console.log(`📝 Nom complet généré : "${fullMunicipalityName}"`);
         
         formData.append("isMunicipality", "true");
-        formData.append("municipalityName", fullMunicipalityName); // ← Nom complet
+        formData.append("municipalityName", fullMunicipalityName); // ← Nom complet pour la BDD
         formData.append("municipalitySIREN", cityData.municipalitySIREN || "");
         formData.append("municipalityPhone", cityData.municipalityPhone || "");
         formData.append("municipalityAddress", cityData.municipalityAddress || "");
@@ -164,6 +187,7 @@ export function useAuth() {
   
       // 📸 Ajout des photos (seulement pour les citoyens)
       if (photos.length > 0) {
+        console.log(`📸 Ajout de ${photos.length} photo(s)`);
         photos.forEach((photo) => {
           formData.append("photos", {
             uri: photo.uri,
@@ -173,7 +197,7 @@ export function useAuth() {
         });
       }
   
-      console.log("✅ Données prêtes à être envoyées");
+      console.log("✅ Données prêtes à être envoyées au backend");
   
       // 🌐 Envoi de la requête au backend
       const response = await fetch(`${API_URL}/auth/signup`, {
@@ -185,17 +209,17 @@ export function useAuth() {
         const data = await response.json();
         console.log("✅ Inscription réussie :", data);
   
-        // 🏛️ SI C'EST UNE MAIRIE, on affiche un message spécial
+        // 🏛️ SI C'EST UNE MAIRIE
         if (cityData.isMunicipality) {
           Alert.alert(
-            "Demande envoyée",
-            "Votre demande d'inscription en tant que mairie a été envoyée. Vous recevrez un email une fois votre compte validé par un administrateur.",
-            [{ text: "Compris" }]
+            "Demande envoyée ✅",
+            "Votre demande d'inscription en tant que mairie a été envoyée avec succès.\n\nVous recevrez un email une fois votre compte validé par un administrateur.",
+            [{ text: "Compris", style: "default" }]
           );
           // On ne connecte PAS automatiquement les mairies
           onSuccess();
         } else {
-          // 👤 Pour les citoyens, connexion automatique
+          // 👤 Pour les CITOYENS, connexion automatique
           const { id, token } = data;
           if (!id || !token) {
             Alert.alert("Erreur", "Problème lors de la récupération des données utilisateur.");
@@ -205,17 +229,27 @@ export function useAuth() {
           await setToken(token);
           await setUserId(id);
   
-          Alert.alert("Succès", "Inscription réussie !");
+          Alert.alert("Succès 🎉", "Inscription réussie ! Bienvenue dans Smartcities !");
           onSuccess();
         }
       } else {
         const errorData = await response.json();
         console.error("❌ Erreur lors de l'inscription :", errorData);
-        Alert.alert("Erreur", errorData.message || "Une erreur s'est produite.");
+        
+        // Message d'erreur personnalisé selon le type d'erreur
+        let errorMessage = "Une erreur s'est produite.";
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        Alert.alert("Erreur d'inscription", errorMessage);
       }
     } catch (error) {
       console.error("❌ Erreur pendant l'inscription :", error);
-      Alert.alert("Erreur", "Impossible de se connecter au serveur.");
+      Alert.alert(
+        "Erreur réseau",
+        "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
+      );
     } finally {
       setIsRegisterClicked(false);
       setIsLoading(false);

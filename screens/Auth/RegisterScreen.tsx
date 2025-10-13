@@ -65,7 +65,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
   const [accountType, setAccountType] = useState<"citizen" | "municipality">("citizen");
   
-  // ✅ CHANGEMENT : On utilise municipalityCity au lieu de municipalityName
   const [municipalityCity, setMunicipalityCity] = useState("");
   const [municipalitySIREN, setMunicipalitySIREN] = useState("");
   const [municipalityPhone, setMunicipalityPhone] = useState("");
@@ -119,7 +118,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   const searchBounceAnim = useRef(new Animated.Value(1)).current;
   const checkingAnim = useRef(new Animated.Value(0)).current;
 
-  // 🔍 DEBUG : Logger les changements d'étape
   useEffect(() => {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log(`📍 ÉTAPE ${currentStep} | Type: ${accountType}`);
@@ -245,7 +243,16 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     return hasMinLength && hasUppercase && hasNumber && hasSpecialChar && doPasswordsMatch;
   };
 
+  // ✅ CHANGEMENT 1 : On ne vérifie le username QUE pour les citoyens
   useEffect(() => {
+    // Si c'est une mairie, on ne vérifie pas le username
+    if (accountType === "municipality") {
+      setUsernameAvailable(null);
+      setUsernameError(null);
+      return;
+    }
+
+    // Pour les citoyens, on garde la vérification normale
     if (usernameTimeoutRef.current) {
       clearTimeout(usernameTimeoutRef.current);
     }
@@ -267,7 +274,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         clearTimeout(usernameTimeoutRef.current);
       }
     };
-  }, [username, checkUsernameAvailabilityHandler]);
+  }, [username, accountType, checkUsernameAvailabilityHandler]);
 
   useEffect(() => {
     if (emailTimeoutRef.current) {
@@ -339,7 +346,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     setEmail(value);
   };
 
-  // 🔍 DEBUG : Logger TOUS les changements de mot de passe
   const handlePasswordChange = (value: string) => {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("🔐 MOT DE PASSE CHANGÉ");
@@ -359,11 +365,13 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     setConfirmPassword(value);
   };
 
+  // ✅ CHANGEMENT 2 : Validation différente selon le type de compte
   useEffect(() => {
     if (currentStep === 0) {
       setFormValid(true);
     } else if (currentStep === 1) {
       if (accountType === "citizen") {
+        // Pour les citoyens : on vérifie firstName, lastName, username
         const step1Valid = 
           !!firstName && !!lastName && !!username && 
           firstNameError === null && lastNameError === null && usernameError === null &&
@@ -371,14 +379,11 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           usernameAvailable === true;
         setFormValid(step1Valid);
       } else {
-        // ✅ CHANGEMENT : Validation avec municipalityCity
+        // ✅ Pour les mairies : on ne vérifie PAS le username !
         const step1Valid = 
-          !!municipalityCity && !!municipalitySIREN && !!municipalityPhone && !!username &&
+          !!municipalityCity && !!municipalitySIREN && !!municipalityPhone &&
           municipalityCity.length >= MIN_LENGTH &&
-          municipalitySIREN.length === 9 &&
-          usernameError === null &&
-          username.length >= MIN_LENGTH &&
-          usernameAvailable === true;
+          municipalitySIREN.length === 9;
         setFormValid(step1Valid);
       }
     } else if (currentStep === 2) {
@@ -458,14 +463,17 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       longitude,
     };
 
-    // ✅ CHANGEMENT : On envoie municipalityCity au lieu de municipalityName
+    // ✅ CHANGEMENT 3 : On n'envoie PAS le username pour les mairies
     const municipalityData = accountType === "municipality" ? {
       isMunicipality: true,
-      municipalityCity,  // ← Ville uniquement
+      municipalityCity,
       municipalitySIREN,
       municipalityPhone,
       municipalityAddress,
-    } : { isMunicipality: false };
+      // ⬅️ Pas de username envoyé ! Le backend va le générer automatiquement
+    } : { 
+      isMunicipality: false 
+    };
 
     handleRegister(onLogin, { ...cityData, ...municipalityData });
   };
@@ -479,7 +487,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           inputRefs.current[index + 1]?.focus();
         }
       } else {
-        if (index < 13 && inputRefs.current[index + 1]) {
+        if (index < 12 && inputRefs.current[index + 1]) {
           inputRefs.current[index + 1]?.focus();
         }
       }
@@ -515,7 +523,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       return;
     }
 
-    if (currentStep === 1 && usernameAvailable === false) {
+    // ✅ On ne vérifie le username QUE pour les citoyens
+    if (currentStep === 1 && accountType === "citizen" && usernameAvailable === false) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Nom d'utilisateur indisponible", "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre.");
       return;
@@ -1011,7 +1020,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </>
         ) : (
           <>
-            {/* ✅ CHANGEMENT : Nouveau champ pour la ville uniquement */}
+            {/* ✅ Champ ville de la mairie */}
             <View>
               <View style={styles.inputWrapper}>
                 <FontAwesome5 
@@ -1033,7 +1042,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
                   onSubmitEditing={() => focusNextInput(10, 1)}
                 />
               </View>
-              {/* ✅ APERÇU du nom final de la mairie */}
               {municipalityCity && (
                 <Text style={styles.municipalityPreview}>
                   📋 Dénomination : Mairie de {municipalityCity}
@@ -1041,6 +1049,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               )}
             </View>
 
+            {/* Champ SIREN */}
             <View>
               <View style={styles.inputWrapper}>
                 <MaterialIcons 
@@ -1065,6 +1074,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               </View>
             </View>
 
+            {/* Champ téléphone */}
             <View>
               <View style={styles.inputWrapper}>
                 <Ionicons 
@@ -1080,53 +1090,22 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
                   placeholderTextColor="#94a3b8"
                   onChangeText={setMunicipalityPhone}
                   keyboardType="phone-pad"
-                  returnKeyType="next"
+                  returnKeyType="done"
                   editable={true}
                   ref={(el) => { inputRefs.current[12] = el; }}
-                  onSubmitEditing={() => focusNextInput(12, 1)}
+                  onSubmitEditing={() => inputRefs.current[12]?.blur()}
                 />
               </View>
             </View>
 
-            <View>
-              <View style={[
-                styles.inputWrapper,
-                usernameError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
-                usernameAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
-              ]}>
-                <Ionicons 
-                  name="at" 
-                  size={22} 
-                  color={usernameError ? "#ef4444" : usernameAvailable === true ? "#10b981" : "#5e5ce6"} 
-                  style={styles.inputIcon} 
-                />
-                <TextInput
-                  style={styles.input}
-                  value={username}
-                  placeholder="Nom d'utilisateur (unique)"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={handleUsernameChange}
-                  autoCorrect={false}
-                  spellCheck={false}
-                  returnKeyType="done"
-                  editable={true}
-                  ref={(el) => { inputRefs.current[13] = el; }}
-                  onSubmitEditing={() => inputRefs.current[13]?.blur()}
-                />
-                {renderVerificationIndicator(isCheckingUsername, usernameAvailable, 'username')}
-              </View>
-              {usernameError && (
-                <Text style={styles.errorText}>{usernameError}</Text>
-              )}
-              {usernameAvailable === true && !usernameError && (
-                <Text style={styles.successText}>✓ Ce nom d'utilisateur est disponible</Text>
-              )}
-            </View>
+            {/* ✅ CHANGEMENT MAJEUR : On supprime complètement le champ username pour les mairies ! */}
+            {/* Les mairies n'ont plus besoin de saisir de username */}
+            {/* Le backend va générer automatiquement "mairie-nomville" */}
 
             <View style={styles.infoBox}>
               <Ionicons name="information-circle" size={20} color="#6366f1" />
               <Text style={styles.infoBoxText}>
-                Votre compte devra être validé par un administrateur avant de pouvoir être utilisé.
+                Votre compte devra être validé par un administrateur avant de pouvoir être utilisé. Un nom d'utilisateur sera généré automatiquement.
               </Text>
             </View>
           </>
@@ -1146,19 +1125,19 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           style={[
             styles.nextButton,
             styles.nextButtonInRow,
-            (!formValid || isCheckingUsername) && styles.buttonDisabled,
+            (!formValid || (accountType === "citizen" && isCheckingUsername)) && styles.buttonDisabled,
           ]}
           onPress={goToNextStep}
-          disabled={!formValid || isCheckingUsername}
+          disabled={!formValid || (accountType === "citizen" && isCheckingUsername)}
           activeOpacity={0.9}
         >
           <LinearGradient
-            colors={(formValid && !isCheckingUsername) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
+            colors={(formValid && !(accountType === "citizen" && isCheckingUsername)) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientButton}
           >
-            {isCheckingUsername ? (
+            {(accountType === "citizen" && isCheckingUsername) ? (
               <>
                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
                 <Text style={styles.nextButtonText}>Vérification...</Text>
@@ -1175,7 +1154,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
-  // 🔍 ÉTAPE 2 - ON GARDE TOUT TEL QUEL (avec les logs)
   const renderStepTwo = () => (
     <Animated.View
       style={[
@@ -1202,7 +1180,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       </Text>
 
       <View style={styles.formContainer}>
-        {/* EMAIL */}
         <View>
           <View style={[
             styles.inputWrapper,
@@ -1227,13 +1204,8 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               spellCheck={false}
               returnKeyType="next"
               editable={true}
-              ref={(el) => { 
-                console.log("📝 Ref EMAIL assignée (index 20)");
-                inputRefs.current[20] = el; 
-              }}
+              ref={(el) => { inputRefs.current[20] = el; }}
               onSubmitEditing={() => focusNextInput(20, 2)}
-              onFocus={() => console.log("✅ EMAIL a le focus")}
-              onBlur={() => console.log("❌ EMAIL a perdu le focus")}
             />
             {renderVerificationIndicator(isCheckingEmail, emailAvailable, 'email')}
           </View>
@@ -1245,7 +1217,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           )}
         </View>
 
-        {/* 🔍 MOT DE PASSE - ON GARDE EXACTEMENT TEL QUEL */}
+      {/* 🔍 MOT DE PASSE - ON GARDE EXACTEMENT TEL QUEL */}
         <View>
           <Text style={{ color: '#fff', fontSize: 12, marginBottom: 5 }}>
             🔍 DEBUG: Password value = "{password}" | Length = {password.length}
@@ -1671,6 +1643,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

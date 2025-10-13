@@ -109,56 +109,58 @@ export default function EditTeamScreen() {
     }
   };
 
-  // ========== 📤 UPLOADER LA PHOTO ==========
-  const uploadTeamMemberPhoto = async (photoUri: string) => {
-    try {
-      setUploadingPhoto(true);
 
-      const formData = new FormData();
-      
-      formData.append("teamMemberPhoto", {
-        uri: photoUri,
-        type: "image/jpeg",
-        name: "team-member.jpg",
-      } as any);
+const uploadTeamMemberPhoto = async (photoUri: string) => {
+  try {
+    setUploadingPhoto(true);
 
-      formData.append("cityName", cityName);
+    const formData = new FormData();
+    
+    formData.append("teamMemberPhoto", {
+      uri: photoUri,
+      type: "image/jpeg",
+      name: "team-member.jpg",
+    } as any);
 
-      const token = await AsyncStorage.getItem("authToken");
-      
-      if (!token) {
-        Alert.alert("Erreur", "Vous devez être connecté.");
-        setUploadingPhoto(false);
-        return;
-      }
-
-      console.log("📤 Envoi de la photo...");
-
-      const response = await fetch(`${API_URL}/cityinfo/upload-team-photo`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("✅ Photo uploadée:", data);
-        setMemberPhoto(data.photoUrl);
-        Alert.alert("Succès", "Photo ajoutée !");
-      } else {
-        const errorText = await response.text();
-        console.error("❌ Erreur serveur:", errorText);
-        Alert.alert("Erreur", "Impossible d'uploader la photo.");
-      }
-    } catch (error) {
-      console.error("❌ Erreur upload:", error);
-      Alert.alert("Erreur", "Vérifiez votre connexion.");
-    } finally {
+    // ⬅️ ✅ Plus besoin d'envoyer cityName ici, juste la photo
+    const token = await AsyncStorage.getItem("authToken");
+    
+    if (!token) {
+      Alert.alert("Erreur", "Vous devez être connecté.");
       setUploadingPhoto(false);
+      return;
     }
-  };
+
+    console.log("📤 Envoi de la photo...");
+
+    const response = await fetch(`${API_URL}/cityinfo/upload-team-photo`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("✅ Photo uploadée:", data);
+      
+      // ⬅️ ✅ On récupère l'URL S3
+      setMemberPhoto(data.photoUrl);
+      
+      Alert.alert("Succès", "Photo ajoutée !");
+    } else {
+      const errorText = await response.text();
+      console.error("❌ Erreur serveur:", errorText);
+      Alert.alert("Erreur", "Impossible d'uploader la photo.");
+    }
+  } catch (error) {
+    console.error("❌ Erreur upload:", error);
+    Alert.alert("Erreur", "Vérifiez votre connexion.");
+  } finally {
+    setUploadingPhoto(false);
+  }
+};
 
   // ========== OUVRIR LA MODALE ==========
   const openModal = (index: number | null = null) => {
