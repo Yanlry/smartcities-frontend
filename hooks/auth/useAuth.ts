@@ -6,6 +6,7 @@ import { login } from '../../services/authService';
 import { useToken } from '../auth/useToken'
 // @ts-ignore
 import { API_URL } from '@env';
+import { normalizeCityName } from '../../utils/cityUtils'; // ✅ AJOUT DE LA FONCTION
 
 export function useAuth() {
   const [email, setEmail] = useState('');
@@ -66,7 +67,7 @@ export function useAuth() {
   };
   
   /**
-   * ✅ FONCTION MODIFIÉE - Gère mieux les erreurs du backend
+   * ✅✅✅ FONCTION MODIFIÉE - Normalise le nom de la ville AVANT de l'enregistrer
    */
   const handleRegister = async (
     onSuccess: () => void,
@@ -84,7 +85,18 @@ export function useAuth() {
   ) => {
     try {
       console.log("🚀 Début de l'inscription...");
-      console.log("📍 Données de localisation :", cityData);
+      console.log("📍 Données de localisation AVANT normalisation :", cityData);
+  
+      // ✅✅✅ NOUVEAU : Normaliser le nom de la ville AVANT de l'enregistrer
+      const normalizedCityName = normalizeCityName(cityData.nom_commune);
+      console.log(`🔄 Ville normalisée : "${cityData.nom_commune}" → "${normalizedCityName}"`);
+      
+      // ✅✅✅ NOUVEAU : Si c'est une mairie, normaliser aussi le nom de la ville de la mairie
+      let normalizedMunicipalityCity = "";
+      if (cityData.isMunicipality && cityData.municipalityCity) {
+        normalizedMunicipalityCity = normalizeCityName(cityData.municipalityCity);
+        console.log(`🏛️ Ville de la mairie normalisée : "${cityData.municipalityCity}" → "${normalizedMunicipalityCity}"`);
+      }
   
       setIsRegisterClicked(true);
       setIsLoading(true);
@@ -144,7 +156,8 @@ export function useAuth() {
       if (cityData.isMunicipality) {
         console.log("🏛️ Inscription d'une MAIRIE");
         
-        const fullMunicipalityName = `Mairie de ${cityData.municipalityCity}`;
+        // ✅✅✅ MODIFICATION : Utiliser le nom de ville normalisé
+        const fullMunicipalityName = `Mairie de ${normalizedMunicipalityCity}`;
         console.log(`📝 Nom complet généré : "${fullMunicipalityName}"`);
         
         formData.append("isMunicipality", "true");
@@ -162,12 +175,14 @@ export function useAuth() {
         formData.append("firstName", firstName);
       }
   
-      // Ajout des données de localisation
-      console.log("📍 Ajout des données de localisation à FormData...");
-      formData.append("nom_commune", cityData.nom_commune);
+      // ✅✅✅ MODIFICATION PRINCIPALE : Utiliser le nom de ville normalisé
+      console.log("📍 Ajout des données de localisation normalisées à FormData...");
+      formData.append("nom_commune", normalizedCityName); // ← ICI !
       formData.append("code_postal", cityData.code_postal);
       formData.append("latitude", cityData.latitude.toString());
       formData.append("longitude", cityData.longitude.toString());
+  
+      console.log(`✅ Ville qui sera enregistrée en base : "${normalizedCityName}"`);
   
       // Ajout des photos (seulement pour les citoyens)
       if (photos.length > 0) {
@@ -189,18 +204,12 @@ export function useAuth() {
         body: formData,
       });
 
-      // ✅ MODIFICATION PRINCIPALE : Meilleure gestion des erreurs
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Inscription réussie :", data);
   
         // Si c'est une MAIRIE
         if (cityData.isMunicipality) {
-          Alert.alert(
-            "Demande envoyée ✅",
-            "Votre demande d'inscription en tant que mairie a été envoyée avec succès.\n\nVous recevrez un email une fois votre compte validé par un administrateur.",
-            [{ text: "Compris", style: "default" }]
-          );
           onSuccess();
         } else {
           // Pour les CITOYENS, connexion automatique
@@ -217,23 +226,17 @@ export function useAuth() {
           onSuccess();
         }
       } else {
-        // ✅ NOUVELLE GESTION DES ERREURS - On affiche le message du backend
         let errorMessage = "Une erreur s'est produite lors de l'inscription.";
         
         try {
-          // On essaie de lire la réponse JSON du backend
           const errorData = await response.json();
-          
-          // ✅ On récupère le message d'erreur envoyé par le backend
           if (errorData.message) {
             errorMessage = errorData.message;
           }
         } catch (jsonError) {
-          // Si on ne peut pas parser le JSON, on garde le message par défaut
           console.error("❌ Impossible de parser la réponse d'erreur :", jsonError);
         }
         
-        // ✅ On affiche l'erreur à l'utilisateur
         console.log("📢 Affichage de l'erreur à l'utilisateur :", errorMessage);
         Alert.alert(
           "Mot interdit 🚫",
@@ -244,7 +247,6 @@ export function useAuth() {
     } catch (error) {
       console.error("❌ Erreur pendant l'inscription :", error);
       
-      // Afficher un message d'erreur générique en cas de problème réseau
       Alert.alert(
         "Erreur réseau 🌐",
         "Impossible de se connecter au serveur. Vérifiez votre connexion internet et réessayez.",

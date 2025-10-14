@@ -214,7 +214,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
   }, [user, isOpen]);
 
   const mainItemsAnimations = useRef(
-    Array(6)  // ← Changé de 5 à 6
+    Array(6)
       .fill(0)
       .map(() => new Animated.Value(-50))
   ).current;
@@ -396,7 +396,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
       label: "Classements",
       screen: "RankingScreen",
     },
-    // ✅ NOUVEAU : Statistiques ajouté ici
     {
       icon: (
         <FontAwesome5
@@ -432,7 +431,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
     },
   ];
   
-  // ✅ Menu secondaire (paramètres) - "Mon profil" reste en premier
   const secondaryMenuItems = [
     {
       icon: (
@@ -479,7 +477,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
       screen: "PrivacyScreen",
     },
   ];
-  
 
   const handleFollowingUserPress = useCallback(
     (id: string) => {
@@ -548,20 +545,24 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
               style={[styles.avatarContainer, { transform: [{ scale: avatarScale }] }]}
             >
               <TouchableOpacity onPress={handleOpenPhotoModal}>
-                <LinearGradient
-                  colors={THEME.colors.primary.gradient}
-                  style={styles.avatarGradientBorder}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  {user?.profilePhoto?.url ? (
+                {/* ✅ MODIFICATION ICI : Affichage conditionnel selon la présence de photo */}
+                {user?.profilePhoto?.url ? (
+                  // Si la photo existe : on garde le gradient violet
+                  <LinearGradient
+                    colors={THEME.colors.primary.gradient}
+                    style={styles.avatarGradientBorder}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
                     <Image source={{ uri: user.profilePhoto.url }} style={styles.avatarImage} />
-                  ) : (
-                    <View style={styles.avatarImage}>
-                      <FontAwesome5 name="user" size={30} color="#CED4DA" />
-                    </View>
-                  )}
-                </LinearGradient>
+                  </LinearGradient>
+                ) : (
+                  // Si pas de photo : fond gris avec texte
+                  <View style={styles.noPhotoContainer}>
+                    <FontAwesome5 name="camera" size={24} color="#94a3b8" />
+                    <Text style={styles.noPhotoText}>Aucune photo{'\n'}disponible</Text>
+                  </View>
+                )}
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -714,7 +715,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
               >
-                <Text style={styles.versionText}>Smartcities | v1.07.25</Text>
+                <Text style={styles.versionText}>Smartcities | v1.07.25</Text>
               </LinearGradient>
             </View>
           </ScrollView>
@@ -832,9 +833,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
-    width: "80%", // largeur % pour meilleure adaptabilité
+    width: "80%",
     maxWidth: 360,
-    height: windowHeight, // Définie la hauteur constante
+    height: windowHeight,
     zIndex: 1000,
     overflow: "hidden",
     borderTopRightRadius: 30,
@@ -894,7 +895,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    padding: 3, // épaisseur de la bordure
+    padding: 3,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -902,6 +903,26 @@ const styles = StyleSheet.create({
     width: 94,
     height: 94,
     borderRadius: 47,
+  },
+  // ✅ NOUVEAU STYLE : Container pour "Aucune photo disponible"
+  noPhotoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#e5e7eb', // Fond gris clair
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#d1d5db', // Bordure gris un peu plus foncé
+  },
+  // ✅ NOUVEAU STYLE : Texte "Aucune photo disponible"
+  noPhotoText: {
+    marginTop: 8,
+    fontSize: 11,
+    color: '#6b7280', // Texte gris foncé
+    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 14,
   },
   onlineStatusBadge: {
     position: "absolute",

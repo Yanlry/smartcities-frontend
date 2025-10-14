@@ -242,16 +242,13 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     return hasMinLength && hasUppercase && hasNumber && hasSpecialChar && doPasswordsMatch;
   };
 
-  // ✅ CHANGEMENT 1 : On ne vérifie le username QUE pour les citoyens
   useEffect(() => {
-    // Si c'est une mairie, on ne vérifie pas le username
     if (accountType === "municipality") {
       setUsernameAvailable(null);
       setUsernameError(null);
       return;
     }
 
-    // Pour les citoyens, on garde la vérification normale
     if (usernameTimeoutRef.current) {
       clearTimeout(usernameTimeoutRef.current);
     }
@@ -364,13 +361,11 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     setConfirmPassword(value);
   };
 
-  // ✅ CHANGEMENT 2 : Validation différente selon le type de compte
   useEffect(() => {
     if (currentStep === 0) {
       setFormValid(true);
     } else if (currentStep === 1) {
       if (accountType === "citizen") {
-        // Pour les citoyens : on vérifie firstName, lastName, username
         const step1Valid = 
           !!firstName && !!lastName && !!username && 
           firstNameError === null && lastNameError === null && usernameError === null &&
@@ -378,7 +373,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           usernameAvailable === true;
         setFormValid(step1Valid);
       } else {
-        // ✅ Pour les mairies : on ne vérifie PAS le username !
         const step1Valid = 
           !!municipalityCity && !!municipalitySIREN && !!municipalityPhone &&
           municipalityCity.length >= MIN_LENGTH &&
@@ -462,19 +456,52 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       longitude,
     };
 
-    // ✅ CHANGEMENT 3 : On n'envoie PAS le username pour les mairies
     const municipalityData = accountType === "municipality" ? {
       isMunicipality: true,
       municipalityCity,
       municipalitySIREN,
       municipalityPhone,
       municipalityAddress,
-      // ⬅️ Pas de username envoyé ! Le backend va le générer automatiquement
     } : { 
       isMunicipality: false 
     };
 
-    handleRegister(onLogin, { ...cityData, ...municipalityData });
+    if (accountType === "municipality") {
+      const municipalityCallback = () => {
+        console.log("🏛️ Inscription mairie réussie - Redirection vers Login");
+        
+        Alert.alert(
+          "Inscription réussie ! 🎉",
+          "Votre demande de compte mairie a été enregistrée.\n\nUn administrateur va vérifier et valider votre compte sous 24-48h.\n\nVous recevrez un email de confirmation une fois votre compte approuvé.",
+          [
+            {
+              text: "Compris",
+              onPress: () => {
+                Animated.parallel([
+                  Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(translateY, {
+                    toValue: 100,
+                    duration: 300,
+                    useNativeDriver: true,
+                  }),
+                ]).start(() => {
+                  navigation.navigate("Login");
+                });
+              }
+            }
+          ]
+        );
+      };
+
+      handleRegister(municipalityCallback, { ...cityData, ...municipalityData });
+      
+    } else {
+      handleRegister(onLogin, { ...cityData, ...municipalityData });
+    }
   };
 
   const focusNextInput = (index: number, step: number) => {
@@ -522,7 +549,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       return;
     }
 
-    // ✅ On ne vérifie le username QUE pour les citoyens
     if (currentStep === 1 && accountType === "citizen" && usernameAvailable === false) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Nom d'utilisateur indisponible", "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre.");
@@ -1019,7 +1045,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </>
         ) : (
           <>
-            {/* ✅ Champ ville de la mairie */}
             <View>
               <View style={styles.inputWrapper}>
                 <FontAwesome5 
@@ -1048,7 +1073,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               )}
             </View>
 
-            {/* Champ SIREN */}
             <View>
               <View style={styles.inputWrapper}>
                 <MaterialIcons 
@@ -1073,7 +1097,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               </View>
             </View>
 
-            {/* Champ téléphone */}
             <View>
               <View style={styles.inputWrapper}>
                 <Ionicons 
@@ -1097,10 +1120,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
               </View>
             </View>
 
-            {/* ✅ CHANGEMENT MAJEUR : On supprime complètement le champ username pour les mairies ! */}
-            {/* Les mairies n'ont plus besoin de saisir de username */}
-            {/* Le backend va générer automatiquement "mairie-nomville" */}
-
             <View style={styles.infoBox}>
               <Ionicons name="information-circle" size={20} color="#6366f1" />
               <Text style={styles.infoBoxText}>
@@ -1111,19 +1130,24 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         )}
       </View>
 
+      {/* ✅ BOUTONS CORRIGÉS - MÊME HAUTEUR ET PROPORTIONS */}
       <View style={styles.navigationButtons}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={goToPreviousStep}
           activeOpacity={0.9}
         >
-          <Text style={styles.backButtonText}>Précédent</Text>
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.12)']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
-            styles.nextButton,
-            styles.nextButtonInRow,
+            styles.nextButtonMain,
             (!formValid || (accountType === "citizen" && isCheckingUsername)) && styles.buttonDisabled,
           ]}
           onPress={goToNextStep}
@@ -1134,7 +1158,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
             colors={(formValid && !(accountType === "citizen" && isCheckingUsername)) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
+            style={styles.buttonGradient}
           >
             {(accountType === "citizen" && isCheckingUsername) ? (
               <>
@@ -1216,7 +1240,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           )}
         </View>
 
-      {/* 🔍 MOT DE PASSE - ON GARDE EXACTEMENT TEL QUEL */}
         <View>
           <Text style={{ color: '#fff', fontSize: 12, marginBottom: 5 }}>
             🔍 DEBUG: Password value = "{password}" | Length = {password.length}
@@ -1278,7 +1301,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </View>
         </View>
 
-        {/* CONFIRMATION DU MOT DE PASSE */}
         <View>
           <View style={styles.inputWrapper}>
             <Ionicons 
@@ -1330,19 +1352,24 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         </View>
       </View>
 
+      {/* ✅ BOUTONS CORRIGÉS - MÊME HAUTEUR ET PROPORTIONS */}
       <View style={styles.navigationButtons}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={goToPreviousStep}
           activeOpacity={0.9}
         >
-          <Text style={styles.backButtonText}>Précédent</Text>
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.12)']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
-            styles.nextButton,
-            styles.nextButtonInRow,
+            styles.nextButtonMain,
             (!formValid || isCheckingEmail) && styles.buttonDisabled,
           ]}
           onPress={goToNextStep}
@@ -1353,7 +1380,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
             colors={(formValid && !isCheckingEmail) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
+            style={styles.buttonGradient}
           >
             {isCheckingEmail ? (
               <>
@@ -1494,13 +1521,19 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         )}
       </View>
 
+      {/* ✅ BOUTONS CORRIGÉS - MÊME HAUTEUR ET PROPORTIONS */}
       <View style={styles.navigationButtons}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={goToPreviousStep}
           activeOpacity={0.9}
         >
-          <Text style={styles.backButtonText}>Précédent</Text>
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.12)']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1516,7 +1549,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
             colors={formValid ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
+            style={styles.buttonGradient}
           >
             <Text style={styles.registerButtonText}>
               {isLoading ? "Création du compte..." : "S'inscrire"}
@@ -1643,7 +1676,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   );
 }
 
-
+// ✅ STYLES CORRIGÉS - BOUTONS BIEN PROPORTIONNÉS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1750,7 +1783,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginLeft: 4,
   },
-  // ✅ NOUVEAU STYLE pour l'aperçu du nom de la mairie
   municipalityPreview: {
     color: '#6ee7b7',
     fontSize: 13,
@@ -1836,45 +1868,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  // 🎯 STYLES DES BOUTONS CORRIGÉS - TOUS IDENTIQUES
   navigationButtons: {
     flexDirection: 'row',
     gap: 12,
   },
+  // Bouton "Précédent" - 35% de la largeur
   backButton: {
-    flex: 1,
-    paddingVertical: 14,
+    flex: 0.35,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    overflow: 'hidden',
+    height: 50, // Hauteur fixe pour tous les boutons
+  },
+  // Bouton "Continuer" principal - 65% de la largeur
+  nextButtonMain: {
+    flex: 0.65,
+    borderRadius: 14,
+    overflow: 'hidden',
+    height: 50, // Même hauteur que backButton
+  },
+  // Bouton "S'inscrire" - 65% de la largeur
+  registerButton: {
+    flex: 0.65,
+    borderRadius: 14,
+    overflow: 'hidden',
+    height: 50, // Même hauteur que les autres
+  },
+  // Bouton unique pleine largeur (pour étape 0)
+  nextButton: {
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    height: 50,
+  },
+  // Gradient intérieur commun à tous les boutons
+  buttonGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  gradientButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    gap: 8,
   },
   backButtonText: {
     color: '#cbd5e1',
     fontSize: 15,
     fontWeight: '600',
-    textAlign: 'center',
-  },
-  nextButton: {
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  nextButtonInRow: {
-    flex: 2,
-  },
-  registerButton: {
-    flex: 2,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  gradientButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    gap: 8,
   },
   nextButtonText: {
     color: '#ffffff',
@@ -1885,6 +1932,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   loginLink: {
     flexDirection: 'row',

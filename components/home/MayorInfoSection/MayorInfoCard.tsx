@@ -20,12 +20,15 @@ import { getUserIdFromToken } from "../../../utils/tokenUtils";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 
+// ✅ MODIFICATION 1 : Ajout de la prop cityName
 interface MayorInfoCardProps {
   handlePressPhoneNumber: () => void;
+  cityName: string; // ← NOUVELLE PROP : Le nom de la ville de l'utilisateur
 }
 
 export default function MayorInfoCard({
   handlePressPhoneNumber,
+  cityName, // ← On reçoit maintenant la ville en paramètre
 }: MayorInfoCardProps) {
   const navigation = useNavigation<any>();
   
@@ -48,7 +51,11 @@ export default function MayorInfoCard({
   const [ranking, setRanking] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const city = "HAUBOURDIN";
+  
+  // ✅ MODIFICATION 2 : On utilise maintenant la ville passée en prop au lieu de "HAUBOURDIN"
+  // AVANT : const city = "HAUBOURDIN";
+  // APRÈS : const city = cityName;
+  const city = cityName;
 
   const [isMunicipality, setIsMunicipality] = useState<boolean>(false);
   const [userInfo, setUserInfo] = useState<any>(null);
@@ -75,6 +82,14 @@ export default function MayorInfoCard({
     fetchCityInfo();
   }, []);
 
+  // ✅ MODIFICATION 3 : Recharger les données quand la ville change
+  // Ce useEffect surveille les changements de cityName et recharge tout
+  useEffect(() => {
+    console.log(`🔄 La ville a changé : ${cityName}`);
+    fetchData();
+    fetchCityInfo();
+  }, [cityName]); // ← Quand cityName change, on recharge les données
+
   const fetchUserInfo = async () => {
     try {
       const userId = await getUserIdFromToken();
@@ -93,16 +108,19 @@ export default function MayorInfoCard({
 
   const fetchCityInfo = async () => {
     try {
+      // ✅ On utilise maintenant la variable "city" qui contient cityName
+      console.log(`📡 Chargement des infos pour : ${city}`);
+      
       const response = await fetch(
         `${API_URL}/cityinfo?cityName=${encodeURIComponent(city)}`
       );
       
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Infos de la ville trouvées:", data);
+        console.log(`✅ Infos de la ville ${city} trouvées:`, data);
         setCityInfo(data);
       } else if (response.status === 404) {
-        console.log("ℹ️ La ville n'a pas encore configuré ses informations");
+        console.log(`ℹ️ La ville ${city} n'a pas encore configuré ses informations`);
         setCityInfo(null);
       } else {
         console.error("❌ Erreur inattendue:", response.status);
@@ -118,6 +136,7 @@ export default function MayorInfoCard({
     try {
       setLoading(true);
 
+      // ✅ On utilise la variable "city" qui contient cityName
       const cityName = city;
       const userId = String(await getUserIdFromToken());
       if (!userId) return;
@@ -169,10 +188,8 @@ export default function MayorInfoCard({
     setRefreshing(false);
   }, []);
 
-  // ✨ MODIFICATION : Actualise automatiquement avant de passer en mode preview
   const togglePreviewMode = async () => {
     if (!isPreviewMode) {
-      // Si on passe en mode preview (citoyen), actualiser d'abord les données
       console.log("🔄 Actualisation des données avant affichage citoyen...");
       await Promise.all([
         fetchUserInfo(),
@@ -181,7 +198,6 @@ export default function MayorInfoCard({
       ]);
       console.log("✅ Données actualisées !");
     }
-    // Ensuite, bascule le mode
     setIsPreviewMode(!isPreviewMode);
   };
 
@@ -217,6 +233,7 @@ export default function MayorInfoCard({
           >
             <View style={styles.headerContent}>
               <View>
+                {/* ✅ Affiche maintenant le nom de la ville de la mairie connectée */}
                 <Text style={styles.cityName}>Mairie de {city}</Text>
                 <Text style={styles.citySubtitle}>Espace administration</Text>
               </View>
@@ -239,7 +256,6 @@ export default function MayorInfoCard({
               </View>
             </View>
 
-            {/* Bouton "Voir comme un citoyen" - Actualise automatiquement maintenant ! */}
             <TouchableOpacity 
               style={styles.previewButton}
               onPress={togglePreviewMode}
@@ -264,7 +280,7 @@ export default function MayorInfoCard({
                 <TouchableOpacity 
                   style={styles.encourageBtn}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate("EditMayorInfoScreen")}
+                  onPress={() => navigation.navigate("EditCityInfoScreen")}
                 >
                   <Text style={styles.encourageBtnText}>Compléter maintenant</Text>
                 </TouchableOpacity>
@@ -364,6 +380,7 @@ export default function MayorInfoCard({
         >
           <View style={styles.headerContent}>
             <View>
+              {/* ✅ Affiche maintenant le nom de la ville de l'utilisateur connecté */}
               <Text style={styles.cityName}>{city}</Text>
               <Text style={styles.citySubtitle}>Votre ville connectée</Text>
             </View>
@@ -721,7 +738,7 @@ export default function MayorInfoCard({
   );
 }
 
-// ========== STYLES ==========
+// ========== STYLES (inchangés) ==========
 const styles = StyleSheet.create({
   container: {
     flex: 1,

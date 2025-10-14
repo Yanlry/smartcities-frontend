@@ -21,46 +21,42 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useUserProfile } from "../hooks/user/useUserProfile";
+import { normalizeCityName } from "../utils/cityUtils"; // ✅ AJOUT
 
-/**
- * 👨‍💼 ÉCRAN : MODIFIER LES INFORMATIONS DU MAIRE ET DE LA MAIRIE
- * 
- * Permet à la mairie de renseigner :
- * - Nom du maire
- * - Photo du maire (NOUVEAU !)
- * - Téléphone du maire
- * - Adresse de la mairie
- * - Téléphone de la mairie
- * - Horaires d'ouverture
- */
 export default function EditMayorInfoScreen() {
   const navigation = useNavigation();
+  const { user } = useUserProfile();
 
-  // ========== ÉTATS ==========
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  // Informations du maire
   const [mayorName, setMayorName] = useState("");
   const [mayorPhone, setMayorPhone] = useState("");
-  const [mayorPhoto, setMayorPhoto] = useState<string | null>(null); // ✨ NOUVEAU
+  const [mayorPhoto, setMayorPhoto] = useState<string | null>(null);
 
-  // Informations de la mairie
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [hours, setHours] = useState("");
 
-  const cityName = "HAUBOURDIN";
+  // ✅ MODIFICATION : Normaliser le nom de la ville
+  const cityName = normalizeCityName(user?.nomCommune);
 
-  // ========== CHARGER LES INFOS EXISTANTES ==========
+  console.log("🏙️ Ville de la mairie (normalisée):", cityName);
+
   useEffect(() => {
-    loadCityInfo();
-  }, []);
+    if (user && user.nomCommune) {
+      console.log(`📡 Chargement des infos pour : ${cityName}`);
+      loadCityInfo();
+    }
+  }, [user]);
 
   const loadCityInfo = async () => {
     try {
       setLoading(true);
+
+      console.log(`🔍 Recherche des infos pour : ${cityName}`);
 
       const response = await fetch(
         `${API_URL}/cityinfo?cityName=${encodeURIComponent(cityName)}`
@@ -68,16 +64,22 @@ export default function EditMayorInfoScreen() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Données chargées:", data);
+        console.log(`✅ Données chargées pour ${cityName}:`, data);
         
         setMayorName(data.mayorName || "");
         setMayorPhone(data.mayorPhone || "");
-        setMayorPhoto(data.mayorPhoto || null); // ✨ NOUVEAU
+        setMayorPhoto(data.mayorPhoto || null);
         setAddress(data.address || "");
         setPhone(data.phone || "");
         setHours(data.hours || "");
       } else if (response.status === 404) {
-        console.log("ℹ️ Aucune info existante");
+        console.log(`ℹ️ Aucune info existante pour ${cityName}`);
+        setMayorName("");
+        setMayorPhone("");
+        setMayorPhoto(null);
+        setAddress("");
+        setPhone("");
+        setHours("");
       }
     } catch (error) {
       console.error("❌ Erreur chargement:", error);
@@ -86,10 +88,8 @@ export default function EditMayorInfoScreen() {
     }
   };
 
-  // ========== 📸 NOUVELLE FONCTION : UPLOADER LA PHOTO DU MAIRE ==========
   const handleSelectMayorPhoto = async () => {
     try {
-      // Demander la permission d'accès à la galerie
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (permissionResult.granted === false) {
@@ -100,20 +100,16 @@ export default function EditMayorInfoScreen() {
         return;
       }
 
-      // Ouvrir le sélecteur d'images
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true, // Permet de recadrer l'image
-        aspect: [1, 1], // Format carré
-        quality: 0.8, // Qualité de l'image (0 à 1)
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
       });
 
-      // Si l'utilisateur n'a pas annulé
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const photoUri = result.assets[0].uri;
         console.log("📸 Photo sélectionnée:", photoUri);
-        
-        // Uploader la photo
         await uploadMayorPhoto(photoUri);
       }
     } catch (error) {
@@ -122,7 +118,6 @@ export default function EditMayorInfoScreen() {
     }
   };
 
-  // ========== 📤 NOUVELLE FONCTION : ENVOYER LA PHOTO AU SERVEUR ==========
   const uploadMayorPhoto = async (photoUri: string) => {
     try {
       setUploadingPhoto(true);
@@ -135,6 +130,7 @@ export default function EditMayorInfoScreen() {
         name: "mayor.jpg",
       } as any);
   
+      // ✅ On utilise la ville normalisée
       formData.append("cityName", cityName);
   
       const token = await AsyncStorage.getItem("authToken");
@@ -145,9 +141,8 @@ export default function EditMayorInfoScreen() {
         return;
       }
   
-      console.log("📤 Envoi de la photo au serveur...");
+      console.log(`📤 Envoi de la photo pour ${cityName}...`);
   
-      // ⬅️ ✅ URL CORRIGÉE : Plus besoin de  l'URL du serveur, S3 gère ça
       const response = await fetch(`${API_URL}/cityinfo/upload-mayor-photo`, {
         method: "POST",
         headers: {
@@ -159,10 +154,7 @@ export default function EditMayorInfoScreen() {
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Photo uploadée:", data);
-        
-        // ⬅️ ✅ On récupère l'URL S3 retournée par le backend
         setMayorPhoto(data.mayorPhotoUrl);
-        
         Alert.alert("Succès", "La photo du maire a été mise à jour !");
       } else {
         const errorText = await response.text();
@@ -176,14 +168,11 @@ export default function EditMayorInfoScreen() {
       setUploadingPhoto(false);
     }
   };
-  
 
-  // ========== SAUVEGARDER LES INFORMATIONS ==========
   const handleSave = async () => {
     try {
-      console.log("💾 Sauvegarde des infos du maire...");
+      console.log(`💾 Sauvegarde des infos pour ${cityName}...`);
 
-      // Validation : au moins un champ doit être rempli
       if (!mayorName && !mayorPhone && !address && !phone && !hours && !mayorPhoto) {
         Alert.alert(
           "Attention",
@@ -205,12 +194,12 @@ export default function EditMayorInfoScreen() {
         return;
       }
 
-      // Préparer les données à envoyer
+      // ✅ On utilise la ville normalisée
       const data = {
         cityName,
         mayorName: mayorName || null,
         mayorPhone: mayorPhone || null,
-        mayorPhoto: mayorPhoto || null, // ✨ NOUVEAU : inclure l'URL de la photo
+        mayorPhoto: mayorPhoto || null,
         address: address || null,
         phone: phone || null,
         hours: hours || null,
@@ -228,11 +217,11 @@ export default function EditMayorInfoScreen() {
       });
 
       if (response.ok) {
-        console.log("✅ Sauvegarde réussie");
+        console.log(`✅ Sauvegarde réussie pour ${cityName}`);
         
         Alert.alert(
           "Succès",
-          "Les informations ont été sauvegardées avec succès !",
+          `Les informations de ${cityName} ont été sauvegardées avec succès !`,
           [
             {
               text: "OK",
@@ -253,8 +242,7 @@ export default function EditMayorInfoScreen() {
     }
   };
 
-  // ========== AFFICHAGE PENDANT LE CHARGEMENT ==========
-  if (loading) {
+  if (loading || !user) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#43A047" />
@@ -263,7 +251,20 @@ export default function EditMayorInfoScreen() {
     );
   }
 
-  // ========== AFFICHAGE DU FORMULAIRE ==========
+  if (!user.nomCommune) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialIcons name="error-outline" size={64} color="#E53935" />
+        <Text style={styles.errorText}>
+          ⚠️ Aucune ville associée à votre compte
+        </Text>
+        <Text style={styles.errorSubtext}>
+          Veuillez contacter l'administrateur pour associer votre compte à une ville.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -274,7 +275,6 @@ export default function EditMayorInfoScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* En-tête avec dégradé */}
         <LinearGradient
           colors={['#43A047', '#2E7D32']}
           style={styles.header}
@@ -282,20 +282,17 @@ export default function EditMayorInfoScreen() {
           <Text style={styles.headerIcon}>👨‍💼</Text>
           <Text style={styles.headerTitle}>Informations du maire</Text>
           <Text style={styles.headerSubtitle}>
-            Renseignez les coordonnées du maire et de la mairie
+            Renseignez les coordonnées du maire de {cityName}
           </Text>
         </LinearGradient>
 
-        {/* ========== SECTION MAIRE ========== */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>👤 Le maire</Text>
 
-          {/* ✨ NOUVEAU : Section pour la photo du maire */}
           <View style={styles.photoSection}>
             <Text style={styles.label}>Photo du maire</Text>
             
             <View style={styles.photoContainer}>
-              {/* Affichage de la photo actuelle ou placeholder */}
               <View style={styles.photoPreview}>
                 {mayorPhoto ? (
                   <Image
@@ -312,7 +309,6 @@ export default function EditMayorInfoScreen() {
                 )}
               </View>
 
-              {/* Bouton pour sélectionner/changer la photo */}
               <TouchableOpacity
                 style={styles.photoButton}
                 onPress={handleSelectMayorPhoto}
@@ -331,7 +327,6 @@ export default function EditMayorInfoScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Bouton pour supprimer la photo */}
               {mayorPhoto && !uploadingPhoto && (
                 <TouchableOpacity
                   style={styles.photoDeleteButton}
@@ -384,7 +379,6 @@ export default function EditMayorInfoScreen() {
           </View>
         </View>
 
-        {/* ========== SECTION MAIRIE ========== */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🏢 La mairie</Text>
 
@@ -427,7 +421,6 @@ export default function EditMayorInfoScreen() {
           </View>
         </View>
 
-        {/* Note d'information */}
         <View style={styles.infoBox}>
           <Text style={styles.infoIcon}>💡</Text>
           <Text style={styles.infoText}>
@@ -435,7 +428,6 @@ export default function EditMayorInfoScreen() {
           </Text>
         </View>
 
-        {/* Boutons d'action */}
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.cancelButton}
@@ -465,7 +457,6 @@ export default function EditMayorInfoScreen() {
   );
 }
 
-// ========== STYLES (avec nouveaux styles pour la photo) ==========
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -476,11 +467,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F5F5F5",
+    padding: 20,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
     color: "#757575",
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#E53935",
+    textAlign: "center",
+    marginTop: 16,
+    marginHorizontal: 20,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: "#757575",
+    textAlign: "center",
+    marginTop: 8,
+    marginHorizontal: 20,
   },
   scrollView: {
     flex: 1,
@@ -527,7 +534,6 @@ const styles = StyleSheet.create({
     color: "#212121",
     marginBottom: 20,
   },
-  // ✨ NOUVEAUX STYLES POUR LA PHOTO
   photoSection: {
     marginBottom: 20,
   },
@@ -588,7 +594,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#E53935",
   },
-  // FIN DES NOUVEAUX STYLES
   inputGroup: {
     marginBottom: 20,
   },

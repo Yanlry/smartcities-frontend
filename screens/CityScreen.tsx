@@ -11,20 +11,20 @@ import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/common/Sidebar";
 import { Linking } from "react-native";
 import MayorInfoCard from "../components/home/MayorInfoSection/MayorInfoCard";
-import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
+import { useUserProfile } from "../hooks/user/useUserProfile";
+import { normalizeCityName } from "../utils/cityUtils"; // ✅ AJOUT
 
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../types/navigation"; // Ensure this file exists and defines your navigation types
+import { RootStackParamList } from "../types/navigation";
 
 type CityScreenNavigationProp = StackNavigationProp<RootStackParamList, "CityScreen">;
 
 export default function CityScreen({ navigation }: { navigation: CityScreenNavigationProp }) {
   const { unreadCount } = useNotification();
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const { user, displayName, voteSummary, updateProfileImage } =
-    useUserProfile();
+  // Récupérer l'utilisateur connecté
+  const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
 
   const dummyFn = () => {};
 
@@ -35,6 +35,14 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
   const handlePressPhoneNumber = () => {
     Linking.openURL("tel:0320440251");
   };
+
+  // ✅ MODIFICATION : Normaliser le nom de la ville
+  // AVANT : const userCity = user?.nomCommune || "VILLE_INCONNUE";
+  // APRÈS : On normalise pour avoir toujours le même format
+  const userCity = normalizeCityName(user?.nomCommune);
+
+  // 📝 Affichage dans la console pour vérifier
+  console.log("🏙️ Ville de l'utilisateur (normalisée):", userCity);
 
   return (
     <View style={styles.container}>
@@ -48,12 +56,10 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
           />
         </TouchableOpacity>
 
-        {/* Titre de la page */}
         <View style={styles.typeBadgeNav}>
           <Text style={styles.headerTitleNav}>Ma ville</Text>
         </View>
 
-        {/* Bouton de notifications avec compteur */}
         <TouchableOpacity
           onPress={() => navigation.navigate("NotificationsScreen")}
         >
@@ -74,8 +80,13 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
       </View>
 
       <ScrollView>
-        <MayorInfoCard handlePressPhoneNumber={handlePressPhoneNumber} />
+        {/* ✅ On passe la ville normalisée au composant */}
+        <MayorInfoCard 
+          handlePressPhoneNumber={handlePressPhoneNumber}
+          cityName={userCity}
+        />
       </ScrollView>
+
       <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -84,9 +95,7 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
         voteSummary={voteSummary}
         onShowNameModal={dummyFn}
         onShowVoteInfoModal={dummyFn}
-        onNavigateToCity={() => {
-          /* TODO : remplacer par une navigation appropriée si besoin */
-        }}
+        onNavigateToCity={() => {}}
         updateProfileImage={updateProfileImage}
       />
     </View>
