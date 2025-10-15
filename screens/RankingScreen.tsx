@@ -102,44 +102,57 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setLoading(true);
     }
     setError(null);
-
+  
     try {
       const userId = await getUserIdFromToken();
       if (!userId) {
         throw new Error("Impossible de récupérer l'ID utilisateur.");
       }
-
+  
       const userResponse = await fetch(`${API_URL}/users/${userId}`);
       if (!userResponse.ok) {
         throw new Error("Impossible de récupérer les données utilisateur.");
       }
-
+  
       const userData = await userResponse.json();
       const cityName = userData.nomCommune;
-
+  
       if (!cityName) {
         throw new Error("La ville de l'utilisateur est introuvable.");
       }
-
+  
       setCityName(cityName);
-
+  
       const rankingResponse = await fetch(
-        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(
-          cityName
-        )}`
+        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
       );
-
+  
       if (!rankingResponse.ok) {
         throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
       }
-
+  
       const data: RankingResponse = await rankingResponse.json();
-
-      // Process and organize data
-      const allUsers = data.users;
+  
+      // 🧹 Nettoyage et filtrage des utilisateurs avant affichage
+      const allUsersRaw = Array.isArray(data?.users) ? data.users : [];
+  
+      const allUsers = allUsersRaw
+        .map((user: any) => ({
+          ...user,
+          displayName: user.useFullName
+            ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+            : (user.username ?? "").trim(),
+        }))
+        .filter((u: any) => {
+          const normalized = (u.displayName ?? "").trim().toLowerCase();
+          // ❌ Exclut "Mairie de ..." ou "mairie ..." (insensible à la casse)
+          return !/^mairie\s*(de|du|des)?\b/i.test(normalized);
+        });
+  
+      // 🏆 Répartition du classement
       const top3 = allUsers.filter((user) => user.ranking <= 3);
       const remainingUsers = allUsers.filter((user) => user.ranking > 3);
-
+  
       setRankingData(allUsers);
       setTopUsers(top3);
       setOtherUsers(remainingUsers);
@@ -159,6 +172,7 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       }
     }
   }, []);
+  
 
   // Initial data load
   useEffect(() => {

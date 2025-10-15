@@ -20,18 +20,17 @@ import { getUserIdFromToken } from "../../../utils/tokenUtils";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 
-// ✅ MODIFICATION 1 : Ajout de la prop cityName
 interface MayorInfoCardProps {
   handlePressPhoneNumber: () => void;
-  cityName: string; // ← NOUVELLE PROP : Le nom de la ville de l'utilisateur
+  cityName: string;
 }
 
 export default function MayorInfoCard({
   handlePressPhoneNumber,
-  cityName, // ← On reçoit maintenant la ville en paramètre
+  cityName,
 }: MayorInfoCardProps) {
   const navigation = useNavigation<any>();
-  
+
   // ========== INTERFACES ==========
   interface User {
     id: string;
@@ -42,7 +41,11 @@ export default function MayorInfoCard({
   }
 
   interface Event {
+    id: string; // Added id property
     title: string;
+    cityName?: string;
+    city?: string;
+    location?: string;
   }
 
   // ========== ÉTATS ==========
@@ -51,10 +54,15 @@ export default function MayorInfoCard({
   const [ranking, setRanking] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  
-  // ✅ MODIFICATION 2 : On utilise maintenant la ville passée en prop au lieu de "HAUBOURDIN"
-  // AVANT : const city = "HAUBOURDIN";
-  // APRÈS : const city = cityName;
+
+  const formatCityName = (cityName: string) =>
+    cityName
+      .toLowerCase()
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("-");
+
+  const cityFormat = formatCityName(cityName);
   const city = cityName;
 
   const [isMunicipality, setIsMunicipality] = useState<boolean>(false);
@@ -82,13 +90,11 @@ export default function MayorInfoCard({
     fetchCityInfo();
   }, []);
 
-  // ✅ MODIFICATION 3 : Recharger les données quand la ville change
-  // Ce useEffect surveille les changements de cityName et recharge tout
   useEffect(() => {
     console.log(`🔄 La ville a changé : ${cityName}`);
     fetchData();
     fetchCityInfo();
-  }, [cityName]); // ← Quand cityName change, on recharge les données
+  }, [cityName]);
 
   const fetchUserInfo = async () => {
     try {
@@ -108,19 +114,20 @@ export default function MayorInfoCard({
 
   const fetchCityInfo = async () => {
     try {
-      // ✅ On utilise maintenant la variable "city" qui contient cityName
       console.log(`📡 Chargement des infos pour : ${city}`);
-      
+
       const response = await fetch(
         `${API_URL}/cityinfo?cityName=${encodeURIComponent(city)}`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ Infos de la ville ${city} trouvées:`, data);
         setCityInfo(data);
       } else if (response.status === 404) {
-        console.log(`ℹ️ La ville ${city} n'a pas encore configuré ses informations`);
+        console.log(
+          `ℹ️ La ville ${city} n'a pas encore configuré ses informations`
+        );
         setCityInfo(null);
       } else {
         console.error("❌ Erreur inattendue:", response.status);
@@ -132,33 +139,137 @@ export default function MayorInfoCard({
     }
   };
 
+  // ================================
+  // ✅ NORMALISATION
+  // ================================
+  const normalizeCityName = (str: string) => {
+    return str
+      .toLowerCase()
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // supprime les accents
+      .replace(/['’]/g, "") // supprime les apostrophes
+      .replace(/\s+/g, " ") // espaces multiples → 1 espace
+      .replace(/\s*-\s*/g, "-"); // tirets entourés d'espaces → tiret simple
+  };
+
+  // ================================
+  // ✅ EXTRAIRE LA VILLE DE L'ADRESSE
+  // ================================
+  const extractCityFromAddress = (address: string) => {
+    if (!address) return "";
+
+    // On prend la partie après le code postal avant la virgule
+    // Exemple: "44 Rue du Petit Belgique, 59320 Haubourdin, France"
+    // → "Haubourdin"
+    const match = address.match(/\d{5}\s+([^,]+)/);
+    if (match && match[1]) return normalizeCityName(match[1]);
+
+    return normalizeCityName(address);
+  };
+
+  // ================================
+  // ✅ FILTRE : match strict sur la ville extraite
+  // ================================
+  const isStrictCityMatch = (searchCity: string, eventLocation: string) => {
+    if (!eventLocation) return false;
+
+    const normalizedSearch = normalizeCityName(searchCity);
+    const eventCity = extractCityFromAddress(eventLocation);
+
+    return normalizedSearch === eventCity;
+  };
+
+  // ================================
+  // ✅ FETCH EVENTS
+  // ================================
+  const fetchEvents = async () => {
+    const response = await fetch(`${API_URL}/events`);
+    if (!response.ok) throw new Error("Erreur événements");
+    return response.json();
+  };
+
+  // ================================
+  // ✅ FETCH DATA PRINCIPAL
+  // ================================
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // ✅ On utilise la variable "city" qui contient cityName
       const cityName = city;
       const userId = String(await getUserIdFromToken());
       if (!userId) return;
 
+      // Récupération des événements + ranking
       const [eventsData, rankingData] = await Promise.all([
-        fetchEvents(cityName),
+        fetchEvents(),
         fetchRankingByCity(userId, cityName),
       ]);
 
-      setEvents(eventsData);
-      setSmarterData(
-        rankingData.users.map((user: any) => ({
-          id: user.id,
-          displayName: user.useFullName
-            ? `${user.firstName} ${user.lastName}`
-            : user.username,
-          ranking: user.ranking,
-          image: { uri: user.photo || "https://via.placeholder.com/150" },
-        }))
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(`📅 Événements reçus de l'API: ${eventsData.length}`);
+
+      eventsData.forEach((event: any, index: number) => {
+        console.log(`\n📍 Événement ${index + 1}:`);
+        console.log(`   Titre: ${event.title}`);
+        console.log(`   cityName: ${event.cityName}`);
+        console.log(`   city: ${event.city}`);
+        console.log(`   location: ${event.location}`);
+      });
+
+      // Filtrage strict sur la ville
+      const filteredEvents = eventsData.filter((event: any) => {
+        const eventLocation =
+          event.cityName || event.city || event.location || "";
+        const match = isStrictCityMatch(cityName, eventLocation);
+
+        console.log(`\n✓ Événement "${event.title}"`);
+        console.log(`  Adresse: "${eventLocation}"`);
+        console.log(
+          `  Ville extraite: "${extractCityFromAddress(eventLocation)}"`
+        );
+        console.log(
+          `  Correspond à "${cityName}" ? ${match ? "✅ OUI" : "❌ NON"}`
+        );
+
+        return match;
+      });
+
+      console.log(
+        `\n🎯 Résultat du filtrage: ${filteredEvents.length} événements`
       );
-      setRanking(rankingData.ranking);
-      setTotalUsers(rankingData.totalUsers);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+      setEvents(filteredEvents);
+
+      // ================================
+      // Mapping ranking
+      // ================================
+      const usersRaw = Array.isArray(rankingData?.users)
+        ? rankingData.users
+        : [];
+
+      const mapped = usersRaw
+        .map((user: any) => {
+          const displayName = user.useFullName
+            ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+            : (user.username ?? "").trim();
+
+          return {
+            id: user.id,
+            displayName,
+            ranking: user.ranking,
+            image: { uri: user.photo || "https://via.placeholder.com/150" },
+          };
+        })
+        .filter((u: any) => {
+          const normalized = (u.displayName ?? "").trim().toLowerCase();
+          return !/^mairie\s*de\s+/i.test(normalized);
+        });
+
+      setSmarterData(mapped);
+      setRanking(rankingData?.ranking ?? null);
+      setTotalUsers(rankingData?.totalUsers ?? null);
     } catch (error: any) {
       console.error("Erreur fetchData:", error);
     } finally {
@@ -166,17 +277,11 @@ export default function MayorInfoCard({
     }
   };
 
-  const fetchEvents = async (cityName: string) => {
-    const response = await fetch(
-      `${API_URL}/events?cityName=${encodeURIComponent(cityName)}`
-    );
-    if (!response.ok) throw new Error("Erreur événements");
-    return response.json();
-  };
-
   const fetchRankingByCity = async (userId: string, cityName: string) => {
     const response = await fetch(
-      `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
+      `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(
+        cityName
+      )}`
     );
     if (!response.ok) throw new Error("Erreur classement");
     return response.json();
@@ -191,11 +296,7 @@ export default function MayorInfoCard({
   const togglePreviewMode = async () => {
     if (!isPreviewMode) {
       console.log("🔄 Actualisation des données avant affichage citoyen...");
-      await Promise.all([
-        fetchUserInfo(),
-        fetchData(),
-        fetchCityInfo(),
-      ]);
+      await Promise.all([fetchUserInfo(), fetchData(), fetchCityInfo()]);
       console.log("✅ Données actualisées !");
     }
     setIsPreviewMode(!isPreviewMode);
@@ -203,7 +304,15 @@ export default function MayorInfoCard({
 
   const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-  const EmptySection = ({ icon, title, message }: { icon: string; title: string; message: string }) => (
+  const EmptySection = ({
+    icon,
+    title,
+    message,
+  }: {
+    icon: string;
+    title: string;
+    message: string;
+  }) => (
     <View style={styles.emptySection}>
       <Text style={styles.emptySectionIcon}>{icon}</Text>
       <Text style={styles.emptySectionTitle}>{title}</Text>
@@ -227,13 +336,9 @@ export default function MayorInfoCard({
             />
           }
         >
-          <LinearGradient
-            colors={['#43A047', '#2E7D32']}
-            style={styles.header}
-          >
+          <LinearGradient colors={["#43A047", "#2E7D32"]} style={styles.header}>
             <View style={styles.headerContent}>
               <View>
-                {/* ✅ Affiche maintenant le nom de la ville de la mairie connectée */}
                 <Text style={styles.cityName}>Mairie de {city}</Text>
                 <Text style={styles.citySubtitle}>Espace administration</Text>
               </View>
@@ -249,20 +354,20 @@ export default function MayorInfoCard({
                 <Text style={styles.statLabel}>Événements</Text>
               </View>
               <View style={styles.statBox}>
-                <Text style={styles.statNumber}>
-                  {cityInfo ? "✓" : "✗"}
-                </Text>
+                <Text style={styles.statNumber}>{cityInfo ? "✓" : "✗"}</Text>
                 <Text style={styles.statLabel}>Profil rempli</Text>
               </View>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.previewButton}
               onPress={togglePreviewMode}
               activeOpacity={0.8}
             >
               <Text style={styles.previewButtonIcon}>👁️</Text>
-              <Text style={styles.previewButtonText}>Voir comme un citoyen</Text>
+              <Text style={styles.previewButtonText}>
+                Voir comme un citoyen
+              </Text>
             </TouchableOpacity>
           </LinearGradient>
 
@@ -274,15 +379,17 @@ export default function MayorInfoCard({
                   Complétez votre profil municipal
                 </Text>
                 <Text style={styles.encourageText}>
-                  Remplissez les informations de votre mairie pour apparaître sur l'application 
-                  et devenir une ville Smarter !
+                  Remplissez les informations de votre mairie pour apparaître
+                  sur l'application et devenir une ville Smarter !
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.encourageBtn}
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate("EditCityInfoScreen")}
                 >
-                  <Text style={styles.encourageBtnText}>Compléter maintenant</Text>
+                  <Text style={styles.encourageBtnText}>
+                    Compléter maintenant
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -293,14 +400,16 @@ export default function MayorInfoCard({
                 <Text style={styles.cardTitle}>Gérer le contenu</Text>
               </View>
 
-              <TouchableOpacity 
-                style={styles.manageBtn} 
+              <TouchableOpacity
+                style={styles.manageBtn}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditCityInfoScreen")}
               >
                 <Text style={styles.manageBtnIcon}>👨‍💼</Text>
                 <View style={styles.manageBtnInfo}>
-                  <Text style={styles.manageBtnTitle}>Informations du maire</Text>
+                  <Text style={styles.manageBtnTitle}>
+                    Informations du maire
+                  </Text>
                   <Text style={styles.manageBtnDesc}>
                     {cityInfo?.mayorName ? "Configuré" : "Non configuré"}
                   </Text>
@@ -308,8 +417,8 @@ export default function MayorInfoCard({
                 <Text style={styles.manageBtnArrow}>→</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.manageBtn} 
+              <TouchableOpacity
+                style={styles.manageBtn}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditTeamScreen")}
               >
@@ -323,8 +432,8 @@ export default function MayorInfoCard({
                 <Text style={styles.manageBtnArrow}>→</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.manageBtn} 
+              <TouchableOpacity
+                style={styles.manageBtn}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditNewsScreen")}
               >
@@ -338,8 +447,8 @@ export default function MayorInfoCard({
                 <Text style={styles.manageBtnArrow}>→</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.manageBtn} 
+              <TouchableOpacity
+                style={styles.manageBtn}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditServicesScreen")}
               >
@@ -374,19 +483,11 @@ export default function MayorInfoCard({
           />
         }
       >
-        <LinearGradient
-          colors={['#1E88E5', '#1565C0']}
-          style={styles.header}
-        >
+        <LinearGradient colors={["#1E88E5", "#1565C0"]} style={styles.header}>
           <View style={styles.headerContent}>
             <View>
-              {/* ✅ Affiche maintenant le nom de la ville de l'utilisateur connecté */}
-              <Text style={styles.cityName}>{city}</Text>
-              <Text style={styles.citySubtitle}>Votre ville connectée</Text>
-            </View>
-            <View style={styles.weatherBadge}>
-              <Text style={styles.weatherIcon}>☀️</Text>
-              <Text style={styles.weatherTemp}>21°C</Text>
+              <Text style={styles.citySubtitle}>Bienvenue à</Text>
+              <Text style={styles.cityName}>{cityFormat}</Text>
             </View>
           </View>
 
@@ -400,32 +501,24 @@ export default function MayorInfoCard({
               <Text style={styles.statLabel}>Événements</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{ranking ? `#${ranking}` : "..."}</Text>
+              <Text style={styles.statNumber}>
+                {ranking ? `#${ranking}` : "..."}
+              </Text>
               <Text style={styles.statLabel}>Votre rang</Text>
             </View>
           </View>
 
           <View style={styles.quickActions}>
             <TouchableOpacity 
-              style={styles.quickBtn} 
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate("ReportScreen")}
-            >
-              <Text style={styles.quickBtnIcon}>🚨</Text>
-              <Text style={styles.quickBtnText}>Signaler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickBtn} activeOpacity={0.7}>
-              <Text style={styles.quickBtnIcon}>📅</Text>
-              <Text style={styles.quickBtnText}>Événements</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickBtn} activeOpacity={0.7}>
+              style={styles.quickBtn} activeOpacity={0.7}
+              onPress={() => navigation.navigate("RankingScreen", { cityName: city })}>
               <Text style={styles.quickBtnIcon}>🏆</Text>
               <Text style={styles.quickBtnText}>Classement</Text>
             </TouchableOpacity>
           </View>
 
           {isMunicipality && isPreviewMode && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.backToAdminButton}
               onPress={togglePreviewMode}
               activeOpacity={0.8}
@@ -444,8 +537,17 @@ export default function MayorInfoCard({
               onPress={() => setActiveTab(tab)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab === "updates" ? "Actualités" : tab === "events" ? "Événements" : "Services"}
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab && styles.tabTextActive,
+                ]}
+              >
+                {tab === "updates"
+                  ? "Actualités"
+                  : tab === "events"
+                  ? "Événements"
+                  : "Services"}
               </Text>
             </TouchableOpacity>
           ))}
@@ -459,7 +561,7 @@ export default function MayorInfoCard({
                   <Text style={styles.cardIcon}>👨‍💼</Text>
                   <Text style={styles.cardTitle}>Le maire</Text>
                 </View>
-                
+
                 {cityInfo?.mayorName ? (
                   <>
                     <View style={styles.mayorContent}>
@@ -476,8 +578,12 @@ export default function MayorInfoCard({
                         </View>
                       )}
                       <View style={styles.mayorInfo}>
-                        <Text style={styles.mayorName}>{cityInfo.mayorName}</Text>
-                        <Text style={styles.mayorRole}>Maire de {city}</Text>
+                        <Text style={styles.mayorName}>
+                          {cityInfo.mayorName}
+                        </Text>
+                        <Text style={styles.mayorRole}>
+                          Maire de {cityFormat}
+                        </Text>
                         {cityInfo.mayorPhone && (
                           <TouchableOpacity
                             style={styles.phoneBtn}
@@ -494,29 +600,43 @@ export default function MayorInfoCard({
 
                     {cityInfo?.teamMembers?.length > 0 && (
                       <View style={styles.teamSection}>
-                        <Text style={styles.teamTitle}>L'équipe municipale</Text>
-                        <ScrollView 
-                          horizontal 
+                        <Text style={styles.teamTitle}>
+                          L'équipe municipale
+                        </Text>
+                        <ScrollView
+                          horizontal
                           showsHorizontalScrollIndicator={false}
                           contentContainerStyle={styles.teamScroll}
                         >
-                          {cityInfo.teamMembers.map((member: any, index: number) => (
-                            <View key={index} style={styles.teamMember}>
-                              {member.photo && member.photo !== "https://via.placeholder.com/150" ? (
-                                <Image
-                                  source={{ uri: member.photo }}
-                                  style={styles.teamMemberImage}
-                                />
-                              ) : (
-                                <View style={styles.teamMemberImagePlaceholder}>
-                                  <Text style={styles.teamMemberImagePlaceholderText}>
-                                    Photo non disponible
-                                  </Text>
-                                </View>
-                              )}
-                              <Text style={styles.teamMemberName}>{member.name}</Text>
-                            </View>
-                          ))}
+                          {cityInfo.teamMembers.map(
+                            (member: any, index: number) => (
+                              <View key={index} style={styles.teamMember}>
+                                {member.photo &&
+                                member.photo !==
+                                  "https://via.placeholder.com/150" ? (
+                                  <Image
+                                    source={{ uri: member.photo }}
+                                    style={styles.teamMemberImage}
+                                  />
+                                ) : (
+                                  <View
+                                    style={styles.teamMemberImagePlaceholder}
+                                  >
+                                    <Text
+                                      style={
+                                        styles.teamMemberImagePlaceholderText
+                                      }
+                                    >
+                                      Photo non disponible
+                                    </Text>
+                                  </View>
+                                )}
+                                <Text style={styles.teamMemberName}>
+                                  {member.name}
+                                </Text>
+                              </View>
+                            )
+                          )}
                         </ScrollView>
                       </View>
                     )}
@@ -542,14 +662,26 @@ export default function MayorInfoCard({
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
                     onMomentumScrollEnd={(e) => {
-                      const index = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40));
+                      const index = Math.round(
+                        e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40)
+                      );
                       setActiveNewsIndex(index);
                     }}
                   >
                     {cityInfo.news.map((news: any) => (
-                      <View key={news.id} style={[styles.newsCard, { width: SCREEN_WIDTH - 40 }]}>
-                        <View style={[styles.newsBadge, { backgroundColor: news.color || "#1E88E5" }]}>
-                          <Text style={styles.newsIcon}>{news.icon || "📰"}</Text>
+                      <View
+                        key={news.id}
+                        style={[styles.newsCard, { width: SCREEN_WIDTH - 40 }]}
+                      >
+                        <View
+                          style={[
+                            styles.newsBadge,
+                            { backgroundColor: news.color || "#1E88E5" },
+                          ]}
+                        >
+                          <Text style={styles.newsIcon}>
+                            {news.icon || "📰"}
+                          </Text>
                         </View>
                         <Text style={styles.newsTitle}>{news.title}</Text>
                         <Text style={styles.newsDate}>{news.date}</Text>
@@ -590,17 +722,28 @@ export default function MayorInfoCard({
                   <TouchableOpacity
                     key={user.id}
                     style={styles.rankingItem}
-                    onPress={() => navigation.navigate("UserProfileScreen", { userId: user.id })}
+                    onPress={() =>
+                      navigation.navigate("UserProfileScreen", {
+                        userId: user.id,
+                      })
+                    }
                     activeOpacity={0.7}
                   >
                     <View style={styles.rankBadge}>
                       <Text style={styles.rankNumber}>{index + 1}</Text>
                     </View>
                     <Image
-                      source={{ uri: user.image?.uri || "https://via.placeholder.com/150" }}
+                      source={{
+                        uri:
+                          user.image?.uri || "https://via.placeholder.com/150",
+                      }}
                       style={styles.userImage}
                     />
-                    <Text style={styles.userName}>{user.displayName}</Text>
+                    <Text style={styles.userName}>
+                      {user.displayName.length > 23
+                        ? user.displayName.slice(0, 23) + "…"
+                        : user.displayName}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -620,21 +763,29 @@ export default function MayorInfoCard({
                     key={index}
                     style={styles.eventItem}
                     activeOpacity={0.7}
+                    onPress={() => navigation.navigate("EventDetailsScreen", { eventId: event.id })}
                   >
                     <View style={styles.eventDate}>
                       <Text style={styles.eventDay}>{15 + index}</Text>
                       <Text style={styles.eventMonth}>SEP</Text>
                     </View>
                     <View style={styles.eventInfo}>
-                      <Text style={styles.eventTitle}>{event.title || "Événement"}</Text>
-                      <Text style={styles.eventLocation}>📍 {city}</Text>
+                      <Text style={styles.eventTitle}>
+                        {event.title || "Événement"}
+                      </Text>
+                      <Text style={styles.eventLocation}>
+                        📍{" "}
+                        {event.cityName || event.city || event.location || city}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 ))
               ) : (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>📅</Text>
-                  <Text style={styles.emptyText}>Aucun événement prévu</Text>
+                  <Text style={styles.emptyText}>
+                    Aucun événement prévu pour {cityFormat}
+                  </Text>
                 </View>
               )}
             </View>
@@ -652,14 +803,21 @@ export default function MayorInfoCard({
                   <>
                     <Text style={styles.serviceText}>{cityInfo.address}</Text>
                     {cityInfo.phone && (
-                      <TouchableOpacity style={styles.phoneBtn} onPress={handlePressPhoneNumber}>
-                        <Text style={styles.phoneBtnText}>📞 {cityInfo.phone}</Text>
+                      <TouchableOpacity
+                        style={styles.phoneBtn}
+                        onPress={handlePressPhoneNumber}
+                      >
+                        <Text style={styles.phoneBtnText}>
+                          📞 {cityInfo.phone}
+                        </Text>
                       </TouchableOpacity>
                     )}
 
                     {cityInfo.hours && (
                       <View style={styles.hoursSection}>
-                        <Text style={styles.hoursTitle}>Horaires d'ouverture</Text>
+                        <Text style={styles.hoursTitle}>
+                          Horaires d'ouverture
+                        </Text>
                         <Text style={styles.hoursText}>{cityInfo.hours}</Text>
                       </View>
                     )}
@@ -689,7 +847,9 @@ export default function MayorInfoCard({
                       >
                         <Text style={styles.serviceIcon}>{service.icon}</Text>
                         <Text style={styles.serviceTitle}>{service.title}</Text>
-                        <Text style={styles.serviceDesc}>{service.description}</Text>
+                        <Text style={styles.serviceDesc}>
+                          {service.description}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -717,10 +877,15 @@ export default function MayorInfoCard({
                   ].map((emergency) => (
                     <TouchableOpacity
                       key={emergency.number}
-                      style={[styles.emergencyBtn, { backgroundColor: emergency.color }]}
+                      style={[
+                        styles.emergencyBtn,
+                        { backgroundColor: emergency.color },
+                      ]}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.emergencyNumber}>{emergency.number}</Text>
+                      <Text style={styles.emergencyNumber}>
+                        {emergency.number}
+                      </Text>
                       <Text style={styles.emergencyName}>{emergency.name}</Text>
                     </TouchableOpacity>
                   ))}
@@ -737,7 +902,6 @@ export default function MayorInfoCard({
     </Animated.View>
   );
 }
-
 // ========== STYLES (inchangés) ==========
 const styles = StyleSheet.create({
   container: {
@@ -748,43 +912,47 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   header: {
-    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight! + 10,
-    paddingBottom: 20,
+    paddingVertical: 30,
     paddingHorizontal: 20,
   },
   headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+    paddingBottom: 20,
   },
-  cityName: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#FFFFFF",
+
+  cityTextContainer: {
+    alignItems: "center", // ✅ Centre le texte horizontalement
+    justifyContent: "center", // ✅ Centre verticalement
   },
+
   citySubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 4,
-  },
-  weatherBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  weatherIcon: {
     fontSize: 16,
-    marginRight: 4,
+    color: "rgba(255,255,255,0.85)",
+    letterSpacing: 1,
+    marginBottom: 6,
+    textTransform: "uppercase",
+    textAlign: "center", // ✅ S’assure que le texte est centré
   },
-  weatherTemp: {
-    fontSize: 14,
-    fontWeight: "600",
+
+  cityName: {
+    fontSize: 34,
+    fontWeight: "700",
     color: "#FFFFFF",
+    textAlign: "center", // ✅ Centre le texte
+    textShadowColor: "rgba(0,0,0,0.25)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
+
   statsRow: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.15)",
@@ -808,7 +976,7 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
   },
   quickBtn: {
     alignItems: "center",
@@ -816,7 +984,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
-    minWidth: 100,
+    width: "100%",
   },
   quickBtnIcon: {
     fontSize: 24,

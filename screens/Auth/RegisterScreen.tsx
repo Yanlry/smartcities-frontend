@@ -65,10 +65,9 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
   const [accountType, setAccountType] = useState<"citizen" | "municipality">("citizen");
   
+  // ✅ SUPPRIMÉ : municipalityPhone et municipalityAddress
   const [municipalityCity, setMunicipalityCity] = useState("");
   const [municipalitySIREN, setMunicipalitySIREN] = useState("");
-  const [municipalityPhone, setMunicipalityPhone] = useState("");
-  const [municipalityAddress, setMunicipalityAddress] = useState("");
 
   const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [lastNameError, setLastNameError] = useState<string | null>(null);
@@ -361,11 +360,13 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     setConfirmPassword(value);
   };
 
+  // 🔄 VALIDATION ADAPTÉE AU NOUVEAU FLUX (SIMPLIFIÉ)
   useEffect(() => {
     if (currentStep === 0) {
       setFormValid(true);
     } else if (currentStep === 1) {
       if (accountType === "citizen") {
+        // CITOYEN : firstName, lastName, username
         const step1Valid = 
           !!firstName && !!lastName && !!username && 
           firstNameError === null && lastNameError === null && usernameError === null &&
@@ -373,29 +374,48 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           usernameAvailable === true;
         setFormValid(step1Valid);
       } else {
-        const step1Valid = 
-          !!municipalityCity && !!municipalitySIREN && !!municipalityPhone &&
-          municipalityCity.length >= MIN_LENGTH &&
-          municipalitySIREN.length === 9;
+        // MAIRIE : sélection de la ville uniquement
+        const step1Valid = !!selectedLocation && !!municipalityCity;
         setFormValid(step1Valid);
       }
     } else if (currentStep === 2) {
-      const step2Valid = 
-        !!email && !!password && !!confirmPassword &&
-        emailError === null &&
-        EMAIL_REGEX.test(email) &&
-        emailAvailable === true &&
-        passwordHasMinLength &&
-        passwordHasUppercase &&
-        passwordHasNumber &&
-        passwordHasSpecialChar &&
-        passwordsMatch;
-      setFormValid(step2Valid);
+      if (accountType === "citizen") {
+        // CITOYEN : email + password
+        const step2Valid = 
+          !!email && !!password && !!confirmPassword &&
+          emailError === null &&
+          EMAIL_REGEX.test(email) &&
+          emailAvailable === true &&
+          passwordHasMinLength &&
+          passwordHasUppercase &&
+          passwordHasNumber &&
+          passwordHasSpecialChar &&
+          passwordsMatch;
+        setFormValid(step2Valid);
+      } else {
+        // ✅ MAIRIE : SIREN + email officiel (SIMPLIFIÉ)
+        const step2Valid = 
+          !!municipalitySIREN && !!email &&
+          municipalitySIREN.length === 9 &&
+          EMAIL_REGEX.test(email) &&
+          emailAvailable === true &&
+          emailError === null;
+        setFormValid(step2Valid);
+      }
     } else if (currentStep === 3) {
       if (accountType === "citizen") {
+        // CITOYEN : photo + localisation
         setFormValid(!!selectedLocation && !!photos?.length);
       } else {
-        setFormValid(!!selectedLocation && !!municipalityAddress);
+        // ✅ MAIRIE : mot de passe uniquement
+        const step3Valid = 
+          !!password && !!confirmPassword &&
+          passwordHasMinLength &&
+          passwordHasUppercase &&
+          passwordHasNumber &&
+          passwordHasSpecialChar &&
+          passwordsMatch;
+        setFormValid(step3Valid);
       }
     }
   }, [
@@ -403,7 +423,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     firstNameError, lastNameError, usernameError, emailError,
     currentStep, selectedLocation, photos, usernameAvailable, emailAvailable,
     passwordHasMinLength, passwordHasUppercase, passwordHasNumber, passwordHasSpecialChar, passwordsMatch,
-    accountType, municipalityCity, municipalitySIREN, municipalityPhone, municipalityAddress
+    accountType, municipalityCity, municipalitySIREN
   ]);
 
   const handleRegisterClick = () => {
@@ -425,12 +445,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         Alert.alert("Emplacement manquant", "Veuillez sélectionner la ville de votre mairie.");
         return;
       }
-
-      if (!municipalityAddress) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert("Adresse manquante", "Veuillez renseigner l'adresse de la mairie.");
-        return;
-      }
+      // ✅ SUPPRIMÉ : vérification de l'adresse
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -456,12 +471,11 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       longitude,
     };
 
+    // ✅ SIMPLIFIÉ : plus de phone et address
     const municipalityData = accountType === "municipality" ? {
       isMunicipality: true,
       municipalityCity,
       municipalitySIREN,
-      municipalityPhone,
-      municipalityAddress,
     } : { 
       isMunicipality: false 
     };
@@ -512,14 +526,22 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         if (index < 2 && inputRefs.current[index + 1]) {
           inputRefs.current[index + 1]?.focus();
         }
-      } else {
+      }
+    } else if (step === 2) {
+      if (accountType === "municipality") {
         if (index < 12 && inputRefs.current[index + 1]) {
           inputRefs.current[index + 1]?.focus();
         }
+      } else {
+        if (index < 22 && inputRefs.current[index + 1]) {
+          inputRefs.current[index + 1]?.focus();
+        }
       }
-    } else if (step === 2) {
-      if (index < 22 && inputRefs.current[index + 1]) {
-        inputRefs.current[index + 1]?.focus();
+    } else if (step === 3) {
+      if (accountType === "municipality") {
+        if (index < 22 && inputRefs.current[index + 1]) {
+          inputRefs.current[index + 1]?.focus();
+        }
       }
     }
   };
@@ -553,10 +575,12 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Nom d'utilisateur indisponible", "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre.");
       return;
-    } else if (currentStep === 2 && emailAvailable === false) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Email indisponible", "Cette adresse email est déjà utilisée. Veuillez en utiliser une autre.");
-      return;
+    } else if ((currentStep === 2 && accountType === "citizen") || (currentStep === 2 && accountType === "municipality")) {
+      if (emailAvailable === false) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Email indisponible", "Cette adresse email est déjà utilisée. Veuillez en utiliser une autre.");
+        return;
+      }
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -688,6 +712,11 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       nom_commune: item.Nom_commune,
       code_postal: item.Code_postal.toString(),
     });
+
+    // Pour les mairies, on génère automatiquement le nom
+    if (accountType === "municipality") {
+      setMunicipalityCity(item.Nom_commune);
+    }
 
     setLatitude(lat);
     setLongitude(lng);
@@ -916,6 +945,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
+  // ÉTAPE 1 : Inchangée
   const renderStepOne = () => (
     <Animated.View
       style={[
@@ -937,12 +967,12 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
       </View>
 
       <Text style={styles.stepTitle}>
-        {accountType === "citizen" ? "Qui êtes-vous ?" : "Informations de la mairie"}
+        {accountType === "citizen" ? "Qui êtes-vous ?" : "Sélectionnez votre ville"}
       </Text>
       <Text style={styles.stepDescription}>
         {accountType === "citizen" 
           ? "Commençons par vos informations personnelles" 
-          : "Renseignez les informations officielles de votre mairie"}
+          : "Recherchez et sélectionnez la ville de votre mairie"}
       </Text>
 
       <View style={styles.formContainer}>
@@ -1045,92 +1075,57 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </>
         ) : (
           <>
-            <View>
+            <View style={styles.searchContainer}>
               <View style={styles.inputWrapper}>
-                <FontAwesome5 
-                  name="landmark" 
-                  size={18} 
-                  color="#5e5ce6" 
-                  style={styles.inputIcon} 
-                />
+                <Ionicons name="location-outline" size={22} color="#5e5ce6" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  value={municipalityCity}
-                  placeholder="Ville de la mairie (ex: Haubourdin)"
+                  placeholder="Rechercher par ville ou code postal"
+                  value={query}
                   placeholderTextColor="#94a3b8"
-                  onChangeText={setMunicipalityCity}
-                  autoCorrect={false}
-                  returnKeyType="next"
+                  onChangeText={setQuery}
                   editable={true}
-                  ref={(el) => { inputRefs.current[10] = el; }}
-                  onSubmitEditing={() => focusNextInput(10, 1)}
                 />
               </View>
-              {municipalityCity && (
-                <Text style={styles.municipalityPreview}>
-                  📋 Dénomination : Mairie de {municipalityCity}
+              
+              <Animated.View style={[styles.searchButtonContainer, { transform: [{ scale: searchBounceAnim }] }]}>
+                <TouchableOpacity
+                  style={styles.searchButton}
+                  onPress={handleAddressSearch}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#6366f1', '#4f46e5']}
+                    style={styles.searchButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.searchButtonText}>Rechercher</Text>
+                    <Ionicons name="search" size={20} color="#fff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+
+            {selectedLocation && municipalityCity && (
+              <View style={styles.selectedLocationContainer}>
+                <MaterialIcons name="location-on" size={22} color="#10b981" />
+                <Text style={styles.selectedLocationText}>
+                  {municipalityCity} ({selectedCity.code_postal})
                 </Text>
-              )}
-            </View>
-
-            <View>
-              <View style={styles.inputWrapper}>
-                <MaterialIcons 
-                  name="business" 
-                  size={22} 
-                  color="#5e5ce6" 
-                  style={styles.inputIcon} 
-                />
-                <TextInput
-                  style={styles.input}
-                  value={municipalitySIREN}
-                  placeholder="Numéro SIREN (9 chiffres)"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={setMunicipalitySIREN}
-                  keyboardType="numeric"
-                  maxLength={9}
-                  returnKeyType="next"
-                  editable={true}
-                  ref={(el) => { inputRefs.current[11] = el; }}
-                  onSubmitEditing={() => focusNextInput(11, 1)}
-                />
               </View>
-            </View>
-
-            <View>
-              <View style={styles.inputWrapper}>
-                <Ionicons 
-                  name="call-outline" 
-                  size={22} 
-                  color="#5e5ce6" 
-                  style={styles.inputIcon} 
-                />
-                <TextInput
-                  style={styles.input}
-                  value={municipalityPhone}
-                  placeholder="Téléphone de la mairie"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={setMunicipalityPhone}
-                  keyboardType="phone-pad"
-                  returnKeyType="done"
-                  editable={true}
-                  ref={(el) => { inputRefs.current[12] = el; }}
-                  onSubmitEditing={() => inputRefs.current[12]?.blur()}
-                />
-              </View>
-            </View>
+            )}
 
             <View style={styles.infoBox}>
               <Ionicons name="information-circle" size={20} color="#6366f1" />
               <Text style={styles.infoBoxText}>
-                Votre compte devra être validé par un administrateur avant de pouvoir être utilisé. Un nom d'utilisateur sera généré automatiquement.
+                La dénomination officielle sera : "Mairie de {municipalityCity || ' ... '}"
               </Text>
             </View>
           </>
         )}
       </View>
 
-      {/* ✅ BOUTONS CORRIGÉS - MÊME HAUTEUR ET PROPORTIONS */}
       <View style={styles.navigationButtons}>
         <TouchableOpacity
           style={styles.backButton}
@@ -1177,6 +1172,7 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
     </Animated.View>
   );
 
+  // ✅ ÉTAPE 2 MODIFIÉE : Pour mairies = SIREN + Email officiel
   const renderStepTwo = () => (
     <Animated.View
       style={[
@@ -1197,50 +1193,358 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
         <Text style={styles.progressText}>Étape 2/3</Text>
       </View>
 
-      <Text style={styles.stepTitle}>Votre compte</Text>
+      <Text style={styles.stepTitle}>
+        {accountType === "citizen" ? "Votre compte" : "Informations officielles"}
+      </Text>
       <Text style={styles.stepDescription}>
-        Configurez les informations de connexion à votre compte
+        {accountType === "citizen" 
+          ? "Configurez les informations de connexion à votre compte"
+          : "Renseignez les informations administratives de votre mairie"}
       </Text>
 
       <View style={styles.formContainer}>
-        <View>
-          <View style={[
-            styles.inputWrapper,
-            emailError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
-            emailAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
-          ]}>
-            <Ionicons 
-              name="mail-outline" 
-              size={22} 
-              color={emailError ? "#ef4444" : emailAvailable === true ? "#10b981" : "#5e5ce6"} 
-              style={styles.inputIcon} 
-            />
-            <TextInput
-              style={styles.input}
-              value={email}
-              placeholder="Email"
-              placeholderTextColor="#94a3b8"
-              onChangeText={handleEmailChange}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              returnKeyType="next"
-              editable={true}
-              ref={(el) => { inputRefs.current[20] = el; }}
-              onSubmitEditing={() => focusNextInput(20, 2)}
-            />
-            {renderVerificationIndicator(isCheckingEmail, emailAvailable, 'email')}
-          </View>
-          {emailError && (
-            <Text style={styles.errorText}>{emailError}</Text>
-          )}
-          {emailAvailable === true && !emailError && (
-            <Text style={styles.successText}>✓ Cette adresse email est disponible</Text>
-          )}
-        </View>
+        {accountType === "citizen" ? (
+          <>
+            {/* CITOYEN : email + password (INCHANGÉ) */}
+            <View>
+              <View style={[
+                styles.inputWrapper,
+                emailError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
+                emailAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
+              ]}>
+                <Ionicons 
+                  name="mail-outline" 
+                  size={22} 
+                  color={emailError ? "#ef4444" : emailAvailable === true ? "#10b981" : "#5e5ce6"} 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  placeholder="Email"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleEmailChange}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[20] = el; }}
+                  onSubmitEditing={() => focusNextInput(20, 2)}
+                />
+                {renderVerificationIndicator(isCheckingEmail, emailAvailable, 'email')}
+              </View>
+              {emailError && (
+                <Text style={styles.errorText}>{emailError}</Text>
+              )}
+              {emailAvailable === true && !emailError && (
+                <Text style={styles.successText}>✓ Cette adresse email est disponible</Text>
+              )}
+            </View>
 
-        <View>
+            <View>
+              <View style={styles.inputWrapper}>
+                <Ionicons 
+                  name="lock-closed-outline" 
+                  size={22} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  placeholder="Mot de passe"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handlePasswordChange}
+                  secureTextEntry={!isPasswordVisible}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[21] = el; }}
+                  onSubmitEditing={() => focusNextInput(21, 2)}
+                />
+                <TouchableOpacity
+                  onPress={togglePasswordVisibility}
+                  style={styles.passwordToggle}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons
+                    name={isPasswordVisible ? "eye-off" : "eye"}
+                    size={20}
+                    color="#94a3b8"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View>
+              <View style={styles.inputWrapper}>
+                <Ionicons 
+                  name="lock-closed-outline" 
+                  size={22} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  placeholder="Confirmer le mot de passe"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleConfirmPasswordChange}
+                  secureTextEntry={!isConfirmPasswordVisible}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="done"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[22] = el; }}
+                  onSubmitEditing={() => inputRefs.current[22]?.blur()}
+                />
+                <TouchableOpacity
+                  onPress={toggleConfirmPasswordVisibility}
+                  style={styles.passwordToggle}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons
+                    name={isConfirmPasswordVisible ? "eye-off" : "eye"}
+                    size={20}
+                    color="#94a3b8"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.passwordRulesContainer}>
+              <Text style={styles.passwordRulesTitle}>Votre mot de passe doit contenir :</Text>
+              {renderPasswordRule(passwordHasMinLength, "Au moins 8 caractères")}
+              {renderPasswordRule(passwordHasUppercase, "Au moins 1 majuscule")}
+              {renderPasswordRule(passwordHasNumber, "Au moins 1 chiffre (0-9)")}
+              {renderPasswordRule(passwordHasSpecialChar, "Au moins 1 caractère spécial (!@#$%...)")}
+              {renderPasswordRule(passwordsMatch, "Les deux mots de passe sont identiques")}
+            </View>
+          </>
+        ) : (
+          <>
+            {/* ✅ MAIRIE : Récap + SIREN + Email officiel UNIQUEMENT */}
+            {municipalityCity && (
+              <View style={styles.municipalityRecapBox}>
+                <FontAwesome5 name="landmark" size={24} color="#6366f1" />
+                <Text style={styles.municipalityRecapText}>
+                  Mairie de {municipalityCity}
+                </Text>
+              </View>
+            )}
+
+            {/* ⚠️ MESSAGE IMPORTANT SUR L'EMAIL OFFICIEL */}
+            <View style={[styles.warningBox]}>
+              <Ionicons name="shield-checkmark" size={22} color="#f59e0b" />
+              <Text style={styles.warningBoxText}>
+                <Text style={{ fontWeight: '700' }}>Important :</Text> Afin de garantir l’authenticité de votre demande, veuillez utiliser l’adresse e-mail officielle de votre mairie. Les adresses non officielles ne pourront malheureusement pas être prises en compte.
+              </Text>
+            </View>
+
+            {/* CHAMP SIREN */}
+            <View>
+              <View style={styles.inputWrapper}>
+                <MaterialIcons 
+                  name="business" 
+                  size={22} 
+                  color="#5e5ce6" 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={municipalitySIREN}
+                  placeholder="Numéro SIREN (9 chiffres)"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={setMunicipalitySIREN}
+                  keyboardType="numeric"
+                  maxLength={9}
+                  returnKeyType="next"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[11] = el; }}
+                  onSubmitEditing={() => focusNextInput(11, 2)}
+                />
+              </View>
+            </View>
+
+            {/* CHAMP EMAIL OFFICIEL (NE PAS TOUCHER) */}
+            <View>
+              <View style={[
+                styles.inputWrapper,
+                emailError && { borderColor: 'rgba(239, 68, 68, 0.5)' },
+                emailAvailable === true && { borderColor: 'rgba(16, 185, 129, 0.5)' }
+              ]}>
+                <Ionicons 
+                  name="mail-outline" 
+                  size={22} 
+                  color={emailError ? "#ef4444" : emailAvailable === true ? "#10b981" : "#5e5ce6"} 
+                  style={styles.inputIcon} 
+                />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  placeholder="Email officiel de la mairie"
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={handleEmailChange}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  returnKeyType="done"
+                  editable={true}
+                  ref={(el) => { inputRefs.current[12] = el; }}
+                  onSubmitEditing={() => inputRefs.current[12]?.blur()}
+                />
+                {renderVerificationIndicator(isCheckingEmail, emailAvailable, 'email')}
+              </View>
+              {emailError && (
+                <Text style={styles.errorText}>{emailError}</Text>
+              )}
+              {emailAvailable === true && !emailError && (
+                <Text style={styles.successText}>✓ Cette adresse email est disponible</Text>
+              )}
+            </View>
+          </>
+        )}
+      </View>
+
+      <View style={styles.navigationButtons}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={goToPreviousStep}
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.12)']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.nextButtonMain,
+            (!formValid || isCheckingEmail) && styles.buttonDisabled,
+          ]}
+          onPress={goToNextStep}
+          disabled={!formValid || isCheckingEmail}
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={(formValid && !isCheckingEmail) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.buttonGradient}
+          >
+            {isCheckingEmail ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.nextButtonText}>Vérification...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.nextButtonText}>Continuer</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+
+  // ✅ ÉTAPE 3 MODIFIÉE : Pour mairies = Mot de passe uniquement
+  const renderStepThree = () => (
+    <Animated.View
+      style={[
+        styles.stepContainer,
+        {
+          opacity: fadeAnim,
+          transform: [
+            { translateY: translateY },
+            { scale: scaleAnim }
+          ],
+        },
+      ]}
+    >
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressIndicator, { width: getProgressWidth() }]} />
+        </View>
+        <Text style={styles.progressText}>Étape 3/3</Text>
+      </View>
+
+      <Text style={styles.stepTitle}>
+        {accountType === "citizen" ? "Finalisez votre profil" : "Sécurisez votre compte"}
+      </Text>
+      <Text style={styles.stepDescription}>
+        {accountType === "citizen"
+          ? "Personnalisez votre profil avec une photo et votre ville"
+          : "Créez un mot de passe sécurisé pour votre compte"}
+      </Text>
+
+      <View style={styles.formContainer}>
+        {accountType === "citizen" ? (
+          <>
+            {/* CITOYEN : photo + localisation (inchangé) */}
+            <Text style={styles.sectionTitle}>Photo de profil</Text>
+            <View style={styles.photoManagerContainer}>
+              <View>
+                <PhotoManager photos={photos} setPhotos={setPhotos} maxPhotos={1} />
+              </View>
+              <Text style={styles.photoHelperText}>
+                {photos?.length ? 'Votre photo de profil' : 'Appuyez ici pour ajouter une photo'}
+              </Text>
+            </View>
+
+            <Text style={styles.sectionTitle}>Votre ville</Text>
+            <View style={styles.searchContainer}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="location-outline" size={22} color="#5e5ce6" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Rechercher par ville ou code postal"
+                  value={query}
+                  placeholderTextColor="#94a3b8"
+                  onChangeText={setQuery}
+                  editable={true}
+                />
+              </View>
+              
+              <Animated.View style={[styles.searchButtonContainer, { transform: [{ scale: searchBounceAnim }] }]}>
+                <TouchableOpacity
+                  style={styles.searchButton}
+                  onPress={handleAddressSearch}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#6366f1', '#4f46e5']}
+                    style={styles.searchButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.searchButtonText}>Rechercher</Text>
+                    <Ionicons name="search" size={20} color="#fff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+
+            {selectedLocation && (
+              <View style={styles.selectedLocationContainer}>
+                <MaterialIcons name="location-on" size={22} color="#10b981" />
+                <Text style={styles.selectedLocationText}>
+                  {selectedCity.nom_commune} ({selectedCity.code_postal})
+                </Text>
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+       <View>
           <Text style={{ color: '#fff', fontSize: 12, marginBottom: 5 }}>
             🔍 DEBUG: Password value = "{password}" | Length = {password.length}
           </Text>
@@ -1342,186 +1646,25 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
           </View>
         </View>
 
-        <View style={styles.passwordRulesContainer}>
-          <Text style={styles.passwordRulesTitle}>Votre mot de passe doit contenir :</Text>
-          {renderPasswordRule(passwordHasMinLength, "Au moins 8 caractères")}
-          {renderPasswordRule(passwordHasUppercase, "Au moins 1 majuscule")}
-          {renderPasswordRule(passwordHasNumber, "Au moins 1 chiffre (0-9)")}
-          {renderPasswordRule(passwordHasSpecialChar, "Au moins 1 caractère spécial (!@#$%...)")}
-          {renderPasswordRule(passwordsMatch, "Les deux mots de passe sont identiques")}
-        </View>
-      </View>
+            <View style={styles.passwordRulesContainer}>
+              <Text style={styles.passwordRulesTitle}>Votre mot de passe doit contenir :</Text>
+              {renderPasswordRule(passwordHasMinLength, "Au moins 8 caractères")}
+              {renderPasswordRule(passwordHasUppercase, "Au moins 1 majuscule")}
+              {renderPasswordRule(passwordHasNumber, "Au moins 1 chiffre (0-9)")}
+              {renderPasswordRule(passwordHasSpecialChar, "Au moins 1 caractère spécial (!@#$%...)")}
+              {renderPasswordRule(passwordsMatch, "Les deux mots de passe sont identiques")}
+            </View>
 
-      {/* ✅ BOUTONS CORRIGÉS - MÊME HAUTEUR ET PROPORTIONS */}
-      <View style={styles.navigationButtons}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={goToPreviousStep}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.12)']}
-            style={styles.buttonGradient}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.nextButtonMain,
-            (!formValid || isCheckingEmail) && styles.buttonDisabled,
-          ]}
-          onPress={goToNextStep}
-          disabled={!formValid || isCheckingEmail}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={(formValid && !isCheckingEmail) ? ['#6366f1', '#4f46e5', '#4338ca'] : ['#94a3b8', '#cbd5e1']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
-          >
-            {isCheckingEmail ? (
-              <>
-                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.nextButtonText}>Vérification...</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.nextButtonText}>Continuer</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
-  );
-
-  const renderStepThree = () => (
-    <Animated.View
-      style={[
-        styles.stepContainer,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: translateY },
-            { scale: scaleAnim }
-          ],
-        },
-      ]}
-    >
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressIndicator, { width: getProgressWidth() }]} />
-        </View>
-        <Text style={styles.progressText}>Étape 3/3</Text>
-      </View>
-
-      <Text style={styles.stepTitle}>Finalisez votre profil</Text>
-      <Text style={styles.stepDescription}>
-        {accountType === "citizen"
-          ? "Personnalisez votre profil avec une photo et votre ville"
-          : "Indiquez l'adresse et la localisation de votre mairie"}
-      </Text>
-
-      <View style={styles.formContainer}>
-        {accountType === "citizen" && (
-          <>
-            <Text style={styles.sectionTitle}>Photo de profil</Text>
-            <View style={styles.photoManagerContainer}>
-              <View>
-                <PhotoManager photos={photos} setPhotos={setPhotos} maxPhotos={1} />
-              </View>
-              <Text style={styles.photoHelperText}>
-                {photos?.length ? 'Votre photo de profil' : 'Appuyez ici pour ajouter une photo'}
+            <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
+              <Ionicons name="alert-circle" size={20} color="#f59e0b" />
+              <Text style={[styles.infoBoxText, { color: '#92400e' }]}>
+                Votre compte sera soumis à validation. Vous recevrez un email une fois votre compte approuvé par un administrateur.
               </Text>
             </View>
           </>
         )}
-
-        {accountType === "municipality" && (
-          <>
-            <Text style={styles.sectionTitle}>Adresse de la mairie</Text>
-            <View>
-              <View style={styles.inputWrapper}>
-                <MaterialIcons 
-                  name="location-city" 
-                  size={22} 
-                  color="#5e5ce6" 
-                  style={styles.inputIcon} 
-                />
-                <TextInput
-                  style={styles.input}
-                  value={municipalityAddress}
-                  placeholder="Adresse complète de la mairie"
-                  placeholderTextColor="#94a3b8"
-                  onChangeText={setMunicipalityAddress}
-                  multiline
-                  numberOfLines={2}
-                  editable={true}
-                />
-              </View>
-            </View>
-          </>
-        )}
-
-        <Text style={styles.sectionTitle}>
-          {accountType === "citizen" ? "Votre ville" : "Localisation"}
-        </Text>
-        <View style={styles.searchContainer}>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="location-outline" size={22} color="#5e5ce6" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Rechercher par ville ou code postal"
-              value={query}
-              placeholderTextColor="#94a3b8"
-              onChangeText={setQuery}
-              editable={true}
-            />
-          </View>
-          
-          <Animated.View style={[styles.searchButtonContainer, { transform: [{ scale: searchBounceAnim }] }]}>
-            <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleAddressSearch}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={['#6366f1', '#4f46e5']}
-                style={styles.searchButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Text style={styles.searchButtonText}>Rechercher</Text>
-                <Ionicons name="search" size={20} color="#fff" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-
-        {selectedLocation && (
-          <View style={styles.selectedLocationContainer}>
-            <MaterialIcons name="location-on" size={22} color="#10b981" />
-            <Text style={styles.selectedLocationText}>
-              {selectedCity.nom_commune} ({selectedCity.code_postal})
-            </Text>
-          </View>
-        )}
-
-        {accountType === "municipality" && (
-          <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
-            <Ionicons name="alert-circle" size={20} color="#f59e0b" />
-            <Text style={[styles.infoBoxText, { color: '#92400e' }]}>
-              Votre compte sera soumis à validation. Vous recevrez un email une fois votre compte approuvé.
-            </Text>
-          </View>
-        )}
       </View>
 
-      {/* ✅ BOUTONS CORRIGÉS - MÊME HAUTEUR ET PROPORTIONS */}
       <View style={styles.navigationButtons}>
         <TouchableOpacity
           style={styles.backButton}
@@ -1676,7 +1819,6 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
   );
 }
 
-// ✅ STYLES CORRIGÉS - BOUTONS BIEN PROPORTIONNÉS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1783,13 +1925,37 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginLeft: 4,
   },
-  municipalityPreview: {
-    color: '#6ee7b7',
+  municipalityRecapBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  municipalityRecapText: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  // ✅ NOUVEAU STYLE pour le message d'avertissement
+  warningBox: {
+    flexDirection: 'row',
+    backgroundColor: '#fffbeb',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+    gap: 12,
+  },
+  warningBoxText: {
+    flex: 1,
     fontSize: 13,
-    marginTop: 8,
-    marginLeft: 4,
-    fontWeight: '600',
-    fontStyle: 'italic',
+    color: '#92400e',
+    lineHeight: 18,
   },
   passwordRulesContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1868,40 +2034,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  // 🎯 STYLES DES BOUTONS CORRIGÉS - TOUS IDENTIQUES
   navigationButtons: {
     flexDirection: 'row',
     gap: 12,
   },
-  // Bouton "Précédent" - 35% de la largeur
   backButton: {
     flex: 0.35,
     borderRadius: 14,
     overflow: 'hidden',
-    height: 50, // Hauteur fixe pour tous les boutons
+    height: 50,
   },
-  // Bouton "Continuer" principal - 65% de la largeur
   nextButtonMain: {
     flex: 0.65,
     borderRadius: 14,
     overflow: 'hidden',
-    height: 50, // Même hauteur que backButton
+    height: 50,
   },
-  // Bouton "S'inscrire" - 65% de la largeur
   registerButton: {
     flex: 0.65,
     borderRadius: 14,
     overflow: 'hidden',
-    height: 50, // Même hauteur que les autres
+    height: 50,
   },
-  // Bouton unique pleine largeur (pour étape 0)
   nextButton: {
     width: '100%',
     borderRadius: 14,
     overflow: 'hidden',
     height: 50,
   },
-  // Gradient intérieur commun à tous les boutons
   buttonGradient: {
     flex: 1,
     flexDirection: 'row',
