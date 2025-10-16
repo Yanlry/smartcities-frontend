@@ -1,0 +1,213 @@
+import { StyleSheet, Platform, Dimensions } from "react-native";
+
+const { width } = Dimensions.get("window");
+
+export default StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: "#F5F5F5",
+    },
+    header: {
+      paddingBottom: 20,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    headerContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 10,
+    },
+    menuButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: 0.5,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+    },
+    statsCard: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: "rgba(0, 198, 251, 0.2)",
+    },
+    statsContent: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    statsTextContainer: {
+      marginLeft: 16,
+    },
+    statsValue: {
+      fontSize: 32,
+      fontWeight: "700",
+      color: "#0A0A0A",
+    },
+    statsLabel: {
+      fontSize: 14,
+      color: "#737373",
+      marginTop: 4,
+    },
+    postCard: {
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    postHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    postHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    postDate: {
+      fontSize: 13,
+      color: "#737373",
+      marginLeft: 8,
+    },
+    postContent: {
+      fontSize: 15,
+      color: "#0A0A0A",
+      lineHeight: 22,
+      marginBottom: 12,
+    },
+    photosContainer: {
+      flexDirection: "row",
+      marginBottom: 12,
+      position: "relative",
+    },
+    postPhoto: {
+      width: (width - 80) / 3,
+      height: 100,
+      borderRadius: 8,
+      marginRight: 8,
+    },
+    morePhotosOverlay: {
+      position: "absolute",
+      right: 8,
+      top: 0,
+      width: (width - 80) / 3,
+      height: 100,
+      borderRadius: 8,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    morePhotosText: {
+      color: "#FFFFFF",
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    postStats: {
+      flexDirection: "row",
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: "#E0E0E0",
+    },
+    statItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginRight: 20,
+    },
+    statText: {
+      fontSize: 14,
+      color: "#737373",
+      marginLeft: 6,
+      fontWeight: "600",
+    },
+    emptyContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 60,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#0A0A0A",
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: "#737373",
+      textAlign: "center",
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#F5F5F5",
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: "#737373",
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#F5F5F5",
+      padding: 20,
+    },
+    errorTitle: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: "#F44336",
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    errorText: {
+      fontSize: 14,
+      color: "#737373",
+      textAlign: "center",
+      marginBottom: 20,
+    },
+    retryButton: {
+      backgroundColor: "#00C6FB",
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "600",
+    },
+  });

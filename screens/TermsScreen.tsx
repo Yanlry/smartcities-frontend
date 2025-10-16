@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNotification } from "../context/NotificationContext";
 import Sidebar from "../components/common/Sidebar";
 import { useUserProfile } from "../hooks/user/useUserProfile";
-import styles from "../styles/TermsScreen.styles";
+import styles from "../styles/screens/TermsScreen.styles";
 
 const COLORS = {
     primary: "#062C41",

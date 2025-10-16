@@ -37,6 +37,7 @@ import {
 
 // Modal de signalement
 import PostReportModal from "../components/interactions/ReportDetails/PostReportModal";
+import styles from "../styles/screens/ReportDetailsScreen.styles";
 
 /**
  * Interface pour la gestion du signalement avec types corrigés
@@ -534,12 +535,5 @@ const ReportDetailsScreen: React.FC<ReportDetailsProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
-});
 
 export default ReportDetailsScreen;

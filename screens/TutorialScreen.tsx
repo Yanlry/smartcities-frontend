@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Button, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import styles from "../styles/screens/TutorialScreen.styles";
 
 export default function TutorialScreen() {
   const navigation = useNavigation<any>(); // 👈 fix TypeScript ici
@@ -37,26 +38,3 @@ export default function TutorialScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#062C41",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  description: {
-    color: "#cfd9e2",
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 30,
-  },
-});

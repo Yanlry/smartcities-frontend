@@ -3,7 +3,7 @@
 import React, { memo } from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { profileStyles } from "../../../styles/profileStyles";
+import { profileStyles } from "../../../styles/screens/UserProfileScreen.styles";
 
 import { EventsTabProps } from "../../../types/features/profile/tabs.types";
 

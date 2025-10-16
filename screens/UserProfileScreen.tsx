@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, ActivityIndicator, Text, ScrollView, Alert } from "react-native";
 import Sidebar from "../components/common/Sidebar";
-import { profileStyles } from "../styles/profileStyles";
+import { profileStyles } from "../styles/screens/UserProfileScreen.styles"
 import { useToken } from "../hooks/auth/useToken";
 import { useBadge } from "../hooks/ui/useBadge";
 import SectionProfile from "../components/profile/Profile/ProfileSection";

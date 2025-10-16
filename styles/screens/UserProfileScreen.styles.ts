@@ -8,7 +8,7 @@ export const profileStyles = StyleSheet.create({
   container: {
 
     paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#ffff",
     flexGrow: 1,
   },
 

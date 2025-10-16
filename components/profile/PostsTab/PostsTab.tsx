@@ -3,7 +3,7 @@
 import React, { memo, useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { profileStyles } from "../../../styles/profileStyles";
+import { profileStyles } from "../../../styles/screens/UserProfileScreen.styles";
 
 import { PostsTabProps } from "../../../types/features/profile/tabs.types";
 

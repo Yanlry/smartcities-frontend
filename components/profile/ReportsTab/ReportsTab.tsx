@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import { profileStyles } from "../../../styles/profileStyles";
+import { profileStyles } from "../../../styles/screens/UserProfileScreen.styles";
 
 import { ReportsTabProps } from "../../../types/features/profile/tabs.types";
 
