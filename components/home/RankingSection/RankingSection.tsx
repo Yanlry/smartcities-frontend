@@ -77,104 +77,120 @@ const MAX_DISPLAY_USERS = 10;
  * Design harmonisé avec le composant SmarterItem
  */
 // Composant pour les positions de podium vacantes
-const EmptyPodiumPosition = memo(({ 
-  position, 
-  rank 
-}: { 
-  position: "left" | "center" | "right"; 
-  rank: number;
-}) => {
-  // Déterminer la couleur d'accent et de fond en fonction du rang
-  const getStyles = () => {
-    switch (rank) {
-      case 2:
-        return {
-          accent: "#D5D5D5", // Argent
-          background: "#F5F5F5", // Fond clair argenté
-          containerStyle: styles.secondPlaceContainer,
-          avatarBorderColor: "#D5D5D5"
-        };
-      case 3:
-        return {
-          accent: "#CD7F32", // Bronze
-          background: "#F9EAE0", // Fond clair bronze
-          containerStyle: styles.thirdPlaceContainer,
-          avatarBorderColor: "#CD7F32"
-        };
-      default:
-        return {
-          accent: "#FFD700", // Or
-          background: "#FFECB3", // Fond clair doré
-          avatarBorderColor: "#FFD700"
-        };
-    }
-  };
+const EmptyPodiumPosition = memo(
+  ({
+    position,
+    rank,
+  }: {
+    position: "left" | "center" | "right";
+    rank: number;
+  }) => {
+    // Déterminer la couleur d'accent et de fond en fonction du rang
+    const getStyles = () => {
+      switch (rank) {
+        case 2:
+          return {
+            accent: "#D5D5D5", // Argent
+            background: "#F5F5F5", // Fond clair argenté
+            containerStyle: styles.secondPlaceContainer,
+            avatarBorderColor: "#D5D5D5",
+          };
+        case 3:
+          return {
+            accent: "#CD7F32", // Bronze
+            background: "#F9EAE0", // Fond clair bronze
+            containerStyle: styles.thirdPlaceContainer,
+            avatarBorderColor: "#CD7F32",
+          };
+        default:
+          return {
+            accent: "#FFD700", // Or
+            background: "#FFECB3", // Fond clair doré
+            avatarBorderColor: "#FFD700",
+          };
+      }
+    };
 
-  const { accent, background, containerStyle, avatarBorderColor } = getStyles();
+    const { accent, background, containerStyle, avatarBorderColor } =
+      getStyles();
 
-  // Animation d'entrée avec timing standard
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-  
-  useEffect(() => {
-    // Délai d'entrée basé sur la position
-    const entryDelay = 400 + (position === "center" ? 0 : position === "left" ? 100 : 200);
-    
-    Animated.sequence([
-      Animated.delay(entryDelay),
-      Animated.spring(bounceAnim, {
-        toValue: 1,
-        friction: 5,
-        tension: 40,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, []);
+    // Animation d'entrée avec timing standard
+    const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  return (
-    <Animated.View
-      style={[
-        position === "left" && styles.podiumLeft,
-        position === "center" && styles.podiumCenter,
-        position === "right" && styles.podiumRight,
-        {
-          opacity: bounceAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1]
-          }),
-          transform: [
-            { scale: bounceAnim },
-            { translateY: bounceAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [20, 0]
-              })
-            }
-          ]
-        }
-      ]}
-    >
-      <View style={[styles.vacantPodiumCard, { backgroundColor: background }, containerStyle]}>
-        {/* Badge de rang */}
-        <View style={[styles.rankBadgeCircle, { backgroundColor: accent }]}>
-          <Text style={styles.rankBadgeText}>{rank}</Text>
-        </View>
+    useEffect(() => {
+      // Délai d'entrée basé sur la position
+      const entryDelay =
+        400 + (position === "center" ? 0 : position === "left" ? 100 : 200);
 
-        {/* Placeholder d'avatar avec bordure */}
-        <View style={styles.podiumAvatarContainer}>
-          <View style={[styles.podiumAvatarBorder, { borderColor: avatarBorderColor }]}>
-            <View style={styles.emptyPodiumAvatar}>
-              <MaterialIcons name="help" size={28} color="#CCCCCC" />
+      Animated.sequence([
+        Animated.delay(entryDelay),
+        Animated.spring(bounceAnim, {
+          toValue: 1,
+          friction: 5,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, []);
+
+    return (
+      <Animated.View
+        style={[
+          position === "left" && styles.podiumLeft,
+          position === "center" && styles.podiumCenter,
+          position === "right" && styles.podiumRight,
+          {
+            opacity: bounceAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1],
+            }),
+            transform: [
+              { scale: bounceAnim },
+              {
+                translateY: bounceAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.vacantPodiumCard,
+            { backgroundColor: background },
+            containerStyle,
+          ]}
+        >
+          {/* Badge de rang */}
+          <View style={[styles.rankBadgeCircle, { backgroundColor: accent }]}>
+            <Text style={styles.rankBadgeText}>{rank}</Text>
+          </View>
+
+          {/* Placeholder d'avatar avec bordure */}
+          <View style={styles.podiumAvatarContainer}>
+            <View
+              style={[
+                styles.podiumAvatarBorder,
+                { borderColor: avatarBorderColor },
+              ]}
+            >
+              <View style={styles.emptyPodiumAvatar}>
+                <MaterialIcons name="help" size={28} color="#CCCCCC" />
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Texte de position vacante */}
-        <Text style={styles.vacantPodiumName}>
-          {rank === 2 ? "2ème place vacante" : "3ème place vacante"}
-        </Text>
-      </View>
-    </Animated.View>
-  );
-});
+          {/* Texte de position vacante */}
+          <Text style={styles.vacantPodiumName}>
+            {rank === 2 ? "2ème place vacante" : "3ème place vacante"}
+          </Text>
+        </View>
+      </Animated.View>
+    );
+  }
+);
 /**
  * RankingSection - Composant de classement avec design premium
  * Optimisé pour une utilisation dans un ScrollView parent
@@ -189,7 +205,9 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
     const opacityAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
     const headerScaleAnim = useRef(new Animated.Value(1)).current;
     const badgePulse = useRef(new Animated.Value(1)).current;
-    const contentSlideAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
+    const contentSlideAnim = useRef(
+      new Animated.Value(isVisible ? 1 : 0)
+    ).current;
 
     // Animation de rotation pour l'icône de flèche
     const arrowRotation = rotateAnim.interpolate({
@@ -203,10 +221,19 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
       outputRange: [-20, 0],
     });
 
-    // Séparer les podium users et les autres
-    const podiumUsers = topUsers.slice(0, Math.min(3, topUsers.length));
-    const listUsers = topUsers.slice(3, MAX_DISPLAY_USERS);
-    const hasMoreUsers = topUsers.length > MAX_DISPLAY_USERS;
+    // Filtrage pour exclure les comptes mairie
+    const filteredUsers = topUsers.filter((user) => {
+      const normalized = (user.displayName ?? "").trim().toLowerCase();
+      return !/^mairie(\s*de)?/i.test(normalized);
+    });
+
+    // Puis utiliser filteredUsers pour le podium et la liste
+    const podiumUsers = filteredUsers.slice(
+      0,
+      Math.min(3, filteredUsers.length)
+    );
+    const listUsers = filteredUsers.slice(3, MAX_DISPLAY_USERS);
+    const hasMoreUsers = filteredUsers.length > MAX_DISPLAY_USERS;
 
     // Démarrer l'animation de pulsation du badge
     useEffect(() => {
@@ -295,12 +322,16 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
     // Rendu du podium avec les 3 premiers et gestion des positions vacantes
     const renderPodium = useCallback(() => {
       // Créer un tableau fixe pour représenter les 3 positions du podium
-      const podiumPositions: Array<{user: SmarterUser | null, position: "left" | "center" | "right", rank: number}> = [
+      const podiumPositions: Array<{
+        user: SmarterUser | null;
+        position: "left" | "center" | "right";
+        rank: number;
+      }> = [
         { user: null, position: "left", rank: 2 },
         { user: null, position: "center", rank: 1 },
-        { user: null, position: "right", rank: 3 }
+        { user: null, position: "right", rank: 3 },
       ];
-      
+
       // Placement des utilisateurs disponibles dans l'ordre correct
       podiumUsers.forEach((user, index) => {
         if (index === 0) {
@@ -319,10 +350,10 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
         <View style={styles.podiumContainer}>
           {podiumPositions.map((item, displayIndex) => {
             const { user, position, rank } = item;
-            
+
             // Calcul de l'index pour SmarterItem (0-based)
             const actualRank = rank - 1;
-            
+
             return user ? (
               // Rendu d'utilisateur réel
               <SmarterItem
@@ -336,9 +367,9 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
               />
             ) : (
               // Rendu d'une position vacante
-              <EmptyPodiumPosition 
-                key={`empty-${position}`} 
-                position={position} 
+              <EmptyPodiumPosition
+                key={`empty-${position}`}
+                position={position}
                 rank={rank}
               />
             );
@@ -382,7 +413,12 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
             end={{ x: 1, y: 0 }}
             style={styles.seeAllGradient}
           >
-            <MaterialIcons name="format-list-bulleted" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <MaterialIcons
+              name="format-list-bulleted"
+              size={18}
+              color="#fff"
+              style={{ marginRight: 8 }}
+            />
             <Text style={styles.seeAllText}>Voir le classement complet</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -395,7 +431,11 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
         <View style={styles.emptyStateContainer}>
           <View style={styles.emptyStateContent}>
             <View style={styles.emptyStateIconContainer}>
-              <MaterialIcons name="emoji-events" size={32} color={THEME.primary} />
+              <MaterialIcons
+                name="emoji-events"
+                size={32}
+                color={THEME.primary}
+              />
             </View>
             <Text style={styles.emptyStateTitle}>Aucun contributeur</Text>
             <Text style={styles.emptyStateSubtitle}>
@@ -416,7 +456,9 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
             style={[
               styles.headerContainer,
               {
-                backgroundColor: isVisible ? EXPANDED_BACKGROUND : COLLAPSED_BACKGROUND,
+                backgroundColor: isVisible
+                  ? EXPANDED_BACKGROUND
+                  : COLLAPSED_BACKGROUND,
                 borderBottomLeftRadius: isVisible ? 0 : 20,
                 borderBottomRightRadius: isVisible ? 0 : 20,
                 transform: [{ scale: headerScaleAnim }],
@@ -432,7 +474,10 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
               onPressIn={handleHeaderPressIn}
               onPressOut={handleHeaderPressOut}
               style={styles.header}
-              android_ripple={{ color: 'rgba(0, 0, 0, 0.05)', borderless: true }}
+              android_ripple={{
+                color: "rgba(0, 0, 0, 0.05)",
+                borderless: true,
+              }}
             >
               <View style={styles.headerContent}>
                 {/* Icône et titre */}
@@ -483,15 +528,17 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
                       {
                         transform: [
                           { rotate: arrowRotation },
-                          { scale: isVisible ? 1.1 : 1 }
+                          { scale: isVisible ? 1.1 : 1 },
                         ],
                       },
                     ]}
                   >
                     <LinearGradient
-                      colors={isVisible ? 
-                        [THEME.primary, THEME.primaryDark] : 
-                        ['#A0AEC0', '#718096']}
+                      colors={
+                        isVisible
+                          ? [THEME.primary, THEME.primaryDark]
+                          : ["#A0AEC0", "#718096"]
+                      }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.arrowIndicator}
@@ -506,9 +553,7 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
 
           {/* Contenu principal avec hauteur conditionnelle */}
           {isVisible && (
-            <View
-              style={styles.sectionContentContainer}
-            >
+            <View style={styles.sectionContentContainer}>
               <LinearGradient
                 colors={[EXPANDED_BACKGROUND, "#FFFFFF"]}
                 style={styles.sectionContent}
@@ -526,34 +571,30 @@ const RankingSection: React.FC<RankingSectionProps> = memo(
                     <View style={styles.loaderContainer}>
                       <ActivityIndicator size="large" color={THEME.primary} />
                     </View>
-                  ) : (
-                    topUsers.length > 0 ? (
-                      <>
-                        {/* Podium pour les 3 premiers */}
-                        <View>{renderPodium()}</View>
+                  ) : topUsers.length > 0 ? (
+                    <>
+                      {/* Podium pour les 3 premiers */}
+                      <View>{renderPodium()}</View>
 
-                        {/* Liste des autres utilisateurs */}
-                        {listUsers.length > 0 && (
-                          <View style={styles.rankingListContainer}>
-                            <View style={styles.rankingListHeader}>
-                              <Text style={styles.rankingListTitle}>
-                                Autres contributeurs
-                              </Text>
-                              <TouchableOpacity onPress={onSeeAllPress}>
-                                <Text style={styles.viewAllLink}>
-                                  Voir tout
-                                </Text>
-                              </TouchableOpacity>
-                            </View>
-
-                            {renderUserList()}
-                            {renderSeeAllButton()}
+                      {/* Liste des autres utilisateurs */}
+                      {listUsers.length > 0 && (
+                        <View style={styles.rankingListContainer}>
+                          <View style={styles.rankingListHeader}>
+                            <Text style={styles.rankingListTitle}>
+                              Autres contributeurs
+                            </Text>
+                            <TouchableOpacity onPress={onSeeAllPress}>
+                              <Text style={styles.viewAllLink}>Voir tout</Text>
+                            </TouchableOpacity>
                           </View>
-                        )}
-                      </>
-                    ) : (
-                      renderEmptyState()
-                    )
+
+                          {renderUserList()}
+                          {renderSeeAllButton()}
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    renderEmptyState()
                   )}
                 </Animated.View>
               </LinearGradient>
@@ -823,79 +864,79 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "bold",
   },
-// Styles pour les positions vacantes du podium
-vacantPodiumCard: {
-  width: "100%",
-  alignItems: "center",
-  paddingVertical: 16,
-  paddingHorizontal: 8,
-  borderRadius: 16,
-  ...Platform.select({
-    ios: {
-      shadowColor: "rgba(0, 0, 0, 0.1)",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.5,
-      shadowRadius: 6,
-    },
-    android: {
-      elevation: 2,
-    },
-  }),
-},
-secondPlaceContainer: {
-  width: 120,
-  height: 160,
-  borderRadius: 16,
-},
-thirdPlaceContainer: {
-  width: 120,
-  height: 160,
-  borderRadius: 16,
-},
-rankBadgeCircle: {
-  position: "absolute",
-  top: -15,
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-  justifyContent: "center",
-  alignItems: "center",
-  borderWidth: 2,
-  borderColor: "#FFFFFF",
-  zIndex: 1,
-},
-rankBadgeText: {
-  fontSize: 16,
-  color: "#FFFFFF",
-  fontWeight: "bold",
-},
-podiumAvatarContainer: {
-  marginTop: 15,
-  marginBottom: 12,
-},
-podiumAvatarBorder: {
-  width: 70,
-  height: 70,
-  borderRadius: 35,
-  borderWidth: 3,
-  padding: 2,
-  alignItems: "center",
-  justifyContent: "center",
-},
-emptyPodiumAvatar: {
-  width: 60,
-  height: 60,
-  borderRadius: 30,
-  backgroundColor: "#F8F8F8",
-  justifyContent: "center",
-  alignItems: "center",
-},
-vacantPodiumName: {
-  fontSize: 14,
-  fontWeight: "500",
-  color: "#666666",
-  textAlign: "center",
-},
+  // Styles pour les positions vacantes du podium
+  vacantPodiumCard: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(0, 0, 0, 0.1)",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  secondPlaceContainer: {
+    width: 120,
+    height: 160,
+    borderRadius: 16,
+  },
+  thirdPlaceContainer: {
+    width: 120,
+    height: 160,
+    borderRadius: 16,
+  },
+  rankBadgeCircle: {
+    position: "absolute",
+    top: -15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    zIndex: 1,
+  },
+  rankBadgeText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+  podiumAvatarContainer: {
+    marginTop: 15,
+    marginBottom: 12,
+  },
+  podiumAvatarBorder: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 3,
+    padding: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyPodiumAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#F8F8F8",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  vacantPodiumName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666666",
+    textAlign: "center",
+  },
   podiumScoreContainer: {
     alignItems: "center",
     marginBottom: 4,
@@ -927,8 +968,7 @@ vacantPodiumName: {
     color: THEME.primary,
     fontWeight: "500",
   },
-  rankingListItems: {
-  },
+  rankingListItems: {},
   // Styles pour l'état vide
   emptyStateContainer: {
     paddingHorizontal: 16,

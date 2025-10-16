@@ -1,0 +1,130 @@
+import { StyleSheet, Platform } from "react-native";
+
+const COLORS = {
+    primary: "#062C41",
+    secondary: "#1B5D85",
+    danger: "#f44336",
+    success: "#4CAF50",
+    background: "#F8F9FA",
+    card: "#FFFFFF",
+    border: "#E0E0E0",
+    text: {
+      primary: "#333333",
+      secondary: "#666666",
+      light: "#FFFFFF",
+      muted: "#999999",
+    },
+  };
+  
+export default StyleSheet.create({
+     container: {
+        flex: 1,
+      },
+      // Header styles - modernisés
+      header: {
+        backgroundColor: COLORS.primary,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: Platform.OS === "ios" ? 55 : 45,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
+      },
+      headerIcon: {
+        width: 42,
+        height: 42,
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 21,
+        backgroundColor: "rgba(255, 255, 255, 0.15)",
+      },
+      headerTitle: {
+        fontSize: 19,
+        fontWeight: "700",
+        color: COLORS.text.light,
+        letterSpacing: 1,
+      },
+      badge: {
+        position: "absolute",
+        top: -6,
+        right: -6,
+        backgroundColor: COLORS.danger,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+      },
+      badgeText: {
+        color: "#FFFFFF",
+        fontSize: 11,
+        fontWeight: "bold",
+      },
+      card: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 14,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
+        elevation: 2,
+      },
+      cardIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: "#F3F4F6",
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 16,
+      },
+      cardText: {
+        flex: 1,
+      },
+      cardTitle: {
+        fontSize: 17,
+        fontWeight: "600",
+        color: "#111827",
+      },
+      cardDescription: {
+        fontSize: 14,
+        color: "#6B7280",
+        marginTop: 2,
+      },
+      gradientButtonContainer: {
+        marginTop: 30,
+      },
+      gradientButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 14,
+        borderRadius: 50,
+        shadowColor: "#2563EB",
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 3,
+      },
+      buttonText: {
+        color: "#fff",
+        fontSize: 17,
+        fontWeight: "600",
+        marginLeft: 8,
+      },
+    });
+    
+    

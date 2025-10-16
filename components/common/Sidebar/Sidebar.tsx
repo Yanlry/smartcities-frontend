@@ -452,7 +452,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, toggleSidebar }) => {
         />
       ),
       label: "Aide et support",
-      screen: "FAQScreen",
+      screen: "HelpScreen",
     },
     {
       icon: (

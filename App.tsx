@@ -26,8 +26,11 @@ import HomeScreen from "./screens/HomeScreen";
 import EventsScreen from "./screens/EventsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditCityInfoScreen from "./screens/EditCityInfoScreen";
+import HelpScreen from "./screens/HelpScreen";
 import ReportScreen from "./screens/ReportScreen";
 import VotesScreen from "./screens/ReportScreen";
+import PrivacyScreen from "./screens/PrivacyScreen";
+import TermsScreen from "./screens/TermsScreen";
 import MapScreen from "./screens/MapScreen";
 import LoginScreen from "./screens/Auth/LoginScreen";
 import RegisterScreen from "./screens/Auth/RegisterScreen";
@@ -1010,6 +1013,10 @@ export default function App() {
                           name="EditServicesScreen"
                           component={EditServicesScreen}
                         />
+                         <Stack.Screen
+                          name="HelpScreen"
+                          component={HelpScreen}
+                        />
                         <Stack.Screen
                           name="StatisticsScreen"
                           component={StatisticsScreen}
@@ -1026,6 +1033,14 @@ export default function App() {
                         <Stack.Screen
                           name="CreateEventScreen"
                           component={CreateEventScreen}
+                        />
+                         <Stack.Screen
+                          name="PrivacyScreen"
+                          component={PrivacyScreen}
+                        />
+                         <Stack.Screen
+                          name="TermsScreen"
+                          component={TermsScreen}
                         />
                         <Stack.Screen
                           name="VotesScreen"
