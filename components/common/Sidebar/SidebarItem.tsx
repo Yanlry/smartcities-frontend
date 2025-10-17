@@ -17,7 +17,7 @@ import { SidebarItemProps } from '../../../types/components/common/sidebar.types
 const THEME = {
   colors: {
     primary: {
-      gradient: ["#062C41", "#1B5D85"],
+      gradient: ["#1B5D85", "#1B5D85"],
       dark: "#1B5D85",
       main: "#1B5D85",
       light: "#1B5D85",

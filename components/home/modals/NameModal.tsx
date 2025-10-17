@@ -107,7 +107,7 @@ const NameModal: React.FC<NameModalProps> = memo(({
             <Ionicons
               name={item.icon as keyof typeof Ionicons.glyphMap}
               size={20}
-              color={isSelected ? '#FFFFFF' : '#062C41'}
+              color={isSelected ? '#FFFFFF' : '#1B5D85'}
             />
           </View>
           <Text style={[
@@ -120,7 +120,7 @@ const NameModal: React.FC<NameModalProps> = memo(({
         <Switch
           value={isSelected}
           onValueChange={() => handleOptionChange(item.value)}
-          trackColor={{ false: "#CCCCCC", true: "#062C41" }}
+          trackColor={{ false: "#CCCCCC", true: "#1B5D85" }}
           thumbColor="#FFFFFF"
           ios_backgroundColor="#CCCCCC"
         />
@@ -157,7 +157,7 @@ const NameModal: React.FC<NameModalProps> = memo(({
             <Ionicons
               name="person-circle"
               size={40}
-              color="#062C41"
+              color="#1B5D85"
               style={styles.headerIcon}
             />
             <Text style={styles.modalTitleName}>
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectedIconContainer: {
-    backgroundColor: '#062C41',
+    backgroundColor: '#1B5D85',
   },
   optionText: {
     fontSize: 16,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   selectedOptionText: {
     fontWeight: '600',
-    color: '#062C41',
+    color: '#1B5D85',
   },
   noticeContainer: {
     flexDirection: 'row',
@@ -295,13 +295,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   closeButton: {
-    backgroundColor: '#062C41',
+    backgroundColor: '#1B5D85',
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#062C41',
+        shadowColor: '#1B5D85',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,

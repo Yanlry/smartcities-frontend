@@ -1,7 +1,10 @@
+// Chemin : frontend/types/entities/user.types.ts
+
 import { ReactNode } from 'react';
 
 /**
  * Représente un utilisateur dans le système
+ * ✅ AJOUT : Champs pour les comptes de mairies
  */
 export interface User {
   /** Identifiant unique de l'utilisateur */
@@ -38,6 +41,23 @@ export interface User {
   isSubscribed: boolean;
   /** Si l'utilisateur représente une municipalité */
   isMunicipality?: boolean;
+  
+  // ✅ NOUVEAUX CHAMPS AJOUTÉS POUR LES MAIRIES
+  /** Si le compte est vérifié (pour les mairies) */
+  isVerified?: boolean;
+  /** Nom officiel de la mairie */
+  municipalityName?: string;
+  /** Numéro SIREN de la mairie */
+  municipalitySIREN?: string;
+  /** Téléphone de la mairie */
+  municipalityPhone?: string;
+  /** Adresse de la mairie */
+  municipalityAddress?: string;
+  /** Statut du compte (active, pending, rejected) */
+  accountStatus?: string;
+  /** Raison du rejet si le compte est rejeté */
+  rejectionReason?: string;
+  
   /** Utilisateurs qui suivent cet utilisateur */
   followers?: UserFollower[];
   /** Utilisateurs suivis par cet utilisateur */
@@ -142,6 +162,7 @@ export interface UserRanking {
 
 /**
  * Statistiques d'un utilisateur
+ * ✅ AJOUT : Statistiques pour les mairies
  */
 export interface UserStats {
   votes: UserVote[];
@@ -152,6 +173,12 @@ export interface UserStats {
   numberOfEventsCreated?: number;
   numberOfEventsAttended?: number;
   totalUsers?: number;
+  
+  // ✅ NOUVEAUX CHAMPS AJOUTÉS POUR LES STATISTIQUES DES MAIRIES
+  /** Nombre total de signalements traités par la mairie */
+  totalReportsHandled?: number;
+  /** Nombre de signalements actuellement en cours de traitement */
+  activeReports?: number;
 }
 
 /**
@@ -189,8 +216,7 @@ export interface Post {
 /**
  * Types d'onglets pour le profil utilisateur
  */
-export type UserTabType = "info" | "publications" | "signalement" | "evenement"; // Renommé de TabType à UserTabType
-
+export type UserTabType = "info" | "publications" | "signalement" | "evenement";
 
 /**
  * Statistiques sociales d'un utilisateur

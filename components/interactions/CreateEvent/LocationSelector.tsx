@@ -189,7 +189,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = memo(({
 
       {(loading || locationSearchLoading) ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#062C41" />
+          <ActivityIndicator size="large" color="#1B5D85" />
         </View>
       ) : (
         <TouchableOpacity
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   searchButton: {
     width: 50,
     height: 50,
-    backgroundColor: '#062C41',
+    backgroundColor: '#1B5D85',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 25,
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   locationButton: {
     width: 50,
     height: 50,
-    backgroundColor: '#062C41',
+    backgroundColor: '#1B5D85',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 25,

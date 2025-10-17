@@ -217,7 +217,7 @@ const UserProfileScreen: React.FC<UserProfileScreenNavigationProps> = ({
   if (isLoading) {
     return (
       <View style={profileStyles.center}>
-        <ActivityIndicator size="large" color="#062C41" />
+        <ActivityIndicator size="large" color="#1B5D85" />
         <Text>Chargement du profil utilisateur...</Text>
       </View>
     );

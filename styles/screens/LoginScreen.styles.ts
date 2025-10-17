@@ -11,7 +11,7 @@ const ACCENT_COLOR = '#1a759f';
 export default StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#062C41',
+        backgroundColor: '#1B5D85',
       },
       background: {
         flex: 1,

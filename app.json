@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#062C41",
+      "backgroundColor": "#1B5D85",
       "resizeMode": "contain"
     },
     "assetBundlePatterns": [
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#062C41"
+        "backgroundColor": "#1B5D85"
       },
       "package": "com.smartcities.app"
     },

@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#062C41',
+    color: '#1B5D85',
     margin: 16,
   },
   contactDetails: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   hoursTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#062C41',
+    color: '#1B5D85',
     marginBottom: 2,
   },
   hoursText: {

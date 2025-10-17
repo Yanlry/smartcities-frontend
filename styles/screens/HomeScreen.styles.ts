@@ -43,7 +43,7 @@ export default StyleSheet.create({
       elevation: 5,
     },
     globalToggleButton: {
-      backgroundColor: "#062C41",
+      backgroundColor: "#1B5D85",
       marginHorizontal: 10,
       marginTop: 10,
       marginBottom: 5,
@@ -75,7 +75,7 @@ export default StyleSheet.create({
       color: "#555",
     },
     button: {
-      backgroundColor: "#062C41",
+      backgroundColor: "#1B5D85",
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 5,

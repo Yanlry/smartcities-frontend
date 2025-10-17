@@ -10,7 +10,7 @@ export default StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "#062C41",
+        backgroundColor: "#1B5D85",
         paddingTop: Platform.OS === 'ios' ? 50 : 38,
         paddingBottom: 16,
         paddingHorizontal: 16,

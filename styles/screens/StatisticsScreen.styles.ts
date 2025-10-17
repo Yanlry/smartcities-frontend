@@ -1,29 +1,82 @@
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet, Dimensions,StatusBar,Platform } from "react-native";
 
 const { width } = Dimensions.get("window");
 
+  const LAYOUT = {
+    radius: {
+      xs: 4,
+      sm: 8,
+      md: 12,
+      lg: 16,
+      xl: 24,
+      circle: 9999,
+    },
+    header: {
+      height: Platform.OS === "ios" ? 100 : 90,
+      padding: Platform.OS === "ios" ? 50 : 30,
+    },
+    tabBar: {
+      height: 64 + (Platform.OS === "ios" ? 20 : 0),
+      buttonSize: 44,
+    },
+    statusBar: {
+      height: StatusBar.currentHeight || (Platform.OS === "ios" ? 44 : 24),
+    },
+    border: {
+      width: 1,
+      color: "rgba(0,0,0,0.08)",
+    },
+    shadow: {
+      small: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+      },
+      medium: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
+      },
+      large: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        elevation: 8,
+      },
+    },
+  };
 
 export default StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: "#F8F9FA",
     },
-    header: {
-      paddingBottom: 20,
-      borderBottomLeftRadius: 16,
-      borderBottomRightRadius: 16,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    headerContent: {
+    headerGradient: {
+      paddingTop: 50,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 20,
-      paddingTop: 10,
+      paddingVertical: 15,
+      paddingHorizontal: 16,
+      borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    },
+    headerIconButton: {
+      width: 38,
+      height: 38,
+      borderRadius: LAYOUT.radius.circle,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.15)",
+    },
+    titleContainer: {
+      alignItems: "center",
     },
     menuButton: {
       width: 40,
@@ -34,7 +87,7 @@ export default StyleSheet.create({
       justifyContent: "center",
     },
     headerTitle: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: "700",
       color: "#FFFFFF",
       letterSpacing: 0.5,
@@ -75,7 +128,7 @@ export default StyleSheet.create({
     profileName: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#062C41",
+      color: "#1B5D85",
       marginBottom: 4,
     },
     profileCity: {
@@ -174,7 +227,7 @@ export default StyleSheet.create({
     totalVotesText: {
       fontSize: 14,
       fontWeight: "600",
-      color: "#062C41",
+      color: "#1B5D85",
     },
     activityGrid: {
       flexDirection: "row",
@@ -236,7 +289,7 @@ export default StyleSheet.create({
     socialValue: {
       fontSize: 24,
       fontWeight: "700",
-      color: "#062C41",
+      color: "#1B5D85",
       marginTop: 12,
       marginBottom: 4,
     },
@@ -270,7 +323,7 @@ export default StyleSheet.create({
     infoValue: {
       fontSize: 14,
       fontWeight: "700",
-      color: "#062C41",
+      color: "#1B5D85",
     },
     premiumText: {
       color: "#FFD700",

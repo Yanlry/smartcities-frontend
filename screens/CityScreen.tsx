@@ -48,12 +48,13 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
   return (
     <View style={styles.container}>
       <View style={styles.headerNav}>
-        <TouchableOpacity onPress={toggleSidebar}>
+        <TouchableOpacity onPress={toggleSidebar}
+           style={styles.headerIconButton}
+           >
           <Icon
             name="menu"
-            size={24}
+            size={22}
             color="#FFFFFC"
-            style={{ marginLeft: 10 }}
           />
         </TouchableOpacity>
 
@@ -63,13 +64,13 @@ export default function CityScreen({ navigation }: { navigation: CityScreenNavig
 
         <TouchableOpacity
           onPress={() => navigation.navigate("NotificationsScreen")}
+          style={styles.headerIconButton}
         >
           <View>
             <Icon
               name="notifications"
-              size={24}
+              size={22}
               color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
-              style={{ marginRight: 10 }}
             />
             {unreadCount > 0 && (
               <View style={styles.badge}>

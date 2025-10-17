@@ -24,14 +24,15 @@ import UserCard from "../components/ranking/UserCard";
 import RankingHeader from "../components/ranking/RankingHeader";
 import TopUsersSection from "../components/ranking/TopUsersSection";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { useUserProfile } from "../hooks/user/useUserProfile"; // Ajoutez cette ligne
+import { useUserProfile } from "../hooks/user/useUserProfile";
 import styles from "../styles/screens/RankingScreen.styles";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 // Color palette
 const COLORS = {
   primary: {
-    start: "#062C41",
-    end: "#0b3e5a",
+    start: "#1B5D85",
+    end: "#1B5D85",
   },
   text: "#FFFFFC",
   accent: "red",
@@ -50,6 +51,8 @@ interface User {
   username?: string;
   nomCommune?: string;
   voteCount?: number;
+  isMunicipality?: boolean;
+  municipalityName?: string;
 }
 
 /**
@@ -63,7 +66,8 @@ interface RankingResponse {
 
 /**
  * RankingScreen component displays user rankings within their city
- * Shows leaderboard with top users highlighted and user's own ranking
+ *
+ * ✅ CORRECTION : Les mairies peuvent VOIR le classement mais n'y apparaissent PAS
  */
 const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { unreadCount } = useNotification();
@@ -79,6 +83,7 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isMunicipality, setIsMunicipality] = useState<boolean>(false); // ✅ Pour savoir si c'est une mairie
 
   const { user, displayName, voteSummary, updateProfileImage } =
     useUserProfile();
@@ -94,6 +99,7 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   });
 
   /**
+   * ✅ CORRECTION : Charge le classement même pour les mairies, mais les filtre de la liste
    * Fetches ranking data from API
    */
   const fetchRankingData = useCallback(async (isRefreshing = false) => {
@@ -103,61 +109,85 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setLoading(true);
     }
     setError(null);
-  
+
     try {
       const userId = await getUserIdFromToken();
       if (!userId) {
         throw new Error("Impossible de récupérer l'ID utilisateur.");
       }
-  
+
       const userResponse = await fetch(`${API_URL}/users/${userId}`);
       if (!userResponse.ok) {
         throw new Error("Impossible de récupérer les données utilisateur.");
       }
-  
+
       const userData = await userResponse.json();
+
+      // ✅ CORRECTION : On note si c'est une mairie, mais on continue quand même
+      setIsMunicipality(userData.isMunicipality || false);
+
       const cityName = userData.nomCommune;
-  
+
       if (!cityName) {
         throw new Error("La ville de l'utilisateur est introuvable.");
       }
-  
+
       setCityName(cityName);
-  
+
       const rankingResponse = await fetch(
-        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(cityName)}`
+        `${API_URL}/users/ranking-by-city?userId=${userId}&cityName=${encodeURIComponent(
+          cityName
+        )}`
       );
-  
+
       if (!rankingResponse.ok) {
         throw new Error(`Erreur serveur : ${rankingResponse.statusText}`);
       }
-  
+
       const data: RankingResponse = await rankingResponse.json();
-  
+
       // 🧹 Nettoyage et filtrage des utilisateurs avant affichage
       const allUsersRaw = Array.isArray(data?.users) ? data.users : [];
-  
+
+      // ✅ CORRECTION : Meilleure gestion du displayName avec vérification
       const allUsers = allUsersRaw
-        .map((user: any) => ({
-          ...user,
-          displayName: user.useFullName
-            ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
-            : (user.username ?? "").trim(),
-        }))
-        .filter((u: any) => {
-          const normalized = (u.displayName ?? "").trim().toLowerCase();
-          // ❌ Exclut "Mairie de ..." ou "mairie ..." (insensible à la casse)
-          return !/^mairie\s*(de|du|des)?\b/i.test(normalized);
-        });
-  
+        .map((user: any) => {
+          // Créer le displayName selon le type d'utilisateur
+          let displayName = "";
+
+          if (user.isMunicipality) {
+            // Pour les mairies
+            displayName = user.municipalityName || "Mairie";
+          } else if (user.useFullName) {
+            // Pour les utilisateurs avec nom complet
+            displayName = `${user.firstName || ""} ${
+              user.lastName || ""
+            }`.trim();
+          } else {
+            // Pour les utilisateurs avec username
+            displayName = (user.username || "").trim();
+          }
+
+          return {
+            ...user,
+            displayName: displayName,
+          };
+        })
+        // ✅ FILTRE 1 : Enlever toutes les mairies du classement
+        .filter((u: any) => !u.isMunicipality)
+        // ✅ FILTRE 2 : Enlever les utilisateurs sans nom (sécurité)
+        .filter((u: any) => u.displayName && u.displayName.trim().length > 0);
+
       // 🏆 Répartition du classement
       const top3 = allUsers.filter((user) => user.ranking <= 3);
       const remainingUsers = allUsers.filter((user) => user.ranking > 3);
-  
+
       setRankingData(allUsers);
       setTopUsers(top3);
       setOtherUsers(remainingUsers);
-      setUserRanking(data.ranking);
+
+      // ✅ CORRECTION : Si c'est une mairie, on met null pour le ranking
+      setUserRanking(userData.isMunicipality ? null : data.ranking);
       setTotalUsers(data.totalUsers);
     } catch (error) {
       console.warn("Erreur lors de la récupération du classement :", error);
@@ -173,7 +203,6 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       }
     }
   }, []);
-  
 
   // Initial data load
   useEffect(() => {
@@ -245,8 +274,11 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             colors={[COLORS.primary.start, COLORS.primary.end]}
             style={styles.headerGradient}
           >
-            <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
-              <Feather name="menu" size={24} color={COLORS.text} />
+            <TouchableOpacity
+              onPress={toggleSidebar}
+              style={styles.headerIconButton}
+            >
+              <Icon name="menu" size={22} color={COLORS.text} />
             </TouchableOpacity>
 
             <View style={styles.titleContainer}>
@@ -255,9 +287,13 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
             <TouchableOpacity
               onPress={navigateToNotifications}
-              style={styles.notificationButton}
+              style={styles.headerIconButton}
             >
-              <Feather name="bell" size={24} color={COLORS.text} />
+              <Icon
+                name="notifications"
+                size={22}
+                color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
+              />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
@@ -288,14 +324,38 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           }
           ListHeaderComponent={
             <>
-              {/* User's Current Ranking */}
-              <RankingHeader
-                userRanking={userRanking}
-                totalUsers={totalUsers}
-                cityName={cityName}
-              />
+              {/* ✅ CORRECTION : N'affiche le RankingHeader QUE si ce n'est PAS une mairie */}
+              {!isMunicipality && (
+                <RankingHeader
+                  userRanking={userRanking}
+                  totalUsers={totalUsers}
+                  cityName={cityName}
+                />
+              )}
 
-              {/* Top 3 Users */}
+              {/* ✅ BLOC MAIRIE - Style cohérent avec RankingHeader */}
+              {isMunicipality && (
+                <View style={styles.municipalityContainer}>
+
+                  {/* Carte du nombre de citoyens */}
+                  <View style={styles.citizenCountBox}>
+                    <View style={styles.citizenCountRow}>
+                      {/* ✅ CORRECTION : On utilise || 0 pour gérer le cas null */}
+                      <Text style={styles.citizenCountNumber}>
+                        {totalUsers || 0}
+                      </Text>
+                      {/* ✅ CORRECTION : On vérifie que totalUsers existe ET qu'il est > 1 */}
+                      <Text style={styles.citizenCountLabel}>
+                        {totalUsers && totalUsers > 1 ? "citoyens" : "citoyen"}
+                      </Text>
+                    </View>
+                    <Text style={styles.municipalitySubtitle}>
+                      inscrits dans votre commune
+                    </Text>
+                  </View>
+                </View>
+              )}
+              {/* Top 3 Users - Visible pour TOUT LE MONDE (citoyens ET mairies) */}
               {topUsers.length > 0 && (
                 <TopUsersSection
                   topUsers={topUsers}
@@ -336,9 +396,7 @@ const RankingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           voteSummary={voteSummary}
           onShowNameModal={dummyFn}
           onShowVoteInfoModal={dummyFn}
-          onNavigateToCity={() => {
-            /* TODO : remplacer par une navigation appropriée si besoin */
-          }}
+          onNavigateToCity={() => {}}
           updateProfileImage={updateProfileImage}
         />
       </View>

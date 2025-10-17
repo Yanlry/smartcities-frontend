@@ -1,9 +1,9 @@
-import { StyleSheet, Platform} from "react-native";
+import { StyleSheet, Platform,StatusBar } from "react-native";
 
 // Définition de la palette de couleurs officielle
 const COLORS = {
   primary: {
-    base: "#062C41",
+    base: "#1B5D85",
     light: "#1B5D85",
     dark: "#041E2D",
     contrast: "#FFFFFF",
@@ -41,12 +41,59 @@ const COLORS = {
   overlay: "rgba(0,0,0,0.7)",
 };
 
+const LAYOUT = {
+  radius: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    circle: 9999,
+  },
+  header: {
+    height: Platform.OS === "ios" ? 100 : 90,
+    padding: Platform.OS === "ios" ? 50 : 30,
+  },
+  tabBar: {
+    height: 64 + (Platform.OS === "ios" ? 20 : 0),
+    buttonSize: 44,
+  },
+  statusBar: {
+    height: StatusBar.currentHeight || (Platform.OS === "ios" ? 44 : 24),
+  },
+  border: {
+    width: 1,
+    color: "rgba(0,0,0,0.08)",
+  },
+  shadow: {
+    small: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    medium: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    large: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.16,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+  },
+};
 
 export default StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: COLORS.neutral[500],
+    backgroundColor: COLORS.neutral[300],
   },
 
   // Header styles
@@ -54,17 +101,19 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: Platform.OS === "ios" ? 50 : 40,
+    paddingTop: Platform.OS === "ios" ? 40 : 40,
     paddingBottom: 15,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     zIndex: 10,
+    backgroundColor: COLORS.primary.base,
+    
   },
   headerCenter: {
     flexDirection: "row",
@@ -76,13 +125,14 @@ export default StyleSheet.create({
     color: COLORS.primary.contrast,
     letterSpacing: 0.5,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: LAYOUT.radius.circle,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
   },
   badge: {
     position: "absolute",
@@ -170,10 +220,12 @@ export default StyleSheet.create({
     marginBottom: 16,
   },
   profileGradient: {
+    borderRadius: 150,
     paddingHorizontal: 20,
     paddingVertical: 25,
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 10,
   },
   profileImageWrapper: {
     marginRight: 20,
@@ -209,13 +261,13 @@ export default StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "600",
     color: COLORS.primary.contrast,
     marginBottom: 4,
   },
   profileUsername: {
-    fontSize: 16,
+    fontSize: 12,
     color: "rgba(255,255,255,0.8)",
     marginBottom: 12,
   },
@@ -229,7 +281,7 @@ export default StyleSheet.create({
     alignSelf: "flex-start",
   },
   photoButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.primary.contrast,
     marginLeft: 6,
     fontWeight: "500",

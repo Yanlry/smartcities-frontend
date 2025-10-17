@@ -164,7 +164,7 @@ export default function CreateEventScreen({
                 onPress={() => navigation.goBack()}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chevron-back" size={24} color="#062C41" />
+                <Ionicons name="chevron-back" size={24} color="#1B5D85" />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Nouvel événement</Text>
               <View style={styles.progressIndicator}>
@@ -194,7 +194,7 @@ export default function CreateEventScreen({
                 <Ionicons
                   name="images-outline"
                   size={22}
-                  color="#062C41"
+                  color="#1B5D85"
                   style={styles.sectionIcon}
                 />
                 <Text style={styles.sectionTitle}>Photos de l'événement</Text>
@@ -215,7 +215,7 @@ export default function CreateEventScreen({
                 <Ionicons
                   name="information-circle-outline"
                   size={22}
-                  color="#062C41"
+                  color="#1B5D85"
                   style={styles.sectionIcon}
                 />
                 <Text style={styles.sectionTitle}>Détails de l'événement</Text>
@@ -234,7 +234,7 @@ export default function CreateEventScreen({
                 <Ionicons
                   name="calendar-outline"
                   size={22}
-                  color="#062C41"
+                  color="#1B5D85"
                   style={styles.sectionIcon}
                 />
                 <Text style={styles.sectionTitle}>Date de l'événement</Text>
@@ -251,7 +251,7 @@ export default function CreateEventScreen({
                 <Ionicons
                   name="location-outline"
                   size={22}
-                  color="#062C41"
+                  color="#1B5D85"
                   style={styles.sectionIcon}
                 />
                 <Text style={styles.sectionTitle}>Lieu de l'événement</Text>
@@ -269,7 +269,7 @@ export default function CreateEventScreen({
         <View style={styles.submitContainer}>
           <LinearGradient
             colors={
-              isSubmitting ? ["#A0A0A0", "#808080"] : ["#062C41", "#05253A"]
+              isSubmitting ? ["#A0A0A0", "#808080"] : ["#1B5D85", "#05253A"]
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}

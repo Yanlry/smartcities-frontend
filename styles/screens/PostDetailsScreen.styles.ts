@@ -81,7 +81,7 @@ export default StyleSheet.create({
       lineHeight: 22,
     },
     retryButton: {
-      backgroundColor: '#062C41',
+      backgroundColor: '#1B5D85',
       paddingVertical: 12,
       paddingHorizontal: 24,
       borderRadius: 8,

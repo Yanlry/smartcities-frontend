@@ -1,4 +1,4 @@
-// Chemin: components/home/ProfileSection/ProfileSection.tsx
+// Chemin: frontend/components/home/ProfileSection/ProfileSection.tsx
 
 import React, { memo, useMemo, useRef, useEffect, useCallback } from "react";
 import {
@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { User, UserStats as UserStatsType } from "../../../types/entities/user.types";
 import { useBadge } from "../../../hooks/ui/useBadge";
 import RankBadge from "./RankBadge";
+import MunicipalityBadge from "./MunicipalityBadge";
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle, Rect, RadialGradient } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -29,44 +30,44 @@ const SCREEN_HEIGHT = Dimensions.get("window").height;
 const COLORS = {
   primary: {
     dark: "#041724",
-    main: "#062C41",
+    main: "#1B5D85",
     light: "#0F3460",
     accent: "#1A6BB0",
   },
-  rank1: { // Or - 1er
-    primary: "#FFD700", // Or
-    secondary: "#FFA000", // Orange doré
-    accent1: "#F9A825", // Jaune doré
-    accent2: "#FF8F00", // Ambre
-    glow: "rgba(255, 215, 0, 0.6)", // Lueur dorée
+  rank1: {
+    primary: "#FFD700",
+    secondary: "#FFA000",
+    accent1: "#F9A825",
+    accent2: "#FF8F00",
+    glow: "rgba(255, 215, 0, 0.6)",
   },
-  rank2: { // Argent - 2ème
-    primary: "#C0C0C0", // Argent
-    secondary: "#757575", // Gris foncé
-    accent1: "#9E9E9E", // Gris moyen
-    accent2: "#607D8B", // Bleu gris
-    glow: "rgba(192, 192, 192, 0.6)", // Lueur argentée
+  rank2: {
+    primary: "#C0C0C0",
+    secondary: "#757575",
+    accent1: "#9E9E9E",
+    accent2: "#607D8B",
+    glow: "rgba(192, 192, 192, 0.6)",
   },
-  rank3: { // Bronze - 3ème
-    primary: "#CD7F32", // Bronze
-    secondary: "#8D6E63", // Brun
-    accent1: "#A1887F", // Brun clair
-    accent2: "#795548", // Brun foncé
-    glow: "rgba(205, 127, 50, 0.6)", // Lueur bronze
+  rank3: {
+    primary: "#CD7F32",
+    secondary: "#8D6E63",
+    accent1: "#A1887F",
+    accent2: "#795548",
+    glow: "rgba(205, 127, 50, 0.6)",
   },
-  rank10: { // Violet - 4ème à 10ème
-    primary: "#6A0DAD", // Violet royal
-    secondary: "#3949AB", // Indigo
-    accent1: "#9C27B0", // Violet
-    accent2: "#5E35B1", // Violet profond
-    glow: "rgba(106, 13, 173, 0.6)", // Lueur violette
+  rank10: {
+    primary: "#6A0DAD",
+    secondary: "#3949AB",
+    accent1: "#9C27B0",
+    accent2: "#5E35B1",
+    glow: "rgba(106, 13, 173, 0.6)",
   },
-  rankDefault: { // Bleu-vert - Autres
-    primary: "#1E88E5", // Bleu
-    secondary: "#00796B", // Vert foncé
-    accent1: "#26A69A", // Teal
-    accent2: "#0288D1", // Bleu clair
-    glow: "rgba(30, 136, 229, 0.6)", // Lueur bleu
+  rankDefault: {
+    primary: "#1E88E5",
+    secondary: "#00796B",
+    accent1: "#26A69A",
+    accent2: "#0288D1",
+    glow: "rgba(30, 136, 229, 0.6)",
   },
   particle: {
     bright: "rgba(255, 255, 255, 0.8)",
@@ -76,8 +77,7 @@ const COLORS = {
 };
 
 /**
- * AuroraEffect - Un composant qui crée un effet d'aurore boréale en arrière-plan
- * Animation fluide qui ajoute une dimension visuelle spectaculaire adaptée au rang
+ * AuroraEffect - Effet d'aurore boréale
  */
 interface AuroraEffectProps {
   ranking: number | null;
@@ -89,7 +89,6 @@ const AuroraEffect: React.FC<AuroraEffectProps> = memo(({ ranking }) => {
   const auroraOpacity1 = useRef(new Animated.Value(0.5)).current;
   const auroraOpacity2 = useRef(new Animated.Value(0.3)).current;
   
-  // Fonction pour déterminer les couleurs d'aurore en fonction du rang
   const getAuroraColors = useCallback(() => {
     if (ranking === 1) {
       return {
@@ -122,7 +121,6 @@ const AuroraEffect: React.FC<AuroraEffectProps> = memo(({ ranking }) => {
   const auroraColors = getAuroraColors();
   
   useEffect(() => {
-    // Animation de déplacement des aurores
     Animated.loop(
       Animated.sequence([
         Animated.timing(auroraPosition1, {
@@ -157,7 +155,6 @@ const AuroraEffect: React.FC<AuroraEffectProps> = memo(({ ranking }) => {
       ])
     ).start();
     
-    // Animation de pulsation de l'opacité
     Animated.loop(
       Animated.sequence([
         Animated.timing(auroraOpacity1, {
@@ -244,8 +241,7 @@ const AuroraEffect: React.FC<AuroraEffectProps> = memo(({ ranking }) => {
 });
 
 /**
- * NebulaStar - Crée une étoile scintillante avec aura pour effet nébuleuse
- * Effet adapté au rang du membre pour une cohérence visuelle
+ * NebulaStar - Étoile scintillante
  */
 interface NebulaStarProps {
   size: number;
@@ -262,7 +258,6 @@ const NebulaStar: React.FC<NebulaStarProps> = memo(({ size, x, y, color, delay, 
   const opacity = useRef(new Animated.Value(0.1)).current;
   const rotation = useRef(new Animated.Value(0)).current;
   
-  // Animation plus prononcée pour les premiers rangs
   const getAnimationValues = useCallback(() => {
     if (ranking === 1) {
       return {
@@ -297,9 +292,7 @@ const NebulaStar: React.FC<NebulaStarProps> = memo(({ size, x, y, color, delay, 
   const animValues = getAnimationValues();
   
   useEffect(() => {
-    // Délai aléatoire avant démarrage
     const timeout = setTimeout(() => {
-      // Animation de scintillement
       Animated.loop(
         Animated.sequence([
           Animated.timing(scale, {
@@ -317,7 +310,6 @@ const NebulaStar: React.FC<NebulaStarProps> = memo(({ size, x, y, color, delay, 
         ])
       ).start();
       
-      // Animation d'opacité
       Animated.loop(
         Animated.sequence([
           Animated.timing(opacity, {
@@ -335,7 +327,6 @@ const NebulaStar: React.FC<NebulaStarProps> = memo(({ size, x, y, color, delay, 
         ])
       ).start();
       
-      // Rotation subtile
       Animated.loop(
         Animated.timing(rotation, {
           toValue: 360,
@@ -354,7 +345,6 @@ const NebulaStar: React.FC<NebulaStarProps> = memo(({ size, x, y, color, delay, 
     outputRange: ["0deg", "360deg"],
   });
   
-  // Taille plus grande pour les étoiles des premiers rangs
   const getAdjustedSize = () => {
     if (ranking === 1) return size * 1.3;
     if (ranking === 2) return size * 1.2; 
@@ -390,21 +380,19 @@ const NebulaStar: React.FC<NebulaStarProps> = memo(({ size, x, y, color, delay, 
 });
 
 /**
- * CosmicNebulaBackground - Crée un effet de nébuleuse cosmique en arrière-plan
- * Combinaison d'étoiles scintillantes et de nuages nébuleux adaptés au rang
+ * CosmicNebulaBackground - Nébuleuse cosmique
  */
 interface CosmicNebulaBackgroundProps {
   ranking: number | null;
 }
 
 const CosmicNebulaBackground: React.FC<CosmicNebulaBackgroundProps> = memo(({ ranking }) => {
-  // Fonction pour obtenir les couleurs basées sur le rang
   const getStarColors = useCallback(() => {
     if (ranking === 1) {
       return {
         colors: [COLORS.rank1.primary, COLORS.rank1.accent1, COLORS.rank1.accent2],
         glow: COLORS.rank1.glow,
-        count: 30 // Plus d'étoiles pour le 1er rang
+        count: 30
       };
     } else if (ranking === 2) {
       return {
@@ -437,14 +425,10 @@ const CosmicNebulaBackground: React.FC<CosmicNebulaBackgroundProps> = memo(({ ra
   
   const nebulas = useMemo(() => {
     return Array.from({ length: count }).map((_, i) => {
-      // Taille variable selon le rang
       const baseSize = ranking === 1 ? 3 : ranking === 2 ? 2.5 : 2;
       const size = baseSize + Math.random() * 6;
-      
-      // Distribution optimisée pour les différents rangs
       const x = Math.random() * SCREEN_WIDTH;
       const y = Math.random() * 200;
-      
       const color = colors[Math.floor(Math.random() * colors.length)];
       const delay = Math.random() * 2000;
       
@@ -471,8 +455,7 @@ const CosmicNebulaBackground: React.FC<CosmicNebulaBackgroundProps> = memo(({ ra
 });
 
 /**
- * LightBeam - Crée un faisceau de lumière qui traverse l'écran
- * Style et fréquence adaptés selon le rang
+ * LightBeam - Faisceau de lumière
  */
 interface LightBeamProps {
   ranking: number | null;
@@ -482,15 +465,14 @@ const LightBeam: React.FC<LightBeamProps> = memo(({ ranking }) => {
   const beamPosition = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const beamOpacity = useRef(new Animated.Value(0)).current;
   
-  // Configuration des particularités du faisceau selon le rang
   const getBeamConfig = useCallback(() => {
     if (ranking === 1) {
       return {
         color: COLORS.rank1.glow,
         maxOpacity: 0.9,
-        frequency: 3000, // Apparaît plus souvent
-        width: 0.5, // Plus large
-        speed: 1800, // Plus rapide
+        frequency: 3000,
+        width: 0.5,
+        speed: 1800,
       };
     } else if (ranking === 2) {
       return {
@@ -530,31 +512,25 @@ const LightBeam: React.FC<LightBeamProps> = memo(({ ranking }) => {
   const beamConfig = getBeamConfig();
   
   useEffect(() => {
-    // Animation du faisceau de lumière traversant l'écran
     const animateBeam = () => {
       Animated.sequence([
-        // Attente (fréquence adaptée au rang)
         Animated.delay(beamConfig.frequency + Math.random() * 5000),
-        // Faire apparaître le faisceau
         Animated.timing(beamOpacity, {
           toValue: beamConfig.maxOpacity,
           duration: 500,
           useNativeDriver: true,
         }),
-        // Déplacer le faisceau
         Animated.timing(beamPosition, {
           toValue: SCREEN_WIDTH * 2,
           duration: beamConfig.speed,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        // Faire disparaître le faisceau
         Animated.timing(beamOpacity, {
           toValue: 0,
           duration: 500,
           useNativeDriver: true,
         }),
-        // Réinitialiser la position
         Animated.timing(beamPosition, {
           toValue: -SCREEN_WIDTH,
           duration: 0,
@@ -582,14 +558,12 @@ const LightBeam: React.FC<LightBeamProps> = memo(({ ranking }) => {
 });
 
 /**
- * WavesBackground - Crée un effet de vagues animées en arrière-plan
- * Couleurs et comportement adaptés au rang
+ * WavesBackground - Vagues animées
  */
 const WavesBackground: React.FC<{ ranking: number | null }> = memo(({ ranking }) => {
   const wave1Position = useRef(new Animated.Value(0)).current;
   const wave2Position = useRef(new Animated.Value(0)).current;
   
-  // Fonction pour déterminer les couleurs des vagues selon le rang
   const getWaveColors = useCallback(() => {
     if (ranking === 1) {
       return {
@@ -631,7 +605,6 @@ const WavesBackground: React.FC<{ ranking: number | null }> = memo(({ ranking })
   
   const waveColors = getWaveColors();
   
-  // Ajuster la vitesse selon le rang
   const getWaveSpeed = useCallback(() => {
     if (ranking === 1) return { wave1: 17000, wave2: 12000 };
     if (ranking === 2) return { wave1: 18000, wave2: 13000 };
@@ -642,7 +615,6 @@ const WavesBackground: React.FC<{ ranking: number | null }> = memo(({ ranking })
   const waveSpeeds = getWaveSpeed();
   
   useEffect(() => {
-    // Animation continue de déplacement des vagues
     Animated.loop(
       Animated.timing(wave1Position, {
         toValue: -200,
@@ -731,11 +703,7 @@ interface ProfileSectionProps {
 }
 
 /**
- * ProfileSection: Composant optimisé pour l'affichage d'un profil de type réseau social
- * - Design moderne et immersif avec intégration fluide des métriques
- * - Avis communautaires intégrés directement dans le profil pour une meilleure cohérence visuelle
- * - Performance améliorée avec mémoïsation des calculs et optimisations de rendu
- * - Animations spectaculaires en arrière-plan pour une expérience visuelle premium
+ * ProfileSection - Composant de profil utilisateur
  */
 const ProfileSection: React.FC<ProfileSectionProps> = memo(
   ({
@@ -759,7 +727,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
       };
 
       const total = voteSummary.up + voteSummary.down;
-      // Calcul précis du ratio
       const voteRatio =
         total === 0 ? 50 : Math.round((voteSummary.up / total) * 100);
       const negativeRatio = total === 0 ? 50 : 100 - voteRatio;
@@ -774,69 +741,78 @@ const ProfileSection: React.FC<ProfileSectionProps> = memo(
       };
     }, [voteSummary, user?.followers?.length, user?.following?.length]);
 
-    // Fonction pour obtenir les couleurs de fond selon le rang
-  const getBackgroundColors = useCallback((): [string, string, ...string[]] => {
-    if (ranking === 1) {
-      return [
-        COLORS.primary.dark, 
-        COLORS.rank1.secondary, 
-        COLORS.rank1.primary
-      ];
-    } else if (ranking === 2) {
-      return [
-        COLORS.primary.dark, 
-        COLORS.rank2.secondary, 
-        COLORS.rank2.primary
-      ];
-    } else if (ranking === 3) {
-      return [
-        COLORS.primary.dark, 
-        COLORS.rank3.secondary, 
-        COLORS.rank3.primary
-      ];
-    } else if (ranking && ranking <= 10) {
-      return [
-        COLORS.primary.dark, 
-        COLORS.rank10.secondary, 
-        COLORS.rank10.primary
-      ];
-    } else {
-      return [
-        COLORS.primary.dark, 
-        COLORS.rankDefault.secondary, 
-        COLORS.rankDefault.primary
-      ];
-    }
-  }, [ranking]);
+    const getBackgroundColors = useCallback((): [string, string, ...string[]] => {
+      if (ranking === 1) {
+        return [
+          COLORS.primary.dark, 
+          COLORS.rank1.secondary, 
+          COLORS.rank1.primary
+        ];
+      } else if (ranking === 2) {
+        return [
+          COLORS.primary.dark, 
+          COLORS.rank2.secondary, 
+          COLORS.rank2.primary
+        ];
+      } else if (ranking === 3) {
+        return [
+          COLORS.primary.dark, 
+          COLORS.rank3.secondary, 
+          COLORS.rank3.primary
+        ];
+      } else if (ranking && ranking <= 10) {
+        return [
+          COLORS.primary.dark, 
+          COLORS.rank10.secondary, 
+          COLORS.rank10.primary
+        ];
+      } else {
+        return [
+          COLORS.primary.dark, 
+          COLORS.rankDefault.secondary, 
+          COLORS.rankDefault.primary
+        ];
+      }
+    }, [ranking]);
   
-  const backgroundColors = getBackgroundColors();
+    const backgroundColors = getBackgroundColors();
   
-  return (
+    return (
       <View style={styles.container}>
-        {/* Header avec fond dégradé et animations */}
         <LinearGradient
           colors={backgroundColors}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          {/* Superposition des animations de fond */}
           <AuroraEffect ranking={ranking} />
           <CosmicNebulaBackground ranking={ranking} />
           <WavesBackground ranking={ranking} />
           <LightBeam ranking={ranking} />
 
-          {/* Section du badge de classement avec le badge utilisateur dynamique */}
+          {/* ✅ CORRECTION ICI : On enlève onShowDetails pour laisser le badge naviguer tout seul */}
           <View style={styles.rankingSection}>
-            <RankBadge
-              ranking={ranking}
-              rankingSuffix={rankingSuffix}
-              totalUsers={totalUsers}
-              onNavigateToRanking={onNavigateToRanking}
-              badgeStyle={badgeStyle}
-              onShowBadgeModal={onShowBadgeModal}
-              cityName={user?.nomCommune}
-            />
+            {user?.isMunicipality ? (
+              <MunicipalityBadge
+                municipalityName={user?.municipalityName}
+                cityName={user?.nomCommune}
+                totalReportsHandled={stats?.totalReportsHandled || 0}
+                activeReports={stats?.activeReports || 0}
+                isVerified={user?.isVerified !== false}
+                // ❌ ON ENLÈVE : onShowDetails qui faisait juste console.log
+                // ✅ Maintenant MunicipalityBadge navigue tout seul vers CityScreen !
+              />
+            ) : (
+              <RankBadge
+                ranking={ranking}
+                rankingSuffix={rankingSuffix}
+                totalUsers={totalUsers}
+                onNavigateToRanking={onNavigateToRanking}
+                badgeStyle={badgeStyle}
+                onShowBadgeModal={onShowBadgeModal}
+                cityName={user?.nomCommune}
+              />
+            )}
           </View>
         </LinearGradient>
       </View>
@@ -863,7 +839,7 @@ const styles = StyleSheet.create({
     }),
   },
   headerGradient: {
-    paddingTop: Platform.OS === "ios" ? 120 : 110, // Ajustement pour le header natif
+    paddingTop: Platform.OS === "ios" ? 120 : 110,
     paddingBottom: 16,
     overflow: "hidden",
   },
@@ -891,13 +867,11 @@ const styles = StyleSheet.create({
     top: 4,
     borderRadius: 17,
   },
-  // Section du badge de classement
   rankingSection: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    zIndex: 10, // S'assurer que le badge est au-dessus des animations
+    zIndex: 10,
   },
-  // Styles pour l'effet d'aurore boréale
   auroraContainer: {
     position: "absolute",
     left: 0,
@@ -925,7 +899,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  // Styles pour l'effet de nébuleuse
   nebulaContainer: {
     position: "absolute",
     left: 0,
@@ -933,7 +906,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  // Styles pour le faisceau de lumière
   lightBeam: {
     position: "absolute",
     width: SCREEN_WIDTH * 0.3,
@@ -941,7 +913,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.4)",
     top: 0,
   },
-  // Styles pour les vagues animées
   wavesContainer: {
     position: "absolute",
     left: 0,

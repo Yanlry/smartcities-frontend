@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 // Color palette
 const COLORS = {
   primary: {
-    start: "#062C41",
+    start: "#1B5D85",
     end: "#0b3e5a",
   },
   text: "#FFFFFC",

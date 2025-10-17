@@ -333,8 +333,23 @@ export default function RegisterScreen({ navigation, onLogin }: any) {
 
   const handleUsernameChange = (value: string) => {
     console.log("✏️ Username changé:", value);
-    setUsername(value);
+  
+    const sanitized = value.replace(/[^a-zA-Z0-9._]/g, '');
+    setUsername(sanitized);
+  
+    if (value !== sanitized) {
+      setUsernameError("Caractères autorisés : lettres, chiffres, points et underscores (_).");
+    } else {
+      setUsernameError('');
+    }
+  
+    if (sanitized.length > 2) {
+      checkUsernameAvailability?.(sanitized);
+    } else {
+      setUsernameAvailable?.(null);
+    }
   };
+  
 
   const handleEmailChange = (value: string) => {
     console.log("✏️ Email changé:", value);

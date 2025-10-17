@@ -77,10 +77,10 @@ export const useBadgeStyles = (votesCount: number = 0): BadgeStyle => {
   } else {
     return {
       title: "Premiers pas",
-      backgroundColor: "#062C41",
+      backgroundColor: "#1B5D85",
       textColor: "#fff",
       borderColor: "#fff",
-      shadowColor: "#062C41",
+      shadowColor: "#1B5D85",
       starsColor: "#0AAEA8",
       stars: 0,
       icon: "school",

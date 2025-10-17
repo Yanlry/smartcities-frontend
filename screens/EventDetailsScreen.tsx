@@ -42,7 +42,7 @@ type EventDetailsScreenRouteProp = {
 
 const { width, height } = Dimensions.get("window");
 const COLORS = {
-  primary: "#062C41",
+  primary: "#1B5D85",
   secondary: "#FF9800",
   accent: "#5D7FDB",
   danger: "#f44336",
@@ -52,7 +52,7 @@ const COLORS = {
   cardDark: "#052436",
   border: "#E0E0E0",
   gradient: {
-    primary: ["#062C41", "#0A4D6E"] as readonly [string, string],
+    primary: ["#1B5D85", "#0A4D6E"] as readonly [string, string],
     secondary: ["#FF9800", "#FFB547"] as readonly [string, string],
     success: ["#4CAF50", "#66BB6A"] as readonly [string, string],
     danger: ["#f44336", "#EF5350"] as readonly [string, string],
@@ -563,7 +563,7 @@ export default function EventDetails({ route }: { route: EventDetailsScreenRoute
         >
           <FlatList
             ref={flatListRef}
-            data={event.photos.length > 0 ? event.photos : [{ url: "https://via.placeholder.com/600/062C41/FFFFFF?text=Événement" }]}
+            data={event.photos.length > 0 ? event.photos : [{ url: "https://via.placeholder.com/600/1B5D85/FFFFFF?text=Événement" }]}
             horizontal
             pagingEnabled
             bounces={false}

@@ -26,7 +26,7 @@ export const profileStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#062C41",
+    backgroundColor: "#1B5D85",
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -144,7 +144,7 @@ export const profileStyles = StyleSheet.create({
     zIndex: 1,
   },
   closeButton: {
-    backgroundColor: "#062C41",
+    backgroundColor: "#1B5D85",
     borderRadius: 20,
     paddingVertical: 14,
     paddingHorizontal: 25,
@@ -287,7 +287,7 @@ export const profileStyles = StyleSheet.create({
   },
   followButton: {
     width: "80%",
-    backgroundColor: "#062C41",
+    backgroundColor: "#1B5D85",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -311,13 +311,13 @@ export const profileStyles = StyleSheet.create({
     width: "80%",
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#062C41",
+    borderColor: "#1B5D85",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 30,
   },
   sendChatText: {
-    color: "#062C41",
+    color: "#1B5D85",
     textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
@@ -365,7 +365,7 @@ export const profileStyles = StyleSheet.create({
   },
   icon: {
     marginRight: 10,
-    color: "#062C41",
+    color: "#1B5D85",
   },
   infoCardHeaderCity: {
     fontSize: 18,
@@ -422,7 +422,7 @@ export const profileStyles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5,
-    color: "#062C41",
+    color: "#1B5D85",
   },
   statLabel: {
     textAlign: "center",

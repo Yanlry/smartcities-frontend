@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#062C41',
+    color: '#1B5D85',
     marginBottom: 4,
   },
   statLabel: {
@@ -180,12 +180,12 @@ const styles = StyleSheet.create({
   voteTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#062C41',
+    color: '#1B5D85',
   },
   voteRatio: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#062C41',
+    color: '#1B5D85',
   },
   voteBarContainer: {
     height: 8,

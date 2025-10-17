@@ -251,7 +251,7 @@ const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
               onPress={onSearchAddress}
             >
               <LinearGradient
-              colors={['#062C41', '#0F3460']}
+              colors={['#1B5D85', '#0F3460']}
                 style={styles.buttonGradient}
               >
                 <Ionicons name="search" size={22} color="#fff" />
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#062C41',
+    backgroundColor: '#1B5D85',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 20,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   stepIndicator: {
     width: 40,
     height: 24,
-    backgroundColor: '#062C41',
+    backgroundColor: '#1B5D85',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',

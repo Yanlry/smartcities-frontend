@@ -24,7 +24,7 @@ const { height, width } = Dimensions.get("window");
  */
 const COLORS = {
   // Gradient principal
-  gradient: ['#062C41', '#0F3460'] as const,
+  gradient: ['#1B5D85', '#0F3460'] as const,
   
   // Texte & accents
   text: {

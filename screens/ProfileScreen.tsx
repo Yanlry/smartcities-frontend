@@ -38,7 +38,7 @@ const franceCities: City[] = franceCitiesRaw as City[];
 // Définition de la palette de couleurs officielle
 const COLORS = {
   primary: {
-    base: "#062C41",
+    base: "#1B5D85",
     light: "#1B5D85",
     dark: "#041E2D",
     contrast: "#FFFFFF",
@@ -301,8 +301,29 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   };
 
   const handleInputChange: HandleInputChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
+    let sanitized = value;
+  
+    switch (field) {
+      case "firstName":
+      case "lastName":
+        // 1) Supprime uniquement les espaces en début (pas la fin), 
+        // 2) remplace séquences d'espaces par un seul espace
+        sanitized = value.replace(/^\s+/, "").replace(/\s{2,}/g, " ");
+        // NOTE: On n'applique PAS la capitalisation complète ici pour ne pas casser la saisie
+        break;
+  
+      case "username":
+        // Supprime espaces & caractères spéciaux immédiatement
+        sanitized = value.replace(/[^a-zA-Z0-9._]/g, "");
+        break;
+  
+      default:
+        break;
+    }
+  
+    setFormData((prev) => ({ ...prev, [field]: sanitized }));
   };
+  
 
   const handleSave = async () => {
     try {
@@ -492,11 +513,11 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         end={{ x: 1, y: 0 }}
       >
         <TouchableOpacity
-          style={styles.iconButton}
+          style={styles.headerIconButton}
           onPress={toggleSidebar}
           activeOpacity={0.7}
         >
-          <Icon name="menu" size={24} color={COLORS.primary.contrast} />
+          <Icon name="menu" size={22} color={COLORS.primary.contrast} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -504,13 +525,13 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         </View>
 
         <TouchableOpacity
-          style={styles.iconButton}
+          style={styles.headerIconButton}
           onPress={() => navigation.navigate("NotificationsScreen")}
           activeOpacity={0.7}
         >
           <Icon
             name="notifications"
-            size={24}
+            size={22}
             color={COLORS.primary.contrast}
           />
           {unreadCount > 0 && (
@@ -529,7 +550,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           {/* Section de la photo de profil */}
           <View style={styles.profileSection}>
             <LinearGradient
-              colors={[COLORS.primary.light, COLORS.secondary.base]}
+              colors={[COLORS.neutral[500], COLORS.neutral[500],]}
               style={styles.profileGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}

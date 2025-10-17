@@ -4,9 +4,9 @@ import { StyleSheet, Platform } from "react-native";
 type GradientTuple = readonly [string, string, ...string[]];
 
 const COLORS = {
-    primary: "#062C41",
+    primary: "#1B5D85",
     primaryLight: "#0A4D73",
-    primaryGradient: ["#062C41", "#0A4D73"] as GradientTuple,
+    primaryGradient: ["#1B5D85", "#0A4D73"] as GradientTuple,
     secondary: "#E43737",
     secondaryLight: "#FF5252",
     secondaryGradient: ["#E43737", "#FF5252"] as GradientTuple,

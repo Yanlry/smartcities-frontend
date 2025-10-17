@@ -11,19 +11,26 @@ import {
   Animated,
   Dimensions,
   Platform,
-  StatusBar,
   RefreshControl,
 } from "react-native";
 // @ts-ignore
 import { API_URL } from "@env";
 import { getUserIdFromToken } from "../../../utils/tokenUtils";
 import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 interface MayorInfoCardProps {
   handlePressPhoneNumber: () => void;
   cityName: string;
 }
+
+const emergencies: { number: string; name: string; colors: [string, string]; icon: string }[] = [
+  { number: "15", name: "SAMU", colors: ["#FEE2E2", "#FECACA"], icon: "medical" },
+  { number: "17", name: "Police", colors: ["#DBEAFE", "#BFDBFE"], icon: "shield" },
+  { number: "18", name: "Pompiers", colors: ["#FED7AA", "#FDBA74"], icon: "flame" },
+  { number: "112", name: "Urgences", colors: ["#D1FAE5", "#A7F3D0"], icon: "call" },
+];
 
 export default function MayorInfoCard({
   handlePressPhoneNumber,
@@ -41,16 +48,24 @@ export default function MayorInfoCard({
   }
 
   interface Event {
-    id: string; // Added id property
+    id: string;
     title: string;
     cityName?: string;
     city?: string;
     location?: string;
   }
 
+  interface Report {
+    id: string;
+    title: string;
+    cityName?: string;
+    city?: string;
+    location?: string;
+  }
   // ========== ÉTATS ==========
   const [smarterData, setSmarterData] = useState<User[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [ranking, setRanking] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -139,122 +154,87 @@ export default function MayorInfoCard({
     }
   };
 
-  // ================================
-  // ✅ NORMALISATION
-  // ================================
   const normalizeCityName = (str: string) => {
     return str
       .toLowerCase()
       .trim()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // supprime les accents
-      .replace(/['’]/g, "") // supprime les apostrophes
-      .replace(/\s+/g, " ") // espaces multiples → 1 espace
-      .replace(/\s*-\s*/g, "-"); // tirets entourés d'espaces → tiret simple
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/['']/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*-\s*/g, "-");
   };
 
-  // ================================
-  // ✅ EXTRAIRE LA VILLE DE L'ADRESSE
-  // ================================
   const extractCityFromAddress = (address: string) => {
     if (!address) return "";
-
-    // On prend la partie après le code postal avant la virgule
-    // Exemple: "44 Rue du Petit Belgique, 59320 Haubourdin, France"
-    // → "Haubourdin"
     const match = address.match(/\d{5}\s+([^,]+)/);
     if (match && match[1]) return normalizeCityName(match[1]);
-
     return normalizeCityName(address);
   };
 
-  // ================================
-  // ✅ FILTRE : match strict sur la ville extraite
-  // ================================
   const isStrictCityMatch = (searchCity: string, eventLocation: string) => {
     if (!eventLocation) return false;
-
     const normalizedSearch = normalizeCityName(searchCity);
     const eventCity = extractCityFromAddress(eventLocation);
-
     return normalizedSearch === eventCity;
   };
 
-  // ================================
-  // ✅ FETCH EVENTS
-  // ================================
   const fetchEvents = async () => {
     const response = await fetch(`${API_URL}/events`);
     if (!response.ok) throw new Error("Erreur événements");
     return response.json();
   };
-
-  // ================================
-  // ✅ FETCH DATA PRINCIPAL
-  // ================================
+  
+  const fetchReports = async () => {
+    const response = await fetch(`${API_URL}/reports`);
+    if (!response.ok) throw new Error("Erreur rapports");
+    return response.json();
+  };
+  
   const fetchData = async () => {
     try {
       setLoading(true);
-
+  
       const cityName = city;
       const userId = String(await getUserIdFromToken());
       if (!userId) return;
-
-      // Récupération des événements + ranking
-      const [eventsData, rankingData] = await Promise.all([
+  
+      // ⚡️ On charge tout en parallèle : events + reports + ranking
+      const [eventsData, reportsData, rankingData] = await Promise.all([
         fetchEvents(),
+        fetchReports(),
         fetchRankingByCity(userId, cityName),
       ]);
-
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      console.log(`📅 Événements reçus de l'API: ${eventsData.length}`);
-
-      eventsData.forEach((event: any, index: number) => {
-        console.log(`\n📍 Événement ${index + 1}:`);
-        console.log(`   Titre: ${event.title}`);
-        console.log(`   cityName: ${event.cityName}`);
-        console.log(`   city: ${event.city}`);
-        console.log(`   location: ${event.location}`);
-      });
-
-      // Filtrage strict sur la ville
+  
+      // --- 🎯 Filtrage des EVENTS par ville ---
       const filteredEvents = eventsData.filter((event: any) => {
         const eventLocation =
           event.cityName || event.city || event.location || "";
-        const match = isStrictCityMatch(cityName, eventLocation);
-
-        console.log(`\n✓ Événement "${event.title}"`);
-        console.log(`  Adresse: "${eventLocation}"`);
-        console.log(
-          `  Ville extraite: "${extractCityFromAddress(eventLocation)}"`
-        );
-        console.log(
-          `  Correspond à "${cityName}" ? ${match ? "✅ OUI" : "❌ NON"}`
-        );
-
-        return match;
+        return isStrictCityMatch(cityName, eventLocation);
       });
-
-      console.log(
-        `\n🎯 Résultat du filtrage: ${filteredEvents.length} événements`
-      );
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-
+  
+      // --- 🎯 Filtrage des REPORTS par ville ---
+      const filteredReports = reportsData.filter((report: any) => {
+        const reportLocation =
+          report.cityName || report.city || report.location || "";
+        return isStrictCityMatch(cityName, reportLocation);
+      });
+  
+      // --- Mise à jour des états ---
       setEvents(filteredEvents);
-
-      // ================================
-      // Mapping ranking
-      // ================================
+      setReports(filteredReports);
+  
+      // --- Mapping du classement ---
       const usersRaw = Array.isArray(rankingData?.users)
         ? rankingData.users
         : [];
-
+  
       const mapped = usersRaw
         .map((user: any) => {
           const displayName = user.useFullName
             ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
             : (user.username ?? "").trim();
-
+  
           return {
             id: user.id,
             displayName,
@@ -266,7 +246,8 @@ export default function MayorInfoCard({
           const normalized = (u.displayName ?? "").trim().toLowerCase();
           return !/^mairie\s*de\s+/i.test(normalized);
         });
-
+  
+      // --- Sauvegarde des données finales ---
       setSmarterData(mapped);
       setRanking(rankingData?.ranking ?? null);
       setTotalUsers(rankingData?.totalUsers ?? null);
@@ -276,6 +257,7 @@ export default function MayorInfoCard({
       setLoading(false);
     }
   };
+  
 
   const fetchRankingByCity = async (userId: string, cityName: string) => {
     const response = await fetch(
@@ -295,9 +277,7 @@ export default function MayorInfoCard({
 
   const togglePreviewMode = async () => {
     if (!isPreviewMode) {
-      console.log("🔄 Actualisation des données avant affichage citoyen...");
       await Promise.all([fetchUserInfo(), fetchData(), fetchCityInfo()]);
-      console.log("✅ Données actualisées !");
     }
     setIsPreviewMode(!isPreviewMode);
   };
@@ -331,50 +311,91 @@ export default function MayorInfoCard({
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={["#43A047"]}
-              tintColor="#43A047"
+              colors={["#7C3AED"]}
+              tintColor="#7C3AED"
             />
           }
         >
-          <LinearGradient colors={["#43A047", "#2E7D32"]} style={styles.header}>
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.cityName}>Mairie de {city}</Text>
-                <Text style={styles.citySubtitle}>Espace administration</Text>
+          {/* ✅ HEADER ADMIN AVEC DÉGRADÉ VIOLET */}
+          <LinearGradient
+            colors={["#1B5D85", "#1B5D85", "#1B5D85"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.adminHeaderGradient}
+          >
+            <View style={styles.adminHeaderContent}>
+              {/* Nom de la ville */}
+              <View style={styles.adminTitleContainer}>
+                <Ionicons name="business" size={32} color="#FFFFFF" />
+                <Text style={styles.adminCityName}>Mairie de {city}</Text>
               </View>
-            </View>
 
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statNumber}>{totalUsers || "..."}</Text>
-                <Text style={styles.statLabel}>Citoyens</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statNumber}>{events?.length || "0"}</Text>
-                <Text style={styles.statLabel}>Événements</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statNumber}>{cityInfo ? "✓" : "✗"}</Text>
-                <Text style={styles.statLabel}>Profil rempli</Text>
-              </View>
-            </View>
+              {/* Statistiques colorées individuellement */}
+              <View style={styles.adminStatsRow}>
+                {/* Stat 1 - Citoyens (Bleu) */}
+                <View style={styles.adminStatBox}>
+                  <LinearGradient
+                    colors={["#3B82F6", "#2563EB"]}
+                    style={styles.adminStatGradient}
+                  >
+                    <Ionicons name="people" size={24} color="#FFFFFF" />
+                    <Text style={styles.adminStatNumber}>{totalUsers || "..."}</Text>
+                    <Text style={styles.adminStatLabel}>Citoyens</Text>
+                  </LinearGradient>
+                </View>
 
-            <TouchableOpacity
-              style={styles.previewButton}
-              onPress={togglePreviewMode}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.previewButtonIcon}>👁️</Text>
-              <Text style={styles.previewButtonText}>
-                Voir comme un citoyen
-              </Text>
-            </TouchableOpacity>
+                {/* Stat 2 - Événements (Orange) */}
+                <View style={styles.adminStatBox}>
+                  <LinearGradient
+                    colors={["#F97316", "#EA580C"]}
+                    style={styles.adminStatGradient}
+                  >
+                    <Ionicons name="calendar" size={24} color="#FFFFFF" />
+                    <Text style={styles.adminStatNumber}>{events?.length || "0"}</Text>
+                    <Text style={styles.adminStatLabel}>Événements</Text>
+                  </LinearGradient>
+                </View>
+
+                {/* Stat 3 - Profil (Vert/Rouge selon état) */}
+                <View style={styles.adminStatBox}>
+                  <LinearGradient
+                    colors={cityInfo ? ["#10B981", "#059669"] : ["#EF4444", "#DC2626"]}
+                    style={styles.adminStatGradient}
+                  >
+                    <Ionicons 
+                      name="warning"
+                      size={24} 
+                      color="#FFFFFF" 
+                    />
+                    <Text style={styles.adminStatNumber}>{reports?.length || "0"}</Text>
+                    <Text style={styles.adminStatLabel}>Signalements</Text>
+                  </LinearGradient>
+                </View>
+              </View>
+
+              {/* Bouton Preview avec icône */}
+              <TouchableOpacity
+                style={styles.adminPreviewButton}
+                onPress={togglePreviewMode}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="eye" size={18} color="#A855F7" />
+                <Text style={styles.adminPreviewButtonText}>
+                  Aperçu de la page en tant que citoyen
+                </Text>
+              </TouchableOpacity>
+            </View>
           </LinearGradient>
 
           <View style={styles.content}>
             {!cityInfo && (
-              <View style={styles.encourageCard}>
-                <Text style={styles.encourageIcon}>🚀</Text>
+              <LinearGradient
+                colors={["#FEF3C7", "#FDE68A"]}
+                style={styles.encourageCard}
+              >
+                <View style={styles.encourageIconContainer}>
+                  <Ionicons name="rocket" size={32} color="#F59E0B" />
+                </View>
                 <Text style={styles.encourageTitle}>
                   Complétez votre profil municipal
                 </Text>
@@ -387,16 +408,29 @@ export default function MayorInfoCard({
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate("EditCityInfoScreen")}
                 >
-                  <Text style={styles.encourageBtnText}>
-                    Compléter maintenant
-                  </Text>
+                  <LinearGradient
+                    colors={["#F59E0B", "#D97706"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.encourageBtnGradient}
+                  >
+                    <Text style={styles.encourageBtnText}>
+                      Compléter maintenant
+                    </Text>
+                    <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
+              </LinearGradient>
             )}
 
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>✏️</Text>
+                <LinearGradient
+                  colors={["#8B5CF6", "#7C3AED"]}
+                  style={styles.cardIconContainer}
+                >
+                  <Ionicons name="create" size={20} color="#FFFFFF" />
+                </LinearGradient>
                 <Text style={styles.cardTitle}>Gérer le contenu</Text>
               </View>
 
@@ -405,16 +439,21 @@ export default function MayorInfoCard({
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditCityInfoScreen")}
               >
-                <Text style={styles.manageBtnIcon}>👨‍💼</Text>
+                <View style={[styles.manageBtnIconContainer, { backgroundColor: "#DBEAFE" }]}>
+                  <Ionicons name="person" size={22} color="#2563EB" />
+                </View>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>
                     Informations du maire
                   </Text>
-                  <Text style={styles.manageBtnDesc}>
-                    {cityInfo?.mayorName ? "Configuré" : "Non configuré"}
+                  <Text style={[
+                    styles.manageBtnDesc,
+                    cityInfo?.mayorName && { color: "#10B981" }
+                  ]}>
+                    {cityInfo?.mayorName ? "✓ Configuré" : "À compléter"}
                   </Text>
                 </View>
-                <Text style={styles.manageBtnArrow}>→</Text>
+                <Ionicons name="chevron-forward" size={20} color="#A3A3A3" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -422,14 +461,16 @@ export default function MayorInfoCard({
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditTeamScreen")}
               >
-                <Text style={styles.manageBtnIcon}>👥</Text>
+                <View style={[styles.manageBtnIconContainer, { backgroundColor: "#FEF3C7" }]}>
+                  <Ionicons name="people" size={22} color="#F59E0B" />
+                </View>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>Équipe municipale</Text>
                   <Text style={styles.manageBtnDesc}>
                     {cityInfo?.teamMembers?.length || 0} membres
                   </Text>
                 </View>
-                <Text style={styles.manageBtnArrow}>→</Text>
+                <Ionicons name="chevron-forward" size={20} color="#A3A3A3" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -437,29 +478,33 @@ export default function MayorInfoCard({
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditNewsScreen")}
               >
-                <Text style={styles.manageBtnIcon}>📢</Text>
+                <View style={[styles.manageBtnIconContainer, { backgroundColor: "#DCFCE7" }]}>
+                  <Ionicons name="megaphone" size={22} color="#10B981" />
+                </View>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>Actualités</Text>
                   <Text style={styles.manageBtnDesc}>
-                    {cityInfo?.news?.length || 0} actualités publiées
+                    {cityInfo?.news?.length || 0} actualités
                   </Text>
                 </View>
-                <Text style={styles.manageBtnArrow}>→</Text>
+                <Ionicons name="chevron-forward" size={20} color="#A3A3A3" />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.manageBtn}
+                style={[styles.manageBtn, { borderBottomWidth: 0 }]}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate("EditServicesScreen")}
               >
-                <Text style={styles.manageBtnIcon}>📋</Text>
+                <View style={[styles.manageBtnIconContainer, { backgroundColor: "#FCE7F3" }]}>
+                  <Ionicons name="list" size={22} color="#EC4899" />
+                </View>
                 <View style={styles.manageBtnInfo}>
                   <Text style={styles.manageBtnTitle}>Services municipaux</Text>
                   <Text style={styles.manageBtnDesc}>
                     {cityInfo?.services?.length || 0} services
                   </Text>
                 </View>
-                <Text style={styles.manageBtnArrow}>→</Text>
+                <Ionicons name="chevron-forward" size={20} color="#A3A3A3" />
               </TouchableOpacity>
             </View>
           </View>
@@ -467,7 +512,7 @@ export default function MayorInfoCard({
       </Animated.View>
     );
   }
-
+  
   // ========== VERSION CITOYENNE ==========
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -478,57 +523,96 @@ export default function MayorInfoCard({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#1E88E5"]}
-            tintColor="#1E88E5"
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
           />
         }
       >
-        <LinearGradient colors={["#1E88E5", "#1565C0"]} style={styles.header}>
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.citySubtitle}>Bienvenue à</Text>
-              <Text style={styles.cityName}>{cityFormat}</Text>
-            </View>
-          </View>
+        {/* ✅ HEADER CITOYEN AVEC DÉGRADÉ BLEU */}
+        <LinearGradient
+          colors={["#1B5D85", "#1B5D85", "#1B5D85"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.citizenHeaderGradient}
+        >
+          <View style={styles.citizenHeaderContent}>
+            {/* Nom de la ville */}
+            <Text style={styles.citizenWelcome}>Bienvenue à</Text>
+            <Text style={styles.citizenCityName}>{cityFormat}</Text>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{totalUsers || "..."}</Text>
-              <Text style={styles.statLabel}>Citoyens</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{events?.length || "0"}</Text>
-              <Text style={styles.statLabel}>Événements</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>
-                {ranking ? `#${ranking}` : "..."}
-              </Text>
-              <Text style={styles.statLabel}>Votre rang</Text>
-            </View>
-          </View>
+            {/* Statistiques en grille avec couleurs distinctes */}
+            <View style={styles.citizenStatsGrid}>
+              {/* Stat 1 - Citoyens (Rose) */}
+              <View style={styles.citizenStatItem}>
+                <LinearGradient
+                  colors={["#EC4899", "#DB2777"]}
+                  style={styles.citizenStatIconContainer}
+                >
+                  <Ionicons name="people" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.citizenStatNumber}>{totalUsers || "..."}</Text>
+                <Text style={styles.citizenStatLabel}>Citoyens</Text>
+              </View>
 
-          <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={styles.quickBtn} activeOpacity={0.7}
-              onPress={() => navigation.navigate("RankingScreen", { cityName: city })}>
-              <Text style={styles.quickBtnIcon}>🏆</Text>
-              <Text style={styles.quickBtnText}>Classement</Text>
+              {/* Stat 2 - Événements (Violet) */}
+              <View style={styles.citizenStatItem}>
+                <LinearGradient
+                  colors={["#8B5CF6", "#7C3AED"]}
+                  style={styles.citizenStatIconContainer}
+                >
+                  <Ionicons name="calendar" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.citizenStatNumber}>{events?.length || "0"}</Text>
+                <Text style={styles.citizenStatLabel}>Événements</Text>
+              </View>
+
+              {/* Stat 3 - Rang (Orange) */}
+              <View style={styles.citizenStatItem}>
+                <LinearGradient
+                  colors={["#F59E0B", "#D97706"]}
+                  style={styles.citizenStatIconContainer}
+                >
+                  <Ionicons name="warning" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.citizenStatNumber}>{reports?.length || "0"}</Text>
+                <Text style={styles.citizenStatLabel}>Signalements</Text>
+              </View>
+            </View>
+
+            {/* Bouton d'action avec dégradé */}
+            <TouchableOpacity
+              style={styles.citizenActionButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate("RankingScreen", { cityName: city })}
+            >
+              <LinearGradient
+                colors={["#FFFFFF", "#F3F4F6"]}
+                style={styles.citizenActionButtonGradient}
+              >
+                <Ionicons name="trophy" size={18} color="#2563EB" />
+                <Text style={styles.citizenActionButtonText}>
+                  Voir le classement
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
+          {/* Bouton retour admin avec style amélioré */}
           {isMunicipality && isPreviewMode && (
             <TouchableOpacity
               style={styles.backToAdminButton}
               onPress={togglePreviewMode}
               activeOpacity={0.8}
             >
-              <Text style={styles.backToAdminButtonIcon}>👨‍💼</Text>
-              <Text style={styles.backToAdminButtonText}>Retour à l'admin</Text>
+              <View style={styles.backToAdminContent}>
+              <Ionicons name="eye" size={18} color="#A855F7" />
+                <Text style={styles.backToAdminButtonText}>Retour administration</Text>
+              </View>
             </TouchableOpacity>
           )}
         </LinearGradient>
 
+        {/* Tabs avec couleur active */}
         <View style={styles.tabs}>
           {["updates", "events", "services"].map((tab) => (
             <TouchableOpacity
@@ -537,6 +621,12 @@ export default function MayorInfoCard({
               onPress={() => setActiveTab(tab)}
               activeOpacity={0.7}
             >
+              {activeTab === tab && (
+                <LinearGradient
+                  colors={["#DBEAFE", "#BFDBFE"]}
+                  style={styles.tabActiveGradient}
+                />
+              )}
               <Text
                 style={[
                   styles.tabText,
@@ -558,7 +648,12 @@ export default function MayorInfoCard({
             <>
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardIcon}>👨‍💼</Text>
+                  <LinearGradient
+                    colors={["#3B82F6", "#2563EB"]}
+                    style={styles.cardIconContainer}
+                  >
+                    <Ionicons name="person" size={20} color="#FFFFFF" />
+                  </LinearGradient>
                   <Text style={styles.cardTitle}>Le maire</Text>
                 </View>
 
@@ -571,11 +666,12 @@ export default function MayorInfoCard({
                           style={styles.mayorImage}
                         />
                       ) : (
-                        <View style={styles.mayorImagePlaceholder}>
-                          <Text style={styles.mayorImagePlaceholderText}>
-                            Photo non disponible
-                          </Text>
-                        </View>
+                        <LinearGradient
+                          colors={["#DBEAFE", "#BFDBFE"]}
+                          style={styles.mayorImagePlaceholder}
+                        >
+                          <Ionicons name="person" size={32} color="#3B82F6" />
+                        </LinearGradient>
                       )}
                       <View style={styles.mayorInfo}>
                         <Text style={styles.mayorName}>
@@ -590,9 +686,15 @@ export default function MayorInfoCard({
                             onPress={handlePressPhoneNumber}
                             activeOpacity={0.7}
                           >
-                            <Text style={styles.phoneBtnText}>
-                              📞 {cityInfo.mayorPhone}
-                            </Text>
+                            <LinearGradient
+                              colors={["#DBEAFE", "#BFDBFE"]}
+                              style={styles.phoneBtnGradient}
+                            >
+                              <Ionicons name="call" size={14} color="#2563EB" />
+                              <Text style={styles.phoneBtnText}>
+                                {cityInfo.mayorPhone}
+                              </Text>
+                            </LinearGradient>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -619,17 +721,12 @@ export default function MayorInfoCard({
                                     style={styles.teamMemberImage}
                                   />
                                 ) : (
-                                  <View
+                                  <LinearGradient
+                                    colors={["#FEF3C7", "#FDE68A"]}
                                     style={styles.teamMemberImagePlaceholder}
                                   >
-                                    <Text
-                                      style={
-                                        styles.teamMemberImagePlaceholderText
-                                      }
-                                    >
-                                      Photo non disponible
-                                    </Text>
-                                  </View>
+                                    <Ionicons name="person" size={20} color="#F59E0B" />
+                                  </LinearGradient>
                                 )}
                                 <Text style={styles.teamMemberName}>
                                   {member.name}
@@ -652,43 +749,57 @@ export default function MayorInfoCard({
 
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardIcon}>📢</Text>
+                  <LinearGradient
+                    colors={["#10B981", "#059669"]}
+                    style={styles.cardIconContainer}
+                  >
+                    <Ionicons name="megaphone" size={20} color="#FFFFFF" />
+                  </LinearGradient>
                   <Text style={styles.cardTitle}>Dernières actualités</Text>
                 </View>
 
                 {cityInfo?.news?.length > 0 ? (
-                  <ScrollView
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    onMomentumScrollEnd={(e) => {
-                      const index = Math.round(
-                        e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40)
-                      );
-                      setActiveNewsIndex(index);
-                    }}
-                  >
-                    {cityInfo.news.map((news: any) => (
-                      <View
-                        key={news.id}
-                        style={[styles.newsCard, { width: SCREEN_WIDTH - 40 }]}
-                      >
-                        <View
-                          style={[
-                            styles.newsBadge,
-                            { backgroundColor: news.color || "#1E88E5" },
-                          ]}
+                  <>
+                    <ScrollView
+                      horizontal
+                      pagingEnabled
+                      showsHorizontalScrollIndicator={false}
+                      onMomentumScrollEnd={(e) => {
+                        const index = Math.round(
+                          e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40)
+                        );
+                        setActiveNewsIndex(index);
+                      }}
+                    >
+                      {cityInfo.news.map((news: any) => (
+                        <LinearGradient
+                          key={news.id}
+                          colors={["#87C2AE", "#FFFFFF"]}
+                          style={[styles.newsCard, { width: SCREEN_WIDTH - 90 }]}
                         >
-                          <Text style={styles.newsIcon}>
-                            {news.icon || "📰"}
-                          </Text>
-                        </View>
-                        <Text style={styles.newsTitle}>{news.title}</Text>
-                        <Text style={styles.newsDate}>{news.date}</Text>
-                        <Text style={styles.newsContent}>{news.content}</Text>
-                      </View>
-                    ))}
-                  </ScrollView>
+                          <View style={styles.newsBadge}>
+                            <Text style={styles.newsIcon}>
+                              {news.icon || "📰"}
+                            </Text>
+                          </View>
+                          <Text style={styles.newsTitle}>{news.title}</Text>
+                          <Text style={styles.newsDate}>{news.date}</Text>
+                          <Text style={styles.newsContent}>{news.content}</Text>
+                        </LinearGradient>
+                      ))}
+                    </ScrollView>
+                    <View style={styles.indicators}>
+                      {cityInfo.news.map((_: any, index: number) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.indicator,
+                            activeNewsIndex === index && styles.indicatorActive,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </>
                 ) : (
                   <EmptySection
                     icon="📰"
@@ -696,25 +807,16 @@ export default function MayorInfoCard({
                     message={`La mairie de ${city} n'a pas encore publié d'actualités.`}
                   />
                 )}
-
-                {cityInfo?.news?.length > 0 && (
-                  <View style={styles.indicators}>
-                    {cityInfo.news.map((_: any, index: number) => (
-                      <View
-                        key={index}
-                        style={[
-                          styles.indicator,
-                          activeNewsIndex === index && styles.indicatorActive,
-                        ]}
-                      />
-                    ))}
-                  </View>
-                )}
               </View>
 
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardIcon}>🏆</Text>
+                  <LinearGradient
+                    colors={["#F59E0B", "#D97706"]}
+                    style={styles.cardIconContainer}
+                  >
+                    <Ionicons name="trophy" size={20} color="#FFFFFF" />
+                  </LinearGradient>
                   <Text style={styles.cardTitle}>Top contributeurs</Text>
                 </View>
 
@@ -729,9 +831,20 @@ export default function MayorInfoCard({
                     }
                     activeOpacity={0.7}
                   >
-                    <View style={styles.rankBadge}>
+                    <LinearGradient
+                      colors={
+                        index === 0
+                          ? ["#FCD34D", "#F59E0B"]
+                          : index === 1
+                          ? ["#D1D5DB", "#9CA3AF"]
+                          : index === 2
+                          ? ["#FCA5A5", "#F87171"]
+                          : ["#DBEAFE", "#BFDBFE"]
+                      }
+                      style={styles.rankBadge}
+                    >
                       <Text style={styles.rankNumber}>{index + 1}</Text>
-                    </View>
+                    </LinearGradient>
                     <Image
                       source={{
                         uri:
@@ -753,7 +866,12 @@ export default function MayorInfoCard({
           {activeTab === "events" && (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardIcon}>📅</Text>
+                <LinearGradient
+                  colors={["#8B5CF6", "#7C3AED"]}
+                  style={styles.cardIconContainer}
+                >
+                  <Ionicons name="calendar" size={20} color="#FFFFFF" />
+                </LinearGradient>
                 <Text style={styles.cardTitle}>Prochains événements</Text>
               </View>
 
@@ -763,12 +881,12 @@ export default function MayorInfoCard({
                     key={index}
                     style={styles.eventItem}
                     activeOpacity={0.7}
-                    onPress={() => navigation.navigate("EventDetailsScreen", { eventId: event.id })}
+                    onPress={() =>
+                      navigation.navigate("EventDetailsScreen", {
+                        eventId: event.id,
+                      })
+                    }
                   >
-                    <View style={styles.eventDate}>
-                      <Text style={styles.eventDay}>{15 + index}</Text>
-                      <Text style={styles.eventMonth}>SEP</Text>
-                    </View>
                     <View style={styles.eventInfo}>
                       <Text style={styles.eventTitle}>
                         {event.title || "Événement"}
@@ -781,12 +899,11 @@ export default function MayorInfoCard({
                   </TouchableOpacity>
                 ))
               ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyIcon}>📅</Text>
-                  <Text style={styles.emptyText}>
-                    Aucun événement prévu pour {cityFormat}
-                  </Text>
-                </View>
+                <EmptySection
+                  icon="📅"
+                  title="Aucun événement"
+                  message={`Aucun événement prévu pour ${cityFormat}`}
+                />
               )}
             </View>
           )}
@@ -795,7 +912,12 @@ export default function MayorInfoCard({
             <>
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardIcon}>🏢</Text>
+                  <LinearGradient
+                    colors={["#3B82F6", "#2563EB"]}
+                    style={styles.cardIconContainer}
+                  >
+                    <Ionicons name="business" size={20} color="#FFFFFF" />
+                  </LinearGradient>
                   <Text style={styles.cardTitle}>Mairie de {city}</Text>
                 </View>
 
@@ -806,18 +928,28 @@ export default function MayorInfoCard({
                       <TouchableOpacity
                         style={styles.phoneBtn}
                         onPress={handlePressPhoneNumber}
+                        activeOpacity={0.7}
                       >
-                        <Text style={styles.phoneBtnText}>
-                          📞 {cityInfo.phone}
-                        </Text>
+                        <LinearGradient
+                          colors={["#DBEAFE", "#BFDBFE"]}
+                          style={styles.phoneBtnGradient}
+                        >
+                          <Ionicons name="call" size={14} color="#2563EB" />
+                          <Text style={styles.phoneBtnText}>
+                            {cityInfo.phone}
+                          </Text>
+                        </LinearGradient>
                       </TouchableOpacity>
                     )}
 
                     {cityInfo.hours && (
                       <View style={styles.hoursSection}>
-                        <Text style={styles.hoursTitle}>
-                          Horaires d'ouverture
-                        </Text>
+                        <View style={styles.hoursHeader}>
+                          <Ionicons name="time" size={16} color="#F59E0B" />
+                          <Text style={styles.hoursTitle}>
+                            Horaires d'ouverture
+                          </Text>
+                        </View>
                         <Text style={styles.hoursText}>{cityInfo.hours}</Text>
                       </View>
                     )}
@@ -833,25 +965,46 @@ export default function MayorInfoCard({
 
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardIcon}>📋</Text>
+                  <LinearGradient
+                    colors={["#10B981", "#059669"]}
+                    style={styles.cardIconContainer}
+                  >
+                    <Ionicons name="list" size={20} color="#FFFFFF" />
+                  </LinearGradient>
                   <Text style={styles.cardTitle}>Services en ligne</Text>
                 </View>
 
                 {cityInfo?.services?.length > 0 ? (
                   <View style={styles.servicesGrid}>
-                    {cityInfo.services.map((service: any) => (
-                      <TouchableOpacity
-                        key={service.id}
-                        style={styles.serviceItem}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.serviceIcon}>{service.icon}</Text>
-                        <Text style={styles.serviceTitle}>{service.title}</Text>
-                        <Text style={styles.serviceDesc}>
-                          {service.description}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                    {cityInfo.services.map((service: any, idx: number) => {
+                      const gradients: [string, string][] = [
+                        ["#DBEAFE", "#BFDBFE"], // Bleu
+                        ["#FEF3C7", "#FDE68A"], // Jaune
+                        ["#DCFCE7", "#BBF7D0"], // Vert
+                        ["#FCE7F3", "#FBCFE8"], // Rose
+                      ];
+                      
+                      const colors = gradients[idx % gradients.length];
+
+                      return (
+                        <TouchableOpacity
+                          key={service.id}
+                          style={styles.serviceItem}
+                          activeOpacity={0.7}
+                        >
+                          <LinearGradient
+                            colors={colors}
+                            style={styles.serviceIconBox}
+                          >
+                            <Text style={styles.serviceIcon}>{service.icon}</Text>
+                          </LinearGradient>
+                          <Text style={styles.serviceTitle}>{service.title}</Text>
+                          <Text style={styles.serviceDesc}>
+                            {service.description}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 ) : (
                   <EmptySection
@@ -864,31 +1017,43 @@ export default function MayorInfoCard({
 
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardIcon}>🚨</Text>
+                  <LinearGradient
+                    colors={["#EF4444", "#DC2626"]}
+                    style={styles.cardIconContainer}
+                  >
+                    <Ionicons name="alert-circle" size={20} color="#FFFFFF" />
+                  </LinearGradient>
                   <Text style={styles.cardTitle}>Numéros d'urgence</Text>
                 </View>
 
                 <View style={styles.emergencyGrid}>
-                  {[
-                    { number: "15", name: "SAMU", color: "#E53935" },
-                    { number: "17", name: "Police", color: "#1E88E5" },
-                    { number: "18", name: "Pompiers", color: "#FF9800" },
-                    { number: "112", name: "Urgences", color: "#43A047" },
-                  ].map((emergency) => (
-                    <TouchableOpacity
-                      key={emergency.number}
-                      style={[
-                        styles.emergencyBtn,
-                        { backgroundColor: emergency.color },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.emergencyNumber}>
-                        {emergency.number}
-                      </Text>
-                      <Text style={styles.emergencyName}>{emergency.name}</Text>
-                    </TouchableOpacity>
-                  ))}
+                {emergencies.map((emergency) => (
+  <TouchableOpacity key={emergency.number} style={styles.emergencyBtn} activeOpacity={0.7}>
+    <LinearGradient
+      colors={emergency.colors} // ✅ TypeScript OK
+      style={styles.emergencyBtnGradient}
+    >
+      <View style={styles.emergencyIconContainer}>
+        <Ionicons
+          name={emergency.icon as any}
+          size={28}
+          color={
+            emergency.number === "15"
+              ? "#EF4444"
+              : emergency.number === "17"
+              ? "#3B82F6"
+              : emergency.number === "18"
+              ? "#F97316"
+              : "#10B981"
+          }
+        />
+      </View>
+      <Text style={styles.emergencyNumber}>{emergency.number}</Text>
+      <Text style={styles.emergencyName}>{emergency.name}</Text>
+    </LinearGradient>
+  </TouchableOpacity>
+))}
+
                 </View>
               </View>
             </>
@@ -902,102 +1067,252 @@ export default function MayorInfoCard({
     </Animated.View>
   );
 }
-// ========== STYLES (inchangés) ==========
+
+// ========== STYLES COMPLETS AVEC COULEURS ==========
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F3F4F6",
   },
   scrollContent: {
     paddingBottom: 20,
   },
-  header: {
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-  },
-  headerContent: {
-    justifyContent: "center",
-    alignItems: "center",
+
+  // ===== HEADER ADMIN AVEC DÉGRADÉ =====
+  adminHeaderGradient: {
+    paddingTop: Platform.OS === "ios" ? 20 : 40,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
-    paddingBottom: 20,
   },
-
-  cityTextContainer: {
-    alignItems: "center", // ✅ Centre le texte horizontalement
-    justifyContent: "center", // ✅ Centre verticalement
+  adminHeaderContent: {
+    // Le contenu est directement dans le gradient
   },
-
-  citySubtitle: {
-    fontSize: 16,
-    color: "rgba(255,255,255,0.85)",
-    letterSpacing: 1,
-    marginBottom: 6,
-    textTransform: "uppercase",
-    textAlign: "center", // ✅ S’assure que le texte est centré
+  adminBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.25)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
   },
-
-  cityName: {
-    fontSize: 34,
+  adminBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginLeft: 6,
+    letterSpacing: 0.5,
+  },
+  adminTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  adminCityName: {
+    fontSize: 26,
     fontWeight: "700",
     color: "#FFFFFF",
-    textAlign: "center", // ✅ Centre le texte
-    textShadowColor: "rgba(0,0,0,0.25)",
+    marginLeft: 12,
+    flex: 1,
+  },
+  adminStatsRow: {
+    flexDirection: "row",
+    marginBottom: 20,
+    gap: 12,
+  },
+  adminStatBox: {
+    flex: 1,
+  },
+  adminStatGradient: {
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  adminStatNumber: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginVertical: 8,
+  },
+  adminStatLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
+  },
+  adminPreviewButton: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  adminPreviewButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#7C3AED",
+    marginLeft: 8,
+  },
+
+  // ===== HEADER CITOYEN AVEC DÉGRADÉ =====
+  citizenHeaderGradient: {
+    paddingTop: 20,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  citizenHeaderContent: {
+    alignItems: "center",
+  },
+  locationIndicator: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  locationDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+  },
+  locationPulse: {
+    position: "absolute",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  citizenWelcome: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  citizenCityName: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 28,
+    textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.1)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
-
-  statsRow: {
+  citizenStatsGrid: {
     flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    width: "100%",
+    marginBottom: 24,
+    gap: 12,
   },
-  statBox: {
+  citizenStatItem: {
     flex: 1,
     alignItems: "center",
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 4,
-  },
-  quickActions: {
-    flexDirection: "row",
+  citizenStatIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
-  },
-  quickBtn: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    width: "100%",
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  quickBtnIcon: {
-    fontSize: 24,
+  citizenStatNumber: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
-  quickBtnText: {
-    fontSize: 12,
-    color: "#FFFFFF",
+  citizenStatLabel: {
+    fontSize: 11,
     fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
   },
+  citizenActionButton: {
+    width: "100%",
+    overflow: "hidden",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  citizenActionButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  citizenActionButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2563EB",
+    marginLeft: 8,
+  },
+
+  // ===== BOUTON RETOUR ADMIN =====
+  backToAdminButton: {
+    marginTop: 12,
+    overflow: "hidden",
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  backToAdminContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  backToAdminButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#7C3AED",
+    marginLeft: 8,
+  },
+
+  // ===== CONTENU =====
   content: {
     padding: 20,
   },
+
+  // ===== TABS AVEC GRADIENT =====
   tabs: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
@@ -1007,56 +1322,75 @@ const styles = StyleSheet.create({
     padding: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: "center",
     borderRadius: 8,
+    overflow: "hidden",
   },
   tabActive: {
-    backgroundColor: "#E3F2FD",
+    // Le gradient sera ajouté dynamiquement
+  },
+  tabActiveGradient: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 8,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#757575",
+    color: "#737373",
+    zIndex: 1,
   },
   tabTextActive: {
-    color: "#1E88E5",
+    color: "#2563EB",
   },
+
+  // ===== CARDS =====
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  cardIcon: {
-    fontSize: 24,
+  cardIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#212121",
+    fontWeight: "700",
+    color: "#171717",
   },
+
+  // ===== EMPTY SECTION =====
   emptySection: {
     alignItems: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 16,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
     backgroundColor: "#F9FAFB",
     borderRadius: 12,
     borderWidth: 1,
@@ -1065,60 +1399,85 @@ const styles = StyleSheet.create({
   },
   emptySectionIcon: {
     fontSize: 48,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   emptySectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#212121",
+    color: "#171717",
     marginBottom: 8,
     textAlign: "center",
   },
   emptySectionText: {
-    fontSize: 14,
-    color: "#757575",
+    fontSize: 13,
+    color: "#737373",
     textAlign: "center",
     lineHeight: 20,
   },
+
+  // ===== ENCOURAGE CARD AVEC GRADIENT =====
   encourageCard: {
-    backgroundColor: "#E8F5E9",
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 20,
+    padding: 28,
     marginBottom: 16,
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#43A047",
-    borderStyle: "dashed",
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  encourageIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+  encourageIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   encourageTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#2E7D32",
+    fontWeight: "700",
+    color: "#78350F",
     marginBottom: 12,
     textAlign: "center",
   },
   encourageText: {
     fontSize: 14,
-    color: "#558B2F",
+    color: "#92400E",
     textAlign: "center",
     lineHeight: 22,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   encourageBtn: {
-    backgroundColor: "#43A047",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    overflow: "hidden",
+    borderRadius: 12,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  encourageBtnGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 28,
   },
   encourageBtnText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: "#FFFFFF",
+    marginRight: 8,
   },
+
+  // ===== MANAGE BUTTONS AVEC COULEURS =====
   manageBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -1126,91 +1485,93 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F5F5F5",
   },
-  manageBtnIcon: {
-    fontSize: 32,
+  manageBtnIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   manageBtnInfo: {
     flex: 1,
   },
   manageBtnTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#212121",
+    color: "#171717",
     marginBottom: 4,
   },
   manageBtnDesc: {
-    fontSize: 14,
-    color: "#757575",
+    fontSize: 13,
+    color: "#737373",
   },
-  manageBtnArrow: {
-    fontSize: 20,
-    color: "#757575",
-  },
+
+  // ===== MAYOR SECTION =====
   mayorContent: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   mayorImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
     marginRight: 16,
+    borderWidth: 3,
+    borderColor: "#DBEAFE",
   },
   mayorImagePlaceholder: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#E0E0E0",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
-    padding: 8,
-  },
-  mayorImagePlaceholderText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#757575",
-    textAlign: "center",
-    lineHeight: 13,
   },
   mayorInfo: {
     flex: 1,
   },
   mayorName: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#212121",
+    fontWeight: "700",
+    color: "#171717",
     marginBottom: 4,
   },
   mayorRole: {
-    fontSize: 14,
-    color: "#757575",
+    fontSize: 13,
+    color: "#737373",
     marginBottom: 12,
   },
   phoneBtn: {
-    backgroundColor: "#E3F2FD",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    overflow: "hidden",
+    borderRadius: 10,
     alignSelf: "flex-start",
   },
-  phoneBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1E88E5",
+  phoneBtnGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
+  phoneBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#2563EB",
+    marginLeft: 6,
+  },
+
+  // ===== TEAM SECTION =====
   teamSection: {
     borderTopWidth: 1,
-    borderTopColor: "#EEEEEE",
-    paddingTop: 16,
+    borderTopColor: "#F5F5F5",
+    paddingTop: 20,
   },
   teamTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#212121",
-    marginBottom: 12,
+    color: "#171717",
+    marginBottom: 16,
   },
   teamScroll: {
     paddingRight: 16,
@@ -1220,83 +1581,91 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   teamMemberImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "#FDE68A",
   },
   teamMemberImagePlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#E0E0E0",
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
-    padding: 6,
-  },
-  teamMemberImagePlaceholderText: {
-    fontSize: 8,
-    fontWeight: "600",
-    color: "#757575",
-    textAlign: "center",
-    lineHeight: 10,
   },
   teamMemberName: {
     fontSize: 12,
-    color: "#757575",
+    fontWeight: "500",
+    color: "#737373",
     textAlign: "center",
     maxWidth: 70,
   },
+
+  // ===== NEWS SECTION AVEC GRADIENT =====
   newsCard: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginRight: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   newsBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   newsIcon: {
-    fontSize: 24,
+    fontSize: 28,
   },
   newsTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#212121",
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#171717",
+    marginBottom: 6,
   },
   newsDate: {
     fontSize: 12,
-    color: "#757575",
+    color: "#737373",
     marginBottom: 12,
   },
   newsContent: {
     fontSize: 14,
-    color: "#424242",
-    lineHeight: 20,
+    color: "#525252",
+    lineHeight: 22,
   },
   indicators: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 16,
+    marginTop: 20,
   },
   indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#E0E0E0",
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#D1D5DB",
     marginHorizontal: 4,
   },
   indicatorActive: {
-    backgroundColor: "#1E88E5",
+    backgroundColor: "#3B82F6",
     width: 24,
   },
+
+  // ===== RANKING SECTION AVEC GRADIENTS =====
   rankingItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1305,200 +1674,192 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F5F5F5",
   },
   rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#E3F2FD",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   rankNumber: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#1E88E5",
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   userImage: {
     width: 48,
     height: 48,
     borderRadius: 24,
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
   },
   userName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#212121",
+    color: "#171717",
   },
+
+  // ===== EVENT SECTION AVEC GRADIENT =====
   eventItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#F5F5F5",
   },
   eventDate: {
-    width: 50,
+    width: 60,
     alignItems: "center",
     marginRight: 16,
-    backgroundColor: "#E3F2FD",
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   eventDay: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1E88E5",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#7C3AED",
   },
   eventMonth: {
     fontSize: 12,
-    color: "#1E88E5",
+    color: "#7C3AED",
     fontWeight: "600",
+    textTransform: "uppercase",
   },
   eventInfo: {
     flex: 1,
   },
   eventTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#212121",
+    color: "#171717",
     marginBottom: 4,
   },
   eventLocation: {
-    fontSize: 14,
-    color: "#757575",
+    fontSize: 13,
+    color: "#737373",
   },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#757575",
-  },
+
+  // ===== SERVICE SECTION =====
   serviceText: {
     fontSize: 14,
-    color: "#424242",
+    color: "#525252",
     marginBottom: 12,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   hoursSection: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#FEF3C7",
+    borderRadius: 12,
+    padding: 16,
     marginTop: 12,
+  },
+  hoursHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
   hoursTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#212121",
-    marginBottom: 8,
+    color: "#78350F",
+    marginLeft: 8,
   },
   hoursText: {
-    fontSize: 14,
-    color: "#424242",
-    marginBottom: 4,
+    fontSize: 13,
+    color: "#92400E",
+    lineHeight: 20,
   },
   servicesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -8,
+    marginHorizontal: -6,
   },
   serviceItem: {
     width: "50%",
-    padding: 8,
-    marginBottom: 8,
+    padding: 6,
+  },
+  serviceIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   serviceIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+    fontSize: 28,
   },
   serviceTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#212121",
+    color: "#171717",
     marginBottom: 4,
   },
   serviceDesc: {
     fontSize: 12,
-    color: "#757575",
+    color: "#737373",
+    lineHeight: 18,
   },
+
+  // ===== EMERGENCY SECTION AVEC GRADIENTS =====
   emergencyGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -8,
+    marginHorizontal: -6,
   },
   emergencyBtn: {
     width: "50%",
-    padding: 8,
-    marginBottom: 8,
+    padding: 6,
+  },
+  emergencyBtnGradient: {
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  emergencyIconContainer: {
+    marginBottom: 12,
   },
   emergencyNumber: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#171717",
     textAlign: "center",
     marginBottom: 4,
   },
   emergencyName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "#525252",
     textAlign: "center",
   },
+
+  // ===== FOOTER =====
   footer: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 24,
   },
   footerText: {
     fontSize: 12,
-    color: "#757575",
-  },
-  previewButton: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.4)",
-  },
-  previewButtonIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  previewButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  backToAdminButton: {
-    backgroundColor: "rgba(67,160,71,0.95)",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  backToAdminButtonIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  backToAdminButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
+    color: "#A3A3A3",
   },
 });

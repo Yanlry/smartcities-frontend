@@ -49,7 +49,7 @@ export default StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#062C41",
+    color: "#1B5D85",
     flex: 1,
   },
   progressIndicator: {
@@ -73,7 +73,7 @@ export default StyleSheet.create({
   progressText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#062C41",
+    color: "#1B5D85",
   },
   sectionCard: {
     backgroundColor: "#FFFFFF",
@@ -104,7 +104,7 @@ export default StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#062C41",
+    color: "#1B5D85",
   },
   sectionDescription: {
     fontSize: 14,
@@ -128,7 +128,7 @@ export default StyleSheet.create({
     overflow: "hidden",
     ...Platform.select({
       ios: {
-        shadowColor: "#062C41",
+        shadowColor: "#1B5D85",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

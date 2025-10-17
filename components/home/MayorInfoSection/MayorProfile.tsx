@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   mayorName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#062C41',
+    color: '#1B5D85',
     marginBottom: 12,
   },
   mayorDetails: {
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   bioTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#062C41',
+    color: '#1B5D85',
     marginBottom: 8,
   },
   bioText: {

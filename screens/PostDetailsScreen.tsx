@@ -225,10 +225,10 @@ export default function PostDetailsScreen({ route, navigation }: PostDetailsScre
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        <StatusBar barStyle="light-content" backgroundColor="#1B5D85" />
         
         <LinearGradient
-          colors={['#062C41', '#0F3460']}
+          colors={['#1B5D85', '#0F3460']}
           style={styles.header}
         >
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
@@ -239,7 +239,7 @@ export default function PostDetailsScreen({ route, navigation }: PostDetailsScre
         </LinearGradient>
 
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#062C41" />
+          <ActivityIndicator size="large" color="#1B5D85" />
           <Text style={styles.loadingText}>Chargement de la publication...</Text>
         </View>
       </View>
@@ -250,10 +250,10 @@ export default function PostDetailsScreen({ route, navigation }: PostDetailsScre
   if (error) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        <StatusBar barStyle="light-content" backgroundColor="#1B5D85" />
         
         <LinearGradient
-          colors={['#062C41', '#0F3460']}
+          colors={['#1B5D85', '#0F3460']}
           style={styles.header}
         >
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
@@ -279,10 +279,10 @@ export default function PostDetailsScreen({ route, navigation }: PostDetailsScre
   if (!post) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        <StatusBar barStyle="light-content" backgroundColor="#1B5D85" />
         
         <LinearGradient
-          colors={['#062C41', '#0F3460']}
+          colors={['#1B5D85', '#0F3460']}
           style={styles.header}
         >
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
@@ -307,11 +307,11 @@ export default function PostDetailsScreen({ route, navigation }: PostDetailsScre
   // Écran principal
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+      <StatusBar barStyle="light-content" backgroundColor="#1B5D85" />
       
       {/* Header avec actions */}
       <LinearGradient
-        colors={['#062C41', '#0F3460']}
+        colors={['#1B5D85', '#0F3460']}
         style={styles.header}
       >
         <TouchableOpacity onPress={goBack} style={styles.backButton}>
@@ -329,8 +329,8 @@ export default function PostDetailsScreen({ route, navigation }: PostDetailsScre
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#062C41']}
-            tintColor="#062C41"
+            colors={['#1B5D85']}
+            tintColor="#1B5D85"
           />
         }
         showsVerticalScrollIndicator={false}

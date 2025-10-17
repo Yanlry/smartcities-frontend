@@ -31,9 +31,10 @@ import { Keyboard, TouchableWithoutFeedback } from "react-native";
 import { useUserProfile } from "../hooks/user/useUserProfile";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import styles from "../styles/screens/EventsScreen.styles";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const COLORS = {
-  primary: "#062C41",
+  primary: "#1B5D85",
   secondary: "#1B5D85",
   danger: "#f44336",
   success: "#4CAF50",
@@ -89,8 +90,9 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [shouldRefreshEvents, setShouldRefreshEvents] = useState(true);
 
-  const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
-    
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
+
   // Chargement des événements
   useEffect(() => {
     const fetchUserEvents = async () => {
@@ -116,7 +118,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         const data = await response.json();
         setEvents(data);
       } catch (error) {
-        console.error("❌ Erreur lors de la récupération des événements :", error);
+        console.error(
+          "❌ Erreur lors de la récupération des événements :",
+          error
+        );
         Alert.alert(
           "Erreur",
           "Impossible de charger vos événements. Veuillez réessayer."
@@ -134,159 +139,180 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
 
   const dummyFn = () => {};
 
-  const renderItem = useCallback(({ item }: { item: Event }) => (
-    <View style={styles.eventCard}>
-      <TouchableOpacity
-        style={styles.eventCardTouchable}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate("EventDetailsScreen", { eventId: item.id })}
-      >
-        <View style={styles.statusIndicator} />
+  const renderItem = useCallback(
+    ({ item }: { item: Event }) => (
+      <View style={styles.eventCard}>
+        <TouchableOpacity
+          style={styles.eventCardTouchable}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate("EventDetailsScreen", { eventId: item.id })
+          }
+        >
+          <View style={styles.statusIndicator} />
 
-        <View style={styles.eventCardContent}>
-          <View style={styles.eventCardMainSection}>
-            <View style={styles.imageContainer}>
-              {Array.isArray(item.photos) && item.photos.length > 0 ? (
-                <Image
-                  source={{ uri: item.photos[0].url }}
-                  style={styles.eventImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.placeholderContainer}>
-                  <Ionicons name="calendar-outline" size={24} color="#CCCCCC" />
-                </View>
-              )}
+          <View style={styles.eventCardContent}>
+            <View style={styles.eventCardMainSection}>
+              <View style={styles.imageContainer}>
+                {Array.isArray(item.photos) && item.photos.length > 0 ? (
+                  <Image
+                    source={{ uri: item.photos[0].url }}
+                    style={styles.eventImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.placeholderContainer}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={24}
+                      color="#CCCCCC"
+                    />
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.eventInfo}>
+                <Text style={styles.eventTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={styles.eventDate}>
+                  {new Date(item.date).toLocaleDateString()}
+                </Text>
+                <Text style={styles.eventDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              </View>
             </View>
 
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
-              <Text style={styles.eventDate}>
-                {new Date(item.date).toLocaleDateString()}
-              </Text>
-              <Text style={styles.eventDescription} numberOfLines={2}>
-                {item.description}
-              </Text>
+            <View style={styles.eventActions}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => openModal(item)}
+              >
+                <Ionicons name="create-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Modifier</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => confirmDelete(item.id)}
+              >
+                <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Supprimer</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.eventActions}>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => openModal(item)}
-            >
-              <Ionicons name="create-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.buttonText}>Modifier</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => confirmDelete(item.id)}
-            >
-              <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.buttonText}>Supprimer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    </View>
-  ), []);
+        </TouchableOpacity>
+      </View>
+    ),
+    []
+  );
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
   }, []);
 
   // 🔧 FONCTION DE SUPPRESSION CORRIGÉE
-  const deleteEvent = useCallback(async (eventId: number) => {
-    try {
-      console.log("🗑️ Début de la suppression pour l'événement:", eventId);
+  const deleteEvent = useCallback(
+    async (eventId: number) => {
+      try {
+        console.log("🗑️ Début de la suppression pour l'événement:", eventId);
 
-      // ✅ CORRECTION : On récupère l'userId DIRECTEMENT ici
-      const userId = await getUserId();
-      
-      // ✅ Vérification avec logs détaillés
-      if (!userId) {
-        console.error("❌ userId est null ou undefined");
-        Alert.alert(
-          "Erreur d'authentification",
-          "Impossible de récupérer vos informations. Veuillez vous reconnecter à l'application.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                // Optionnel : rediriger vers l'écran de connexion
-                // navigation.navigate("LoginScreen");
-              }
-            }
-          ]
-        );
-        return;
-      }
+        // ✅ CORRECTION : On récupère l'userId DIRECTEMENT ici
+        const userId = await getUserId();
 
-      console.log("✅ userId récupéré:", userId);
-      console.log("📤 Envoi de la requête DELETE...");
-
-      // ✅ On envoie la requête avec l'userId
-      const response = await fetch(`${API_URL}/events/${eventId}?userId=${userId}`, {
-        method: "DELETE",
-      });
-
-      console.log("📥 Réponse reçue, status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("❌ Erreur serveur:", errorData);
-        
-        if (response.status === 403) {
+        // ✅ Vérification avec logs détaillés
+        if (!userId) {
+          console.error("❌ userId est null ou undefined");
           Alert.alert(
-            "Action interdite",
-            "Vous n'êtes pas autorisé à supprimer cet événement. Seul le créateur peut le supprimer."
+            "Erreur d'authentification",
+            "Impossible de récupérer vos informations. Veuillez vous reconnecter à l'application.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  // Optionnel : rediriger vers l'écran de connexion
+                  // navigation.navigate("LoginScreen");
+                },
+              },
+            ]
           );
-        } else if (response.status === 404) {
-          Alert.alert(
-            "Événement introuvable",
-            "Cet événement n'existe plus ou a déjà été supprimé."
-          );
-        } else {
-          Alert.alert(
-            "Erreur",
-            errorData.message || "Une erreur est survenue lors de la suppression."
-          );
+          return;
         }
-        return;
+
+        console.log("✅ userId récupéré:", userId);
+        console.log("📤 Envoi de la requête DELETE...");
+
+        // ✅ On envoie la requête avec l'userId
+        const response = await fetch(
+          `${API_URL}/events/${eventId}?userId=${userId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        console.log("📥 Réponse reçue, status:", response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ Erreur serveur:", errorData);
+
+          if (response.status === 403) {
+            Alert.alert(
+              "Action interdite",
+              "Vous n'êtes pas autorisé à supprimer cet événement. Seul le créateur peut le supprimer."
+            );
+          } else if (response.status === 404) {
+            Alert.alert(
+              "Événement introuvable",
+              "Cet événement n'existe plus ou a déjà été supprimé."
+            );
+          } else {
+            Alert.alert(
+              "Erreur",
+              errorData.message ||
+                "Une erreur est survenue lors de la suppression."
+            );
+          }
+          return;
+        }
+
+        console.log("✅ Événement supprimé avec succès !");
+
+        // ✅ On retire l'événement de la liste
+        setEvents((prevEvents) =>
+          prevEvents.filter((event) => event.id !== eventId)
+        );
+
+        Alert.alert("Succès", "Événement supprimé avec succès");
+      } catch (error) {
+        console.error("❌ Erreur lors de la suppression:", error);
+        Alert.alert(
+          "Erreur réseau",
+          "Impossible de supprimer l'événement. Vérifiez votre connexion internet et réessayez."
+        );
       }
+    },
+    [getUserId]
+  ); // ✅ IMPORTANT : getUserId dans les dépendances
 
-      console.log("✅ Événement supprimé avec succès !");
-
-      // ✅ On retire l'événement de la liste
-      setEvents((prevEvents) =>
-        prevEvents.filter((event) => event.id !== eventId)
-      );
-
-      Alert.alert("Succès", "Événement supprimé avec succès");
-    } catch (error) {
-      console.error("❌ Erreur lors de la suppression:", error);
+  const confirmDelete = useCallback(
+    (eventId: number) => {
       Alert.alert(
-        "Erreur réseau",
-        "Impossible de supprimer l'événement. Vérifiez votre connexion internet et réessayez."
+        "Confirmer la suppression",
+        "Voulez-vous vraiment supprimer cet événement ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            onPress: () => deleteEvent(eventId),
+            style: "destructive",
+          },
+        ]
       );
-    }
-  }, [getUserId]); // ✅ IMPORTANT : getUserId dans les dépendances
-
-  const confirmDelete = useCallback((eventId: number) => {
-    Alert.alert(
-      "Confirmer la suppression",
-      "Voulez-vous vraiment supprimer cet événement ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          onPress: () => deleteEvent(eventId),
-          style: "destructive"
-        },
-      ]
-    );
-  }, [deleteEvent]);
+    },
+    [deleteEvent]
+  );
 
   const openModal = useCallback((event: Event) => {
     setCurrentEvent(event);
@@ -301,54 +327,59 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     setModalVisible(false);
   }, []);
 
-  const updateEventHandler = useCallback(async (updatedEvent: Event) => {
-    if (!updatedEvent) return;
+  const updateEventHandler = useCallback(
+    async (updatedEvent: Event) => {
+      if (!updatedEvent) return;
 
-    setIsSubmitting(true);
+      setIsSubmitting(true);
 
-    try {
-      const eventData = {
-        title: updatedEvent.title,
-        description: updatedEvent.description,
-        date: new Date(updatedEvent.date).toISOString(),
-        location: updatedEvent.location,
-        latitude: updatedEvent.latitude,
-        longitude: updatedEvent.longitude,
-        photos: updatedEvent.photos?.map((photo) => ({
-          url: photo.url,
-        })),
-      };
+      try {
+        const eventData = {
+          title: updatedEvent.title,
+          description: updatedEvent.description,
+          date: new Date(updatedEvent.date).toISOString(),
+          location: updatedEvent.location,
+          latitude: updatedEvent.latitude,
+          longitude: updatedEvent.longitude,
+          photos: updatedEvent.photos?.map((photo) => ({
+            url: photo.url,
+          })),
+        };
 
-      const response = await fetch(`${API_URL}/events/${updatedEvent.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(eventData),
-      });
+        const response = await fetch(`${API_URL}/events/${updatedEvent.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(eventData),
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Erreur du serveur :", errorText);
-        throw new Error("Erreur lors de la mise à jour de l'événement.");
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Erreur du serveur :", errorText);
+          throw new Error("Erreur lors de la mise à jour de l'événement.");
+        }
+
+        const data = await response.json();
+
+        setEvents((prevEvents) =>
+          prevEvents.map((event) =>
+            event.id === updatedEvent.id ? data : event
+          )
+        );
+
+        Alert.alert("Succès", "Événement mis à jour avec succès");
+        closeModal();
+        setShouldRefreshEvents(true);
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour :", error);
+        Alert.alert("Erreur", "Impossible de mettre à jour l'événement");
+      } finally {
+        setIsSubmitting(false);
       }
-
-      const data = await response.json();
-
-      setEvents((prevEvents) =>
-        prevEvents.map((event) => (event.id === updatedEvent.id ? data : event))
-      );
-
-      Alert.alert("Succès", "Événement mis à jour avec succès");
-      closeModal();
-      setShouldRefreshEvents(true);
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour :", error);
-      Alert.alert("Erreur", "Impossible de mettre à jour l'événement");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [closeModal]);
+    },
+    [closeModal]
+  );
 
   const handleUseLocation = useCallback(async () => {
     if (locationLoading) {
@@ -367,10 +398,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     setIsLoadingSuggestions(true);
     setSuggestions([]);
     setModalVisible(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
 
       const response = await fetch(url);
@@ -403,10 +434,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     setIsLoadingSuggestions(true);
     setSuggestions([]);
     setModalVisible(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         city
       )}&key=${OPEN_CAGE_API_KEY}`;
@@ -415,11 +446,13 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
       const data = await response.json();
 
       if (data.results && data.results.length > 0) {
-        const sortedSuggestions = data.results.sort((a: AddressSuggestion, b: AddressSuggestion) => {
-          const postalA = extractPostalCode(a.formatted);
-          const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB;
-        });
+        const sortedSuggestions = data.results.sort(
+          (a: AddressSuggestion, b: AddressSuggestion) => {
+            const postalA = extractPostalCode(a.formatted);
+            const postalB = extractPostalCode(b.formatted);
+            return postalA - postalB;
+          }
+        );
 
         setSuggestions(sortedSuggestions);
       } else {
@@ -439,41 +472,44 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
     return postalCodeMatch ? parseInt(postalCodeMatch[0], 10) : Infinity;
   }, []);
 
-  const handleSuggestionSelect = useCallback((item: AddressSuggestion) => {
-    if (!currentEvent) return;
+  const handleSuggestionSelect = useCallback(
+    (item: AddressSuggestion) => {
+      if (!currentEvent) return;
 
-    if (item.geometry) {
-      const { lat, lng } = item.geometry;
+      if (item.geometry) {
+        const { lat, lng } = item.geometry;
 
-      const formattedLocation = item.formatted.replace(
-        /unnamed road/g,
-        "Route inconnue"
-      );
-
-      setCurrentEvent({
-        ...currentEvent,
-        location: formattedLocation,
-        latitude: lat,
-        longitude: lng,
-      });
-
-      setIsAddressValidated(true);
-
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            latitude: lat,
-            longitude: lng,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          },
-          1000
+        const formattedLocation = item.formatted.replace(
+          /unnamed road/g,
+          "Route inconnue"
         );
-      }
-    }
 
-    setModalVisible(false);
-  }, [currentEvent]);
+        setCurrentEvent({
+          ...currentEvent,
+          location: formattedLocation,
+          latitude: lat,
+          longitude: lng,
+        });
+
+        setIsAddressValidated(true);
+
+        if (mapRef.current) {
+          mapRef.current.animateToRegion(
+            {
+              latitude: lat,
+              longitude: lng,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            },
+            1000
+          );
+        }
+      }
+
+      setModalVisible(false);
+    },
+    [currentEvent]
+  );
 
   const isValidInput = useCallback(() => {
     return (
@@ -522,27 +558,33 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
 
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.headerIcon}
+          style={styles.headerIconButton}
           onPress={toggleSidebar}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.8}
         >
-          <Ionicons name="menu-outline" size={26} color={COLORS.text.light} />
+          <Icon name="menu" size={22} color={COLORS.text.light} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>MES ÉVÉNEMENTS</Text>
 
         <TouchableOpacity
-          style={styles.headerIcon}
+          style={styles.headerIconButton}
           onPress={() => navigation.navigate("NotificationsScreen")}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.8}
         >
           <View>
-            <Ionicons name="notifications-outline" size={26} color={COLORS.text.light} />
+            <Icon
+              name="notifications"
+              size={22}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
+            />
             {unreadCount > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
               </View>
             )}
           </View>
@@ -555,7 +597,8 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
             <Ionicons name="calendar-outline" size={90} color="#CCCCCC" />
             <Text style={styles.emptyTitle}>Aucun événement</Text>
             <Text style={styles.emptySubtitle}>
-              Vous n'avez pas encore créé d'événement dans votre espace personnel
+              Vous n'avez pas encore créé d'événement dans votre espace
+              personnel
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
@@ -586,13 +629,16 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
         onRequestClose={closeModal}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalContainer}
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Modifier l'événement</Text>
-              <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={closeModal}
+              >
                 <Ionicons name="close" size={24} color={COLORS.text.primary} />
               </TouchableOpacity>
             </View>
@@ -606,14 +652,21 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Titre</Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons name="bookmark-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                  <Ionicons
+                    name="bookmark-outline"
+                    size={20}
+                    color="#AAAAAA"
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.input}
                     placeholder="Titre de l'événement"
                     placeholderTextColor="#AAAAAA"
                     value={currentEvent?.title || ""}
                     onChangeText={(text) =>
-                      setCurrentEvent(prev => prev ? {...prev, title: text} : null)
+                      setCurrentEvent((prev) =>
+                        prev ? { ...prev, title: text } : null
+                      )
                     }
                     maxLength={100}
                   />
@@ -627,7 +680,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                     name="create-outline"
                     size={20}
                     color="#AAAAAA"
-                    style={[styles.inputIcon, {alignSelf: 'flex-start', marginTop: 10}]}
+                    style={[
+                      styles.inputIcon,
+                      { alignSelf: "flex-start", marginTop: 10 },
+                    ]}
                   />
                   <TextInput
                     style={styles.textArea}
@@ -635,7 +691,9 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                     placeholderTextColor="#AAAAAA"
                     value={currentEvent?.description || ""}
                     onChangeText={(text) =>
-                      setCurrentEvent(prev => prev ? {...prev, description: text} : null)
+                      setCurrentEvent((prev) =>
+                        prev ? { ...prev, description: text } : null
+                      )
                     }
                     multiline
                     textAlignVertical="top"
@@ -645,14 +703,19 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Date de l'événement</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.datePickerButton}
                   onPress={() => setShowDatePicker(true)}
                 >
-                  <Ionicons name="calendar-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color="#AAAAAA"
+                    style={styles.inputIcon}
+                  />
                   <Text style={styles.datePickerText}>
-                    {currentEvent?.date 
-                      ? new Date(currentEvent.date).toLocaleString() 
+                    {currentEvent?.date
+                      ? new Date(currentEvent.date).toLocaleString()
                       : "Sélectionnez une date et heure"}
                   </Text>
                 </TouchableOpacity>
@@ -678,7 +741,12 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 <View style={styles.locationContainer}>
                   <View style={styles.addressInputWrapper}>
                     <View style={styles.inputContainer}>
-                      <Ionicons name="location-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                      <Ionicons
+                        name="location-outline"
+                        size={20}
+                        color="#AAAAAA"
+                        style={styles.inputIcon}
+                      />
                       <TextInput
                         style={styles.input}
                         placeholder="Adresse de l'événement"
@@ -686,8 +754,11 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                         value={currentEvent?.location || ""}
                         onChangeText={(text) => {
                           if (currentEvent) {
-                            setCurrentEvent({...currentEvent, location: text});
-                            
+                            setCurrentEvent({
+                              ...currentEvent,
+                              location: text,
+                            });
+
                             if (text !== currentEvent.location) {
                               setIsAddressValidated(false);
                             }
@@ -707,7 +778,10 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                         if (currentEvent && currentEvent.location.trim()) {
                           handleAddressSearch(currentEvent.location);
                         } else {
-                          Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
+                          Alert.alert(
+                            "Erreur",
+                            "Veuillez entrer une adresse à rechercher"
+                          );
                         }
                       }}
                       activeOpacity={0.8}
@@ -728,13 +802,25 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 <View style={styles.validatedAddressContainer}>
                   {isAddressValidated ? (
                     <>
-                      <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
-                      <Text style={styles.validatedAddressText}>Adresse validée</Text>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={16}
+                        color={COLORS.success}
+                      />
+                      <Text style={styles.validatedAddressText}>
+                        Adresse validée
+                      </Text>
                     </>
                   ) : (
                     <>
-                      <Ionicons name="close-circle" size={16} color={COLORS.danger} />
-                      <Text style={styles.invalidAddressText}>Adresse non validée</Text>
+                      <Ionicons
+                        name="close-circle"
+                        size={16}
+                        color={COLORS.danger}
+                      />
+                      <Text style={styles.invalidAddressText}>
+                        Adresse non validée
+                      </Text>
                     </>
                   )}
                 </View>
@@ -787,7 +873,7 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                 <TouchableOpacity
                   style={[
                     styles.saveButton,
-                    (!isValidInput() || isSubmitting) && styles.disabledButton
+                    (!isValidInput() || isSubmitting) && styles.disabledButton,
                   ]}
                   onPress={() => {
                     if (isValidInput() && !isSubmitting && currentEvent) {
@@ -803,7 +889,12 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Ionicons name="save-outline" size={20} color="#FFFFFF" style={{marginRight: 8}} />
+                      <Ionicons
+                        name="save-outline"
+                        size={20}
+                        color="#FFFFFF"
+                        style={{ marginRight: 8 }}
+                      />
                       <Text style={styles.actionButtonText}>Enregistrer</Text>
                     </>
                   )}
@@ -814,7 +905,12 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
                   onPress={closeModal}
                   disabled={isSubmitting}
                 >
-                  <Ionicons name="close-circle-outline" size={20} color="#FFFFFF" style={{marginRight: 8}} />
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={20}
+                    color="#FFFFFF"
+                    style={{ marginRight: 8 }}
+                  />
                   <Text style={styles.actionButtonText}>Annuler</Text>
                 </TouchableOpacity>
               </View>
@@ -828,7 +924,9 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
               <TouchableWithoutFeedback>
                 <View style={styles.suggestionsContent}>
                   <View style={styles.suggestionsHeader}>
-                    <Text style={styles.suggestionsTitle}>Sélectionnez une adresse</Text>
+                    <Text style={styles.suggestionsTitle}>
+                      Sélectionnez une adresse
+                    </Text>
                     <TouchableOpacity
                       style={styles.closeSuggestionsButton}
                       onPress={() => setModalVisible(false)}
@@ -839,38 +937,60 @@ export default function EventsScreen({ navigation }: { navigation: any }) {
 
                   <ScrollView
                     style={styles.suggestionsList}
-                    contentContainerStyle={suggestions.length === 0 ? styles.emptyContentContainer : null}
+                    contentContainerStyle={
+                      suggestions.length === 0
+                        ? styles.emptyContentContainer
+                        : null
+                    }
                     showsVerticalScrollIndicator={false}
                   >
                     {isLoadingSuggestions && (
                       <View style={styles.loaderContainer}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
-                        <Text style={styles.loaderText}>Recherche d'adresses...</Text>
+                        <ActivityIndicator
+                          size="large"
+                          color={COLORS.primary}
+                        />
+                        <Text style={styles.loaderText}>
+                          Recherche d'adresses...
+                        </Text>
                       </View>
                     )}
-                    
+
                     {!isLoadingSuggestions && suggestions.length === 0 ? (
                       <View style={styles.emptyContentContainer}>
-                        <Ionicons name="location-outline" size={56} color="#CCCCCC" />
+                        <Ionicons
+                          name="location-outline"
+                          size={56}
+                          color="#CCCCCC"
+                        />
                         <Text style={styles.noSuggestionsText}>
                           Aucune adresse trouvée pour cette recherche
                         </Text>
                       </View>
                     ) : (
-                      !isLoadingSuggestions && suggestions.map((item, index) => (
+                      !isLoadingSuggestions &&
+                      suggestions.map((item, index) => (
                         <TouchableOpacity
                           key={`${item.formatted}-${index}`}
                           style={[
                             styles.suggestionItem,
-                            index % 2 === 0 ? {backgroundColor: "#FFFFFF"} : {backgroundColor: "#FAFAFA"}
+                            index % 2 === 0
+                              ? { backgroundColor: "#FFFFFF" }
+                              : { backgroundColor: "#FAFAFA" },
                           ]}
                           onPress={() => handleSuggestionSelect(item)}
                           activeOpacity={0.7}
                         >
                           <View style={styles.suggestionIconContainer}>
-                            <Ionicons name="location" size={20} color="#FFFFFF" />
+                            <Ionicons
+                              name="location"
+                              size={20}
+                              color="#FFFFFF"
+                            />
                           </View>
-                          <Text style={styles.suggestionText}>{item.formatted}</Text>
+                          <Text style={styles.suggestionText}>
+                            {item.formatted}
+                          </Text>
                         </TouchableOpacity>
                       ))
                     )}

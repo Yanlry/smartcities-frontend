@@ -1,7 +1,7 @@
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, StatusBar} from "react-native";
 
 const COLORS = {
-    primary: "#062C41",
+    primary: "#1B5D85",
     secondary: "#1B5D85",
     danger: "#f44336",
     success: "#4CAF50",
@@ -15,116 +15,258 @@ const COLORS = {
       muted: "#999999",
     },
   };
-  
-export default StyleSheet.create({
-     container: {
-        flex: 1,
-      },
-      // Header styles - modernisés
-      header: {
-        backgroundColor: COLORS.primary,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingTop: Platform.OS === "ios" ? 55 : 45,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-        elevation: 8,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-      },
-      headerIcon: {
-        width: 42,
-        height: 42,
-        justifyContent: "center",
-        alignItems: "center",
-        borderRadius: 21,
-        backgroundColor: "rgba(255, 255, 255, 0.15)",
-      },
-      headerTitle: {
-        fontSize: 19,
-        fontWeight: "700",
-        color: COLORS.text.light,
-        letterSpacing: 1,
-      },
-      badge: {
-        position: "absolute",
-        top: -6,
-        right: -6,
-        backgroundColor: COLORS.danger,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-      },
-      badgeText: {
-        color: "#FFFFFF",
-        fontSize: 11,
-        fontWeight: "bold",
-      },
-      card: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 14,
+
+  const LAYOUT = {
+    radius: {
+      xs: 4,
+      sm: 8,
+      md: 12,
+      lg: 16,
+      xl: 24,
+      circle: 9999,
+    },
+    header: {
+      height: Platform.OS === "ios" ? 100 : 90,
+      padding: Platform.OS === "ios" ? 50 : 30,
+    },
+    tabBar: {
+      height: 64 + (Platform.OS === "ios" ? 20 : 0),
+      buttonSize: 44,
+    },
+    statusBar: {
+      height: StatusBar.currentHeight || (Platform.OS === "ios" ? 44 : 24),
+    },
+    border: {
+      width: 1,
+      color: "rgba(0,0,0,0.08)",
+    },
+    shadow: {
+      small: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.08,
-        shadowRadius: 3,
+        shadowRadius: 4,
         elevation: 2,
       },
-      cardIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: "#F3F4F6",
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 16,
-      },
-      cardText: {
-        flex: 1,
-      },
-      cardTitle: {
-        fontSize: 17,
-        fontWeight: "600",
-        color: "#111827",
-      },
-      cardDescription: {
-        fontSize: 14,
-        color: "#6B7280",
-        marginTop: 2,
-      },
-      gradientButtonContainer: {
-        marginTop: 30,
-      },
-      gradientButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 14,
-        borderRadius: 50,
-        shadowColor: "#2563EB",
-        shadowOpacity: 0.3,
+      medium: {
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
       },
-      buttonText: {
-        color: "#fff",
-        fontSize: 17,
-        fontWeight: "600",
-        marginLeft: 8,
+      large: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        elevation: 8,
       },
-    });
-    
+    },
+  };
+  
+export default StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  // ✅ Header styles - CONSERVÉS
+  header: {
+    backgroundColor: COLORS.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: Platform.OS === "ios" ? 45 : 45,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  headerIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.danger,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  // 🆕 Nouveaux styles modernes
+  scrollContent: {
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  introSection: {
+    marginBottom: 28,
+  },
+  introTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  introSubtitle: {
+    fontSize: 15,
+    color: "#64748B",
+    lineHeight: 22,
+  },
+  cardWrapper: {
+    marginBottom: 16,
+  },
+  modernCard: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  cardGradientBorder: {
+    padding: 2,
+    borderRadius: 16,
+  },
+  cardInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+  },
+  cardIconContainer: {
+    marginRight: 16,
+  },
+  cardIconGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  cardContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1E293B",
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: "#64748B",
+    lineHeight: 20,
+  },
+  cardArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ctaButtonContainer: {
+    marginTop: 32,
+    marginBottom: 24,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#8E2DE2",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  ctaButton: {
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    position: "relative",
+    overflow: "hidden",
+  },
+  ctaContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  ctaButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: 12,
+    letterSpacing: 0.5,
+  },
+  ctaShine: {
+    position: "absolute",
+    top: 0,
+    left: -100,
+    width: 100,
+    height: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    transform: [{ skewX: "-20deg" }],
+  },
+  emergencySection: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 14,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#FEE2E2",
+    alignItems: "center",
+  },
+  emergencyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#991B1B",
+    marginBottom: 12,
+  },
+  emergencyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+  },
+  emergencyText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#EF4444",
+    marginLeft: 8,
+  },
+});
+
     

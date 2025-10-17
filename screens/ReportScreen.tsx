@@ -30,9 +30,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
 import { useUserProfile } from "../hooks/user/useUserProfile";
 import styles from "../styles/screens/ReportScreen.styles";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const COLORS = {
-  primary: "#062C41",
+  primary: "#1B5D85",
   secondary: "#1B5D85",
   danger: "#f44336",
   success: "#4CAF50",
@@ -74,11 +75,11 @@ interface AddressSuggestion {
 export default function ReportScreen({ navigation }: { navigation: any }) {
   const { unreadCount } = useNotification();
   const { location, loading: locationLoading } = useLocation();
-  
+
   // ✅ CORRECTION 1: Utilisation du bon type pour la référence de MapView
   // Au lieu de <MapView>, on utilise React.ElementRef<typeof MapView>
   const mapRef = useRef<any>(null);
-  
+
   const { getUserId } = useToken();
 
   // États
@@ -93,8 +94,9 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
   const [loading, setLoading] = useState(true);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
-  const { user, displayName, voteSummary, updateProfileImage } = useUserProfile();
-    
+  const { user, displayName, voteSummary, updateProfileImage } =
+    useUserProfile();
+
   // Chargement des données au démarrage
   useEffect(() => {
     const fetchUserReports = async () => {
@@ -130,68 +132,75 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
   const dummyFn = () => {};
 
   // Rendu de chaque élément de rapport
-  const renderItem = useCallback(({ item }: { item: Report }) => (
-    <View style={styles.reportCard}>
-      <TouchableOpacity
-        style={styles.reportCardTouchable}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate("ReportDetailsScreen", { reportId: item.id })}
-      >
-        {/* Indicateur visuel de statut */}
-        <View style={styles.statusIndicator} />
+  const renderItem = useCallback(
+    ({ item }: { item: Report }) => (
+      <View style={styles.reportCard}>
+        <TouchableOpacity
+          style={styles.reportCardTouchable}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate("ReportDetailsScreen", { reportId: item.id })
+          }
+        >
+          {/* Indicateur visuel de statut */}
+          <View style={styles.statusIndicator} />
 
-        <View style={styles.reportCardContent}>
-          {/* Section image et informations principales */}
-          <View style={styles.reportCardMainSection}>
-            {/* Affichage de l'image avec placeholder si besoin */}
-            <View style={styles.imageContainer}>
-              {Array.isArray(item.photos) && item.photos.length > 0 ? (
-                <Image
-                  source={{ uri: item.photos[0].url }}
-                  style={styles.reportImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.placeholderContainer}>
-                  <Ionicons name="image-outline" size={24} color="#CCCCCC" />
-                </View>
-              )}
+          <View style={styles.reportCardContent}>
+            {/* Section image et informations principales */}
+            <View style={styles.reportCardMainSection}>
+              {/* Affichage de l'image avec placeholder si besoin */}
+              <View style={styles.imageContainer}>
+                {Array.isArray(item.photos) && item.photos.length > 0 ? (
+                  <Image
+                    source={{ uri: item.photos[0].url }}
+                    style={styles.reportImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.placeholderContainer}>
+                    <Ionicons name="image-outline" size={24} color="#CCCCCC" />
+                  </View>
+                )}
+              </View>
+
+              {/* Informations textuelles */}
+              <View style={styles.reportInfo}>
+                <Text style={styles.reportTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={styles.reportDate}>
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </Text>
+                <Text style={styles.reportDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              </View>
             </View>
 
-            {/* Informations textuelles */}
-            <View style={styles.reportInfo}>
-              <Text style={styles.reportTitle} numberOfLines={1}>{item.title}</Text>
-              <Text style={styles.reportDate}>
-                {new Date(item.createdAt).toLocaleDateString()}
-              </Text>
-              <Text style={styles.reportDescription} numberOfLines={2}>
-                {item.description}
-              </Text>
+            {/* Actions */}
+            <View style={styles.reportActions}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => openModal(item)}
+              >
+                <Ionicons name="create-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Modifier</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => confirmDelete(item.id)}
+              >
+                <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Supprimer</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Actions */}
-          <View style={styles.reportActions}>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => openModal(item)}
-            >
-              <Ionicons name="create-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.buttonText}>Modifier</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => confirmDelete(item.id)}
-            >
-              <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.buttonText}>Supprimer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    </View>
-  ), []);
+        </TouchableOpacity>
+      </View>
+    ),
+    []
+  );
 
   // Gestion du sidebar
   const toggleSidebar = useCallback(() => {
@@ -222,20 +231,23 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
   }, []);
 
   // Confirmation de suppression
-  const confirmDelete = useCallback((reportId: number) => {
-    Alert.alert(
-      "Confirmer la suppression",
-      "Voulez-vous vraiment supprimer ce signalement ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          onPress: () => deleteReport(reportId),
-          style: "destructive"
-        },
-      ]
-    );
-  }, [deleteReport]);
+  const confirmDelete = useCallback(
+    (reportId: number) => {
+      Alert.alert(
+        "Confirmer la suppression",
+        "Voulez-vous vraiment supprimer ce signalement ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            onPress: () => deleteReport(reportId),
+            style: "destructive",
+          },
+        ]
+      );
+    },
+    [deleteReport]
+  );
 
   // Ouverture du modal de modification
   const openModal = useCallback((report: Report) => {
@@ -254,44 +266,48 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
   }, []);
 
   // Mise à jour d'un signalement
-  const updateReportHandler = useCallback(async (updatedReport: Report) => {
-    if (!updatedReport) return;
+  const updateReportHandler = useCallback(
+    async (updatedReport: Report) => {
+      if (!updatedReport) return;
 
-    setIsSubmitting(true);
+      setIsSubmitting(true);
 
-    // Filtrer les propriétés non nécessaires pour l'API
-    const { id, createdAt, votes, trustRate, distance, ...filteredReport } = updatedReport;
+      // Filtrer les propriétés non nécessaires pour l'API
+      const { id, createdAt, votes, trustRate, distance, ...filteredReport } =
+        updatedReport;
 
-    try {
-      const response = await fetch(`${API_URL}/reports/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(filteredReport),
-      });
+      try {
+        const response = await fetch(`${API_URL}/reports/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(filteredReport),
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Erreur du serveur :", errorText);
-        throw new Error("Erreur lors de la mise à jour du signalement.");
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Erreur du serveur :", errorText);
+          throw new Error("Erreur lors de la mise à jour du signalement.");
+        }
+
+        const data = await response.json();
+
+        setReports((prevReports) =>
+          prevReports.map((report) => (report.id === id ? data : report))
+        );
+
+        Alert.alert("Succès", "Signalement mis à jour avec succès");
+        closeModal();
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour :", error);
+        Alert.alert("Erreur", "Impossible de mettre à jour le signalement");
+      } finally {
+        setIsSubmitting(false);
       }
-
-      const data = await response.json();
-
-      setReports((prevReports) =>
-        prevReports.map((report) => (report.id === id ? data : report))
-      );
-
-      Alert.alert("Succès", "Signalement mis à jour avec succès");
-      closeModal();
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour :", error);
-      Alert.alert("Erreur", "Impossible de mettre à jour le signalement");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [closeModal]);
+    },
+    [closeModal]
+  );
 
   // Utilisation de la position actuelle
   const handleUseLocation = useCallback(async () => {
@@ -312,11 +328,11 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
     setIsLoadingSuggestions(true);
     setSuggestions([]);
     setModalVisible(true);
-    
+
     try {
       // Attendre un court délai pour garantir que le modal s'affiche avec le loader
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${location.latitude}+${location.longitude}&key=${OPEN_CAGE_API_KEY}`;
 
       const response = await fetch(url);
@@ -351,11 +367,11 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
     setIsLoadingSuggestions(true);
     setSuggestions([]);
     setModalVisible(true);
-    
+
     try {
       // Attendre un court délai pour garantir que le modal s'affiche avec le loader
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         city
       )}&key=${OPEN_CAGE_API_KEY}`;
@@ -365,11 +381,13 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
 
       if (data.results && data.results.length > 0) {
         // ✅ CORRECTION 2 & 3: Ajout du type explicite AddressSuggestion pour a et b
-        const sortedSuggestions = data.results.sort((a: AddressSuggestion, b: AddressSuggestion) => {
-          const postalA = extractPostalCode(a.formatted);
-          const postalB = extractPostalCode(b.formatted);
-          return postalA - postalB;
-        });
+        const sortedSuggestions = data.results.sort(
+          (a: AddressSuggestion, b: AddressSuggestion) => {
+            const postalA = extractPostalCode(a.formatted);
+            const postalB = extractPostalCode(b.formatted);
+            return postalA - postalB;
+          }
+        );
 
         setSuggestions(sortedSuggestions);
       } else {
@@ -391,41 +409,44 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
   }, []);
 
   // Sélection d'une suggestion d'adresse
-  const handleSuggestionSelect = useCallback((item: AddressSuggestion) => {
-    if (!currentReport) return;
+  const handleSuggestionSelect = useCallback(
+    (item: AddressSuggestion) => {
+      if (!currentReport) return;
 
-    if (item.geometry) {
-      const { lat, lng } = item.geometry;
+      if (item.geometry) {
+        const { lat, lng } = item.geometry;
 
-      const formattedCity = item.formatted.replace(
-        /unnamed road/g,
-        "Route inconnue"
-      );
-
-      setCurrentReport({
-        ...currentReport,
-        city: formattedCity,
-        latitude: lat,
-        longitude: lng,
-      });
-
-      setIsAddressValidated(true);
-
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            latitude: lat,
-            longitude: lng,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          },
-          1000
+        const formattedCity = item.formatted.replace(
+          /unnamed road/g,
+          "Route inconnue"
         );
-      }
-    }
 
-    setModalVisible(false);
-  }, [currentReport]);
+        setCurrentReport({
+          ...currentReport,
+          city: formattedCity,
+          latitude: lat,
+          longitude: lng,
+        });
+
+        setIsAddressValidated(true);
+
+        if (mapRef.current) {
+          mapRef.current.animateToRegion(
+            {
+              latitude: lat,
+              longitude: lng,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            },
+            1000
+          );
+        }
+      }
+
+      setModalVisible(false);
+    },
+    [currentReport]
+  );
 
   // Validation des entrées
   const isValidInput = useCallback(() => {
@@ -473,27 +494,33 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
       {/* Header modernisé */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.headerIcon}
+          style={styles.headerIconButton}
           onPress={toggleSidebar}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.8}
         >
-          <Ionicons name="menu-outline" size={26} color={COLORS.text.light} />
+          <Icon name="menu" size={22} color={COLORS.text.light} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>MES SIGNALEMENTS</Text>
 
         <TouchableOpacity
-          style={styles.headerIcon}
+          style={styles.headerIconButton}
           onPress={() => navigation.navigate("NotificationsScreen")}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.8}
         >
           <View>
-            <Ionicons name="notifications-outline" size={26} color={COLORS.text.light} />
+            <Icon
+              name="notifications"
+              size={22}
+              color={unreadCount > 0 ? "#FFFFFC" : "#FFFFFC"}
+            />
             {unreadCount > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
               </View>
             )}
           </View>
@@ -507,7 +534,8 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
             <Ionicons name="document-text-outline" size={90} color="#CCCCCC" />
             <Text style={styles.emptyTitle}>Aucun signalement</Text>
             <Text style={styles.emptySubtitle}>
-              Vous n'avez pas encore créé de signalement dans votre espace personnel
+              Vous n'avez pas encore créé de signalement dans votre espace
+              personnel
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
@@ -538,13 +566,16 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
         onRequestClose={closeModal}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalContainer}
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Modifier le signalement</Text>
-              <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={closeModal}
+              >
                 <Ionicons name="close" size={24} color={COLORS.text.primary} />
               </TouchableOpacity>
             </View>
@@ -559,14 +590,21 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Titre</Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons name="bookmark-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                  <Ionicons
+                    name="bookmark-outline"
+                    size={20}
+                    color="#AAAAAA"
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.input}
                     placeholder="Titre du signalement"
                     placeholderTextColor="#AAAAAA"
                     value={currentReport?.title || ""}
                     onChangeText={(text) =>
-                      setCurrentReport(prev => prev ? {...prev, title: text} : null)
+                      setCurrentReport((prev) =>
+                        prev ? { ...prev, title: text } : null
+                      )
                     }
                     maxLength={100}
                   />
@@ -581,7 +619,10 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                     name="create-outline"
                     size={20}
                     color="#AAAAAA"
-                    style={[styles.inputIcon, {alignSelf: 'flex-start', marginTop: 10}]}
+                    style={[
+                      styles.inputIcon,
+                      { alignSelf: "flex-start", marginTop: 10 },
+                    ]}
                   />
                   <TextInput
                     style={styles.textArea}
@@ -589,7 +630,9 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                     placeholderTextColor="#AAAAAA"
                     value={currentReport?.description || ""}
                     onChangeText={(text) =>
-                      setCurrentReport(prev => prev ? {...prev, description: text} : null)
+                      setCurrentReport((prev) =>
+                        prev ? { ...prev, description: text } : null
+                      )
                     }
                     multiline
                     textAlignVertical="top"
@@ -603,7 +646,12 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                 <View style={styles.locationContainer}>
                   <View style={styles.addressInputWrapper}>
                     <View style={styles.inputContainer}>
-                      <Ionicons name="location-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
+                      <Ionicons
+                        name="location-outline"
+                        size={20}
+                        color="#AAAAAA"
+                        style={styles.inputIcon}
+                      />
                       <TextInput
                         style={styles.input}
                         placeholder="Adresse du signalement"
@@ -612,8 +660,8 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                         onChangeText={(text) => {
                           if (currentReport) {
                             // Mise à jour du texte sans ouvrir le modal
-                            setCurrentReport({...currentReport, city: text});
-                            
+                            setCurrentReport({ ...currentReport, city: text });
+
                             // Ne réinitialise l'état de validation que si le texte change vraiment
                             if (text !== currentReport.city) {
                               setIsAddressValidated(false);
@@ -636,7 +684,10 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                         if (currentReport && currentReport.city.trim()) {
                           handleAddressSearch(currentReport.city);
                         } else {
-                          Alert.alert("Erreur", "Veuillez entrer une adresse à rechercher");
+                          Alert.alert(
+                            "Erreur",
+                            "Veuillez entrer une adresse à rechercher"
+                          );
                         }
                       }}
                       activeOpacity={0.8}
@@ -655,20 +706,32 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                 </View>
 
                 {isAddressValidated ? (
-                    <>
+                  <>
                     <View style={styles.validatedAddressContainer}>
-                      <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
-                      <Text style={styles.validatedAddressText}>Adresse validée</Text>
-                      </View>
-                    </>
-                  ) : (
-                    <>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={16}
+                        color={COLORS.success}
+                      />
+                      <Text style={styles.validatedAddressText}>
+                        Adresse validée
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
                     <View style={styles.validatedAddressContainer}>
-                      <Ionicons name="close-circle" size={16} color={COLORS.danger} />
-                      <Text style={styles.invalidAddressText}>Adresse non validée</Text>
-                      </View>
-                    </>
-                  )}
+                      <Ionicons
+                        name="close-circle"
+                        size={16}
+                        color={COLORS.danger}
+                      />
+                      <Text style={styles.invalidAddressText}>
+                        Adresse non validée
+                      </Text>
+                    </View>
+                  </>
+                )}
               </View>
 
               {/* Carte */}
@@ -721,23 +784,36 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                 <TouchableOpacity
                   style={[
                     styles.saveButton,
-                    (!isAddressValidated || !isValidInput() || isSubmitting) && styles.disabledButton
+                    (!isAddressValidated || !isValidInput() || isSubmitting) &&
+                      styles.disabledButton,
                   ]}
                   onPress={() => {
-                    if (isAddressValidated && isValidInput() && !isSubmitting && currentReport) {
+                    if (
+                      isAddressValidated &&
+                      isValidInput() &&
+                      !isSubmitting &&
+                      currentReport
+                    ) {
                       updateReportHandler(currentReport);
                     } else if (!isSubmitting) {
                       const errors = getValidationErrors();
                       Alert.alert("Validation requise", errors.join("\n"));
                     }
                   }}
-                  disabled={!isAddressValidated || !isValidInput() || isSubmitting}
+                  disabled={
+                    !isAddressValidated || !isValidInput() || isSubmitting
+                  }
                 >
                   {isSubmitting ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Ionicons name="save-outline" size={20} color="#FFFFFF" style={{marginRight: 8}} />
+                      <Ionicons
+                        name="save-outline"
+                        size={20}
+                        color="#FFFFFF"
+                        style={{ marginRight: 8 }}
+                      />
                       <Text style={styles.actionButtonText}>Enregistrer</Text>
                     </>
                   )}
@@ -748,7 +824,12 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
                   onPress={closeModal}
                   disabled={isSubmitting}
                 >
-                  <Ionicons name="close-circle-outline" size={20} color="#FFFFFF" style={{marginRight: 8}} />
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={20}
+                    color="#FFFFFF"
+                    style={{ marginRight: 8 }}
+                  />
                   <Text style={styles.actionButtonText}>Annuler</Text>
                 </TouchableOpacity>
               </View>
@@ -763,7 +844,9 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
               <TouchableWithoutFeedback>
                 <View style={styles.suggestionsContent}>
                   <View style={styles.suggestionsHeader}>
-                    <Text style={styles.suggestionsTitle}>Sélectionnez une adresse</Text>
+                    <Text style={styles.suggestionsTitle}>
+                      Sélectionnez une adresse
+                    </Text>
                     <TouchableOpacity
                       style={styles.closeSuggestionsButton}
                       onPress={() => setModalVisible(false)}
@@ -774,38 +857,60 @@ export default function ReportScreen({ navigation }: { navigation: any }) {
 
                   <ScrollView
                     style={styles.suggestionsList}
-                    contentContainerStyle={suggestions.length === 0 ? styles.emptyContentContainer : null}
+                    contentContainerStyle={
+                      suggestions.length === 0
+                        ? styles.emptyContentContainer
+                        : null
+                    }
                     showsVerticalScrollIndicator={false}
                   >
                     {isLoadingSuggestions && (
                       <View style={styles.loaderContainer}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
-                        <Text style={styles.loaderText}>Recherche d'adresses...</Text>
+                        <ActivityIndicator
+                          size="large"
+                          color={COLORS.primary}
+                        />
+                        <Text style={styles.loaderText}>
+                          Recherche d'adresses...
+                        </Text>
                       </View>
                     )}
-                    
+
                     {!isLoadingSuggestions && suggestions.length === 0 ? (
                       <View style={styles.emptyContentContainer}>
-                        <Ionicons name="location-outline" size={56} color="#CCCCCC" />
+                        <Ionicons
+                          name="location-outline"
+                          size={56}
+                          color="#CCCCCC"
+                        />
                         <Text style={styles.noSuggestionsText}>
                           Aucune adresse trouvée pour cette recherche
                         </Text>
                       </View>
                     ) : (
-                      !isLoadingSuggestions && suggestions.map((item, index) => (
+                      !isLoadingSuggestions &&
+                      suggestions.map((item, index) => (
                         <TouchableOpacity
                           key={`${item.formatted}-${index}`}
                           style={[
                             styles.suggestionItem,
-                            index % 2 === 0 ? {backgroundColor: "#FFFFFF"} : {backgroundColor: "#FAFAFA"}
+                            index % 2 === 0
+                              ? { backgroundColor: "#FFFFFF" }
+                              : { backgroundColor: "#FAFAFA" },
                           ]}
                           onPress={() => handleSuggestionSelect(item)}
                           activeOpacity={0.7}
                         >
                           <View style={styles.suggestionIconContainer}>
-                            <Ionicons name="location" size={20} color="#FFFFFF" />
+                            <Ionicons
+                              name="location"
+                              size={20}
+                              color="#FFFFFF"
+                            />
                           </View>
-                          <Text style={styles.suggestionText}>{item.formatted}</Text>
+                          <Text style={styles.suggestionText}>
+                            {item.formatted}
+                          </Text>
                         </TouchableOpacity>
                       ))
                     )}

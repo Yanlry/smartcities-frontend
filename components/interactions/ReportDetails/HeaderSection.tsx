@@ -70,7 +70,7 @@ const COLORS: ColorSystem = {
     accent: ["#00C6FB", "#005BEA"] as const,
     rose: ["#FF416C", "#FF4B2B"] as const,
     success: ["#00B09B", "#96C93D"] as const,
-    header: ['#062C41', '#0F3460'] as const,
+    header: ['#1B5D85', '#0F3460'] as const,
     titleBar: ["rgba(255, 255, 255, 0.08)", "rgba(255, 255, 255, 0.03)"] as const,
     buttonHover: ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"] as const,
     reportDanger: ["#FF6B6B", "#FF4757"] as const,

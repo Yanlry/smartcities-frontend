@@ -29,7 +29,7 @@ const ProgressModal: React.FC<ProgressModalProps> = memo(({
           <Progress.Bar 
             progress={progress} 
             width={200} 
-            color="#062C41" 
+            color="#1B5D85" 
             style={styles.progressBar}
           />
           <Text style={styles.percentage}>

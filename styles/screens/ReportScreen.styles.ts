@@ -1,9 +1,9 @@
-import { StyleSheet, Platform, Dimensions } from "react-native";
+import { StyleSheet, Platform, Dimensions, StatusBar } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
 const COLORS = {
-  primary: "#062C41",
+  primary: "#1B5D85",
   secondary: "#1B5D85",
   danger: "#f44336",
   success: "#4CAF50",
@@ -17,6 +17,55 @@ const COLORS = {
     muted: "#999999",
   },
 };
+
+  const LAYOUT = {
+    radius: {
+      xs: 4,
+      sm: 8,
+      md: 12,
+      lg: 16,
+      xl: 24,
+      circle: 9999,
+    },
+    header: {
+      height: Platform.OS === "ios" ? 100 : 90,
+      padding: Platform.OS === "ios" ? 50 : 30,
+    },
+    tabBar: {
+      height: 64 + (Platform.OS === "ios" ? 20 : 0),
+      buttonSize: 44,
+    },
+    statusBar: {
+      height: StatusBar.currentHeight || (Platform.OS === "ios" ? 44 : 24),
+    },
+    border: {
+      width: 1,
+      color: "rgba(0,0,0,0.08)",
+    },
+    shadow: {
+      small: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+      },
+      medium: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
+      },
+      large: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        elevation: 8,
+      },
+    },
+  };
 
 export default StyleSheet.create({
     container: {
@@ -57,8 +106,8 @@ export default StyleSheet.create({
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingTop: Platform.OS === 'ios' ? 55 : 45,
-      paddingBottom: 20,
+      paddingTop: Platform.OS === "ios" ? 45 : 30,
+      paddingBottom: 15,
       paddingHorizontal: 20,
       elevation: 8,
       shadowColor: "#000",
@@ -68,19 +117,20 @@ export default StyleSheet.create({
       borderBottomLeftRadius: 16,
       borderBottomRightRadius: 16,
     },
-    headerIcon: {
-      width: 42,
-      height: 42,
+    headerIconButton: {
+      width: 38,
+      height: 38,
+      borderRadius: LAYOUT.radius.circle,
       justifyContent: "center",
       alignItems: "center",
-      borderRadius: 21,
-      backgroundColor: "rgba(255, 255, 255, 0.15)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.15)",
     },
     headerTitle: {
-      fontSize: 19,
+      fontSize: 18,
       fontWeight: "700",
-      color: COLORS.text.light,
-      letterSpacing: 1,
+      color: "#FFFFFF",
+      letterSpacing: 0.5,
     },
     badge: {
       position: "absolute",

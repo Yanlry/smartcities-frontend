@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 50, // Très arrondi pour un look moderne
-    shadowColor: '#062C41',
+    shadowColor: '#1B5D85',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   
   // Texte de l'icône de chargement
   loadingText: {
-    color: '#062C41', // Couleur de ton app
+    color: '#1B5D85', // Couleur de ton app
     fontSize: 14,
     fontWeight: 'bold',
   },

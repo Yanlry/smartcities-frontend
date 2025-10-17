@@ -32,7 +32,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = memo(({
       />
     </TouchableOpacity>
     
-    <View style={profileStyles.typeBadge}>
+    <View >
       <Text style={profileStyles.headerTitle}>PROFIL</Text>
     </View>
     

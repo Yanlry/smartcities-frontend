@@ -302,7 +302,7 @@ const HomeScreen: React.FC<HomeScreenProps> = memo(
         <View style={styles.loadingContainer}>
           <JoyfulLoader
             message="Chargement de votre fil d'actualité..."
-            color="#062C41"
+            color="#1B5D85"
             size="medium"
           />
         </View>

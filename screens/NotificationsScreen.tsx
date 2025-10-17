@@ -21,7 +21,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
 } from "react-native";
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from "expo-linear-gradient";
 
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Sidebar from "../components/common/Sidebar";
@@ -74,7 +74,11 @@ interface Notification {
 }
 
 // ✅ CORRECTION 1: Ajout du type pour navigation
-export default function NotificationsScreen({ navigation }: { navigation: NavigationProp }) {
+export default function NotificationsScreen({
+  navigation,
+}: {
+  navigation: NavigationProp;
+}) {
   const { getToken } = useToken();
   const { unreadCount } = useNotification();
 
@@ -83,7 +87,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
-  
+
   const defaultPreferences: NotificationPreferences = {
     COMMENT: true,
     FOLLOW: true,
@@ -95,8 +99,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
     comment: true,
     NEW_POST: true,
   };
-  
-  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
+
+  const [preferences, setPreferences] =
+    useState<NotificationPreferences>(defaultPreferences);
 
   // Animation values
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -141,7 +146,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
         );
-      // ✅ CORRECTION 2: Typage explicite de error
+        // ✅ CORRECTION 2: Typage explicite de error
       } catch (error: any) {
         if (error.message.includes("Token non trouvé")) {
           console.log("Token non valide ou expiré. Aucune action entreprise.");
@@ -172,7 +177,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
         if (savedPreferences) {
           setPreferences(JSON.parse(savedPreferences));
         }
-      // ✅ CORRECTION 3: Typage explicite de error
+        // ✅ CORRECTION 3: Typage explicite de error
       } catch (error: any) {
         console.error("Erreur lors du chargement des préférences :", error);
       }
@@ -228,7 +233,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
       );
-    // ✅ CORRECTION 4: Typage explicite de error
+      // ✅ CORRECTION 4: Typage explicite de error
     } catch (error: any) {
       console.error(
         "Erreur lors de la récupération des notifications :",
@@ -277,7 +282,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
             : notification
         )
       );
-    // ✅ CORRECTION 5: Typage explicite de error
+      // ✅ CORRECTION 5: Typage explicite de error
     } catch (error: any) {
       console.error(
         `Erreur lors de la mise à jour de la notification ${notificationId} :`,
@@ -318,7 +323,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
         "Succès",
         "Toutes les notifications ont été marquées comme lues."
       );
-    // ✅ CORRECTION 6: Typage explicite de error
+      // ✅ CORRECTION 6: Typage explicite de error
     } catch (error: any) {
       console.error(
         "Erreur lors de la mise à jour des notifications :",
@@ -364,7 +369,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
           (notification) => notification.id !== notificationId
         )
       );
-    // ✅ CORRECTION 7: Typage explicite de error
+      // ✅ CORRECTION 7: Typage explicite de error
     } catch (error: any) {
       console.error(
         `Erreur lors de la suppression de la notification ${notificationId} :`,
@@ -377,19 +382,27 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
   const handleNotificationClick = async (notification: Notification) => {
     console.log("🔔 Notification cliquée :", notification);
     console.log("📋 Type de notification :", notification.type);
-    console.log("🆔 RelatedId :", notification.relatedId, typeof notification.relatedId);
+    console.log(
+      "🆔 RelatedId :",
+      notification.relatedId,
+      typeof notification.relatedId
+    );
 
     try {
       await markNotificationAsRead(notification.id);
       console.log("✅ Notification marquée comme lue");
     } catch (error) {
-      console.error("❌ Erreur lors de la mise à jour de la notification comme lue :", error);
+      console.error(
+        "❌ Erreur lors de la mise à jour de la notification comme lue :",
+        error
+      );
     }
 
     // Conversion du relatedId en nombre si c'est une chaîne
-    const relatedId = typeof notification.relatedId === 'string' 
-      ? parseInt(notification.relatedId, 10) 
-      : notification.relatedId;
+    const relatedId =
+      typeof notification.relatedId === "string"
+        ? parseInt(notification.relatedId, 10)
+        : notification.relatedId;
 
     console.log("🔄 RelatedId converti :", relatedId, typeof relatedId);
 
@@ -406,21 +419,30 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
     try {
       switch (notification.type) {
         case "COMMENT":
-          console.log("🚀 Navigation vers ReportDetailsScreen avec reportId :", relatedId);
+          console.log(
+            "🚀 Navigation vers ReportDetailsScreen avec reportId :",
+            relatedId
+          );
           navigation.navigate("ReportDetailsScreen", {
             reportId: relatedId,
           });
           break;
 
         case "FOLLOW":
-          console.log("🚀 Navigation vers UserProfileScreen avec userId :", relatedId);
+          console.log(
+            "🚀 Navigation vers UserProfileScreen avec userId :",
+            relatedId
+          );
           navigation.navigate("UserProfileScreen", {
             userId: relatedId,
           });
           break;
 
         case "VOTE":
-          console.log("🚀 Navigation vers ReportDetailsScreen avec reportId :", relatedId);
+          console.log(
+            "🚀 Navigation vers ReportDetailsScreen avec reportId :",
+            relatedId
+          );
           navigation.navigate("ReportDetailsScreen", {
             reportId: relatedId,
           });
@@ -435,35 +457,50 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
           break;
 
         case "comment":
-          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          console.log(
+            "🚀 Navigation vers PostDetailsScreen avec postId :",
+            relatedId
+          );
           navigation.navigate("PostDetailsScreen", {
             postId: relatedId,
           });
           break;
 
         case "post":
-          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          console.log(
+            "🚀 Navigation vers PostDetailsScreen avec postId :",
+            relatedId
+          );
           navigation.navigate("PostDetailsScreen", {
             postId: relatedId,
           });
           break;
 
         case "NEW_POST":
-          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          console.log(
+            "🚀 Navigation vers PostDetailsScreen avec postId :",
+            relatedId
+          );
           navigation.navigate("PostDetailsScreen", {
             postId: relatedId,
           });
           break;
 
         case "LIKE":
-          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          console.log(
+            "🚀 Navigation vers PostDetailsScreen avec postId :",
+            relatedId
+          );
           navigation.navigate("PostDetailsScreen", {
             postId: relatedId,
           });
           break;
 
         case "comment_reply":
-          console.log("🚀 Navigation vers PostDetailsScreen avec postId :", relatedId);
+          console.log(
+            "🚀 Navigation vers PostDetailsScreen avec postId :",
+            relatedId
+          );
           navigation.navigate("PostDetailsScreen", {
             postId: relatedId,
           });
@@ -699,7 +736,8 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
   };
 
   const NotificationPreferencesModal = () => {
-    const [tempPreferences, setTempPreferences] = useState<NotificationPreferences>(preferences);
+    const [tempPreferences, setTempPreferences] =
+      useState<NotificationPreferences>(preferences);
     const modalScaleAnim = React.useRef(new Animated.Value(0.9)).current;
     const modalOpacityAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -920,9 +958,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#062C41" />
+        <StatusBar barStyle="light-content" backgroundColor="#1B5D85" />
         <View style={styles.loadingContent}>
-          <Icon name="notifications" size={50} color="#062C41" />
+          <Icon name="notifications" size={50} color="#1B5D85" />
           <Text style={styles.loadingText}>
             Chargement des notifications...
           </Text>
@@ -933,14 +971,11 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#062C41" />
- <LinearGradient
-        colors={['#062C41', '#0F3460']}
-        style={styles.header}
-      >
+      <StatusBar barStyle="light-content" backgroundColor="#1B5D85" />
+      <LinearGradient colors={["#1B5D85", "#1B5D85"]} style={styles.header}>
         <TouchableOpacity
           onPress={toggleSidebar}
-          style={styles.headerButton}
+          style={styles.headerIconButton}
           activeOpacity={0.7}
         >
           <Icon name="menu" size={24} color="#FFFFFF" />
@@ -952,7 +987,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
 
         <TouchableOpacity
           onPress={() => navigation.navigate("NotificationsScreen")}
-          style={styles.headerButton}
+          style={styles.headerIconButton}
           activeOpacity={0.7}
         >
           <View>
@@ -1043,8 +1078,6 @@ export default function NotificationsScreen({ navigation }: { navigation: Naviga
     </View>
   );
 }
-
-
 
 // Garde tes styles existants (const styles = StyleSheet.create({...}))
 // Je n'ai pas inclus les styles car ils n'ont pas changé
